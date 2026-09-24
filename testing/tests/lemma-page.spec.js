@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Persistent Lemma Pages', () => {
 
     test('lemma page loads with query param (?id=879)', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=879');
+        await page.goto('/lemma/?id=879');
 
         // Wait for loading to complete
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
@@ -27,7 +27,7 @@ test.describe('Persistent Lemma Pages', () => {
     });
 
     test('lemma page shows correct data for brôt (879)', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=879');
+        await page.goto('/lemma/?id=879');
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
 
         // brôt should be a noun
@@ -44,7 +44,7 @@ test.describe('Persistent Lemma Pages', () => {
     });
 
     test('lemma page shows corpus occurrences', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=879');
+        await page.goto('/lemma/?id=879');
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
 
         // Wait a bit for corpus index to load
@@ -60,7 +60,7 @@ test.describe('Persistent Lemma Pages', () => {
     });
 
     test('lemma page shows external links', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=879');
+        await page.goto('/lemma/?id=879');
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
 
         // Should have old MHDBDB link with correct URL
@@ -73,33 +73,81 @@ test.describe('Persistent Lemma Pages', () => {
         // Should have corpus search link
         const corpusLink = page.locator('#externalLinks a:has-text("Korpus")');
         await expect(corpusLink).toBeVisible();
-
-        // Should have MWB Online link
-        const mwbLink = page.locator('#externalLinks a:has-text("MWB Online")');
-        await expect(mwbLink).toBeVisible();
-        const mwbHref = await mwbLink.getAttribute('href');
-        expect(mwbHref).toContain('mhdwb-online.de');
     });
 
     test('lemma page loads Wörterbuchnetz entries via API', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=879');
+        await page.goto('/lemma/?id=879');
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
 
         // Wörterbuchnetz section appears after async API call (brôt → brot)
         await page.waitForSelector('#wbnetzSection:not(.hidden)', { timeout: 15000 });
 
-        // Should have at least one dictionary link (BMZ or Lexer)
+        // Should have at least one dictionary link (MWB or Lexer)
         const wbnLinks = page.locator('#wbnetzLinks a');
         const count = await wbnLinks.count();
         expect(count).toBeGreaterThan(0);
 
-        // Links should point to woerterbuchnetz.de
+        // Links point to either mhdwb-online.de (MWB) or woerterbuchnetz.de (Lexer)
+        // — both come from the Wörterbuchnetz API but the original deep-links
+        // differ per dictionary (#73, dcbee3479).
         const firstHref = await wbnLinks.first().getAttribute('href');
-        expect(firstHref).toContain('woerterbuchnetz.de');
+        expect(firstHref).toMatch(/(mhdwb-online|woerterbuchnetz)\.de/);
+    });
+
+    test('#258: Lemma-Seite gruppiert je Wörterbuch und schreibt die Sigle aus', async ({ page }) => {
+        // Stub statt Live-API: die Beleglage der einzelnen Wörterbücher ändert
+        // sich (das MWB erscheint noch und hat "minne" heute nicht), eine
+        // Zusicherung auf echte Treffer wäre morgen falsch.
+        await page.route('https://api.woerterbuchnetz.de/**', route => {
+            const sigle = route.request().url().replace(/^.*\/dictionaries\//, '').split('/')[0];
+            route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ result_set: [
+                    // gram trägt hier bewusst eine Entität: der Wert lief auf
+                    // dieser Seite als Einzige ohne decodeHtmlEntities durch,
+                    // während app.js und hapax-legomena.js ihn dekodieren.
+                    { sigle, lemma: 'br&ocirc;t', gram: 'st&ocirc;N', wbnetzid: 'E1',
+                      wbnetzlink: `https://woerterbuchnetz.de/?sigle=${sigle}&lemid=E1` },
+                ]}),
+            });
+        });
+
+        await page.goto('/lemma/?id=879');
+        await page.waitForSelector('#wbnetzSection:not(.hidden)', { timeout: 30000 });
+
+        // Eine Gruppe je Wörterbuch, in der Abfragereihenfolge aus DICTIONARIES
+        const gruppen = page.locator('#wbnetzLinks [data-wbnetz-group]');
+        await expect(gruppen).toHaveCount(5);
+        expect(await gruppen.evaluateAll(els => els.map(e => e.dataset.wbnetzGroup)))
+            .toEqual(['MWB', 'Lexer', 'LexerN', 'BMZ', 'FindeB']);
+
+        // Die Sigle wird hier ausgeschrieben, nicht nur als title-Tooltip:
+        // die Lemma-Seite ist die Vertiefungsseite (#258 Punkt 3).
+        const ueberschriften = await page.locator('#wbnetzLinks h3')
+            .evaluateAll(els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+        expect(ueberschriften).toEqual([
+            'Mittelhochdeutsches Wörterbuch (MWB)',
+            'Lexer, Mittelhochdeutsches Handwörterbuch (Lexer)',
+            'Lexer, Nachträge zum Mittelhochdeutschen Handwörterbuch (LexerN)',
+            'Benecke/Müller/Zarncke, Mittelhochdeutsches Wörterbuch (BMZ)',
+            'Findebuch zum mittelhochdeutschen Wortschatz (FindeB)',
+        ]);
+
+        // Die Karte trägt das dekodierte Stichwort, die Sigle steht nur noch
+        // in der Überschrift darüber.
+        const bmzKarte = page.locator('#wbnetzLinks [data-wbnetz-group="BMZ"] a');
+        await expect(bmzKarte).toHaveCount(1);
+        await expect(bmzKarte).toContainText('brôt');
+        // Auch gram wird dekodiert, gleich wie auf den beiden anderen
+        // Oberflächen: der PR erhebt gram zum Unterscheidungsmerkmal der
+        // Homographen, dann darf es nicht auf einer Seite roh stehen.
+        await expect(bmzKarte).toContainText('(stôN)');
+        expect(await bmzKarte.getAttribute('href')).toBe('https://woerterbuchnetz.de/?sigle=BMZ&lemid=E1');
     });
 
     test('invalid lemma ID shows error', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=99999999');
+        await page.goto('/lemma/?id=99999999');
 
         // Should show error, not content
         await page.waitForSelector('#errorDisplay:not(.hidden)', { timeout: 30000 });
@@ -113,7 +161,7 @@ test.describe('Persistent Lemma Pages', () => {
     });
 
     test('no ID shows error message', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/');
+        await page.goto('/lemma/');
 
         await page.waitForSelector('#errorDisplay:not(.hidden)', { timeout: 30000 });
 
@@ -122,7 +170,7 @@ test.describe('Persistent Lemma Pages', () => {
     });
 
     test('minne (4130) - high-frequency lemma loads', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=4130');
+        await page.goto('/lemma/?id=4130');
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
 
         const title = await page.textContent('#lemmaTitle');
@@ -136,7 +184,7 @@ test.describe('Persistent Lemma Pages', () => {
 
     test('etymology links point to other lemma pages', async ({ page }) => {
         // lemma_100 (ahzehen) has etymology components
-        await page.goto('http://localhost:8080/lemma/?id=100');
+        await page.goto('/lemma/?id=100');
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
 
         // Check if etymology section is visible (not all lemmata have etymology)
@@ -152,7 +200,7 @@ test.describe('Persistent Lemma Pages', () => {
     });
 
     test('copy ID button exists and is clickable', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=879');
+        await page.goto('/lemma/?id=879');
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
 
         // Verify button exists and shows initial text
@@ -165,7 +213,7 @@ test.describe('Persistent Lemma Pages', () => {
     });
 
     test('orthographic variants shown for brôt (879)', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=879');
+        await page.goto('/lemma/?id=879');
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
 
         // brôt should have multiple attested spelling variants
@@ -181,7 +229,7 @@ test.describe('Persistent Lemma Pages', () => {
     });
 
     test('compounds section shown for brôt (879)', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=879');
+        await page.goto('/lemma/?id=879');
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
 
         // brôt should have compounds (halpbrôt, himelbrôt, etc.)
@@ -197,7 +245,7 @@ test.describe('Persistent Lemma Pages', () => {
     });
 
     test('IMAREAL link present in external links', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=879');
+        await page.goto('/lemma/?id=879');
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
 
         const imrealLink = page.locator('#externalLinks a:has-text("REALonline")');
@@ -207,7 +255,7 @@ test.describe('Persistent Lemma Pages', () => {
     });
 
     test('occurrence links navigate to korpus reading view', async ({ page }) => {
-        await page.goto('http://localhost:8080/lemma/?id=879');
+        await page.goto('/lemma/?id=879');
         await page.waitForSelector('#occurrencesSection:not(.hidden)', { timeout: 30000 });
 
         // Get first occurrence link
@@ -217,6 +265,75 @@ test.describe('Persistent Lemma Pages', () => {
         // Should link to korpus.html with correct params
         expect(href).toContain('korpus.html');
         expect(href).toContain('textId=');
-        expect(href).toContain('lemmaIds=879');
+        // Reader-Highlight braucht den kanonischen lemma_-Präfix (CONTRACTS §B.1);
+        // der Belegstellen-Link muss ihn also mitgeben, nicht abstreifen.
+        expect(href).toContain('lemmaIds=lemma_879');
+    });
+
+    // Kuratierte Angaben (Authority Index v1.7.0): Herkunftssprache aus
+    // <etym type="borrowing">, Bedeutung aus <def>, Kommentar aus
+    // <note type="comment">. Alle drei sind optional und stehen heute nur an
+    // lemma_37818 (Abba) — genau deshalb prüft der zweite Test, dass ein
+    // Lemma ohne Kuratierung die Sektion nicht zeigt.
+    test('kuratierte Herkunft und Bedeutung erscheinen für Abba (37818)', async ({ page }) => {
+        await page.goto('/lemma/?id=37818');
+        await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
+
+        // Beide Herkunftsschichten samt Code. Die Liste muss deckungsgleich mit
+        // den Sprach-Konzepten des Eintrags sein (Kurationsregel in
+        // TEI-MODEL-AUTH-FILES §3.1), deshalb wird sie hier gegen beide geprüft.
+        await page.waitForSelector('#originSection:not(.hidden)', { timeout: 5000 });
+        const origin = await page.textContent('#originContent');
+        expect(origin).toContain('Aramäisch');
+        expect(origin).toContain('Lateinisch');
+        expect(origin).toContain('Bibel');
+
+        // Die Codes gezielt gegen die gerenderten Spans, nicht gegen den
+        // Gesamttext: „Lateinisch" und „lateinische Bibel" enthalten den String
+        // „la" auch dann, wenn der Code überhaupt nicht angezeigt würde.
+        const codes = (await page.locator('#originContent .font-mono').allTextContents())
+            .map(c => c.trim());
+        expect(codes).toEqual(['arc', 'la']);
+
+        // Definition und Kommentar stehen im Bedeutungs-Block, vor den
+        // Begriffs-Chips; der Kommentar trägt ein sichtbares Label.
+        const senses = await page.textContent('#sensesContent');
+        expect(senses).toContain('Anrede Gottes');
+        expect(senses).toContain('Kommentar');
+        expect(senses).toContain('ZUK 2377');
+        expect(senses).toContain('Markus 14,36');
+
+        // Die neuen Begriffszuordnungen sind sichtbar, die entfernte nicht
+        expect(senses).toContain('Aramäisch');
+        expect(senses).toContain('Lateinisch');
+        expect(senses).toContain('Bibel/Religionsgeschichte');
+        expect(senses).not.toContain('Kirchliche Hierarchie');
+    });
+
+    test('Lemma ohne kuratierte Herkunft zeigt keine Herkunft-Sektion (879)', async ({ page }) => {
+        await page.goto('/lemma/?id=879');
+        await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
+
+        const originHidden = await page.locator('#originSection')
+            .evaluate(el => el.classList.contains('hidden'));
+        expect(originHidden).toBe(true);
+    });
+
+    test('occurrence link click-through highlights the lemma in the reader', async ({ page }) => {
+        // Audit #12: der href-String-Test allein hatte das kaputte Link-Format
+        // zementiert — hier wird der reale Klickpfad bis zum sichtbaren
+        // Highlight verifiziert.
+        test.setTimeout(120000);
+
+        await page.goto('/lemma/?id=879');
+        await page.waitForSelector('#occurrencesSection:not(.hidden)', { timeout: 30000 });
+
+        await page.locator('#occurrencesContent a').first().click();
+
+        // Navigiert auf korpus.html; Reader lädt und MUSS Treffer markieren
+        await page.waitForSelector('#loadingScreen', { state: 'hidden', timeout: 30000 });
+        await expect(page.locator('#readingTitle')).not.toBeEmpty({ timeout: 90000 });
+        const highlights = page.locator('#readingBody .highlight');
+        await expect(highlights.first()).toBeVisible({ timeout: 15000 });
     });
 });

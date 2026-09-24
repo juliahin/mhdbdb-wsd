@@ -1,0 +1,497 @@
+name: Data Integrity
+
+# Ein konsolidiertes Daten-Gate (#125): prueft Quellen UND abgeleitete
+# Schicht (Indexe, variants.xml) in einem Job, Steps von billig nach
+# teuer (fail fast). Konsolidiert das fruehere index-version-check.yml
+# (Step 1) und schema-validation.yml (Steps 2-3, 7-8).
+#
+#   0. Diff-Base bestimmen (PR: erster Elternteil des Merge-Refs,
+#      Push: event.before) —
+#      Grundlage fuer Step 1c und die Change-Detection in Step 6c.
+#   1. Index-Versions-Konstanten: Build-Skripte und corpus-loader.js
+#      muessen dieselbe Version nennen, sonst greift die Cache-
+#      Invalidierung nicht (#47.3).
+#   1a. Dokumentierte Zahlen gegen die Daten (#382/#398): jede in der
+#      Doku und auf den ausgelieferten Seiten verankerte Zaehlung wird
+#      gegen den Bestand gehalten. Frueh, weil billig (sechs Sekunden)
+#      und ohne Abhaengigkeit von einem Vorgaenger. Zwei Grenzen stehen
+#      am Step selbst: die Pfadfilter nennen weder docs/** (behauptete
+#      Zahl) noch playground/** (gemessene Zahl).
+#   1b. Werk-Identifier gegen works.xml (#399): fuer
+#      handschriftencensus, GND und wikidata ist works.xml Master, der
+#      msIdentifier jedes TEI-Headers ist Spiegel. Verglichen wird
+#      INHALT, nicht Formatierung: ein Sync-und-diff wuerde alle 667
+#      Dateien ueber lxml neu serialisieren und das Gate dauerhaft rot
+#      faerben. Rot auch bei fehlendem oder unparsebarem msIdentifier,
+#      mit eigener Meldung, weil --works einen fehlenden Block nicht
+#      anlegen kann. Frueh, weil billig (rund eine Sekunde ueber alle
+#      667, gemessen 08.09.2026) und ohne Vorgaenger-Abhaengigkeit.
+#   1c. Versions-Bump-Gate (#154): hat sich der dekomprimierte Inhalt
+#      von corpus-/authority-index gegenueber der Diff-Base geaendert,
+#      MUSS der version-String mitgebumpt sein — sonst invalidiert der
+#      Dexie-Cache nicht und wiederkehrende Nutzer behalten bis zu 30
+#      Tage den alten Index. MUSS VOR Step 6 (Freshness Indexe) laufen:
+#      der Rebuild dort ueberschreibt data/*.json.gz im Working Tree.
+#   1d. Index-Budget (#111, ADR-019), mit vorgeschaltetem Selbsttest
+#      (--selftest) im eigenen Step: gz-Groesse fuer Leitung und Cache,
+#      unkomprimierte Groesse fuer den Speicher nach JSON.parse. WARNT
+#      nur und faerbt den Lauf nie rot; rot wird allein die gescheiterte
+#      Messung. Steht wie 1c vor Step 6 (Freshness Indexe), damit der
+#      committete Stand gemessen wird und nicht der frisch gebaute.
+#   2. RNC->RNG sync check (P2-14).
+#   3. TEI-P5-Versions-Pin fuer tei_all.rng.
+#   4. Freshness variants.xml: extract-variants.py --apply muss die
+#      committete Datei byte-identisch reproduzieren, sonst wurde nach
+#      einer Korpus-Aenderung die Regenerierung vergessen. MUSS als
+#      blockierender Step VOR Step 6 (Freshness Indexe) stehen: der
+#      Index-Vergleich kann variants-Drift prinzipiell nicht erkennen
+#      (der Rebuild nutzt dieselbe committete variants.xml und matcht).
+#      Nie auf advisory herunterstufen.
+#   5. Freshness API (#45): build-api.py muss das committete api/
+#      byte-identisch reproduzieren (plain JSON, kein gzip — daher
+#      reicht git diff). MUSS VOR Step 6 (Freshness Indexe) laufen: der
+#      Index-Rebuild dort laesst data/*.json.gz mit potenziell anderen
+#      gz-Bytes zurueck (je zlib-Build), was den build-api-Pre-flight
+#      ("data/ muss clean sein") grundlos ausloesen wuerde.
+#   6. Freshness Indexe (Rebuild-and-Compare): beide Indexe frisch
+#      bauen, DEKOMPRIMIERTEN Inhalt mit dem committeten Stand
+#      vergleichen (gzip-Bytes koennen je zlib-Build variieren).
+#      Traegt nur, weil die Builds seit #125 deterministisch sind
+#      (kein generatedAt, sorted glob, gzip mtime=0).
+#   6b. Naming-Index Konsistenz (#152): source.commit-Provenienz
+#      vorhanden + alle works[].sigle existieren als tei/<SIG>.tei.xml
+#      (ein Sigle-Rename braeche den Reader-Link sonst still als No-op).
+#      Offline und billig, laeuft immer.
+#   6c. Freshness naming-index (#152): Rebuild aus dem im Index
+#      gepinnten source.commit muss den committeten Stand reproduzieren
+#      (deterministisch: generatedAt = Committer-Datum des Pins).
+#      Laeuft NUR, wenn naming-Pfade sich gegenueber der Diff-Base
+#      geaendert haben — der Fetch geht an ein externes Repo
+#      (lindabeutel/Naming-analysis), und externe Netz-Abhaengigkeit
+#      auf jedem Daten-PR widerspraeche dem #125-Prinzip.
+#   7. Authority cross-reference integrity (#44/#115/#152): dangling
+#      Refs ausserhalb lexicon.xml brechen den Build; lexicon.xml wird
+#      als ID-Set-Ratsche gegen die committete Baseline-Datei
+#      (scripts/audit/lexicon-baseline.json) gegated: jede ID ausserhalb
+#      der Baseline = rot, tolerierter Altbestand = gruen, geschrumpfter
+#      Ist-Stand = ::warning mit --update-baseline-Hinweis. Vor der
+#      RelaxNG-Validierung, weil deutlich billiger (plain parse).
+#   7b. Personennamen im Header gegen persons.xml (#228/#308): der
+#      zweite Spiegel neben dem msIdentifier aus Step 1b. Geprueft
+#      werden titleStmt/author (leer, toter @ref, Praefixform) und
+#      seit #308 particDesc/listPerson/persName[@type="preferred"],
+#      671 Eintraege in 666 Dateien, adressiert ueber @corresp. Eine
+#      Abweichung dort ist nie eine bibliographische Variante, sondern
+#      immer ein veralteter Spiegel. Hier und nicht bei 1b, weil das
+#      Skript jede der 667 Dateien ganz parst (gemessen 1 min 47 s).
+#   8. Zweistufige RelaxNG-Validierung (P2-13): Stage 2
+#      (mhdbdb.rng / mhdbdb-authority.rng) ist das harte Gate;
+#      Stage-1-Baseline-Fails (#30) sind nur Warnungen.
+#
+# Die Nummerierung oben ist die dieser Datei und laeuft mit Buchstaben,
+# damit ein spaeter eingefuegter Step seine Position zeigt, ohne die
+# Ziffern darunter zu verschieben. Die Buchstaben verschiebt er sehr
+# wohl: #399 hat 1b auf 1c und 1c auf 1d geschoben. Stehen bleibt 2
+# bis 8. Sie entspricht NICHT der durchnummerierten Liste in
+# docs/DEVELOPMENT.md (dort 1 bis 15, ohne Buchstaben): dort ist der
+# Index-Rebuild Pruefung 11, hier Step 6. Wer zwischen beiden Dateien
+# springt, vergleicht Namen und nicht Nummern.
+#
+# Dependencies sind in requirements.txt gepinnt (CI und lokal dieselben
+# Versionen): eine neue lxml-Serialisierung wuerde sonst in Step 4 als
+# falscher Drift-Alarm erscheinen (variants.xml ist lxml-serialisiert;
+# die Indexe sind reines json.dumps), eine neue rnc2rng-Version in
+# Step 2. Bei Pin-Bump lokal `pip install -r requirements.txt` und
+# variants.xml einmal regenerieren.
+
+on:
+  pull_request:
+    paths:
+      - 'schema/**'
+      - 'tei/**'
+      - 'authority-files/**'
+      # Glob statt der drei Einzeldateien (#111): das Budget-Gate misst
+      # jede data/*.json.gz und traegt fuer unbekannte Indexe eine eigene
+      # Voreinstellung. Ein neuer kuratierter Index der #194-Rubrik waere
+      # mit einer Namensliste am Gate vorbeigelaufen.
+      - 'data/*.json.gz'
+      - 'api/**'
+      - '!api/index.html'
+      - 'scripts/build-corpus-index.py'
+      - 'scripts/build-authority-index.py'
+      - 'scripts/build-api.py'
+      - 'scripts/mhg_normalizer.py'
+      # Globs statt Einzeldateien: jedes hier ausgefuehrte Gate-Skript
+      # soll seinen eigenen Aenderungs-Trigger haben (Review #146).
+      - 'scripts/sync/**'
+      - 'scripts/audit/**'
+      - 'scripts/ingest/naming/**'
+      - 'assets/js/lib/corpus-loader.js'
+      - 'requirements.txt'
+      - '.github/workflows/data-integrity.yml'
+  # Direct-to-main pushes also trigger the workflow (Branch-Protection
+  # ist historisch umgangen worden, z.B. WZB-Merge 2026-05-06).
+  push:
+    branches:
+      - main
+    paths:
+      - 'schema/**'
+      - 'tei/**'
+      - 'authority-files/**'
+      # Glob statt der drei Einzeldateien (#111): das Budget-Gate misst
+      # jede data/*.json.gz und traegt fuer unbekannte Indexe eine eigene
+      # Voreinstellung. Ein neuer kuratierter Index der #194-Rubrik waere
+      # mit einer Namensliste am Gate vorbeigelaufen.
+      - 'data/*.json.gz'
+      - 'api/**'
+      - '!api/index.html'
+      - 'scripts/build-corpus-index.py'
+      - 'scripts/build-authority-index.py'
+      - 'scripts/build-api.py'
+      - 'scripts/mhg_normalizer.py'
+      - 'scripts/sync/**'
+      - 'scripts/audit/**'
+      - 'scripts/ingest/naming/**'
+      - 'assets/js/lib/corpus-loader.js'
+      - 'requirements.txt'
+      - '.github/workflows/data-integrity.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: data-integrity-${{ github.ref }}
+  # Nur PR-Laeufe canceln: bei main-Pushes vergleicht das Bump-Gate gegen
+  # event.before — ein gecancelter Zwischen-Lauf liesse dessen Commit-Range
+  # ungeprueft (Push1 aendert Index ohne Bump, Push2 cancelt Lauf1, Lauf2
+  # sieht nur Push2s Range; Review PR #155). PR-Laeufe sind safe zu canceln,
+  # der Ersatzlauf prueft immer den vollen Diff gegen den Base-Branch.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    # Checkout ~2 min (grosses Repo) + Index-Builds (~5 min lokal) +
+    # RelaxNG-Validierung. 45 min lassen Luft fuer langsame Runner;
+    # nach den ersten realen Laeufen ggf. nachjustieren.
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        # fetch-depth: 2, damit der Diff-Base-Schritt unten den ersten
+        # Elternteil des Merge-Refs lesen kann. Mit der Voreinstellung 1
+        # kappt die shallow-Grenze die Elternliste, und `HEAD^1` scheitert.
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Diff-Base bestimmen (#154/#152)
+        id: base
+        # Liefert sha = Vergleichsstand fuer das Versions-Bump-Gate und
+        # die naming-Change-Detection. Leerer sha (workflow_dispatch,
+        # Force-Push-Edge) -> Bump-Gate wird uebersprungen, naming-Check
+        # laeuft konservativ.
+        #
+        # Achtung, falls hier je eine Merge-Queue dazukommt: `merge_group`
+        # faellt durch beide Zweige unten durch, BASE bliebe leer, und das
+        # Bump-Gate wuerde still uebersprungen. Wer den Trigger ergaenzt,
+        # muss diesen Schritt also mitbehandeln.
+        run: |
+          BASE=""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Erster Elternteil des ausgecheckten Merge-Refs, also per
+            # Konstruktion der Stand, gegen den gemergt wurde. Die zwei
+            # naheliegenden Alternativen sind beide gemessen falsch: der
+            # aktuelle Tip von $GITHUB_BASE_REF laeuft weiter, waehrend der
+            # Lauf wartet (Lauf 30744220171: ausgecheckt "Merge 52a83d3 into
+            # b8b44eb", Base d835e8f, weil PR #338 98 Sekunden spaeter
+            # gemergt wurde), und pull_request.base.sha haengt hinterher
+            # (Folgelauf 30744745366: ausgecheckt gegen d835e8f, base.sha
+            # weiter b8b44eb). In beiden Faellen galt, was ein fremder PR
+            # geaendert hatte, als Aenderung dieses PRs, hier also mit einem
+            # eingeforderten Versions-Bump, den der PR nicht schuldet.
+            #
+            # Braucht fetch-depth 2 im Checkout: mit der Voreinstellung 1
+            # kappt die shallow-Grenze die Elternliste. Kein Netzzugriff,
+            # also auch kein Retry mehr noetig (der stand hier gegen
+            # transiente Fetch-Fehler). Achtung: auch Kommentare im run-Block
+            # werden auf Expressions gescannt, leere Doppelklammer-
+            # Ausdruecke crashen hier den Workflow-Parse.
+            BASE=$(git rev-parse --verify --quiet HEAD^1) || BASE=""
+            if [ -z "$BASE" ]; then
+              echo "::error title=Diff-Base::Erster Elternteil des Merge-Refs nicht lesbar (fetch-depth zu klein?)."
+              exit 1
+            fi
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            BASE="${{ github.event.before }}"
+            if [ "$BASE" = "0000000000000000000000000000000000000000" ] \
+               || ! git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null; then
+              BASE=""
+            fi
+          fi
+          echo "sha=$BASE" >> "$GITHUB_OUTPUT"
+          if [ -z "$BASE" ] \
+             || ! git diff --quiet "$BASE" HEAD -- data/naming-index.json.gz scripts/ingest/naming/; then
+            echo "naming_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "naming_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Diff-Base: ${BASE:-<keine>} / naming_changed siehe Output"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install --quiet -r requirements.txt
+
+      - name: Index version consistency (#47.3)
+        run: python scripts/audit/check-index-versions.py
+
+      # Dokumentierte Zahlen gegen die Daten, die sie beschreiben.
+      #
+      # Position: frueh, weil billig. Sechs Sekunden lokal gemessen
+      # (06.09.2026), und der Schritt haengt an keinem Vorgaenger:
+      # doc-count-audit.py liest authority-files/*.xml, die Dateiliste aus
+      # corpus_files() (nicht den geparsten Korpus) und playground/js/ui/.
+      # Nach "Install dependencies" ist alles da. Der Workflow-Kopf schreibt
+      # "Steps von billig nach teuer (fail fast)" aus; eine falsche Zahl auf
+      # index.html darf nicht erst hinter der RelaxNG-Validierung auffallen.
+      #
+      # Warum hier und nicht in no-cdn-check.yml, wo die uebrigen Doku-Gates
+      # haengen: das Skript liest variants.xml und braucht dafuer lxml.
+      # no-cdn-check.yml ist stdlib-only und hat fuenf Minuten Timeout. Hier
+      # ist lxml ohnehin installiert.
+      #
+      # Warum ueberhaupt: das Skript gibt es seit Monaten und lief in keinem
+      # Workflow. Am 06.09. hat der neu gepraegte type_372365 die
+      # Variantenzahl von 256.761 auf 256.762 gehoben, und die alte Zahl
+      # blieb an zehn Stellen stehen, zwei davon auf ausgelieferten Seiten
+      # (index.html und hilfe-daten.html, beide fuer Besucher sichtbar).
+      # Gefunden hat es der Review-Bot, nicht die CI.
+      #
+      # GRENZEN, und es sind zwei. Die Pfadfilter dieses Workflows nennen
+      # weder docs/** noch *.html noch playground/**:
+      #
+      #   (a) Ein PR, der nur Dokumentation anfasst, aendert die BEHAUPTETE
+      #       Zahl und loest den Lauf nicht aus.
+      #   (b) Ein PR am Playground aendert die GEMESSENE Zahl und loest den
+      #       Lauf ebenfalls nicht aus. Sechs Groessen sind code-abgeleitet
+      #       (CODE_LABELS in doc-count-audit.py), und sie stammen aus
+      #       DREI verschiedenen Orten:
+      #
+      #         ui_modules, tei_tools, pattern_modules
+      #             glob ueber playground/js/ui/ (collect_code_counts())
+      #         curated_datasets
+      #             len(CURATED_DATASET_MODULES), eine Konstante
+      #             in diesem Skript selbst
+      #         authority_explorers, entry_points
+      #             re.findall auf playground/index.html (collect_code_counts())
+      #
+      #       curated_datasets ist damit gedeckt: es aendert sich nur mit
+      #       scripts/audit/**, und das steht in den Filtern.
+      #
+      # In beiden Faellen faellt die Drift erst beim naechsten Datenlauf auf,
+      # bei (b) also in einem PR, der damit nichts zu tun hat. Der Befund ist
+      # dann trotzdem echt, nur spaet und beim Falschen.
+      #
+      # Wer sofortige Erkennung will, braucht ZWEI Eintraege in den Filtern,
+      # playground/js/ui/** UND playground/index.html. Der zweite ist leicht
+      # zu uebersehen und deckt gerade den Fall, der ohne Codeaenderung
+      # eintritt: wer eine der sechs show*Btn-Ids in playground/index.html
+      # umbenennt, senkt authority_explorers und entry_points, ohne eine
+      # .js-Datei anzufassen. Beides kostet diesen 45-Minuten-Lauf bei jeder
+      # Playground-Aenderung und ist deshalb hier bewusst NICHT getan.
+      # docs/** aufzunehmen waere derselbe Handel bei jeder Doku-Aenderung.
+      #
+      # Nebenbei, weil es beim Nachmessen auffiel: playground/index.html
+      # steht auf BEIDEN Seiten dieses Gates, als gemessene Quelle (collect_code_counts())
+      # und als Doku-Ziel fuer variants_normalized (DOC_TARGETS).
+      #
+      # Der Fall vom 06.09. faellt unter keine der beiden Grenzen: er faengt
+      # an einer Datenaenderung an und loest diesen Workflow immer aus.
+      - name: Dokumentierte Zahlen gegen die Daten (#382/#398)
+        run: python scripts/audit/doc-count-audit.py --check
+
+      # Haelt den msIdentifier jeder Korpusdatei gegen works.xml (#399).
+      # Verglichen wird der INHALT der gespiegelten idno, nicht die
+      # Formatierung: ein "Sync laufen lassen und diffen" waere dauerhaft rot,
+      # weil der lxml-Schreibpfad jede Datei neu serialisiert (gemessen
+      # 07.09.2026: alle 667 geaendert, Korpus 1.432,5 -> 1.430,6 MB).
+      # Billig und offline: liest je Datei nur bis zum Ende des
+      # msIdentifier (iterparse), rund eine Sekunde ueber alle 667.
+      - name: Werk-Identifier gegen works.xml (#399)
+        run: python scripts/sync/sync_tei_headers.py --works --check
+
+      - name: Index-Versions-Bump-Gate (#154)
+        # MUSS vor dem Index-Rebuild (Step 6 der Liste im Kopf) laufen:
+        # der ueberschreibt data/*.json.gz im Working Tree.
+        run: |
+          if [ -z "${{ steps.base.outputs.sha }}" ]; then
+            echo "::notice title=Versions-Bump-Gate::Kein Diff-Base bestimmbar (workflow_dispatch/Force-Push) — Gate uebersprungen."
+          else
+            python scripts/audit/check-index-version-bump.py --base "${{ steps.base.outputs.sha }}"
+          fi
+
+      # Wie das Bump-Gate darueber vor dem Index-Rebuild (Step 6 der Liste
+      # im Kopf): der ueberschreibt data/*.json.gz im Working Tree.
+      # Gemessen werden soll der committete Stand, also das, was
+      # ausgeliefert wird.
+      - name: Index-Budget Selbsttest (#111)
+        # Dieses Gate wird auf absehbare Zeit nichts melden (Korpus-Index
+        # heute bei 84 Prozent Auslastung). Ohne Selbsttest wuesste niemand,
+        # ob es noch misst, was es messen soll.
+        run: python scripts/audit/check-index-budget.py --selftest
+
+      - name: Index-Budget (#111)
+        # Warnt nur, faerbt den Lauf nie rot (Entscheidung Chris, 08.08.2026):
+        # der Index waechst durch legitime Annotationsarbeit, und ein rotes
+        # Gate wuerde den naechsten Backfill blockieren, bis jemand ein
+        # Splitting gebaut hat. Rot wird der Schritt nur, wenn die Messung
+        # selbst scheitert.
+        run: python scripts/audit/check-index-budget.py
+
+      - name: Regenerate RNG from RNC (P2-14 drift check)
+        run: |
+          python -m rnc2rng schema/mhdbdb.rnc schema/mhdbdb.rng
+          python -m rnc2rng schema/mhdbdb-authority.rnc schema/mhdbdb-authority.rng
+
+      - name: Fail if committed .rng differs from regenerated .rng
+        run: |
+          if ! git diff --exit-code schema/mhdbdb.rng schema/mhdbdb-authority.rng; then
+            echo "::error title=RNG drift::Committete .rng-Dateien sind nicht synchron mit ihren .rnc-Quellen. Lokal 'python -m rnc2rng schema/mhdbdb.rnc schema/mhdbdb.rng && python -m rnc2rng schema/mhdbdb-authority.rnc schema/mhdbdb-authority.rng' ausfuehren und das Ergebnis committen."
+            exit 1
+          fi
+
+      - name: Verify TEI P5 version pin
+        # tei_all.rng is committed to the repo (schema/tei_all.rng, see
+        # schema/README.md) — NO download from tei-c.org at build time, so
+        # the CI does not depend on upstream reachability (reproducible
+        # builds, #125; previously a tei-c.org outage failed every run).
+        # This step is a sanity check that the committed schema still
+        # carries the pinned version; it catches an accidental replacement
+        # with a different P5 version. Upgrading P5 is a deliberate act:
+        # replace schema/tei_all.rng and bump EXPECTED + schema/README.md.
+        #
+        # NOTE: the version header in tei_all.rng contains a literal
+        # NBSP (U+00A0, UTF-8 bytes C2 A0) between "Version" and the
+        # number, so a naive `grep -oE 'Version [0-9.]+'` with a
+        # regular space does NOT match. Python's re.search with \s
+        # handles that correctly since Python 3.
+        run: |
+          if [ ! -f schema/tei_all.rng ]; then
+            echo "::error title=TEI schema missing::schema/tei_all.rng fehlt im Repo. Die Datei muss committet sein (siehe schema/README.md)."
+            exit 1
+          fi
+          TEI_VERSION=$(python3 -c "import re; m = re.search(r'TEI Edition: P5 Version\s+([0-9]+\.[0-9]+\.[0-9]+)', open('schema/tei_all.rng', encoding='utf-8').read()); print(m.group(1) if m else '')")
+          EXPECTED="4.11.0"
+          if [ -z "$TEI_VERSION" ]; then
+            echo "::error title=TEI P5 version pin::TEI-P5-Version konnte nicht aus schema/tei_all.rng extrahiert werden. Header-Format hat sich evtl. geaendert."
+            exit 1
+          fi
+          if [ "$TEI_VERSION" != "$EXPECTED" ]; then
+            echo "::error title=TEI P5 version drift::Committetes schema/tei_all.rng ist Version $TEI_VERSION, erwartet $EXPECTED (siehe schema/README.md). Beim bewussten P5-Upgrade EXPECTED + schema/README.md mitbumpen."
+            exit 1
+          fi
+          echo "TEI P5 version: $TEI_VERSION (matches pin, committed schema)"
+
+      - name: Freshness variants.xml (#125)
+        run: |
+          python scripts/sync/extract-variants.py --apply
+          if ! git diff --exit-code -- authority-files/variants.xml; then
+            echo "::error file=authority-files/variants.xml::variants.xml ist nicht mit dem Korpus synchron. Lokal 'python scripts/sync/extract-variants.py --apply' ausfuehren und mitcommitten (DATA-MODEL.md -> Data-Change-Lifecycle)."
+            exit 1
+          fi
+
+      - name: Freshness API (#45)
+        run: |
+          python scripts/build-api.py
+          # git status --porcelain statt git diff: faengt zusaetzlich
+          # untracked Files (neuer Text -> neue api/texts/NEU.json), die
+          # git diff ignoriert (spiegelt das #100-Pre-flight-Muster in
+          # build-api.py check_working_tree()).
+          if [ -n "$(git status --porcelain -- api/)" ]; then
+            echo "::error file=api/index.json::api/ ist nicht mit den Indexen synchron (geaenderte ODER untracked Files). Lokal python scripts/build-api.py ausfuehren und mitcommitten (DATA-MODEL.md -> Data-Change-Lifecycle)."
+            git status --porcelain -- api/
+            exit 1
+          fi
+
+      - name: Freshness Indexe — Rebuild-and-Compare (#125)
+        run: |
+          mkdir -p "$RUNNER_TEMP/committed"
+          cp data/corpus-index.json.gz data/authority-index.json.gz "$RUNNER_TEMP/committed/"
+          python scripts/build-corpus-index.py
+          python scripts/build-authority-index.py
+          python - <<'EOF'
+          import gzip, os, sys
+          tmp = os.path.join(os.environ['RUNNER_TEMP'], 'committed')
+          ok = True
+          for name in ('corpus-index.json.gz', 'authority-index.json.gz'):
+              with gzip.open(os.path.join('data', name), 'rb') as f:
+                  fresh = f.read()
+              with gzip.open(os.path.join(tmp, name), 'rb') as f:
+                  committed = f.read()
+              if fresh == committed:
+                  print(f'{name}: OK (Rebuild byte-identisch nach Dekompression)')
+              else:
+                  print(f'::error file=data/{name}::{name} ist nicht mit dem Quellstand '
+                        'synchron: Rebuild aus den aktuellen Quellen liefert anderen Inhalt. '
+                        'Lokal rebuilden, Version bumpen und mitcommitten '
+                        '(DATA-MODEL.md -> Data-Change-Lifecycle).')
+                  ok = False
+          sys.exit(0 if ok else 1)
+          EOF
+
+      - name: Naming-Index Konsistenz (#152)
+        run: python scripts/audit/check-naming-index.py
+
+      - name: Freshness naming-index — Rebuild-and-Compare (#152)
+        if: steps.base.outputs.naming_changed == 'true'
+        # Rebuild aus dem im committeten Index gepinnten source.commit;
+        # deterministisch (generatedAt = Committer-Datum des Pins), daher
+        # muss der dekomprimierte Inhalt matchen. source.ref wird beim
+        # Vergleich normalisiert ('master' im Committed vs. Pin-SHA im
+        # Rebuild — Aufruf-Artefakt, kein Inhalt). GITHUB_TOKEN gegen das
+        # IP-Rate-Limit unauthentifizierter api.github.com-Calls.
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          # Pin-Existenz garantiert der Konsistenz-Step davor (laeuft immer,
+          # failt hart bei fehlendem source.commit).
+          PIN=$(python scripts/audit/check-naming-index.py --print-source-commit)
+          cp data/naming-index.json.gz "$RUNNER_TEMP/naming-committed.json.gz"
+          python scripts/ingest/naming/01-fetch-and-build-index.py --ref "$PIN" --require-commit
+          python - <<'EOF'
+          import gzip, json, os, sys
+          def load(path):
+              idx = json.load(gzip.open(path, 'rt', encoding='utf-8'))
+              idx.get('source', {}).pop('ref', None)
+              return idx
+          fresh = load('data/naming-index.json.gz')
+          committed = load(os.path.join(os.environ['RUNNER_TEMP'], 'naming-committed.json.gz'))
+          if fresh == committed:
+              print('naming-index: OK (Rebuild aus gepinntem source.commit reproduziert den committeten Stand)')
+              sys.exit(0)
+          print('::error file=data/naming-index.json.gz::naming-index ist nicht '
+                'aus seinem gepinnten source.commit reproduzierbar — Handedit, '
+                'Format-Drift in der Quelle oder Skript-Aenderung ohne Rebuild '
+                '(#152). Lokal scripts/ingest/naming/01-fetch-and-build-index.py '
+                'ausfuehren und das Ergebnis committen.')
+          sys.exit(1)
+          EOF
+
+      - name: Authority cross-reference integrity (#44/#115/#152)
+        run: python scripts/audit/check-authority-cross-refs.py --check
+
+      # Zweiter Header-Spiegel neben dem msIdentifier aus Step 1b (#308):
+      # titleStmt/author und particDesc/listPerson spiegeln persons.xml.
+      # Lief bis heute bewusst nicht mit, solange der tote @ref in VOR offen
+      # war (so in scripts/README.md vermerkt); der ist mit #308 behoben, das
+      # Skript steht auf exit 0, damit faellt die Begruendung weg.
+      # Hier und nicht oben bei 1b, weil es jede der 667 Dateien ganz parst:
+      # gemessen 1 min 47 s, waehrend 1b per iterparse nach rund einer
+      # Sekunde fertig ist.
+      - name: Personennamen im Header gegen persons.xml (#228/#308)
+        run: python scripts/audit/check-author-refs.py --check
+
+      - name: Validate corpus and authority files (P2-13)
+        run: python scripts/audit/validate-corpus.py --fail-fast

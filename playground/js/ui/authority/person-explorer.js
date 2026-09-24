@@ -13,10 +13,79 @@ import {
   renderToContainer,
   escapeForJS,
   formatMetadata,
-  SearchPatterns,
 } from "../search/SearchHelpers.js";
+import { TextNormalizer } from "../../../../assets/js/lib/text-normalizer.js";
 
 import { displayResults } from "../core/ui-helpers.js";
+
+// Self-contained per module (DESIGN.md §Escaping-Konvention). generateResultItem
+// inserts the subtitle raw, because meta/title carry markup (GND links).
+function escapeHtml(s) {
+  if (s == null) return "";
+  return String(s).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
+/**
+ * If the search term matched the person only via an alternative name form
+ * (#307), return that form for display as an "auch: …" hint. Returns null when
+ * the preferred name already matches, so a hint only ever appears where the
+ * match would otherwise look like an error.
+ *
+ * Matching runs against the precomputed `altNormalized`, whose entries are
+ * index-parallel to `altNames` (see build-authority-index.py). `altNames` is
+ * absent for 130 of 211 persons and for every index built before 1.8.0; both
+ * cases leave through the length check below.
+ *
+ * The live-normalization fallback is pure defence against a broken contract: it
+ * can only fire when `altNames` exists while `altNormalized` is missing or
+ * shorter, which the build cannot produce and the index test in
+ * playground-authority-index.spec.js catches. It is here so that such an index
+ * degrades to a slower match instead of a TypeError.
+ */
+function findAlternativeMatch(person, searchTerm) {
+  if (personNameMatches(person.preferredName, searchTerm)) {
+    return null;
+  }
+  const altNames = person.altNames || [];
+  if (!altNames.length) return null;
+
+  const needle = TextNormalizer.normalizeMHG(searchTerm);
+  if (!needle) return null;
+
+  const altNormalized = person.altNormalized;
+  for (let i = 0; i < altNames.length; i++) {
+    const normalized =
+      altNormalized && altNormalized[i] !== undefined
+        ? altNormalized[i]
+        : TextNormalizer.normalizeMHG(altNames[i]);
+    // Die Faltung laeuft auf der Rohform, nicht auf `altNormalized`: das
+    // Index-Feld ist mit normalizeMHG gebaut und traegt den Umlaut schon
+    // als Digraph, gefaltet ergaebe es "kuerenberg" statt "kurenberg".
+    if (normalized.includes(needle) || TextNormalizer.matchesFolded(altNames[i], searchTerm)) {
+      return altNames[i];
+    }
+  }
+  return null;
+}
+
+/**
+ * Beide Normalisierungsrichtungen fuer Personennamen (#419).
+ *
+ * Der Werke-Explorer vergleicht `work.author` ueber multiFieldNormalized und
+ * faltet damit seit #419. Dieselben 27 Namen mit Umlaut stehen zeichengleich
+ * in `persons.preferredName` (gemessen am 11.09. gegen den Authority-Index:
+ * Kuerenberg, Moench von Salzburg, Tuenger und 24 weitere). Ohne diese
+ * Funktion faende die Eingabe "kurenberg" die Werke und die Person daneben
+ * nicht, und das ist genau die Asymmetrie aus #419, eine Ebene hoeher.
+ */
+function personNameMatches(name, searchTerm) {
+  return (
+    TextNormalizer.matchesNormalized(name || "", searchTerm) ||
+    TextNormalizer.matchesFolded(name || "", searchTerm)
+  );
+}
 
 export class PersonExplorer {
   constructor(authorityData) {
@@ -74,10 +143,13 @@ export class PersonExplorer {
       return;
     }
 
-    const matches = SearchPatterns.textContainsNormalized(
-      this.authorityData.persons,
-      searchTerm,
-      (person) => person.preferredName
+    // #307: alternative name forms search alongside the preferred one. Each form
+    // is tested on its own instead of joining them into one haystack, so a term
+    // cannot match across the boundary between two forms.
+    const matches = this.authorityData.persons.filter(
+      (person) =>
+        personNameMatches(person.preferredName, searchTerm) ||
+        findAlternativeMatch(person, searchTerm) !== null
     );
 
     const result = handleSearchResults(searchTerm, matches, {
@@ -93,14 +165,23 @@ export class PersonExplorer {
     const resultHTML = result.matches
       .map((author) => {
         const workCount = author.works ? author.works.split(",").length : 0;
+        const altHint = findAlternativeMatch(author, searchTerm);
 
         return generateResultItem({
           meta: formatMetadata([
             `ID: ${author.id}`,
-            author.gnd ? `GND: ${author.gnd}` : null,
+            // #135: GND/Wikidata als externe Links (neuer Tab). IDs sind im
+            // Authority-Index reine Bezeichner (kein URL-Präfix), siehe persons.xml.
+            author.gnd
+              ? `GND: <a href="https://d-nb.info/gnd/${author.gnd}" target="_blank" rel="noopener" class="underline hover:text-brand-900">${author.gnd}</a>`
+              : null,
+            author.wikidata
+              ? `Wikidata: <a href="https://www.wikidata.org/wiki/${author.wikidata}" target="_blank" rel="noopener" class="underline hover:text-brand-900">${author.wikidata}</a>`
+              : null,
             workCount > 0 ? `${workCount} Werke` : null,
           ]),
           title: author.preferredName,
+          subtitle: altHint ? `auch: ${escapeHtml(altHint)}` : "",
           buttons:
             workCount > 0
               ? [
@@ -134,15 +215,24 @@ export class PersonExplorer {
 
       const worksHTML = authorWorks
         .slice(0, 20)
-        .map(
-          (work) => `
+        .map((work) => {
+          // #135: Werk-Titel als Deep-Link in die Lesesuche, sofern eine Sigle
+          // existiert (= TEI-Text vorhanden). Ohne Sigle kein Link (kein toter Link).
+          // Werke mit mehreren Textzeugen tragen sigle als Komma-String
+          // ("AXH, AXU"); der Reader adressiert genau EINEN Text, daher die erste
+          // Einzelsigle nehmen (sigles-Array bevorzugt), nie den Komma-String.
+          const sigle = (work.sigles && work.sigles[0])
+            || (work.sigle ? work.sigle.split(",")[0].trim() : null)
+            || null;
+          const titleHTML = sigle
+            ? `<a href="../korpus.html?textId=${encodeURIComponent(sigle)}" target="_blank" rel="noopener" class="text-brand-700 hover:text-brand-900 hover:underline"><strong>${work.title}</strong></a>`
+            : `<strong>${work.title}</strong>`;
+          return `
                 <div style="margin-bottom: 3px; font-size: 0.85rem;">
-                    • <strong>${work.title}</strong>${
-            work.sigle ? ` (${work.sigle})` : ""
-          }
+                    • ${titleHTML}${sigle ? ` (${sigle})` : ""}
                 </div>
-            `
-        )
+            `;
+        })
         .join("");
 
       return `

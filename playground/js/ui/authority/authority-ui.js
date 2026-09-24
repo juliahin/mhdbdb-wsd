@@ -89,12 +89,38 @@ export class AuthorityUI {
     this.lemmaExplorer.showAllLemmata();
   }
 
-  showLemmataWithSearch() {
-    this.lemmaExplorer.showLemmataWithSearch();
+  showLemmataWithSearch(mode) {
+    this.lemmaExplorer.showLemmataWithSearch(mode);
   }
 
   searchLemmata(searchTerm) {
     this.lemmaExplorer.searchLemmata(searchTerm);
+  }
+
+  // Wortbestandteil-Suche (#239)
+
+  searchWordComponents(searchTerm) {
+    this.lemmaExplorer.searchWordComponents(searchTerm);
+  }
+
+  switchLemmaSearchMode(mode) {
+    this.lemmaExplorer.switchLemmaSearchMode(mode);
+  }
+
+  toggleWordComponentGroup(key) {
+    this.lemmaExplorer.toggleWordComponentGroup(key);
+  }
+
+  toggleComponentMorphFilter(an) {
+    this.lemmaExplorer.toggleComponentMorphFilter(an);
+  }
+
+  toggleComponentPick(wert, an) {
+    this.lemmaExplorer.toggleComponentPick(wert, an);
+  }
+
+  sendWordComponentSelection() {
+    this.lemmaExplorer.sendWordComponentSelection();
   }
 
   showLemmaSenses(lemmaId) {
@@ -103,6 +129,10 @@ export class AuthorityUI {
 
   showComponentLemma(originalLemmaId, componentLemmaId, componentText) {
     this.lemmaExplorer.showComponentLemma(originalLemmaId, componentLemmaId, componentText);
+  }
+
+  showOriginalLemmaSenses(lemmaId) {
+    this.lemmaExplorer.showOriginalLemmaSenses(lemmaId);
   }
 
   generateLemmaSenseContent(lemma, lemmaId, originalLemmaId = null) {
@@ -127,8 +157,11 @@ export class AuthorityUI {
     this.conceptExplorer.searchConcepts(searchTerm);
   }
 
-  showLemmasWithConcept(conceptId, conceptName) {
-    this.conceptExplorer.showLemmasWithConcept(conceptId, conceptName);
+  showLemmasWithConcept(conceptId, conceptName, detailsId) {
+    // detailsId is optional: the name-explorer passes a namespaced container id
+    // (lemmas-<nameId>-<conceptId>) so two open name cards sharing a concept do
+    // not collide; the concept-explorer's own buttons omit it (default applies). See #120.
+    this.conceptExplorer.showLemmasWithConcept(conceptId, conceptName, detailsId);
   }
 
   findLemmasWithConcept(conceptId) {
@@ -167,6 +200,15 @@ export class AuthorityUI {
 
   getGenreHierarchy(genreId) {
     return this.genreExplorer.getGenreHierarchy(genreId);
+  }
+
+  // #361: called from the inline handlers of the genre tree
+  toggleGenreNode(key) {
+    this.genreExplorer.toggleGenreNode(key);
+  }
+
+  showGenreDetail(genreId) {
+    this.genreExplorer.showGenreDetail(genreId);
   }
 
   // ==================== NAME METHODS ====================

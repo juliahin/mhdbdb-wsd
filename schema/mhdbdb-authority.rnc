@@ -1,0 +1,373 @@
+# MHDBDB Authority Files — RELAX NG Schema (Compact Syntax)
+# ==========================================================
+# Schema for the 8 authority files in authority-files/:
+#   lexicon.xml, variants.xml, persons.xml, works.xml,
+#   concepts.xml, genres.xml, names.xml, contributors.xml
+#
+# Each file is a standalone TEI document with a shared minimal
+# teiHeader and file-specific body content. contributors.xml was
+# added 2026-04-14 as part of the editor-attribution feature
+# (#83) and carries the MHDBDB team register via a dedicated
+# contributors.body production.
+
+default namespace = "http://www.tei-c.org/ns/1.0"
+namespace xml = "http://www.w3.org/XML/1998/namespace"
+datatypes xsd = "http://www.w3.org/2001/XMLSchema-datatypes"
+
+# ============================================================
+# Root — all authority files share this envelope
+# ============================================================
+
+start = element TEI {
+    authority.header,
+    element text {
+        element body { authority.body }
+    }
+}
+
+# ============================================================
+# Shared minimal teiHeader
+# ============================================================
+
+authority.header = element teiHeader {
+    element fileDesc {
+        element titleStmt {
+            element title { text },
+            element respStmt {
+                element resp { text },
+                element name { text }
+            }?
+        },
+        element publicationStmt {
+            element publisher { text },
+            element date { text }
+        },
+        element sourceDesc { element p { text } }
+    },
+    # Taxonomy files (concepts, genres, names) have encodingDesc
+    element encodingDesc {
+        element classDecl { taxonomy }
+    }?
+}
+
+# ============================================================
+# Body: one of the 4 structural types
+# ============================================================
+#
+# Known Stage-2 gap (P2-11 in docs/features/032-schema-followup.md):
+# Taxonomy files (concepts.xml, genres.xml, names.xml) carry their
+# real payload in <encodingDesc>/<classDecl>/<taxonomy>, and their
+# <body> is just a <p>-placeholder. RELAX NG cannot conditionally
+# require <encodingDesc>/<classDecl>/<taxonomy> when <body>/<p> is
+# present — that coupling crosses sibling boundaries and is only
+# expressible in Schematron. Stage 2 is therefore deliberately
+# weak here: the `element p { text }` branch below is valid even
+# if the taxonomy payload in <encodingDesc> is missing. Stage 1
+# (tei_all.rng) catches gross TEI errors; the taxonomy-body link
+# is enforced by convention + review, not by the schema. If we
+# ever add a Schematron layer, this is the first check to move
+# there (see P3 in 032-schema-followup.md).
+
+authority.body =
+    lexicon.div        # lexicon.xml
+    | variants.div     # variants.xml
+    | listPerson       # persons.xml
+    | listBibl         # works.xml
+    | contributors.body    # contributors.xml: (listOrg?, listPerson)
+    | element p { text }   # taxonomy files: placeholder <p> (data in encodingDesc — see comment above)
+
+# ============================================================
+# Type 1: Lexicon (lexicon.xml)
+# ============================================================
+
+lexicon.div = element div {
+    attribute type { "lexicon" },
+    lexicon.entry*
+}
+
+lexicon.entry = element entry {
+    attribute xml:id { xsd:NCName },   # lemma_N
+    element form {
+        attribute type { "lemma" },
+        element orth { text }
+    },
+    element gramGrp {
+        element pos { text }+          # POS tags (can be multiple)
+    },                                  # required — 43,750/43,750 entries have gramGrp
+    element etym {
+        attribute type { "morphological" },
+        element seg {
+            attribute type { "component" },
+            attribute corresp { text }?,  # lexicon.xml#lemma_N
+            text
+        }*                                 # can be empty (data quality issue)
+    }?,
+    lexicon.etym.borrowing?,
+    element sense {
+        attribute xml:id { xsd:NCName },   # lemma_N_sense_M
+        attribute ana { text }?,            # space-separated #type_N refs
+        lexicon.def?,
+        lexicon.sense.note?,
+        element ptr {
+            attribute target { text }       # concepts.xml#concept_N
+        }*
+    }+                                      # required (1+) — 43,750/43,750 entries have sense
+}
+
+# ------------------------------------------------------------
+# Kuratierte Lemma-Angaben (additiv, 2026-07-30)
+# ------------------------------------------------------------
+# Drei optionale Produktionen für händisch kuratiertes Wissen, das
+# die RDF-Migration nicht mitbringen konnte. Alle drei sind additiv:
+# der Bestand (43.879 Einträge; die 43.750 in den Kommentaren oben sind
+# der gemessene Stand der #32-Migration vom April 2026) bleibt ohne
+# Änderung valide.
+#
+# REIHENFOLGE: RELAX NG modelliert hier eine Sequenz ohne interleave.
+# Im <entry> steht <etym type="morphological"> VOR
+# <etym type="borrowing">, im <sense> gilt <def> vor
+# <note type="comment"> vor den <ptr>. Anhängendes Erzeugen (SubElement)
+# trifft das von sich aus; wer manuell einfügt, bekommt sonst einen
+# Stage-2-Fehler, dessen Meldung die Ursache nicht nennt.
+#
+# 1. <etym type="borrowing"> — Herkunftssprache eines Lehn- oder
+#    Fremdworts. Das ist Schicht B des Fremdsprachen-Phasenplans
+#    (#28, docs/features/FREMDSPRACHEN-PHASENPLAN-28.md): Quellsprache
+#    plus Quelle der Zuschreibung, KEIN Urteil über den Integrations-
+#    grad (KZW-Entscheidung 3 vom 29.07.). Getrennt von
+#    <etym type="morphological">, weil das Kompositionsangaben trägt
+#    und beides an einem Lemma zugleich stehen kann.
+#    Nicht zu verwechseln mit Schicht A (`@xml:lang` am <w> im Korpus,
+#    Code-Switching) — die Trennung ist der Kern der #28-Entscheidung 1.
+#
+# 2. <def> im <sense> — die Bedeutungsangabe in Prosa. Das Begriffs-
+#    system (<ptr> auf concepts.xml) klassifiziert, es formuliert nicht;
+#    für Lemmata, die eine Erläuterung brauchen (Fremdwörter, Hapax,
+#    Bibelvokabular), fehlte bisher jeder Platz dafür.
+#
+# 3. <note type="comment"> im <sense> — philologischer Kommentar zur
+#    Bedeutung (Belegkontext, Bezugsstellen). Bewusst getrennt von <def>:
+#    die Definition ist Wörterbuchinhalt, der Kommentar ist Argumentation.
+#
+# @resp verweist auf contributors.xml#contrib_N und macht jede kuratierte
+# Angabe einer Person zurechenbar (Pflicht bei <note>, weil ein Kommentar
+# ohne Urheber nicht zitierfähig ist). Getypt als Pattern, damit ein
+# Tippfehler in der ID nicht erst im Cross-Ref-Audit auffällt.
+
+# @norm ist BCP-47, dasselbe Register wie @xml:lang in Schicht A
+# (FREMDSPRACHEN-PHASENPLAN-28: la, fr, ar, he, grc, it, es, en, yi,
+# x-rotw, dazu arc). Kein ISO 639-3 daneben: das schrieb 'lat' statt 'la'
+# und beide Schichten wären über den Sprachcode nicht mehr joinbar.
+lexicon.lang.code = xsd:token { pattern = "[a-z]{2,3}(-[A-Za-z0-9]{1,8})*|x-[a-z]{2,8}" }
+lexicon.resp.ref = xsd:token { pattern = "contributors\.xml#contrib_[0-9]{3}" }
+
+lexicon.etym.borrowing = element etym {
+    attribute type { "borrowing" },
+    element lang {
+        attribute norm { lexicon.lang.code }?,
+        text                            # Sprachname, deutsch
+    }+,                                 # 1+ — Mehrfachherkunft ist normal (mirre: ar + he + arc)
+    element note {
+        attribute type { "attribution" },
+        attribute resp { lexicon.resp.ref },
+        text
+    }?
+}
+
+lexicon.def = element def {
+    attribute xml:lang { text }?,
+    attribute resp { lexicon.resp.ref }?,
+    text
+}
+
+lexicon.sense.note = element note {
+    attribute type { "comment" },
+    attribute xml:lang { text }?,
+    attribute resp { lexicon.resp.ref },
+    text
+}
+
+# ============================================================
+# Type 2: Variants (variants.xml)
+# ============================================================
+
+variants.div = element div {
+    attribute type { "orthographicVariants" },
+    variants.entry*
+}
+
+variants.entry = element entry {
+    attribute corresp { text },            # lexicon.xml#lemma_N
+    element form {
+        attribute xml:id { xsd:NCName },   # type_N
+        text                               # orthographic variant
+    }+
+}
+
+# ============================================================
+# Type 3: Persons (persons.xml)
+# ============================================================
+
+listPerson = element listPerson {
+    element person {
+        attribute xml:id { xsd:NCName },   # person_N (numeric) or person_anonym
+        element persName {
+            attribute type { "preferred" | "alternative" },
+            attribute xml:lang { text }?,
+            text
+        }+,
+        element idno {
+            attribute type { "GND" | "wikidata" },
+            text
+        }*
+        # No <listBibl> — person→work derived from works.xml <author @ref>
+    }*
+}
+
+# ============================================================
+# Type 4: Works (works.xml)
+# ============================================================
+
+listBibl = element listBibl {
+    works.bibl*
+}
+
+works.bibl = element bibl {
+    attribute xml:id { xsd:NCName },   # work_N
+    element title {
+        attribute xml:lang { text }?,
+        attribute level { text }?,
+        attribute type { text }?,
+        attribute ana { text }?,
+        text
+    }+,                                 # required: 584/584 works have title
+    # Hier stand 583/583, also eins zu wenig. Wodurch genau, ist nicht mehr
+    # belegbar; die Zaehlweise steht in keiner Commit-Message. works.xml hat
+    # 584 bibl mit 669 Sigle-Eintraegen auf 668 verschiedenen Siglen, TRO
+    # steht doppelt (siehe #395). Gemessen 07.09.2026.
+    element idno {
+        attribute type { "sigle" | "handschriftencensus" | "GND" | "wikidata" },
+        text
+    }*,
+    element ptr {
+        attribute target { text }      # genres.xml#genre_UUID
+    }*,
+    element author {
+        attribute ref { text }?,       # persons.xml#person_N
+        text
+    }*,
+    element relatedItem {
+        works.biblStruct
+    }*
+}
+
+works.biblStruct = element biblStruct {
+    attribute type { text }?,          # journalArticle, bookSection, book
+    attribute xml:id { xsd:NCName }?,
+    attribute corresp { text }?,       # Zotero URL
+    attribute key { text }?,           # sigle
+    element analytic {
+        element title { attribute level { text }?, text }+,  # required
+        element author { element name { text } }*,
+        element ref { attribute target { text }?, attribute type { text }?, text }*,
+        element idno { attribute type { text }, text }*
+    }?,
+    element monogr {
+        element author { element name { text } }*,
+        element title { attribute level { text }?, text }+,  # required
+        element idno { attribute type { text }, text }*,
+        element editor {
+            (element forename { text }?,
+             element surname { text }?)
+        }*,
+        element edition { text }*,
+        element imprint {
+            (element pubPlace { text }
+             | element publisher { text }
+             | element date { attribute when { text }?, text }
+             | element biblScope { attribute unit { text }?, text })*
+        }?
+    }?,
+    element series {
+        element title { attribute level { text }?, text },
+        element biblScope { attribute unit { text }?, text }*
+    }?,
+    element note { text }?
+}
+
+# ============================================================
+# Type 5: Taxonomy (concepts.xml, genres.xml, names.xml)
+# ============================================================
+
+taxonomy = element taxonomy {
+    attribute xml:id { xsd:NCName },   # mhdbdb-concepts, mhdbdb-genres, mhdbdb-names
+    element desc { text }?,
+    category*
+}
+
+category = element category {
+    attribute xml:id { xsd:NCName },   # concept_N, genre_UUID, name_N
+    element catDesc {
+        (element term {
+            attribute xml:lang { text },
+            attribute type { text }?,  # alternative
+            text
+        }
+        | element ptr {
+            attribute type { "broader" | "exactMatch" | "closeMatch" },
+            attribute target { text }  # internal #ID or external file#ID
+        })*
+    },
+    category*   # nested subcategories
+}
+
+# ============================================================
+# Type 6: Contributors (contributors.xml)
+# ============================================================
+# Editor-Attribution-Register — Gründer, Koordination, Lead-
+# Editor:innen und alle Editor:innen, die an MHDBDB-Texten
+# gearbeitet haben. Bewusst getrennt von persons.xml (dort nur
+# mhd. Textautoren). Eigenes Pattern, damit persons.xml-Constraints
+# (persName/@type="preferred"|"alternative") nicht gelten und
+# Rollen-Enum direkt auf <person>/@role möglich ist.
+
+contributors.body =
+    element listOrg { contributors.org+ }?,
+    contributors.listPerson
+
+contributors.listPerson = element listPerson {
+    contributors.person+
+}
+
+contributors.org = element org {
+    attribute xml:id { xsd:NCName },   # mhdbdb-team, dhcraft
+    element orgName {
+        attribute xml:lang { text }?,
+        text
+    }+,
+    element desc {
+        attribute xml:lang { text }?,
+        text
+    }?,
+    element idno {
+        attribute type { "GND" | "wikidata" | "ROR" | "URL" },
+        text
+    }*                                  # URL = Homepage (TEI Guidelines Kap. 13 Pattern)
+}
+
+contributors.person = element person {
+    attribute xml:id { xsd:NCName },   # contrib_NNN
+    attribute role { "founder" | "coordinator" | "lead-editor" | "editor" }?,
+    element persName {
+        attribute xml:lang { text }?,
+        text
+    }+,
+    element idno {
+        attribute type { "GND" | "ORCID" | "wikidata" },
+        text
+    }*,
+    element note {
+        attribute xml:lang { text }?,
+        text
+    }?
+}

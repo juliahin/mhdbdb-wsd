@@ -8,14 +8,22 @@ import { TEIFilesManager } from './data/tei-manager.js';
 
 // NEW: Import modular UI components (decomposed from UICore.js)
 import { updateAllUI } from './ui/core/ui-helpers.js';
-import { displayFileItem, setupCollapsibleFileList, setupFileFilter, updateFileCount } from './ui/core/file-display.js';
-import { showProgress, updateProgress, hideSpinner, setFileDisplayHelpers } from './ui/core/progress.js';
+import { initRouter, navigate, dispatchFromHash } from './ui/core/router.js';
 import { AuthorityUI } from './ui/authority/authority-ui.js';
 import { TEIExplorer } from './ui/tei/tei-ui.js';
 import { MultiLemmaSearchUI } from './ui/tei/multi-lemma-search.js';
-
-// Wire up file display helpers for progress.js
-setFileDisplayHelpers(setupCollapsibleFileList, setupFileFilter);
+import { WordFrequencyAnalyzer } from './ui/tei/word-frequency.js';
+import { TextStatistics } from './ui/tei/text-statistics.js';
+import { LemmaDistribution } from './ui/tei/lemma-distribution.js';
+import { VersePositionSearch } from './ui/tei/verse-position-search.js';
+import { ConceptDistribution } from './ui/tei/concept-distribution.js';
+import { TextComparison } from './ui/tei/text-comparison.js';
+import { CooccurrenceRanking } from './ui/tei/cooccurrence-ranking.js';
+import { RhymeDictionary } from './ui/tei/rhyme-dictionary.js';
+import { HapaxLegomenaAnalyzer } from './ui/tei/hapax-legomena.js';
+import { VerseEndingProfileAnalyzer } from './ui/tei/verse-ending-profile.js';
+import { NamingExplorer } from './ui/tei/naming-explorer.js';
+import { HorsesExplorer } from './ui/tei/horses-explorer.js';
 
 // Import utilities for global exposure (needed for testing)
 import { TextNormalizer } from '../../assets/js/lib/text-normalizer.js';
@@ -36,22 +44,21 @@ class MHDBDBPlayground {
             variants: []
         };
         
-        this.teiData = {
-            files: [],
-            parsedXML: [],
-            words: [],
-            lines: [],
-            annotations: []
-        };
+        // Hier stand bis #325 ein this.teiData mit fünf Feldern (files,
+        // parsedXML, words, lines, annotations). Befüllt hat es der
+        // Datei-Upload, den #314 zurückgebaut hat; danach hatte kein Feld mehr
+        // einen Schreiber. Der Container wurde trotzdem noch durch drei
+        // Konstruktoren gereicht und hat damit einen Datenfluss suggeriert,
+        // den es nicht mehr gab.
 
         // Data managers (UNCHANGED)
         this.authorityManager = new AuthorityFilesManager(this.authorityData);
-        this.teiManager = new TEIFilesManager(this.teiData);
+        this.teiManager = new TEIFilesManager();
 
         // NEW: Modular UI instead of single UIHelpers
         this.ui = {
             authorityExplorers: new AuthorityUI(this.authorityData),
-            teiExplorer: new TEIExplorer(this.teiData, this.authorityData)
+            teiExplorer: new TEIExplorer()
         };
 
         // Initialize after teiExplorer is created
@@ -59,12 +66,82 @@ class MHDBDBPlayground {
             this.ui.teiExplorer,
             this.authorityManager
         );
+        // Zwei Sichten auf denselben Korpus (#204).
+        //
+        // corpusTextsThunk liefert ALLE geladenen Texte, selectedTextsThunk nur
+        // die im Korpus-Browser angehakten. Bis #204 bekamen alle Werkzeuge den
+        // ersten, auch die, deren Ergebnis sich auf eine Auswahl beziehen soll:
+        // gemessen am 15.09. lieferte das Kookkurrenz-Ranking für „minne" bei
+        // Auswahl „nur Moriz von Craûn" 7.161 Vorkommen, also exakt den
+        // korpusweiten Wert, während in CR selbst 14 stehen. Der Zähler
+        // „1 / 667 Texte aktiv" stand daneben und stimmte. Nur die
+        // Multi-Lemma-Suche hat die Auswahl je gelesen, sie geht über den
+        // teiManager und nicht über diese Thunks.
+        //
+        // Wer hier ein Werkzeug ergänzt, wählt bewusst: die Auswahl gilt,
+        // außer das Ergebnis ist seiner Natur nach korpusweit.
+        const corpusTextsThunk = () => this.corpusData?.texts || this.teiManager.corpusIndex?.texts || [];
+        const selectedTextsThunk = () => {
+            const alle = corpusTextsThunk();
+            const auswahl = this.corpusData?.includedTexts;
+            // Vor dem Korpus-Load gibt es noch keine Auswahl. Dann ist die
+            // leere Menge kein Nutzerinnen-Wunsch, sondern ein Ladezustand,
+            // und die Werkzeuge sollen ihre Lade-Meldung zeigen dürfen.
+            if (!auswahl) return alle;
+            return alle.filter(t => auswahl.has(t.id));
+        };
+
+        this.ui.wordFrequency = new WordFrequencyAnalyzer(
+            selectedTextsThunk,
+            this.authorityData
+        );
+        this.ui.textStatistics = new TextStatistics(selectedTextsThunk);
+        this.ui.lemmaDistribution = new LemmaDistribution(selectedTextsThunk, this.authorityManager);
+        this.ui.versePositionSearch = new VersePositionSearch(selectedTextsThunk, this.authorityManager);
+        this.ui.conceptDistribution = new ConceptDistribution(
+            selectedTextsThunk,
+            this.authorityManager,
+            () => this.authorityData
+        );
+        // Textvergleich und Hapaxlegomena bleiben korpusweit (KZW/chsteiner,
+        // 15.09.): der Vergleich laesst seine zwei Texte ohnehin selbst waehlen,
+        // und "korpusweit einmalig" ist beim Hapax die Definition und nicht eine
+        // Voreinstellung. Beide sagen das in ihrer Kopfzeile, damit die Auswahl
+        // daneben nicht als wirkungslos missverstanden wird.
+        this.ui.textComparison = new TextComparison(corpusTextsThunk, this.authorityManager);
+        this.ui.cooccurrenceRanking = new CooccurrenceRanking(selectedTextsThunk, this.authorityManager);
+        // Das Reim-Wörterbuch hat ein eigenes Textfilter-Feld und bleibt
+        // deshalb korpusweit (chsteiner, 15.09.). Zwei Filter übereinander
+        // wären hier der Fehler aus #204 in klein: das eigene Feld zeigt
+        // seinen Zustand nur an, wenn es gefüllt ist, eine stille
+        // Schnittmenge mit Schritt 1 stünde also nirgends. Stattdessen trägt
+        // es einen einzeln ausgewählten Text sichtbar in sein Feld ein.
+        this.ui.rhymeDictionary = new RhymeDictionary(corpusTextsThunk, this.authorityManager);
+        this.ui.hapaxLegomena = new HapaxLegomenaAnalyzer(corpusTextsThunk, this.authorityData);
+        this.ui.verseEndingProfile = new VerseEndingProfileAnalyzer(selectedTextsThunk, this.authorityData);
+        this.ui.namingExplorer = new NamingExplorer('../data');
+        this.ui.horsesExplorer = new HorsesExplorer('../data');
 
         this.init();
     }
 
     async init() {
         this.initializeEventListeners();
+
+        // #314: Die Datenbank MHDBDB_Playground hielt einen einzigen Store
+        // (tei_files) für den Datei-Upload. Der ist weg, damit hat sie keinen
+        // Schreiber mehr. Bis #280 räumte eine Schema-Migration hier noch
+        // Altstores auf; die lief über den IndexedDBManager, den nach dem
+        // Rückbau niemand mehr instanziiert. Statt 397 Zeilen Schema-Pflege
+        // für eine leere Datenbank wird sie einmalig gelöscht. Auf einer
+        // nicht vorhandenen Datenbank ist das ein No-op, der Aufruf darf
+        // also bei jedem Start laufen. Korpus und Authority-Daten liegen in
+        // MHDBDBMainSite und sind nicht betroffen.
+        // Entfernbar, sobald keine Profile mehr im Umlauf sind, die den
+        // Playground vor Juli 2026 geöffnet haben: realistisch ab Mitte 2027.
+        // Ohne dieses Datum wird der Aufruf selbst zu dem konservierten
+        // Zweig, den #314 gerade entfernt hat.
+        this.dropLegacyPlaygroundDatabase();
 
         // Load authority files from pre-built index (UPDATED)
         await this.loadAuthorityIndex();
@@ -73,6 +150,11 @@ class MHDBDBPlayground {
         await this.autoLoadCorpus();
 
         this.updateUI();
+
+        // NEW: Wire up hash router and dispatch any initial hash from the URL.
+        // Done after data loading so that handlers can rely on populated state.
+        initRouter();
+        dispatchFromHash();
     }
 
     async loadAuthorityIndex() {
@@ -107,10 +189,9 @@ class MHDBDBPlayground {
                 if (authorityIndex.maps.genreToWorks) {
                     this.authorityManager.indexes.genreToWorks = new Map(Object.entries(authorityIndex.maps.genreToWorks));
                 }
-                if (authorityIndex.maps.genreHierarchy) {
-                    this.authorityManager.indexes.genreHierarchy = new Map(Object.entries(authorityIndex.maps.genreHierarchy));
-                }
-                console.log(`📊 Performance Maps loaded: concept→lemmas: ${this.authorityManager.indexes.conceptToLemmas.size}, genre→works: ${this.authorityManager.indexes.genreToWorks.size}, genreHierarchy: ${this.authorityManager.indexes.genreHierarchy.size}`);
+                // #361: maps.genreHierarchy is gone. The hierarchy now sits on
+                // the genre entries as parents[], with ids and direct parents.
+                console.log(`📊 Performance Maps loaded: concept→lemmas: ${this.authorityManager.indexes.conceptToLemmas.size}, genre→works: ${this.authorityManager.indexes.genreToWorks.size}`);
             }
 
             // Mark authority files as loaded
@@ -129,6 +210,20 @@ class MHDBDBPlayground {
         } catch (error) {
             console.error('❌ Failed to load authority index:', error);
             alert('Failed to load authority data. Please refresh the page.');
+        }
+    }
+
+    dropLegacyPlaygroundDatabase() {
+        if (!window.indexedDB) return;
+        try {
+            const req = indexedDB.deleteDatabase('MHDBDB_Playground');
+            req.onsuccess = () => console.log('Alt-Datenbank MHDBDB_Playground entfernt (#314)');
+            // onblocked heißt: ein anderer Tab hält die Datenbank noch offen.
+            // Kein Fehlerfall, der nächste Start erledigt es.
+            req.onblocked = () => console.log('MHDBDB_Playground noch von einem anderen Tab belegt');
+            req.onerror = () => console.warn('MHDBDB_Playground ließ sich nicht löschen:', req.error);
+        } catch (e) {
+            console.warn('deleteDatabase auf MHDBDB_Playground hat geworfen:', e);
         }
     }
 
@@ -157,6 +252,13 @@ class MHDBDBPlayground {
                 includedTexts: new Set() // Track which texts are included in search
             };
 
+            // Also expose under teiManager.corpusIndex so downstream callers
+            // (multi-lemma search, word-frequency, text-statistics,
+            // lemma-distribution, future modules) can read from a single
+            // canonical location regardless of which loader populated it.
+            // See #97.
+            this.teiManager.corpusIndex = corpusIndex;
+
             // Initially include all texts
             this.corpusData.texts.forEach(text => {
                 this.corpusData.includedTexts.add(text.id);
@@ -171,9 +273,14 @@ class MHDBDBPlayground {
             // Populate file browser
             this.populateFileBrowser();
 
-            // Enable TEI queries
-            const teiQueries = document.getElementById('teiQueries');
-            if (teiQueries) teiQueries.style.display = 'block';
+            // Enable TEI queries. Seit #410 sind es zwei Bloecke: die
+            // Korpusanalysen (teiQueries) und die weiteren (moreTeiQueries).
+            // Beide haengen am geladenen Korpus und werden zusammen sichtbar;
+            // die Register daneben brauchen ihn nicht und stehen von Anfang an.
+            ['teiQueries', 'moreTeiQueries'].forEach((id) => {
+                const block = document.getElementById(id);
+                if (block) block.style.display = 'block';
+            });
 
         } catch (error) {
             console.error('❌ Failed to auto-load corpus:', error);
@@ -262,6 +369,83 @@ class MHDBDBPlayground {
 
         if (totalWordsEl) totalWordsEl.textContent = totalWords.toLocaleString();
         if (totalLemmataEl) totalLemmataEl.textContent = lemmataSet.size.toLocaleString();
+
+        // Jede Auswahlaenderung kann den Hinweis faellig machen oder erledigen
+        // (#204). Diese Methode ist der gemeinsame Durchgang aller vier Wege:
+        // Einzel-Haekchen, Alle, Keine, Nur diese.
+        this.updateFilterMismatchNote();
+    }
+
+    /**
+     * Die aktuell sichtbaren (gefilterten) Texte werden zur Auswahl (#204).
+     * Geteilt von „Nur diese" und der Korrektur im Mismatch-Hinweis.
+     */
+    selectOnlyVisibleTexts() {
+        const fileList = document.getElementById('fileList');
+        if (!fileList) return;
+        this.corpusData.includedTexts.clear();
+        Array.from(fileList.querySelectorAll('input[type="checkbox"]')).forEach(cb => {
+            const item = cb.closest('.file-item');
+            const isVisible = !item.style.display || item.style.display !== 'none';
+            cb.checked = isVisible;
+            if (isVisible) {
+                this.corpusData.includedTexts.add(cb.dataset.textId);
+            }
+        });
+        this.updateFileBrowserStats();
+    }
+
+    /**
+     * Issue #204: Hinweis, solange der Anzeigefilter aktiv ist und die Auswahl
+     * ueber die sichtbare Liste hinausgeht.
+     *
+     * Die Verwechslung ist zweimal unabhaengig passiert (Korpussuche 07/2026,
+     * Playground 09/2026): gefiltert wird gelesen als ausgewaehlt. Der Hinweis
+     * steht deshalb am Filterfeld und nicht am Ergebnis, denn hier laesst er
+     * sich noch mit einem Klick beantworten.
+     */
+    updateFilterMismatchNote() {
+        const note = document.getElementById('filterSelectionMismatch');
+        const fileList = document.getElementById('fileList');
+        const filterInput = document.getElementById('fileFilter');
+        if (!note || !fileList || !filterInput) return;
+
+        const query = filterInput.value.trim();
+        const sichtbare = query
+            ? Array.from(fileList.querySelectorAll('.file-item'))
+                .filter(item => item.style.display !== 'none')
+                .map(item => item.dataset.textId)
+            : [];
+
+        // Mismatch nur, wenn gefiltert wird, die Filterung etwas uebrig laesst
+        // und die Auswahl mehr umfasst als die sichtbare Liste. Ein Filter, der
+        // genau die ausgewaehlten Texte zeigt, ist kein Missverstaendnis.
+        const sichtbarSet = new Set(sichtbare);
+        const mismatch = query && sichtbare.length > 0 &&
+            [...this.corpusData.includedTexts].some(id => !sichtbarSet.has(id));
+
+        const onlyVisibleBtn = document.getElementById('selectOnlyVisibleBtn');
+        if (!mismatch) {
+            note.classList.add('hidden');
+            // Ohne Mismatch traegt „Nur diese" wieder das ruhige Link-Styling
+            if (onlyVisibleBtn) onlyVisibleBtn.classList.remove('font-semibold', 'underline');
+            return;
+        }
+
+        // Das Wort steht hier und nicht im HTML: genau ein ausgewaehlter Text
+        // ist erreichbar (auf „mori" verengen, dann nach „par" weitersuchen)
+        // und stand sonst als „1 Texte" da.
+        const anzahl = this.corpusData.includedTexts.size;
+        document.getElementById('mismatchSelectedCount').textContent =
+            `${anzahl.toLocaleString('de-DE')} ${anzahl === 1 ? 'Text' : 'Texte'}`;
+        // Der haeufigste Fall ist genau ein Text: beide gemeldeten
+        // Verwechslungen hatten bis auf einen Text herunter gefiltert.
+        document.getElementById('mismatchUseFilteredLabel').textContent = sichtbare.length === 1
+            ? 'Nur diesen einen Text verwenden'
+            : `Nur die ${sichtbare.length.toLocaleString('de-DE')} gefilterten Texte verwenden`;
+        note.classList.remove('hidden');
+        // KZW 15.09.: „Nur diese" deckt die Erwartung ab und darf auffallen
+        if (onlyVisibleBtn) onlyVisibleBtn.classList.add('font-semibold', 'underline');
     }
 
     setupFileBrowserFilter() {
@@ -295,13 +479,22 @@ class MHDBDBPlayground {
                 }
             });
 
-            // Show/hide filter info
+            // Show/hide filter info + "Nur diese" button
+            const onlyVisibleBtn = document.getElementById('selectOnlyVisibleBtn');
+            const onlyVisibleSep = document.getElementById('selectOnlyVisibleSep');
             if (query) {
                 if (filterInfo) filterInfo.style.display = 'flex';
                 if (visibleCountEl) visibleCountEl.textContent = visibleCount;
+                if (onlyVisibleBtn) onlyVisibleBtn.style.display = '';
+                if (onlyVisibleSep) onlyVisibleSep.style.display = '';
             } else {
                 if (filterInfo) filterInfo.style.display = 'none';
+                if (onlyVisibleBtn) onlyVisibleBtn.style.display = 'none';
+                if (onlyVisibleSep) onlyVisibleSep.style.display = 'none';
             }
+
+            // #204: Der Hinweis haengt am Filter, nicht am Ergebnis
+            this.updateFilterMismatchNote();
         });
 
         // Clear filter button
@@ -318,24 +511,46 @@ class MHDBDBPlayground {
 
         if (selectAllBtn) {
             selectAllBtn.addEventListener('click', () => {
-                const visibleCheckboxes = Array.from(fileList.querySelectorAll('.file-item:not([style*="display: none"]) input[type="checkbox"]'));
-                visibleCheckboxes.forEach(cb => {
+                const allCheckboxes = Array.from(fileList.querySelectorAll('input[type="checkbox"]'));
+                allCheckboxes.forEach(cb => {
                     cb.checked = true;
                     this.corpusData.includedTexts.add(cb.dataset.textId);
                 });
+                const fileFilter = document.getElementById('fileFilter');
+                if (fileFilter) {
+                    fileFilter.value = '';
+                    fileFilter.dispatchEvent(new Event('input'));
+                }
                 this.updateFileBrowserStats();
             });
         }
 
         if (selectNoneBtn) {
             selectNoneBtn.addEventListener('click', () => {
-                const visibleCheckboxes = Array.from(fileList.querySelectorAll('.file-item:not([style*="display: none"]) input[type="checkbox"]'));
-                visibleCheckboxes.forEach(cb => {
+                this.corpusData.includedTexts.clear();
+                const allCheckboxes = Array.from(fileList.querySelectorAll('input[type="checkbox"]'));
+                allCheckboxes.forEach(cb => {
                     cb.checked = false;
-                    this.corpusData.includedTexts.delete(cb.dataset.textId);
                 });
+                const fileFilter = document.getElementById('fileFilter');
+                if (fileFilter) {
+                    fileFilter.value = '';
+                    fileFilter.dispatchEvent(new Event('input'));
+                }
                 this.updateFileBrowserStats();
             });
+        }
+
+        // "Nur diese" — select only visible (filtered) texts, deselect all others
+        const selectOnlyVisibleBtn = document.getElementById('selectOnlyVisibleBtn');
+        if (selectOnlyVisibleBtn) {
+            selectOnlyVisibleBtn.addEventListener('click', () => this.selectOnlyVisibleTexts());
+        }
+
+        // #204: dieselbe Korrektur aus dem Hinweis heraus, einen Klick entfernt
+        const mismatchUseFiltered = document.getElementById('mismatchUseFiltered');
+        if (mismatchUseFiltered) {
+            mismatchUseFiltered.addEventListener('click', () => this.selectOnlyVisibleTexts());
         }
     }
 
@@ -343,51 +558,101 @@ class MHDBDBPlayground {
     // ==================== EVENT LISTENERS (UPDATED) ====================
     
     initializeEventListeners() {
-        this.setupFileUpload();
+        this.setupSectionToggles();
         this.setupAuthorityQueries();
         this.setupTEIQueries();
-
-        // Setup collapsible file list functionality
-        setupCollapsibleFileList();
-        setupFileFilter();
     }
 
-    setupFileUpload() {
-        const uploadZone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
+    /**
+     * Die vier Abschnitte der Abfragespalte auf- und zuklappbar machen (#410).
+     *
+     * Erste Runde (KZW am 2026-09-08): „Es steht sonst zu viel auf einmal da.
+     * Zumal die experimentellen Forschungsdaten ja erweitert werden auch
+     * noch." Damals wurden genau die beiden Abschnitte aus ihren Screenshots
+     * zuklappbar, die elf Analysewerkzeuge blieben als ein Block stehen.
+     *
+     * Zweite Runde (KZW am 2026-09-11, nach der Bewertung vom 10.09.): die
+     * elf Werkzeuge sind auf zwei Bloecke aufgeteilt, und die Grenze ist nicht
+     * Wichtigkeit, sondern der Ausgangspunkt der Frage. Sechs Werkzeuge
+     * beginnen mit einem Wort oder Begriff („Korpusanalysen"), fuenf mit einem
+     * Text oder einer Autor*in („Weitere Korpusanalysen"). Die Register heissen
+     * jetzt „Register & Indizes (Authority Files)" und stehen offen, weil sie
+     * fuer die fachwissenschaftliche Nutzung der vertraute Einstieg sind.
+     *
+     * Die Vorgabe ist deshalb nicht mehr fuer alle gleich: die beiden oberen
+     * Bloecke stehen offen, die beiden unteren zu. Die eigene Wahl wiegt
+     * schwerer als die Vorgabe und wird gemerkt. localStorage kann in privaten
+     * Fenstern und bei gesperrten Site-Daten werfen, deshalb steht jeder
+     * Zugriff in try/catch und der Ausfall bedeutet: es gilt die Vorgabe.
+     *
+     * Der Umschalter ist ein <button> INNERHALB der <h3> und nicht die <h3>
+     * selbst: in der Ueberschrift steht daneben der Hilfe-Link, und ein <a>
+     * in einem <button> waere weder gueltiges HTML noch bedienbar (der Klick
+     * auf Hilfe wuerde mitklappen).
+     */
+    setupSectionToggles() {
+        const abschnitte = [
+            { toggle: 'corpusAnalysesToggle',   panel: 'corpusAnalysesPanel',   chevron: 'corpusAnalysesChevron',   offen: true },
+            { toggle: 'authorityQueriesToggle', panel: 'authorityQueriesPanel', chevron: 'authorityQueriesChevron', offen: true },
+            { toggle: 'moreAnalysesToggle',     panel: 'moreAnalysesPanel',     chevron: 'moreAnalysesChevron',     offen: false },
+            { toggle: 'experimentalToggle',     panel: 'experimentalPanel',     chevron: 'experimentalChevron',     offen: false }
+        ];
 
-        if (!uploadZone || !fileInput) {
-            // Upload UI removed in redesign - corpus auto-loads instead
-            return;
-        }
+        abschnitte.forEach(({ toggle, panel, chevron, offen: vorgabeOffen }) => {
+            const knopf = document.getElementById(toggle);
+            const inhalt = document.getElementById(panel);
+            const pfeil = document.getElementById(chevron);
+            if (!knopf || !inhalt) {
+                console.warn(`Missing section toggle: ${toggle}/${panel}`);
+                return;
+            }
 
-        uploadZone.addEventListener('click', () => fileInput.click());
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('dragover');
-        });
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('dragover');
-        });
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-            this.handleTEIFiles(e.dataTransfer.files);
-        });
-        fileInput.addEventListener('change', (e) => {
-            this.handleTEIFiles(e.target.files);
+            const schluessel = `mhdbdb-playground-section-${panel}`;
+            const anwenden = (offen) => {
+                inhalt.classList.toggle('hidden', !offen);
+                knopf.setAttribute('aria-expanded', String(offen));
+                if (pfeil) pfeil.classList.toggle('rotate-180', offen);
+            };
+
+            let gemerkt = null;
+            try {
+                gemerkt = localStorage.getItem(schluessel);
+            } catch (e) {
+                // privates Fenster oder gesperrte Site-Daten: Default gilt
+            }
+            // Die Vorgabe ist seit #410 nicht mehr fuer alle Abschnitte
+            // dieselbe: die beiden oberen stehen offen, die beiden unteren zu.
+            // Deshalb wird der fehlende Speicherwert gegen die jeweilige
+            // Vorgabe aufgeloest und nicht pauschal als "zu" gelesen.
+            if (gemerkt === 'offen') {
+                anwenden(true);
+            } else if (gemerkt === 'zu') {
+                anwenden(false);
+            } else {
+                anwenden(vorgabeOffen);
+            }
+
+            knopf.addEventListener('click', () => {
+                const offen = inhalt.classList.contains('hidden');
+                anwenden(offen);
+                try {
+                    localStorage.setItem(schluessel, offen ? 'offen' : 'zu');
+                } catch (e) {
+                    // nicht speicherbar; die Sitzung selbst funktioniert weiter
+                }
+            });
         });
     }
 
     setupAuthorityQueries() {
-        // UPDATED: Use new modular UI methods
+        // UPDATED: Go through the hash router so the URL reflects the current view.
         const authorityButtons = [
-            { id: 'showAuthorsBtn', handler: () => this.ui.authorityExplorers.showAuthors() },
-            { id: 'showWorksBtn', handler: () => this.ui.authorityExplorers.showWorks() },
-            { id: 'showLemmataBtn', handler: () => this.ui.authorityExplorers.showLemmata() },
-            { id: 'showConceptsBtn', handler: () => this.ui.authorityExplorers.showConcepts() },
-            { id: 'showGenresBtn', handler: () => this.ui.authorityExplorers.showGenres() },
-            { id: 'showNamesBtn', handler: () => this.ui.authorityExplorers.showNames() }
+            { id: 'showAuthorsBtn',  handler: () => navigate('authors') },
+            { id: 'showWorksBtn',    handler: () => navigate('works') },
+            { id: 'showLemmataBtn',  handler: () => navigate('lemmata') },
+            { id: 'showConceptsBtn', handler: () => navigate('concepts') },
+            { id: 'showGenresBtn',   handler: () => navigate('genres') },
+            { id: 'showNamesBtn',    handler: () => navigate('names') }
         ];
 
         authorityButtons.forEach(({ id, handler }) => {
@@ -401,12 +666,21 @@ class MHDBDBPlayground {
     }
 
     setupTEIQueries() {
-        // UPDATED: Use new TEI explorer methods
+        // UPDATED: Go through the hash router so the URL reflects the current view.
         const teiButtons = [
-            { id: 'showWordsBtn', handler: () => this.ui.teiExplorer.showWords() },
-            { id: 'showLinesBtn', handler: () => this.ui.teiExplorer.showLines() },
-            { id: 'findMultiLemmaBtn', handler: () => this.ui.multiLemmaSearch.open() },
-            { id: 'showAnnotationsBtn', handler: () => this.ui.teiExplorer.showAnnotations() }
+            { id: 'findMultiLemmaBtn',       handler: () => navigate('multi-lemma') },
+            { id: 'findVersePositionBtn',    handler: () => navigate('verse-position') },
+            { id: 'showWordFrequencyBtn',    handler: () => navigate('word-frequency') },
+            { id: 'showTextStatisticsBtn',   handler: () => navigate('text-statistics') },
+            { id: 'showLemmaDistributionBtn', handler: () => navigate('lemma-distribution') },
+            { id: 'showConceptDistributionBtn', handler: () => navigate('concept-distribution') },
+            { id: 'showTextComparisonBtn', handler: () => navigate('text-comparison') },
+            { id: 'showCooccurrenceRankingBtn', handler: () => navigate('cooccurrence-ranking') },
+            { id: 'showRhymeDictionaryBtn', handler: () => navigate('rhyme-dictionary') },
+            { id: 'showHapaxLegomenaBtn', handler: () => navigate('hapax-legomena') },
+            { id: 'showVerseEndingProfileBtn', handler: () => navigate('verse-ending-profile') },
+            { id: 'showNamingExplorerBtn', handler: () => navigate('naming') },
+            { id: 'showHorsesExplorerBtn', handler: () => navigate('horses') }
         ];
 
         teiButtons.forEach(({ id, handler }) => {
@@ -419,179 +693,11 @@ class MHDBDBPlayground {
         });
     }
 
-    // ==================== TEI FILE HANDLING (UPDATED) ====================
-
-    async handleTEIFiles(files) {
-        const fileArray = Array.from(files);
-        const uploadedFilesContainer = document.getElementById('uploadedFiles');
-        const totalFiles = fileArray.length;
-
-        if (totalFiles === 0) return;
-
-        // Check if corpus is already loaded
-        if (this.teiData.parsedXML.length > 0) {
-            const hasCorpusData = this.teiData.parsedXML.some(item => 'xmlDoc' in item);
-            if (hasCorpusData) {
-                const confirmed = confirm(
-                    `Der vollständige Korpus (${this.teiData.parsedXML.length} Dateien) ist bereits geladen.\n\n` +
-                    `Möchten Sie diesen löschen und stattdessen ${totalFiles} neue Datei(en) hochladen?`
-                );
-                if (!confirmed) return;
-
-                // Clear corpus data before uploading
-                await this.teiManager.clearAllTEIData();
-
-                // Reset load corpus button to original state
-                const loadCorpusBtn = document.getElementById('loadCorpusBtn');
-                if (loadCorpusBtn) {
-                    loadCorpusBtn.disabled = false;
-                    loadCorpusBtn.classList.remove('bg-green-50', 'border-green-200', 'text-green-700');
-                    loadCorpusBtn.classList.add('hover:bg-brand-100');
-                    loadCorpusBtn.innerHTML = `
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                        </svg>
-                        <span>Load Full Corpus (666 Files)</span>
-                    `;
-                }
-
-                // Clear corpus UI indicators
-                const fileCountBadge = document.getElementById('fileCount');
-                if (fileCountBadge) {
-                    fileCountBadge.textContent = '0';
-                }
-
-                // Clear file list container
-                const uploadedFilesContainer = document.getElementById('uploadedFiles');
-                if (uploadedFilesContainer) {
-                    uploadedFilesContainer.innerHTML = '';
-                }
-
-                // Show file filter again
-                const fileFilter = document.getElementById('fileFilter');
-                if (fileFilter) {
-                    fileFilter.style.display = '';
-                    fileFilter.value = ''; // Reset filter
-                }
-
-                this.updateUI();
-            }
-        }
-
-        // Show progress if uploading multiple files
-        if (totalFiles > 1) {
-            showProgress('uploadedFilesSection', 0, totalFiles, 'Lade TEI-Dateien');
-        }
-        
-        let processedCount = 0;
-        
-        for (const file of fileArray) {
-            if (this.teiManager.isTEIFile(file)) {
-                try {
-                    // Update progress for multi-file uploads
-                    if (totalFiles > 1) {
-                        updateProgress('uploadedFilesSection', processedCount, totalFiles,
-                            `Verarbeite: ${file.name}`);
-                    }
-                    
-                    await this.teiManager.processTEIFile(file);
-                    processedCount++;
-                    
-                    // For single file, show immediate feedback
-                    if (totalFiles === 1) {
-                        displayFileItem(file, uploadedFilesContainer);
-                    }
-                } catch (error) {
-                    console.error(`Fehler beim Verarbeiten von ${file.name}:`, error);
-                    // Continue with other files even if one fails
-                }
-            }
-        }
-        
-        // Complete progress and show all files for multi-file uploads
-        if (totalFiles > 1) {
-            updateProgress('uploadedFilesSection', totalFiles, totalFiles, 'Abgeschlossen');
-
-            // After a brief delay, show the file list
-            setTimeout(() => {
-                hideSpinner('uploadedFilesSection');
-
-                // Get fresh reference to container after HTML reset
-                const freshUploadedFilesContainer = document.getElementById('uploadedFiles');
-
-                // Display all successfully processed files
-                this.teiData.files.forEach(file => {
-                    displayFileItem(file, freshUploadedFilesContainer);
-                });
-            }, 500);
-        }
-
-        this.updateUI();
-    }
-
-    // ==================== SESSION FILE MANAGEMENT ====================
-
-    async removeTEIFile(filename) {
-        if (await this.teiManager.removeTEIFile(filename)) {
-            // Update UI
-            const fileItem = document.querySelector(`[data-filename="${filename.toLowerCase()}"]`);
-            if (fileItem) {
-                fileItem.remove();
-            }
-
-            // Update file count and overview
-            updateFileCount();
-            this.updateUI();
-        }
-    }
-
-    async clearAllCachedFiles() {
-        try {
-            // Clear TEI files
-            const removedCount = await this.teiManager.clearAllCachedFiles();
-
-            // NOTE: Authority file cache is managed by CorpusLoader (Dexie.js)
-            // and will be cleared when the page reloads
-
-            if (removedCount > 0) {
-                // Clear UI
-                const uploadedFiles = document.getElementById('uploadedFiles');
-                if (uploadedFiles) {
-                    const cachedFileItems = uploadedFiles.querySelectorAll('[data-cached-file="true"]');
-                    cachedFileItems.forEach(item => item.remove());
-                }
-
-                // Update file count and overview
-                updateFileCount();
-                this.updateUI();
-
-                // Show success message and offer full page reload
-                const reload = confirm(`Cleared ${removedCount} cached TEI files.\n\nReload the page to also clear authority cache?`);
-                if (reload) {
-                    window.location.reload();
-                }
-            } else {
-                // No TEI files to clear, just offer reload
-                const reload = confirm(`No cached TEI files found.\n\nReload the page to clear authority cache?`);
-                if (reload) {
-                    window.location.reload();
-                }
-            }
-        } catch (error) {
-            console.error('❌ Error clearing cache:', error);
-            alert('Error clearing cache. Please reload the page manually.');
-        }
-    }
-
-    async getStorageInfo() {
-        return await this.teiManager.getStorageInfo();
-    }
-
     // ==================== UI UPDATES (SIMPLIFIED) ====================
 
     updateUI() {
         // NEW: Use centralized UI update function
-        updateAllUI(this.authorityData, this.teiData);
+        updateAllUI(this.authorityData);
     }
 }
 
@@ -616,87 +722,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.TextNormalizer = TextNormalizer;
     window.SearchPatterns = SearchPatterns;
 
-    // Setup Load Corpus button handler
-    const loadCorpusBtn = document.getElementById('loadCorpusBtn');
-    if (loadCorpusBtn) {
-        loadCorpusBtn.addEventListener('click', async () => {
-            if (!window.playground) return;
-
-            // Show loading state
-            const originalText = loadCorpusBtn.innerHTML;
-            loadCorpusBtn.disabled = true;
-            loadCorpusBtn.innerHTML = '<span>Clearing previous data...</span>';
-
-            try {
-                // Clear any previously uploaded TEI files first
-                await window.playground.teiManager.clearAllTEIData();
-
-                loadCorpusBtn.innerHTML = '<span>Loading corpus...</span>';
-                const result = await window.playground.teiManager.loadCorpusIntoPlayground((loaded, total) => {
-                    const percentage = Math.round((loaded / total) * 100);
-                    loadCorpusBtn.innerHTML = `<span>Loading: ${loaded}/${total} (${percentage}%)</span>`;
-                });
-
-                // Success! Keep button showing loaded state
-                loadCorpusBtn.innerHTML = `<span>✅ ${result.loaded} TEI files loaded</span>`;
-                loadCorpusBtn.disabled = true; // Keep disabled to prevent re-loading
-                loadCorpusBtn.classList.remove('hover:bg-brand-100');
-                loadCorpusBtn.classList.add('bg-green-50', 'border-green-200', 'text-green-700');
-
-                // Clear and repopulate the file display with corpus entries
-                const uploadedFilesContainer = document.getElementById('uploadedFiles');
-                if (uploadedFilesContainer) {
-                    uploadedFilesContainer.innerHTML = '';
-
-                    // Display corpus files with metadata
-                    window.playground.teiData.parsedXML.forEach(teiData => {
-                        displayFileItem(teiData, uploadedFilesContainer);
-                    });
-                }
-
-                // Update file count badge (just the number)
-                const fileCountBadge = document.getElementById('fileCount');
-                if (fileCountBadge) {
-                    fileCountBadge.textContent = result.loaded;
-                }
-
-                // Show file filter for corpus data (useful for 666 files)
-                const fileFilter = document.getElementById('fileFilter');
-                if (fileFilter) {
-                    fileFilter.style.display = '';
-                    fileFilter.value = ''; // Reset filter
-                }
-
-                // Show files summary section
-                const filesSummary = document.getElementById('filesSummary');
-                if (filesSummary) {
-                    filesSummary.style.display = 'flex';
-                }
-
-                // Update UI
-                window.playground.updateUI();
-
-                // Auto-open TEI analysis panel
-                const teiQueries = document.getElementById('teiQueries');
-                if (teiQueries) {
-                    teiQueries.style.display = 'block';
-                    teiQueries.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
-
-                console.log(`✅ Corpus loaded successfully: ${result.loaded} files available for analysis`);
-
-            } catch (error) {
-                console.error('Corpus loading error:', error);
-                loadCorpusBtn.innerHTML = `<span>❌ Error: ${error.message}</span>`;
-
-                // Reset button after 5 seconds
-                setTimeout(() => {
-                    loadCorpusBtn.disabled = false;
-                    loadCorpusBtn.innerHTML = originalText;
-                }, 5000);
-            }
-        });
-    }
+    // Note: The "Load Full Corpus" button was removed in the redesign;
+    // autoLoadCorpus() in init() handles corpus loading. See #99.
 
     console.log('MHDBDB Playground migrated to modular UI successfully!');
     console.log('Available UI modules:', Object.keys(window.playground.ui));

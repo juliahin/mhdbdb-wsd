@@ -3,12 +3,25 @@
  * Handles the modal interface for advanced multi-lemma search
  */
 
+import { getNavigationEpoch } from '../core/router.js';
+
 export class MultiLemmaSearchUI {
     constructor(teiExplorer, authorityManager) {
         this.teiExplorer = teiExplorer;
         this.authorityManager = authorityManager;
         this.lemmas = [];
         this.isOpen = false;
+
+        // Schreibform -> feste Lemma-ID (#58). Wer aus dem Lemmata-Explorer
+        // kommt, hat ein bestimmtes Lemma angeklickt; die Auflösung über die
+        // Schreibform nimmt dagegen matches[0]. Gemessen am 2026-08-07 über
+        // authority-files/lexicon.xml, gruppiert mit normalize_mhg() aus
+        // scripts/mhg_normalizer.py: 477 normalisierte Formen tragen mehr
+        // als einen Eintrag, zusammen 993 der 43.879 Lemmata (2,26 Prozent),
+        // darunter sin, wal, mal und de. Für die stünde hier sonst still ein
+        // anderes Lemma. Gefüllt wird die Map nur vom Router, nie von einer
+        // Handeingabe: siehe addLemmaFromInput.
+        this.lemmaIdHints = new Map();
 
         this.initializeElements();
         this.attachEventListeners();
@@ -95,6 +108,7 @@ export class MultiLemmaSearchUI {
 
     reset() {
         this.lemmas = [];
+        this.lemmaIdHints.clear();
         this.lemmaInput.value = '';
         this.lemmaChips.innerHTML = '';
         this.executeBtn.disabled = true;
@@ -117,6 +131,11 @@ export class MultiLemmaSearchUI {
 
         terms.forEach(term => {
             if (term && !this.lemmas.includes(term)) {
+                // Eine Handeingabe ist eine Schreibform und sonst nichts. Trägt
+                // die Map noch einen Zeiger unter demselben Label (erst die
+                // Route, dann ein zweites Lemma von Hand), würde die Eingabe
+                // still die ID der Route erben.
+                this.lemmaIdHints.delete(term);
                 this.lemmas.push(term);
                 this.addLemmaChip(term);
             }
@@ -150,8 +169,11 @@ export class MultiLemmaSearchUI {
 
     removeLemma(lemma) {
         this.lemmas = this.lemmas.filter(l => l !== lemma);
+        this.lemmaIdHints.delete(lemma);
 
-        const chip = this.lemmaChips.querySelector(`[data-lemma="${lemma}"]`);
+        // dataset comparison instead of a CSS selector: a lemma containing
+        // quotes would throw in querySelector (#audit-66).
+        const chip = [...this.lemmaChips.children].find(ch => ch.dataset && ch.dataset.lemma === lemma);
         if (chip) {
             chip.style.animation = 'chipOut 200ms ease-in forwards';
             setTimeout(() => {
@@ -166,6 +188,37 @@ export class MultiLemmaSearchUI {
         this.executeBtn.disabled = this.lemmas.length === 0;
     }
 
+    /**
+     * Suchbegriffe zu Lemma-IDs auflösen, mit Vorrang für gesetzte Zeiger.
+     *
+     * Der einzige Unterschied zu `resolveLemmaIds` ist dieser Vorrang. Er muss
+     * an jeder Stelle gelten, die aus Begriffen IDs macht, auch in der
+     * Fehlerdiagnose weiter unten: sonst meldet die „kein Lemma gefunden"-Zeile
+     * einen Begriff als unauflösbar, dessen ID feststeht.
+     *
+     * `zeiger` wird ausdrücklich übergeben und nicht aus `this` gelesen.
+     * `executeSearch` schließt das Modal, bevor es auflöst, und `close()` leert
+     * über `reset()` auch diese Map: ein Zugriff auf `this.lemmaIdHints` fände
+     * hier also immer eine leere Map vor. Genau denselben Grund nennt der
+     * Kommentar an `searchTerms` schon für die Begriffsliste.
+     *
+     * Dedupliziert wie das Original, aus demselben Grund (siehe dort): zwei
+     * Eingaben auf derselben ID lassen die Nähesuche jede Fundstelle mit
+     * Abstand 0 melden.
+     *
+     * @param {string[]} terms
+     * @param {Map<string, string>} zeiger Schreibform -> feste Lemma-ID
+     * @returns {string[]} Lemma-IDs ohne `lemma_`-Präfix
+     */
+    resolveTerms(terms, zeiger) {
+        const ids = terms.flatMap(term =>
+            zeiger.has(term)
+                ? [zeiger.get(term)]
+                : this.teiExplorer.resolveLemmaIds([term])
+        );
+        return [...new Set(ids)];
+    }
+
     getSelectedSearchMode() {
         const selected = document.querySelector('input[name="searchMode"]:checked');
         return selected ? selected.value : 'proximity'; // v4.0.0: default to proximity
@@ -176,6 +229,18 @@ export class MultiLemmaSearchUI {
 
         const searchMode = this.getSelectedSearchMode();
         const searchTerms = [...this.lemmas]; // Create copy
+        // Aus demselben Grund kopiert wie die Begriffe eine Zeile darüber:
+        // close() setzt über reset() auch die Zeiger zurück (#58).
+        const zeiger = new Map(this.lemmaIdHints);
+        // Dritter Zustand mit demselben Problem, gefunden im Review zu #58 und
+        // älter als dieser PR: reset() stellt proximityDistance auf '10' zurück.
+        // Gelesen wurde der Wert bis dahin erst nach close(), also immer als 10.
+        // Wirkungslos waren dadurch der dist-Parameter der Route und der
+        // Beleg-Link des Kookkurrenz-Rankings, der die eingestellte
+        // Fenstergröße mitgibt und sie im Tooltip auch verspricht. Gemessen am
+        // 2026-08-07: dist=3, dist=10 und dist=25 lieferten denselben Kopf
+        // („max. 10 Wörter") und dieselben zwei Treffer.
+        const distanz = parseInt(this.proximityDistance.value) || 10;
 
         // Close modal first
         this.close();
@@ -196,23 +261,74 @@ export class MultiLemmaSearchUI {
         if (!teiManager) {
             if (resultsContainer) {
                 resultsContainer.innerHTML = `
-                    <div class="text-sm text-red-600">
-                        ❌ Fehler: TEI Manager nicht verfügbar. Bitte laden Sie TEI-Dateien.
+                    <div class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                        Fehler: TEI Manager nicht verfügbar. Bitte laden Sie TEI-Dateien.
                     </div>
                 `;
             }
             return;
         }
 
+        // Guard analog zu den 8 Schwester-Tools: vor dem Corpus-Load liefert
+        // die Suche sonst still leere Ergebnisse (#167 Finding 22).
+        if (!window.playground?.corpusData?.texts?.length) {
+            if (resultsContainer) {
+                resultsContainer.innerHTML = `
+                    <div class="text-sm text-red-600">
+                        Korpus ist noch nicht geladen. Bitte einen Moment warten und erneut suchen.
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        // Navigiert der User während der async Korpus-Suche zu einer
+        // anderen View, darf das fertige Ergebnis die dort angezeigte
+        // View nicht überschreiben (#159). Vor dem try deklariert, damit
+        // auch der catch-Pfad den Guard prüfen kann.
+        const myEpoch = getNavigationEpoch();
+
         try {
             // Resolve lemma IDs
-            const lemmaIds = this.teiExplorer.resolveLemmaIds(searchTerms);
+            const lemmaIds = this.resolveTerms(searchTerms, zeiger);
 
             if (lemmaIds.length === 0) {
                 if (resultsContainer) {
                     resultsContainer.innerHTML = `
-                        <div class="text-sm text-red-600">
-                            ❌ Keine gültigen Lemmata gefunden für: ${searchTerms.join(', ')}
+                        <div class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                            Keine gültigen Lemmata gefunden für: ${searchTerms.map(t => this.escapeHtml(t)).join(', ')}
+                        </div>
+                    `;
+                }
+                return;
+            }
+
+            // Nähe- und Vers-Suche brauchen zwei VERSCHIEDENE Lemmata. Nach
+            // der Auflösung können mehrere Eingaben auf dasselbe Lemma zeigen
+            // („wîn" und „wein" beide auf lemma_7532), und mit nur einer ID
+            // sucht die Fensterlogik ein Fenster ohne weitere abzudeckende
+            // Liste: das leistet jede Position, jede Fundstelle würde als
+            // Treffer mit Abstand 0 gemeldet. Lieber sagen, was los ist.
+            if ((searchMode === 'proximity' || searchMode === 'verse') && lemmaIds.length < 2) {
+                if (resultsContainer) {
+                    // Zwei sehr verschiedene Ursachen führen hierher, und die
+                    // falsche Diagnose schickt jemanden auf die Suche nach
+                    // einer Homonymie, die es nicht gibt: „minne" + „qqqq"
+                    // ergibt ebenfalls eine ID, weil der zweite Begriff
+                    // überhaupt nicht auflöst. Deshalb je Begriff einzeln
+                    // nachfragen; das kostet nur in diesem Fehlerfall etwas.
+                    const ohneTreffer = searchTerms.filter(
+                        t => this.resolveTerms([t], zeiger).length === 0
+                    );
+                    const grund = ohneTreffer.length > 0
+                        ? `Kein Lemma gefunden für: ${ohneTreffer.map(t => this.escapeHtml(t)).join(', ')}.`
+                        : searchTerms.length > 1
+                            ? `Ihre Eingaben (${searchTerms.map(t => this.escapeHtml(t)).join(', ')}) führen auf dasselbe Lemma.`
+                            : 'Es ist nur ein Lemma angegeben.';
+                    resultsContainer.innerHTML = `
+                        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                            Diese Suche vergleicht die Fundstellen zweier Lemmata und braucht deshalb zwei verschiedene. ${grund}
+                            Für die Belege eines einzelnen Lemmas eignet sich die Suche über das ganze Dokument.
                         </div>
                     `;
                 }
@@ -220,35 +336,50 @@ export class MultiLemmaSearchUI {
             }
 
             // Execute search based on mode (now async)
-            // Use fast index-based search when available (corpus index)
+            // Alle drei Modi lesen den vorgebauten Korpus-Index. Den XML-Fallback
+            // gab es bis #314; faellt der Index aus, wirft die Suche jetzt und
+            // der catch unten zeigt das an.
             let results;
             if (searchMode === 'proximity') {
-                const maxDistance = parseInt(this.proximityDistance.value) || 10;
-                // Try fast index-based search first (falls back to XML if needed)
-                results = await teiManager.searchMultipleLemmasUsingIndex(lemmaIds, 'proximity', maxDistance);
-                this.teiExplorer.displayCooccurrenceResults(results, searchTerms, maxDistance, lemmaIds);
+                results = await teiManager.searchMultipleLemmasUsingIndex(lemmaIds, 'proximity', distanz);
+                if (getNavigationEpoch() !== myEpoch) return;
+                this.teiExplorer.displayCooccurrenceResults(results, searchTerms, distanz, lemmaIds);
+            } else if (searchMode === 'verse') {
+                // #106 Punkt 8: Kookkurrenz auf ein gemeinsames <l> beschränkt
+                results = await teiManager.searchMultipleLemmasUsingIndex(lemmaIds, 'verse');
+                if (getNavigationEpoch() !== myEpoch) return;
+                this.teiExplorer.displayCooccurrenceResults(results, searchTerms, null, lemmaIds, { verseMode: true });
             } else {
-                // Use fast index-based search for paragraph/document mode
+                // Dokumentweite Suche über den Index
                 results = await teiManager.searchMultipleLemmasUsingIndex(lemmaIds, searchMode);
-                this.teiExplorer.displayMultiLemmaResults(results, searchTerms, searchMode);
+                if (getNavigationEpoch() !== myEpoch) return;
+                this.teiExplorer.displayMultiLemmaResults(results, searchTerms);
             }
 
         } catch (error) {
             console.error('Search error:', error);
+            // Gleicher Epoch-Guard wie in den Success-Pfaden: eine nach dem
+            // View-Wechsel fehlschlagende Suche darf die neue View nicht mit
+            // der Fehlermeldung überschreiben (Review-Finding PR #174).
+            if (getNavigationEpoch() !== myEpoch) return;
             if (resultsContainer) {
                 resultsContainer.innerHTML = `
-                    <div class="text-sm text-red-600">
-                        ❌ Suchfehler: ${error.message}
+                    <div class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                        Suchfehler: ${this.escapeHtml(String(error.message))}
                     </div>
                 `;
             }
         }
     }
 
+    // Regex-based instead of the textContent/innerHTML trick: the value is
+    // also interpolated into attribute contexts (aria-label), where unescaped
+    // quotes would break out of the attribute (#audit-66).
     escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        if (text == null) return '';
+        return String(text).replace(/[&<>"']/g, c => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
     }
 }
 

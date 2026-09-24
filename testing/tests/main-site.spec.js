@@ -12,7 +12,7 @@ test.describe('Main Site', () => {
 
     test.beforeEach(async ({ page }) => {
         // Navigate to search page (not landing page)
-        await page.goto('http://localhost:8080/korpus.html');
+        await page.goto('/korpus.html');
     });
 
     test('should load without console errors', async ({ page }) => {
@@ -53,6 +53,15 @@ test.describe('Main Site', () => {
             logs.push(msg.text());
         });
 
+        // Neu laden, NACHDEM der Listener haengt. Das beforeEach hat schon
+        // navigiert, und `page.goto` loest erst auf, wenn die Initialisierung
+        // durch ist: gemessen am 07.09.2026 loest goto nach 12,8 s auf und der
+        // Ladeschirm verschwindet 38 ms spaeter, "[MainSiteApp] Ready" ist
+        // Logzeile 13 von 15 und faellt damit vor das Anhaengen. Ohne dieses
+        // reload zeichnet der Listener NULL Zeilen auf und der Test ist rot,
+        // ohne dass an der Anwendung etwas fehlt.
+        await page.reload();
+
         await page.waitForSelector('#loadingScreen', { state: 'hidden', timeout: 30000 });
 
         // App logs "[MainSiteApp] Ready" when fully initialized
@@ -65,7 +74,7 @@ test.describe('Main Site', () => {
 
         // Text list should have checkboxes (one per corpus text)
         const textCount = await page.locator('#textList label').count();
-        expect(textCount).toBeGreaterThan(100); // 666 texts expected
+        expect(textCount).toBeGreaterThan(100); // 667 texts expected
 
         // Selected text count should be displayed
         const selectedCount = await page.locator('#selectedTextCount').textContent();
@@ -167,4 +176,101 @@ test.describe('Main Site', () => {
         await expect(page.locator('#highlightIndicator')).toBeVisible();
     });
 
+});
+
+test.describe('Such-Deep-Link ?search= (#144)', () => {
+
+    test('?search=brôt füllt das Suchfeld und liefert Treffer', async ({ page }) => {
+        await page.goto('/korpus.html?search=br%C3%B4t');
+
+        await page.waitForSelector('#loadingScreen', { state: 'hidden', timeout: 30000 });
+
+        // Suche wird automatisch ausgelöst: Ergebnisse erscheinen ohne Klick
+        await page.waitForSelector('#resultsList > div', { timeout: 15000 });
+        const results = await page.locator('#resultsList > div').count();
+        expect(results).toBeGreaterThan(0);
+
+        // Suchfeld trägt den Begriff (Pfad der manuellen Eingabe)
+        const inputValue = await page.inputValue('#searchInput');
+        expect(inputValue).toBe('brôt');
+
+        // URL ist bereinigt (gleiche Konvention wie der textId-Pfad)
+        expect(page.url()).not.toContain('search=');
+    });
+
+    test('Lemma-Seiten-Button "Im Korpus suchen" führt zu Treffern', async ({ page, context }) => {
+        test.setTimeout(120000);
+
+        await page.goto('/lemma/?id=879');
+        await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });
+
+        // Button verlinkt auf korpus.html?search=... und öffnet einen neuen Tab
+        const corpusLink = page.locator('#externalLinks a[href*="korpus.html?search="]');
+        await expect(corpusLink).toBeVisible();
+        const [searchPage] = await Promise.all([
+            context.waitForEvent('page'),
+            corpusLink.click(),
+        ]);
+
+        // Auf der Korpussuche erscheinen Treffer automatisch
+        await searchPage.waitForSelector('#loadingScreen', { state: 'hidden', timeout: 30000 });
+        await searchPage.waitForSelector('#resultsList > div', { timeout: 15000 });
+        expect(await searchPage.locator('#resultsList > div').count()).toBeGreaterThan(0);
+    });
+
+});
+
+test.describe('Issue #204: Filter vs. Auswahl', () => {
+
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/korpus.html');
+        // 60000 aus demselben Grund wie in results-table.spec.js: es ist
+        // zeichengleich derselbe Wait auf derselben Seite. Vor der
+        // Signaturkorrektur war der Timeout wirkungslos, real band das
+        // 60-s-Testbudget; der Fix soll hier nichts verschärfen.
+        await page.waitForFunction(() => !!window._mhdbdbApp?.searchEngine, null, { timeout: 60000 });
+    });
+
+    test('Mismatch-Hinweis erscheint bei aktivem Filter + breiter Auswahl, One-Click korrigiert', async ({ page }) => {
+        // Filter setzen, Auswahl bleibt bei allen 667 Texten
+        await page.fill('#textFilter', 'Nibelungen');
+        await page.fill('#searchInput', 'minne');
+        await page.click('#searchButton');
+        await page.waitForSelector('#resultsList > *');
+
+        const note = page.locator('#filterMismatchNote');
+        await expect(note).toBeVisible();
+        await expect(page.locator('#mismatchSearchedCount')).toHaveText('667');
+
+        // One-Click: Auswahl auf gefilterte Liste einschränken + neu suchen
+        await page.click('#mismatchApplyFilter');
+        await expect(note).toBeHidden();
+        // Ergebnis-Header weist den (jetzt kleinen) Suchraum aus
+        await expect(page.locator('#resultsCount')).toContainText('ausgewählten Texten');
+        const headerText = await page.locator('#resultsCount').textContent();
+        const searched = parseInt(headerText.match(/von (\d+) ausgewählten/)[1], 10);
+        expect(searched).toBeLessThan(20);
+    });
+
+    test('Kein Mismatch-Hinweis ohne Filter', async ({ page }) => {
+        await page.fill('#searchInput', 'minne');
+        await page.click('#searchButton');
+        await page.waitForSelector('#resultsList > *');
+        await expect(page.locator('#filterMismatchNote')).toBeHidden();
+    });
+
+    test('0-Treffer-Box ist sichtbar und benennt Begriff + Suchraum', async ({ page }) => {
+        // Auswahl auf DTG (Die treue Gattin) beschränken — dort hat "schlafen" 0 Treffer
+        await page.fill('#textFilter', 'dtg');
+        await page.click('#selectOnlyVisible');
+        await page.fill('#searchInput', 'schlafen');
+        await page.click('#searchButton');
+
+        // Regressionsnetz: Die Box liegt INNERHALB von #resultsSection und war
+        // vor #204 durch das Verstecken der ganzen Section nie sichtbar.
+        await expect(page.locator('#noResults')).toBeVisible();
+        await expect(page.locator('#noResultsSummary')).toContainText('0 Treffer für');
+        await expect(page.locator('#noResultsSummary')).toContainText('schlafen');
+        await expect(page.locator('#noResultsSummary')).toContainText('ausgewählten Texten');
+    });
 });

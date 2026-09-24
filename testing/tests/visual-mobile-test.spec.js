@@ -22,7 +22,7 @@ const viewports = {
 for (const [device, viewport] of Object.entries(viewports)) {
     test(`Playground - ${device} (${viewport.width}x${viewport.height})`, async ({ page }) => {
         await page.setViewportSize(viewport);
-        await page.goto('http://localhost:8080/playground/');
+        await page.goto('/playground/');
 
         // Wait for corpus to auto-load
         await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 30000 });
@@ -32,27 +32,42 @@ for (const [device, viewport] of Object.entries(viewports)) {
             fullPage: true
         });
 
-        // Test authority search (Lemmata anzeigen)
-        const lemmataBtn = page.locator('button:has-text("Lemmata anzeigen")');
-        if (await lemmataBtn.isVisible()) {
-            await lemmataBtn.click();
-            await page.waitForTimeout(500);
+        // #410, zweite Runde: der Block heisst jetzt "Register & Indizes
+        // (Authority Files)" und wird aufgeklappt ausgeliefert. Das frueher
+        // noetige Oeffnen entfaellt; ein Klick wuerde jetzt zuklappen.
+
+        // Der Lemmata-Block hier war schon vor #410 tot, und zwar seit
+        // mindestens dem 24.08.: der Locator suchte "Lemmata anzeigen", der
+        // Knopf heisst aber "Lemmata-Explorer" (0 Treffer im Markup, auch auf
+        // main). Der isVisible()-Guard war damit in allen fuenf Viewports
+        // falsch, die -lemmata-Screenshots wurden nie geschrieben, und der
+        // Test blieb gruen. Dritter Fall dieser Sorte in diesem Verzeichnis
+        // nach Audit #39 (cross-reference-test) und Audit #41 weiter unten in
+        // dieser Datei.
+        //
+        // Deshalb jetzt ueber die ID und ohne Guard: ein fehlender Knopf soll
+        // den Test rot machen und nicht still einen Block ueberspringen.
+        await page.click('#showLemmataBtn');
+        await page.waitForTimeout(500);
+
+        await page.screenshot({
+            path: resolve(__dirname, `../screenshots/playground-${device.toLowerCase()}-lemmata.png`),
+            fullPage: true
+        });
+
+        // Dieser Guard bleibt und ist keiner der toten: ob das Suchfeld im
+        // jeweiligen Viewport rendert, ist eine echte Frage. Der Playground
+        // ist auf mindestens 1200px ausgelegt, und der Test faehrt bewusst
+        // auch 375px an.
+        const lemmaSearch = page.locator('#lemmaSearch');
+        if (await lemmaSearch.isVisible()) {
+            await lemmaSearch.fill('got');
+            await page.waitForTimeout(1000);
 
             await page.screenshot({
-                path: resolve(__dirname, `../screenshots/playground-${device.toLowerCase()}-lemmata.png`),
+                path: resolve(__dirname, `../screenshots/playground-${device.toLowerCase()}-lemmata-results.png`),
                 fullPage: true
             });
-
-            const lemmaSearch = page.locator('#lemmaSearch');
-            if (await lemmaSearch.isVisible()) {
-                await lemmaSearch.fill('got');
-                await page.waitForTimeout(1000);
-
-                await page.screenshot({
-                    path: resolve(__dirname, `../screenshots/playground-${device.toLowerCase()}-lemmata-results.png`),
-                    fullPage: true
-                });
-            }
         }
     });
 }
@@ -60,7 +75,7 @@ for (const [device, viewport] of Object.entries(viewports)) {
 // Landscape orientation tests
 test('Main Site - Landscape iPad (1024x768)', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
-    await page.goto('http://localhost:8080/korpus.html');
+    await page.goto('/korpus.html');
     await page.waitForSelector('#loadingScreen', { state: 'hidden', timeout: 30000 });
 
     await page.screenshot({
@@ -71,7 +86,7 @@ test('Main Site - Landscape iPad (1024x768)', async ({ page }) => {
 
 test('Playground - Landscape iPad (1024x768)', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
-    await page.goto('http://localhost:8080/playground/');
+    await page.goto('/playground/');
 
     // Wait for corpus to auto-load
     await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 30000 });
@@ -85,35 +100,40 @@ test('Playground - Landscape iPad (1024x768)', async ({ page }) => {
 // Touch interaction tests
 test('Main Site - Touch Interaction Test (iPhone)', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('http://localhost:8080/korpus.html');
+    await page.goto('/korpus.html');
     await page.waitForSelector('#loadingScreen', { state: 'hidden', timeout: 30000 });
 
     // Search button should be tappable
     const searchBtn = page.locator('#searchButton');
     const searchBtnBox = await searchBtn.boundingBox();
-    if (searchBtnBox) {
-        expect(searchBtnBox.height).toBeGreaterThanOrEqual(44);
-    }
+    // Ohne Bounding-Box wäre der Test assertion-frei gewesen (Audit #41)
+    expect(searchBtnBox).not.toBeNull();
+    expect(searchBtnBox.height).toBeGreaterThanOrEqual(44);
 });
 
 test('Playground - Touch Interaction Test (iPhone)', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('http://localhost:8080/playground/');
+    await page.goto('/playground/');
 
     // Wait for corpus to auto-load
     await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 30000 });
 
-    // Test action buttons are tappable
-    const buttons = page.locator('button');
+    // Test action buttons are tappable — nur sichtbare Buttons messen und
+    // sicherstellen, dass überhaupt gemessen wurde (Audit #41: bei 0 messbaren
+    // Buttons blieb minHeight Infinity und Infinity >= 44 bestand vakuös).
+    const buttons = page.locator('button:visible');
     const count = await buttons.count();
 
     let minHeight = Infinity;
+    let measured = 0;
     for (let i = 0; i < Math.min(count, 10); i++) {
         const box = await buttons.nth(i).boundingBox();
         if (box) {
             minHeight = Math.min(minHeight, box.height);
+            measured++;
         }
     }
 
+    expect(measured).toBeGreaterThan(0);
     expect(minHeight).toBeGreaterThanOrEqual(44);
 });

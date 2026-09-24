@@ -1,0 +1,597 @@
+/**
+ * Naming-Explorer Tests (#59 Erweiterte Figurenbezeichnungen, Beta)
+ *
+ * Smoke-Tests fuer das kuratierte Figurenbezeichnungs-Modul: Route #naming,
+ * Werk/Figur-Auswahl, Kategorie-Tabs, Belegstellen-Expand, MHG-normalisierter
+ * Lemma-Filter und Pflicht-Attribution (Lizenzauflage CC BY-NC-SA).
+ *
+ * Datengrundlage ist data/naming-index.json.gz (extern kuratiert, lindabeutel/
+ * Naming-analysis). Die Tests locken Struktur, nicht exakte Zahlen.
+ *
+ * Der Satz "bei einem Quelldaten-Update muss nur der weiche Iwein-Lock
+ * mitwandern" stand hier bis 2026-08-14 und war zu eng: das Update auf
+ * v0.2.1-beta hat drei Tests rot gemacht (Iwein 242 auf 239, der
+ * Lunete-Unterfilter 31 auf 29, und der fest verdrahtete Nenner '#engel',
+ * den es nicht mehr gibt). Wo es ging, leiten die Tests ihre Erwartung jetzt
+ * aus dem DOM ab statt aus einer Zahl im Quelltext; wo eine Zahl bleibt,
+ * steht der Quellstand daneben, gegen den sie gemessen wurde.
+ */
+
+import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
+
+// Die Quellangaben aus dem ausgelieferten Index, in Node gelesen. Der Test
+// vergleicht die angezeigte Attribution dagegen, statt eine zweite Kopie von
+// DOI und Zitation im Testcode zu fuehren.
+const INDEX_QUELLE = JSON.parse(
+  gunzipSync(readFileSync(new URL('../../data/naming-index.json.gz', import.meta.url))).toString('utf8')
+).source;
+
+test.describe('Naming Explorer (#59)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/playground/#naming');
+    // dispatchFromHash() laeuft erst nach Corpus-Load; danach laedt das Modul
+    // seinen eigenen Index lazy (fetch+pako, ~110 KB)
+    await page.waitForSelector('#neWorkSelect', { state: 'visible', timeout: 60000 });
+  });
+
+  async function selectIwein(page) {
+    await page.selectOption('#neWorkSelect', 'IW');
+    await page.selectOption('#neFigureSelect', 'Iwein');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+  }
+
+  test('Route #naming rendert Modul mit allen 4 Werken und Attribution', async ({ page }) => {
+    // Beta-Modul-Header
+    await expect(page.locator('#resultsContainer')).toContainText('Erweiterte Figurenbezeichnungen');
+
+    // Genau die 4 kuratierten Werke (plus Platzhalter-Option)
+    const values = await page.locator('#neWorkSelect option').allTextContents();
+    expect(values.join(' ')).toContain('IW - Iwein');
+    expect(values.join(' ')).toContain('ENE - Eneasroman');
+    expect(values.join(' ')).toContain('ROL - Rolandslied');
+    expect(values.join(' ')).toContain('TRO - Trojanerkrieg');
+    expect(values.length).toBe(5);
+
+    // Pflicht-Attribution (Lizenzauflage) muss ohne Auswahl sichtbar sein.
+    //
+    // Der DOI wird gegen den Index geprueft, nicht gegen eine Konstante im
+    // Test. Vorher stand hier '10.5281/zenodo.18770138' fest, und weil die
+    // Attribution ihn ebenfalls fest verdrahtet hatte, blieb der Test gruen,
+    // als die Daten auf v0.2.1-beta wechselten: die Seite zeigte die alte
+    // Zitation ueber neuen Daten, und die gruene Suite hat es zementiert.
+    await expect(page.locator('#resultsContainer')).toContainText('Naming-analysis nach Linda Beutel-Thurow');
+    expect(INDEX_QUELLE.doi).toBeTruthy();
+    await expect(page.locator(`#resultsContainer a[href="https://doi.org/${INDEX_QUELLE.doi}"]`)).toBeVisible();
+    await expect(page.locator('#resultsContainer')).toContainText(INDEX_QUELLE.citation);
+  });
+
+  test('Werk + Figur liefert Summary und Lemma-Tabelle mit drei Kategorien', async ({ page }) => {
+    await selectIwein(page);
+
+    // Weicher Daten-Lock: Iwein hat 239 kuratierte Belegstellen (Quellstand
+    // 4766065c). Vorher 242; Linda hat am 13.08. drei Iwein-Dubletten
+    // aufgeloest ("resolve Iwein duplicates").
+    await expect(page.locator('#resultsContainer')).toContainText('239 kuratierte Belegstellen');
+
+    // Alle drei Kategorien kommen in der Tabelle vor
+    const badges = await page.locator('[data-ne-term] td:nth-child(2)').allTextContents();
+    const badgeSet = new Set(badges.map(b => b.trim()));
+    expect(badgeSet.has('Eigenname')).toBe(true);
+    expect(badgeSet.has('Antonomasie')).toBe(true);
+    expect(badgeSet.has('Epitheton')).toBe(true);
+
+    // Top-Lemma ist nach Haeufigkeit sortiert (hoechster Count zuerst)
+    const counts = await page.locator('[data-ne-term] td:nth-child(3)').allTextContents();
+    const nums = counts.map(c => parseInt(c.replace(/\./g, ''), 10));
+    expect(nums[0]).toBe(Math.max(...nums));
+  });
+
+  test('Kategorie-Tab filtert auf Epitheta', async ({ page }) => {
+    await selectIwein(page);
+
+    await page.click('[data-ne-cat="epi"]');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+
+    const badges = await page.locator('[data-ne-term] td:nth-child(2)').allTextContents();
+    expect(badges.length).toBeGreaterThan(0);
+    for (const b of badges) {
+      expect(b.trim()).toBe('Epitheton');
+    }
+  });
+
+  test('Belegstellen-Expand zeigt Vers, Phrase und Sprecher', async ({ page }) => {
+    await selectIwein(page);
+
+    await page.locator('[data-ne-term]').first().click();
+
+    // Evidence-Row: Versangabe + Sprecher-Label
+    await expect(page.locator('#resultsContainer')).toContainText(/V\. \d/);
+    await expect(page.locator('#resultsContainer')).toContainText(/Erzähler|Figurenrede|Selbstnennung/);
+  });
+
+  test('TRO-Belegstellen verlinken in die Leseansicht, IW-Belegstellen nicht', async ({ page }) => {
+    // TRO/ROL: Verszählung deckungsgleich mit MHDBDB -> Vers-Deep-Link
+    await page.selectOption('#neWorkSelect', 'TRO');
+    await page.selectOption('#neFigureSelect', 'Achilles');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+    await page.locator('[data-ne-term]').first().click();
+
+    const link = page.locator('#resultsContainer a[href*="korpus.html?textId=TRO&verse="]').first();
+    await expect(link).toBeVisible();
+    await expect(link).toContainText(/V\. \d/);
+
+    // IW: abweichende Editionszählung -> bewusst kein Link
+    await selectIwein(page);
+    await page.locator('[data-ne-term]').first().click();
+    await expect(page.locator('#resultsContainer')).toContainText(/V\. \d/);
+    await expect(page.locator('#resultsContainer a[href*="verse="]')).toHaveCount(0);
+  });
+
+  test('Lemma-Filter ist MHG-normalisiert (tore findet tôre)', async ({ page }) => {
+    await selectIwein(page);
+    await expect(page.locator('#resultsContainer')).toContainText('Lemma-Filter');
+    await expect(page.locator('#resultsContainer')).not.toContainText('Term');
+
+    await page.fill('#neNameFilter', 'tore');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+
+    const terms = await page.locator('[data-ne-term] td:nth-child(1)').allTextContents();
+    expect(terms.length).toBeGreaterThan(0);
+    expect(terms.some(t => t.includes('tôre'))).toBe(true);
+  });
+
+  test('Werk-Wechsel setzt Figur zurueck', async ({ page }) => {
+    await selectIwein(page);
+
+    await page.selectOption('#neWorkSelect', 'ROL');
+    // Figur-Select ist zurueckgesetzt, Tabelle weg, Hinweis sichtbar
+    await expect(page.locator('#neFigureSelect')).toHaveValue('');
+    await expect(page.locator('#resultsContainer')).toContainText('Bitte eine Figur auswählen');
+  });
+
+  // --- Lindas beide Wuensche, #59-Kommentar 2026-07-29 -------------------
+
+  test('Unterfilter nach nennender Instanz grenzt die Belegstellen ein', async ({ page }) => {
+    await selectIwein(page);
+
+    // Ohne Filter die Gesamtzahl, mit Filter die Teilmenge samt Bezugsgroesse
+    await expect(page.locator('#resultsContainer')).toContainText('239 kuratierte Belegstellen');
+    const optionen = await page.locator('#neSubFilter option').allTextContents();
+    expect(optionen[0]).toContain('Alle (239)');
+    expect(optionen.join(' ')).toContain('Erzähler');
+    expect(optionen.join(' ')).toContain('Selbstnennung');
+    // Einzelne Nenner stehen unter "Figurenrede, alle"
+    expect(optionen.some(o => o.trim().startsWith('Lunete'))).toBe(true);
+
+    // Wert statt Label: die Einzelnenner sind mit NBSP eingerueckt
+    await page.selectOption('#neSubFilter', 'fig:lunete');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+    await expect(page.locator('#resultsContainer')).toContainText('29 von 239 kuratierte Belegstellen');
+
+    // Belegstellen tragen jetzt nur noch Lunete als Sprecher
+    await page.locator('[data-ne-term]').first().click();
+    const evidence = await page.locator('tr.bg-slate-50\\/50').first().innerText();
+    expect(evidence).toContain('Figurenrede: Lunete');
+    expect(evidence).not.toContain('Erzähler');
+  });
+
+  test('Nenner-Perspektive gruppiert die Lemmata nach genannter Figur', async ({ page }) => {
+    await page.click('[data-ne-persp="namer"]');
+    await page.selectOption('#neWorkSelect', 'IW');
+    // Der Nenner-Select fuehrt den Erzaehler als eigenen Eintrag
+    const nenner = await page.locator('#neFigureSelect option').allTextContents();
+    expect(nenner.some(o => o.startsWith('Erzähler'))).toBe(true);
+    expect(nenner.some(o => o.startsWith('Iwein'))).toBe(true);
+
+    // Lindas Frage: "Welche Benennungen fuer wen findet Iwein im Iwein?"
+    await page.selectOption('#neFigureSelect', 'iwein');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+    await expect(page.locator('#resultsContainer')).toContainText(/benennt \d+ Figuren in \d+ kuratierten Belegstellen/);
+
+    // Vierte Spalte "Genannte Figur" kommt dazu, mit mehr als einer Figur
+    await expect(page.locator('thead th').first()).toHaveText('Genannte Figur');
+    const figuren = (await page.locator('[data-ne-term] td:first-child').allTextContents())
+      .map(t => t.trim()).filter(Boolean);
+    expect(new Set(figuren).size).toBeGreaterThan(1);
+    // Kategorie und Haeufigkeit ruecken um eine Spalte weiter
+    const badges = await page.locator('[data-ne-term] td:nth-child(3)').allTextContents();
+    expect(new Set(badges.map(b => b.trim())).has('Antonomasie')).toBe(true);
+  });
+
+  // --- Lemma-Perspektive (#420) -------------------------------------------
+  //
+  // Der Oracle dieser Gruppe ist NICHT unsere eigene Rechnung, sondern Lindas
+  // veroeffentlichter Datensatz figures_by_lemma_helt_naming_variants.json aus
+  // Naming-analysis v0.3.0-beta, zitiert in #420. Unser Index ist seit dem
+  // 23.09.2026 auf denselben Stand gepinnt (source.commit 8076467a; vorher
+  // v0.2.2-beta, 2f16f0ea, mit denselben Zahlen fuer ROL). Wandert der Pin
+  // und aendert sich die Erhebung fuer ROL, gehen diese Tests rot, und das ist
+  // die richtige Reaktion: dann deckt sich unsere Ansicht nicht mehr mit ihrer.
+  const HELT_ROL = { nennungen: 78, figuren: 22, erz: 61 };
+  const RUOLANT = { mentions: 34, erz: 31, fig: 3, self: 0, bez: 34, epi: 0, share: 44 };
+
+  async function selectTerm(page, sigle, term) {
+    await page.click('[data-ne-persp="lemma"]');
+    await page.selectOption('#neWorkSelect', sigle);
+    await page.selectOption('#neFigureSelect', term);
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+  }
+
+  const zahlen = (texte) => texte.map(x => parseInt(x.replace(/[^\d]/g, ''), 10));
+
+  test('Lemma-Perspektive: helt im Rolandslied trifft Lindas veroeffentlichte Zahlen', async ({ page }) => {
+    await selectTerm(page, 'ROL', 'helt');
+
+    await expect(page.locator('#resultsContainer')).toContainText(
+      `benennt ${HELT_ROL.figuren} Figuren in ${HELT_ROL.nennungen} kuratierten Belegstellen`);
+    await expect(page.locator('[data-ne-heading]')).toHaveText('helt');
+
+    // Sortierung: meistgenannte Figur zuerst
+    const ersteZeile = page.locator('[data-ne-term]').first();
+    await expect(ersteZeile.locator('td').first()).toContainText('Ruolant');
+
+    const zellen = zahlen(await ersteZeile.locator('td').allTextContents());
+    // [Figur ist Text -> NaN, mentions, anteil, erz, fig, self, bez, epi]
+    expect(zellen.slice(1)).toEqual([
+      RUOLANT.mentions, RUOLANT.share, RUOLANT.erz, RUOLANT.fig,
+      RUOLANT.self, RUOLANT.bez, RUOLANT.epi
+    ]);
+
+    // Die Erzaehlerspalte ueber alle Zeilen summiert ergibt Lindas 61
+    const erzSpalte = zahlen(await page.locator('[data-ne-term] td:nth-child(4)').allTextContents());
+    expect(erzSpalte.reduce((a, b) => a + b, 0)).toBe(HELT_ROL.erz);
+    // und die Nennungen summieren sich auf die 78
+    const nennungen = zahlen(await page.locator('[data-ne-term] td:nth-child(2)').allTextContents());
+    expect(nennungen.reduce((a, b) => a + b, 0)).toBe(HELT_ROL.nennungen);
+    expect(nennungen.length).toBe(HELT_ROL.figuren);
+  });
+
+  test('Lemma-Perspektive: hêrre dreht das Bild zur Figurenrede', async ({ page }) => {
+    // Lindas zweites Beispiel aus #420, und der Grund fuer die Perspektive:
+    // dasselbe Material, gegenlaeufiges Bild. helt kommt ueberwiegend vom
+    // Erzaehler, hêrre ueberwiegend aus Figurenrede.
+    await selectTerm(page, 'ROL', 'hêrre');
+    const erz = zahlen(await page.locator('[data-ne-term] td:nth-child(4)').allTextContents())
+      .reduce((a, b) => a + b, 0);
+    const rede = zahlen(await page.locator('[data-ne-term] td:nth-child(5)').allTextContents())
+      .reduce((a, b) => a + b, 0);
+    expect(erz).toBe(55);
+    expect(rede).toBe(167);
+    expect(rede).toBeGreaterThan(erz);
+  });
+
+  test('Lemma-Perspektive: eine Zeile der Quelle ist EINE Nennung, auch in zwei Gruppen', async ({ page }) => {
+    // Lindas Zaehlregel und ihre Ueberlappungsregel aus #420 in einem Test,
+    // weil nur zusammen pruefbar: "Eine Zeile ist eine Nennung. Sie zaehlt
+    // einmal fuer ihre benannte Figur, auch wenn das Lemma in mehreren Spalten
+    // derselben Zeile steht." Und: "Eine Zeile, die es in beiden fuehrt, zaehlt
+    // in beiden — die Summe der zwei Werte kann also ueber mentions liegen."
+    //
+    // TRO + 'got' ist der Fall, an dem sich das UEBERHAUPT beobachten laesst:
+    // Jupiter traegt 17 Nennungen, davon 17 als Bezeichnung und 1 zusaetzlich
+    // als Epitheton. Wuerde die Ansicht je Kategorie zaehlen statt je Record,
+    // stuenden dort 18 Nennungen und bez+epi waere gleich mentions statt
+    // groesser. Eine Mutationsprobe am 2026-09-11 hat genau das gezeigt: mit
+    // 'alt' im Iwein (dem ersten Kandidaten) blieb der Test gruen, weil dort
+    // keine Zeile beide Gruppen ECHT ueberschreitet.
+    await selectTerm(page, 'TRO', 'got');
+    await expect(page.locator('#resultsContainer'))
+      .toContainText('benennt 11 Figuren in 133 kuratierten Belegstellen');
+
+    const zeilen = page.locator('[data-ne-term]');
+    const n = await zeilen.count();
+    let echtUeber = 0;
+    let summe = 0;
+    for (let i = 0; i < n; i++) {
+      const z = zahlen(await zeilen.nth(i).locator('td').allTextContents());
+      const [, mentions, , , , , bez, epi] = z;
+      summe += mentions;
+      expect(bez + epi).toBeGreaterThanOrEqual(mentions);
+      if (bez + epi > mentions) echtUeber += 1;
+    }
+    // Die Nennungen summieren sich auf die Kopfzahl: kein Record doppelt
+    expect(summe).toBe(133);
+    // und mindestens eine Zeile fuehrt denselben Record in beiden Gruppen
+    expect(echtUeber).toBeGreaterThan(0);
+  });
+
+  test('Lemma-Perspektive: ein Eigenname faellt in die Bezeichnungsspalte', async ({ page }) => {
+    // Schliesst eine Luecke, die der Review gefunden hat: die uebrigen Tests
+    // arbeiten mit helt, hêrre und got, und die sind allesamt Antonomasien.
+    // Eine Mutation BEZ_CATS = ['ant'], die Eigennamen und Decknamen aus der
+    // Bezeichnungsspalte wirft, waere ihnen deshalb entgangen. 'Ruolant' ist
+    // im Rolandslied ein reiner Eigenname (174 Nennungen auf eine Figur,
+    // gemessen 2026-09-11), also muss dort bez == Nennungen und epi == 0
+    // stehen.
+    await selectTerm(page, 'ROL', 'Ruolant');
+    const zeilen = page.locator('[data-ne-term]');
+    await expect(zeilen).toHaveCount(1);
+    const z = zahlen(await zeilen.first().locator('td').allTextContents());
+    const [, mentions, , , , , bez, epi] = z;
+    expect(mentions).toBe(174);
+    expect(bez).toBe(mentions);
+    expect(epi).toBe(0);
+  });
+
+  test('Lemma-Perspektive: Kategorie-Tab schneidet auf Epitheta zu', async ({ page }) => {
+    await selectTerm(page, 'IW', 'alt');
+    const vorher = await page.locator('[data-ne-term] td:nth-child(2)').allTextContents();
+    await page.click('[data-ne-cat="epi"]');
+    await page.waitForTimeout(100);
+    const zeilen = page.locator('[data-ne-term]');
+    const n = await zeilen.count();
+    expect(n).toBeGreaterThan(0);
+    for (let i = 0; i < n; i++) {
+      const z = zahlen(await zeilen.nth(i).locator('td').allTextContents());
+      // Im Epitheta-Zweig muss jede Zeile Epitheta fuehren
+      expect(z[7]).toBeGreaterThan(0);
+    }
+    const nachher = await page.locator('[data-ne-term] td:nth-child(2)').allTextContents();
+    expect(zahlen(nachher).reduce((a, b) => a + b, 0))
+      .toBeLessThan(zahlen(vorher).reduce((a, b) => a + b, 0));
+  });
+
+  test('Lemma-Perspektive: Unterfilter zaehlt am Kategorie-Tab entlang, nicht daran vorbei', async ({ page }) => {
+    // Die Tabelle rechnet auf der kategoriegeschnittenen Menge. Zaehlte das
+    // Select daneben ueber alle vier Kategorien, stuenden zwei verschiedene
+    // Gesamtzahlen im selben Bild, und „Erzaehler (n)" verspraeche ein n, das
+    // nach der Auswahl nicht in der Tabelle steht (Befund des CI-Reviews
+    // auf PR #431).
+    await selectTerm(page, 'IW', 'alt');
+    await page.click('[data-ne-cat="epi"]');
+    await page.waitForTimeout(100);
+
+    const summe = zahlen(await page.locator('[data-ne-term] td:nth-child(2)').allTextContents())
+      .reduce((a, b) => a + b, 0);
+    const alle = await page.locator('#neSubFilter option[value=""]').textContent();
+    expect(zahlen([alle])[0]).toBe(summe);
+
+    // Und die Gegenprobe: der Schnitt greift ueberhaupt, das „Alle" ist also
+    // nicht bloss zufaellig gleich der ungeschnittenen Menge.
+    await page.click('[data-ne-cat="all"]');
+    await page.waitForTimeout(100);
+    const alleOhneSchnitt = await page.locator('#neSubFilter option[value=""]').textContent();
+    expect(zahlen([alleOhneSchnitt])[0]).toBeGreaterThan(summe);
+  });
+
+  test('Lemma-Perspektive: gewaehlter Einzelnenner ueberlebt den Kategoriewechsel', async ({ page }) => {
+    // Die Optionsliste des Unterfilters darf nicht am Kategorieschnitt
+    // schrumpfen. Taete sie es, fiele ein gewaehlter Nenner heraus, das
+    // Select zeigte mangels `selected` wieder „Alle", `state.speaker` bliebe
+    // aber stehen, und weil der Wert dann schon `""` ist, loeste die Wahl von
+    // „Alle" kein change-Ereignis aus: der Zustand waere ueber das eigene
+    // Steuerelement nicht mehr zu raeumen (Befund des CI-Reviews, Runde 3).
+    // ENE/Eneas ist der haerteste Fall im Korpus: der Epitheta-Tab traegt
+    // zwei Zeilen und darin keinen einzigen Einzelnenner.
+    await selectTerm(page, 'ENE', 'Eneas');
+    await page.selectOption('#neSubFilter', 'fig:turnus');
+    await page.waitForTimeout(100);
+    expect(await page.locator('[data-ne-term]').count()).toBeGreaterThan(0);
+
+    await page.click('[data-ne-cat="epi"]');
+    await page.waitForTimeout(100);
+
+    // Die Auswahl steht noch, und sie steht ehrlich auf (0)
+    await expect(page.locator('#neSubFilter')).toHaveValue('fig:turnus');
+    const label = await page.locator('#neSubFilter option[value="fig:turnus"]').textContent();
+    expect(zahlen([label])[0]).toBe(0);
+
+    // Und der Weg heraus funktioniert: `value` aendert sich wirklich, das
+    // change-Ereignis feuert, die Tabelle fuellt sich wieder.
+    await page.selectOption('#neSubFilter', '');
+    await page.waitForTimeout(100);
+    expect(await page.locator('[data-ne-term]').count()).toBeGreaterThan(0);
+  });
+
+  test('Lemma-Perspektive: Unterfilter auf den Erzaehler grenzt ein', async ({ page }) => {
+    await selectTerm(page, 'ROL', 'helt');
+    await page.selectOption('#neSubFilter', 'erz');
+    await page.waitForTimeout(100);
+    const nennungen = zahlen(await page.locator('[data-ne-term] td:nth-child(2)').allTextContents());
+    expect(nennungen.reduce((a, b) => a + b, 0)).toBe(HELT_ROL.erz);
+    // Figurenrede- und Selbstnennungsspalte sind danach durchgehend leer
+    const rede = zahlen(await page.locator('[data-ne-term] td:nth-child(5)').allTextContents());
+    expect(rede.every(x => x === 0)).toBe(true);
+    await expect(page.locator('#resultsContainer'))
+      .toContainText(`in ${HELT_ROL.erz} von ${HELT_ROL.nennungen} kuratierten Belegstellen`);
+  });
+
+  test('Lemma-Perspektive: Belegstellen klappen je Figur auf', async ({ page }) => {
+    await selectTerm(page, 'ROL', 'helt');
+    await page.locator('[data-ne-term]').first().click();
+    const evidence = page.locator('tr.bg-slate-50\\/50').first();
+    await expect(evidence).toBeVisible();
+    await expect(evidence).toContainText('V. ');
+    await expect(evidence).toContainText('helt');
+    // ROL hat deckungsgleiche Verszaehlung, also Deep-Links in die Leseansicht
+    await expect(evidence.locator('a[href*="korpus.html?textId=ROL&verse="]').first()).toBeVisible();
+  });
+
+  test('Lemma-Perspektive: Werk ohne Auswahl nennt die Zahl der Lemmata', async ({ page }) => {
+    // Beschriftung "Lemma" statt "Term", modulweit (Linda in #420, Punkt 4):
+    // die Eintraege sind durchgehend lemmatisiert.
+    await expect(page.locator('[data-ne-persp="lemma"]')).toHaveText(/^\s*Lemma\s*$/);
+    await page.click('[data-ne-persp="lemma"]');
+    await page.selectOption('#neWorkSelect', 'IW');
+    await expect(page.locator('#resultsContainer')).toContainText(/\d+ Lemmata in kuratierten Bezeichnungen/);
+    const optionen = await page.locator('#neFigureSelect option').allTextContents();
+    // Lemmata nach Belegzahl, mit der Zahl der Figuren als Zusatz
+    expect(optionen.some(o => /\(\d+ Belege, \d+ Figuren?\)/.test(o))).toBe(true);
+  });
+
+  test('Perspektivwechsel setzt die Auswahl zurueck', async ({ page }) => {
+    await selectIwein(page);
+    await page.click('[data-ne-persp="namer"]');
+    // Ein Figurenname ist kein Nenner-Schluessel, die Auswahl darf nicht stehenbleiben
+    await expect(page.locator('#neFigureSelect')).toHaveValue('');
+    await expect(page.locator('#neWorkSelect')).toHaveValue('IW');
+    await expect(page.locator('#resultsContainer')).toContainText('Bitte einen Nenner auswählen');
+  });
+
+  test('Die Notation der Quelle steht in der Nennerliste und wird erklaert', async ({ page }) => {
+    // Das fuehrende '#' ist seit Lindas Umstellung vom 2026-08-11 der Marker
+    // genau eines Instanztyps ("Quoted"), nicht mehr das Sammelzeichen fuer
+    // "keine handelnde Figur". Es wird angezeigt statt abgeschnitten: #David
+    // und ein handelnder David waeren sonst derselbe Nenner.
+    await page.click('[data-ne-persp="namer"]');
+    await page.selectOption('#neWorkSelect', 'ROL');
+
+    const nenner = await page.locator('#neFigureSelect option').allTextContents();
+    expect(nenner.some(o => o.startsWith('#'))).toBe(true);
+    // Kein Nenner steht zugleich mit und ohne Gitter in der Liste, seit Linda
+    // die Schreibungen vereinheitlicht hat: frueher zerfiel etwa Engel in
+    // '#Engel' und 'Engel'.
+    //
+    // Verglichen wird der option-value, nicht der Anzeigetext. Zwei Entwuerfe
+    // sind vorher an dieser Stelle gescheitert. Der erste streifte zum
+    // Vergleichen jede Klammer ab und legte damit '[fuersten] (heidnisch)' und
+    // '[fuersten] (christlich)' zusammen, also zwei Instanzen, die Linda
+    // ausdruecklich trennt. Der zweite streifte nur noch '(N Belege)' ab und
+    // traf damit gar nichts mehr: bei Nennern lautet das Suffix immer
+    // '(N Belege, M genannte Figuren)', der Vergleich war also gruen per
+    // Konstruktion. Der value traegt den Schluessel ohne jedes Suffix, mit
+    // Marker, und ist damit genau das, worauf es ankommt.
+    const werte = await page.locator('#neFigureSelect option')
+      .evaluateAll(els => els.map(el => el.value));
+    const ohneGitter = new Set(werte.filter(v => !v.startsWith('#')));
+    const doppelt = werte.filter(v => v.startsWith('#') && ohneGitter.has(v.slice(1)));
+    expect(doppelt).toEqual([]);
+    await expect(page.locator('#resultsContainer')).toContainText('Notation der Quelle');
+
+    // Den Gitter-Nenner aus dem DOM holen statt ihn hinzuschreiben. Frueher
+    // stand hier '#engel' fest; seit der Umstellung ist '#David' der einzige
+    // Quoted-Nenner im ROL, und der naechste Quelldatenstand kann das wieder
+    // verschieben. Der Round-Trip ueber den echten option-value ist ausserdem
+    // die Eigenschaft, an der der Erzaehler-Sentinel gescheitert war (#360).
+    const wert = werte.find(v => v.startsWith('#'));
+    expect(wert).toBeTruthy();
+    await page.selectOption('#neFigureSelect', wert);
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+    // Auf die Ergebnis-Ueberschrift zielen, nicht auf '#resultsContainer'.
+    // Der Container enthaelt das Auswahlfeld mit, also waere ein
+    // toContainText('#') schon durch die Optionsliste erfuellt und bliebe auch
+    // dann gruen, wenn der Schluessel den Marker wieder abschneidet. Genau
+    // diesen Rueckbau gab es am 2026-08-09 schon einmal.
+    await expect(page.locator('[data-ne-heading]')).toHaveText(/^#/);
+  });
+
+  test('Die Legende nennt genau die Markerklassen, die im Werk vorkommen', async ({ page }) => {
+    // Der Vorgaenger-Test prueft nur, ob die Ueberschrift "Notation der Quelle"
+    // dasteht. Sie stand vor und nach der Umstellung auf Lindas acht
+    // Instanztypen da, er konnte den Umbau also gar nicht sehen.
+    //
+    // Erwartet wird hier deshalb keine feste Liste, sondern der Abgleich mit
+    // dem, was im Auswahlfeld tatsaechlich steht. Eine feste Liste waere schon
+    // am Montag falsch: der Auto-Update-Workflow zieht Lindas Quellstand nach,
+    // und dort verschiebt sich die Verteilung der Marker deutlich (im ROL faellt
+    // '#' von 69 Nennungen auf 3, dafuer kommen Kollektiv, Rollenfigur, Gruppe
+    // und Immateriell dazu). Der Test soll den Mechanismus halten, nicht den
+    // Datenstand einer Woche.
+    const KLASSEN = [
+      ['Collective', /\[[^\]]*\]/],
+      ['Role figure', /<[^>]*>/],
+      ['Non-figure', /\{[^}]*\}/],
+      ['Group', / & /],
+      ['Quoted', /^#/],
+      ['Immaterial', /^°/],
+    ];
+
+    await page.click('[data-ne-persp="namer"]');
+
+    for (const sigle of ['IW', 'ENE', 'ROL', 'TRO']) {
+      await page.selectOption('#neWorkSelect', sigle);
+      await page.waitForSelector('#neFigureSelect option', { state: 'attached', timeout: 5000 });
+
+      // Gearbeitet wird auf dem option-value, also auf dem Schluessel, den die
+      // Ansicht als Nenner fuehrt. Der Anzeigetext haette hier zwar auch
+      // funktioniert, weil sein Zaehl-Suffix keines der sechs Markerzeichen
+      // enthaelt, aber das ist eine Eigenschaft des Suffix und keine, auf die
+      // der Test sich stuetzen soll.
+      const optionen = await page.locator('#neFigureSelect option')
+        .evaluateAll(els => els.map(el => el.value));
+
+      const erwartet = KLASSEN
+        .filter(([, rx]) => optionen.some(o => rx.test(o)))
+        .map(([id]) => id)
+        .sort();
+      const gezeigt = (await page.locator('[data-ne-marker]')
+        .evaluateAll(els => els.map(el => el.dataset.neMarker))).sort();
+
+      expect(gezeigt, `Legende in ${sigle}`).toEqual(erwartet);
+    }
+  });
+
+  test('Die Legende beschreibt das Werk, nicht die gewaehlte Perspektive', async ({ page }) => {
+    // Erster Entwurf dieses Tests behauptete, die Legende bleibe in der
+    // Figuren-Perspektive weg. Falsch: sie leitet sich aus getNamers(work) ab
+    // und gilt fuer beide Perspektiven, denn auch in der Figurenansicht stehen
+    // die Marker im Unterfilter nach nennender Instanz. Genau diese Invariante
+    // wird hier festgehalten, weil sie beim naechsten Umbau leicht kippt.
+    const klassen = () => page.locator('[data-ne-marker]')
+      .evaluateAll(els => els.map(el => el.dataset.neMarker).sort());
+
+    await page.click('[data-ne-persp="namer"]');
+    await page.selectOption('#neWorkSelect', 'TRO');
+    await page.waitForSelector('[data-ne-marker]', { state: 'attached', timeout: 5000 });
+    const alsNenner = await klassen();
+    expect(alsNenner.length).toBeGreaterThan(0);
+
+    await page.click('[data-ne-persp="named"]');
+    await page.selectOption('#neWorkSelect', 'TRO');
+    await page.waitForSelector('[data-ne-marker]', { state: 'attached', timeout: 5000 });
+    expect(await klassen()).toEqual(alsNenner);
+  });
+
+  test('Alias-Override zaehlt Alexander bei Paris als Deckname', async ({ page }) => {
+    // Deckname des Paris im Trojanerkrieg, werkspezifisch in
+    // scripts/ingest/naming/alias-overrides.json. Eigene vierte Kategorie
+    // statt Eigenname auf Lindas Praezisierung hin (#59, 2026-08-10).
+    await page.selectOption('#neWorkSelect', 'TRO');
+    await page.selectOption('#neFigureSelect', 'Paris');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+
+    // Der Deckname-Tab erscheint nur, wo die Kategorie trifft: hier ja
+    await expect(page.locator('[data-ne-cat="deck"]')).toBeVisible();
+
+    await page.fill('#neNameFilter', 'Alexander');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+    const zeilen = await page.locator('[data-ne-term]').allTextContents();
+    expect(zeilen.length).toBe(1);
+    await expect(page.locator('[data-ne-term] td:nth-child(2)')).toHaveText('Deckname');
+  });
+
+  test('Der Erzaehler ist als Nenner auswaehlbar und liefert Lemmata', async ({ page }) => {
+    // Regression aus PR #360: NARRATOR_KEY lag als U+0000-Sentinel im
+    // option-value, und der HTML-Tokenizer macht daraus U+FFFD. Der Wert aus
+    // dem Select traf den Schluessel damit nie, die Auswahl lieferte in allen
+    // vier Werken 0 Treffer. Der Erzaehler ist der belegstaerkste Nenner
+    // jedes Werks, und kein Test hatte ihn je ausgewaehlt.
+    await page.click('[data-ne-persp="namer"]');
+    await page.selectOption('#neWorkSelect', 'ROL');
+    // Den Wert aus dem DOM zuruecklesen statt ihn hinzuschreiben: genau das
+    // ist die Eigenschaft, die der Sentinel braucht. Mit dem NUL-Sentinel
+    // stuende hier "�erzaehler", die Auswahl gelaenge und liefe leer.
+    const erzaehlerWert = await page.$eval('#neFigureSelect', sel =>
+      [...sel.options].find(o => o.textContent.startsWith('Erzähler'))?.value);
+    expect(erzaehlerWert).toBeTruthy();
+    await page.selectOption('#neFigureSelect', erzaehlerWert);
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+
+    // Tausenderpunkt zulassen: der ROL-Erzaehler hat 1.222 Belege
+    await expect(page.locator('#resultsContainer')).toContainText(/benennt [\d.]+ Figuren in [\d.]+ kuratierten Belegstellen/);
+    // Die Auswahl haelt den Re-Render aus: der Schluessel muss durch das
+    // Attribut und wieder zurueck kommen, sonst springt das Select auf leer
+    await expect(page.locator('#neFigureSelect')).not.toHaveValue('');
+    await expect(page.locator('#resultsContainer .text-lg')).toHaveText('Erzähler');
+  });
+
+  test('Der Deckname-Tab bleibt weg, wo die Kategorie nicht trifft', async ({ page }) => {
+    // Genau ein Beleg im ganzen Index; eine dauerhafte Null-Kategorie neben
+    // drei gefuellten laese sich wie ein Erhebungsmangel.
+    await selectIwein(page);
+    await expect(page.locator('[data-ne-cat="eig"]')).toBeVisible();
+    await expect(page.locator('[data-ne-cat="deck"]')).toHaveCount(0);
+  });
+});

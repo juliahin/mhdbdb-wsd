@@ -9,13 +9,22 @@ test.describe('Search Functions with Pre-Built Corpus', () => {
 
     test.beforeEach(async ({ page }) => {
         // Navigate to playground
-        await page.goto('http://localhost:8080/playground/');
+        await page.goto('/playground/');
 
         // Wait for authority files to load
         await page.waitForSelector('#statusText:has-text("Authority Files geladen")', { timeout: 15000 });
 
         // Corpus now auto-loads — wait for file browser section to appear
         await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
+
+        // #410: der Block hiess „Authority Files durchsuchen" und war ein
+        // halbes Jahr zugeklappt (KZW: „Es steht sonst zu viel auf einmal
+        // da"). Seit der zweiten Runde heisst er „Register & Indizes
+        // (Authority Files)" und steht offen: die Menge wird nicht mehr
+        // durchs Zuklappen begrenzt, sondern durch die Aufteilung auf vier
+        // Bloecke, von denen zwei zu sind. Die sechs Knoepfe darunter sind
+        // damit ohne Zutun sichtbar.
+        await expect(page.locator('#authorityQueriesPanel')).toBeVisible();
 
         console.log('✅ Playground ready with full corpus loaded');
     });
@@ -36,6 +45,24 @@ test.describe('Search Functions with Pre-Built Corpus', () => {
         const results = await page.locator('#resultsContainer').textContent();
         expect(results).toContain('Eckhart');
         console.log('✅ Authors search works');
+    });
+
+    test('Search 1b: Autoren ueber Nebenform finden (#307)', async ({ page }) => {
+        await page.click('#showAuthorsBtn');
+        await page.waitForSelector('#authorSearch', { timeout: 5000 });
+
+        // "Rietenburg" steht nur als persName[@type="alternative"] in persons.xml,
+        // der Hauptname ist "Burggraf von Riedenburg" (d statt t). Vor #307 lieferte
+        // diese Suche null Treffer.
+        await page.fill('#authorSearch', 'Rietenburg');
+        await page.waitForTimeout(500);
+
+        const results = await page.locator('#resultsContainer').textContent();
+        expect(results).toContain('Burggraf von Riedenburg');
+        // Ohne den Hinweis sieht der Treffer wie ein Fehler aus: der Suchbegriff
+        // kommt im angezeigten Namen nicht vor.
+        expect(results).toContain('auch: Burggraf von Rietenburg');
+        console.log('✅ Author search matches alternative name forms');
     });
 
     test('Search 2: Werke anzeigen (Works search)', async ({ page }) => {
@@ -108,6 +135,65 @@ test.describe('Search Functions with Pre-Built Corpus', () => {
         console.log('✅ Names search works');
     });
 
+    test('Search 5b (#119): Gattungen-Filter "nur mit Werken" + Dimming', async ({ page }) => {
+        await page.click('#showGenresBtn');
+        await page.waitForSelector('#genreSearch', { timeout: 5000 });
+
+        await page.fill('#genreSearch', 'chronik');
+        await page.waitForTimeout(500);
+
+        // Unchecked: matches include genres without works -> dimmed cards + placeholder
+        const before = await page.locator('#genreResults article').count();
+        expect(before).toBeGreaterThan(0);
+        const dimmedBefore = await page.locator('#genreResults article')
+            .evaluateAll(els => els.filter(e => e.className.includes('bg-slate-50/60')).length);
+        expect(dimmedBefore).toBeGreaterThan(0);
+        await expect(page.locator('#genreResults'))
+            .toContainText('Noch keine Werke in der MHDBDB zugeordnet');
+
+        // Toggle the filter -> only genres with works remain, placeholder gone
+        await page.check('#genreOnlyWithWorks');
+        await page.waitForTimeout(500);
+        const after = await page.locator('#genreResults article').count();
+        expect(after).toBeGreaterThan(0);
+        expect(after).toBeLessThan(before);
+        const dimmedAfter = await page.locator('#genreResults article')
+            .evaluateAll(els => els.filter(e => e.className.includes('bg-slate-50/60')).length);
+        expect(dimmedAfter).toBe(0);
+        await expect(page.locator('#genreResults')).not.toContainText('Noch keine Werke');
+        console.log('✅ #119 genre filter + dimming works');
+    });
+
+    test('Search 6b (#120): Name -> Begriff -> Lemmata mit namespaced Container', async ({ page }) => {
+        await page.click('#showNamesBtn');
+        await page.waitForSelector('#nameSearch', { timeout: 5000 });
+
+        // "Geographika (Toponyme)" is an authority name with a concept connection
+        await page.fill('#nameSearch', 'Geographika');
+        await page.waitForTimeout(500);
+
+        const conceptBtn = page.locator('#nameResults button:has-text("Begriffe anzeigen")').first();
+        await expect(conceptBtn).toBeVisible();
+        await conceptBtn.click();
+        await page.waitForTimeout(300);
+
+        // Related-concept cards expose a "Lemmata anzeigen" button
+        const lemmaBtn = page.locator('#resultsContainer button:has-text("Lemmata anzeigen")').first();
+        await expect(lemmaBtn).toBeVisible();
+        await lemmaBtn.click();
+        await page.waitForTimeout(500);
+
+        // The namespaced container (lemmas-<nameId>-<conceptId>) must fill. Before the
+        // #120 fix the authority-ui proxy dropped the detailsId, so the container id
+        // did not match and getElementById mis-resolved across name cards.
+        const filled = await page.evaluate(() => {
+            const cs = [...document.querySelectorAll('[id^="lemmas-name_"]')];
+            return cs.some(c => c.offsetParent !== null && c.innerHTML.trim().length > 20);
+        });
+        expect(filled).toBe(true);
+        console.log('✅ #120 name -> concept -> lemma navigation works');
+    });
+
     // ==================== TEI TEXT SEARCHES (4) ====================
 
     test('Search 7-9: Multi-Lemma searches (Paragraph/Document/Proximity)', async ({ page }) => {
@@ -128,40 +214,12 @@ test.describe('Search Functions with Pre-Built Corpus', () => {
         }
     });
 
-    test('Search 10: XPath Query on TEI', async ({ page }) => {
-        // XPath query UI may not be present in current redesign
-        const xpathInput = page.locator('#xpathInput');
-
-        if (await xpathInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-            // Select "TEI Texte" as target
-            await page.selectOption('#xpathTarget', 'tei');
-
-            // Enter a simple XPath query
-            await page.fill('#xpathInput', '//tei:w[@lemmaRef]');
-
-            // Execute query
-            await page.click('button:has-text("XPath ausführen")');
-
-            // Wait for results
-            await page.waitForTimeout(2000);
-
-            // Check if results appeared (not empty)
-            const results = await page.locator('#resultsContainer').textContent();
-            expect(results.length).toBeGreaterThan(100);
-
-            console.log('✅ XPath query on TEI corpus works');
-        } else {
-            // XPath UI not present in current redesign — verify core search still works
-            console.log('ℹ️ XPath query UI not present in current playground version');
-        }
-    });
-
     // ==================== PERFORMANCE TEST ====================
 
     test('Performance: Corpus auto-loads within 60 seconds', async ({ page }) => {
         // Reload page to measure performance
         const startTime = Date.now();
-        await page.goto('http://localhost:8080/playground/');
+        await page.goto('/playground/');
 
         // Wait for authority files
         await page.waitForSelector('#statusText:has-text("Authority Files geladen")', { timeout: 15000 });
@@ -187,11 +245,11 @@ test.describe('Search Functions with Pre-Built Corpus', () => {
 
     // ==================== DATA INTEGRITY TEST ====================
 
-    test('Data integrity: All 666 texts accessible', async ({ page }) => {
+    test('Data integrity: All 667 texts accessible', async ({ page }) => {
         // Check the included count display
         const includedCount = await page.locator('#includedCount').textContent();
-        expect(parseInt(includedCount)).toBe(666);
-        console.log(`📊 Texts loaded: ${includedCount}/666`);
+        expect(parseInt(includedCount)).toBe(667);
+        console.log(`📊 Texts loaded: ${includedCount}/667`);
     });
 
     test('Data integrity: TEI queries section is visible', async ({ page }) => {

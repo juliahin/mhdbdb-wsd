@@ -1,0 +1,8 @@
+prismjs vendor bundle
+Source package: prismjs@1.30.0
+License: MIT (see https://github.com/PrismJS/prism)
+
+Files:
+  assets/vendor/prism/prism-core.min.js  (7461 bytes, sha256:6caad316dd991f24)
+  assets/vendor/prism/prism-markup.min.js  (2850 bytes, sha256:879fc9d256c352d9)
+  assets/vendor/prism/prism.css  (1380 bytes, sha256:cf31d510ed313a85)

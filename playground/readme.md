@@ -20,26 +20,24 @@ Mediävist:innen haben kein flexibles, exploratives Tool, um ihre TEI-Textkorpor
 ## Features
 
 ### Data Management
-- **Bulk upload** of TEI and authority files (drag & drop)
-- **IndexedDB caching** for large file persistence across sessions
+- **Auto-loading** of TEI corpus and authority files from the repository (no upload step — UI removed in the current redesign)
+- **IndexedDB caching** of the pre-built corpus and authority indexes, via the shared `CorpusLoader` (database `MHDBDBMainSite`)
 - **Client-side processing** - all data stays in your browser
 - **Authority file integration** with 30-day cache expiration
 
 ### Search & Analysis
 
-**Authority Files Exploration (6 search types):**
+**Authority Files Exploration (6 authority explorers):**
 1. **Autoren** - Search by name with MHG character normalization
 2. **Werke** - Multi-field search across title, author, sigle
-3. **Lemmata** - Lexicon search with orthographic variant support (192,674 variants)
+3. **Lemmata** - Lexicon search with orthographic variant support
 4. **Begriffe** - Semantic concept taxonomy (DE/EN)
 5. **Gattungen** - Literary genre classification
 6. **Namen** - Proper names with semantic relations
 
-**TEI Text Analysis (4 search types):**
-7. **Multi-Lemma-Suche** - Find one or more lemmata across the corpus (paragraph, document, or proximity mode)
-8. **Alle Wörter** - Browse all words in loaded TEI files
-9. **Alle Zeilen** - Browse all lines in loaded TEI files
-10. **Alle Annotationen** - Annotations with resolved concept references
+**TEI Text Analysis (11 analysis tools, plus two curated research datasets):** from the multi-lemma search with proximity analysis to the rhyme dictionary and the verse-ending profile. The two curated datasets (character naming #59, arthurian horses #193) are counted separately, because #194 moved them into a group of their own.
+
+The list of tools is deliberately **not repeated here**. It already lives in [FEATURES.md](../docs/FEATURES.md), with counts, examples and issue references, and every new tool would otherwise have to be entered in a fourth place. This section carried exactly one of them until 2026-08-06, which is what a duplicated catalog looks like once nobody keeps it in step. The modules themselves are the ground truth: one file per tool in `playground/js/ui/tei/`, one per explorer in `playground/js/ui/authority/`.
 
 ### MHG Character Normalization
 
@@ -49,14 +47,16 @@ All searches (except XPath) support automatic normalization of Middle High Germa
 - **Umlauts:** ä→ae, ö→oe, ü→ue
 - **Ligatures:** æ→ae, œ→oe
 
-**Example:** Searching "brot" finds "brôt", "brott", "brot" and all 50 attested variants.
+**Example:** Searching "brot" also finds "brôt" and the other attested spellings of the same lemma.
 
 ### Orthographic Variants
 
-**192,674 variant forms** extracted from the corpus and indexed in `variants.xml`:
+Variant forms are extracted from the corpus and indexed in `variants.xml`:
 - Enables fuzzy orthographic matching
-- 3-stage resolution: lexicon exact → variants exact → partial fallback
+- 3-stage resolution: lexicon exact → variants exact → prefix fallback
 - Supports medieval spelling variation (e.g., "vriunt" = "vrîunt" = "vrivnt")
+
+**No count is given here on purpose.** There are two of them and they measure different things: the raw `<form>` elements in `variants.xml` and the normalized mappings in the authority index, the latter markedly fewer. Both are correct, neither may be quoted for the other, and both change with every re-annotation. The measured values live in [CONTRACTS.md §C](../docs/CONTRACTS.md) and in [DATA-MODEL.md](../docs/DATA-MODEL.md), where `doc-count-audit.py` keeps them honest. The figure that stood here until 2026-08-06 matched neither of the two.
 
 ## Research Questions Supported
 
@@ -80,14 +80,14 @@ All searches (except XPath) support automatic normalization of Middle High Germa
    # Opens on http://localhost:8080/playground/
    ```
 
-2. **Upload files:**
+2. **Data loads automatically:**
    - Authority files load automatically from `../authority-files/`
-   - Drag & drop TEI files from `../tei/` directory
-   - Large files (>5MB) are automatically cached in IndexedDB
+   - TEI corpus loads from the pre-built index (no drag & drop; upload UI removed in the current redesign)
+   - The indexes are cached in IndexedDB for subsequent visits
 
 3. **Explore data:**
-   - Use "Authority Files durchsuchen" for metadata queries
-   - Use "TEI Textanalyse" for text-based searches
+   - Use "Register & Indizes (Authority Files)" for metadata queries
+   - Use "Korpusanalysen" when you start from a word or a concept, "Weitere Korpusanalysen" when you start from a text or an author (#410)
    - Try "Multi-Lemma-Suche" for co-occurrence analysis
 
 ### Development
@@ -105,40 +105,32 @@ npm run test:debug    # Debug mode
 npm run report
 ```
 
-### Test Coverage
+### Tests
 
-- **24 tests** validating core functionality
-- **14 tests** validating search normalization
-- **92.9% pass rate** (13/14 normalization tests passed)
+The suite is repo-wide, not per sub-app: `npm test` from the repository root, and the VERDICT line it prints is the result. The spec inventory with one line per file is in [DEVELOPMENT.md](../docs/DEVELOPMENT.md) and gated against `testing/tests/`, so it cannot quietly go stale the way the count that stood here did.
 
 ## Architecture
 
 ### Core Classes
 
-- **`MHDBDBPlayground`** (main.js) - Main application controller
+- **`MHDBDBPlayground`** (`playground-main.js`) - Main application controller
 - **`AuthorityFilesManager`** - Authority file loading and parsing
-- **`TEIFilesManager`** - TEI document processing and analysis
-- **`TEIStorageManager`** - IndexedDB persistence for TEI files
-- **`AuthorityStorageManager`** - IndexedDB caching with expiration
+- **`TEIFilesManager`** - Multi-lemma search over the pre-built corpus index
 
 ### UI Components (Modular)
 
-- **`UICore.js`** - Progress tracking, file display
-- **`AuthorityExplorers.js`** - Authority file search interfaces
-- **`TEIExplorer.js`** - TEI text analysis features
-- **`XPathInterface.js`** - XPath query execution
-- **`MultiLemmaSearch.js`** - Multi-lemma co-occurrence modal
-- **`SearchHelpers.js`** - Reusable search patterns
+- **`SearchHelpers.js`** (`playground/js/ui/search/`) - wiederverwendbare Suchmuster, exportiert `SearchPatterns`
+
+*Die vier Namen `AuthorityExplorers.js`, `TEIExplorer.js`, `XPathInterface.js` und `MultiLemmaSearch.js` standen bis Juli 2026 hier und benennen keine Datei im Repo. Der aktuelle Modulbaum steht in [ARCHITECTURE.md](../docs/ARCHITECTURE.md) (25 Module unter `playground/js/ui/`). Ein fünfter Eintrag, `UICore.js`, ist mit #314 weggefallen, weil er genau die beiden gelöschten Module benannte.*
 
 ### Utilities
 
-- **`TextNormalizer.js`** - Centralized MHG character normalization
-- **`IndexedDBManager.js`** - Low-level IndexedDB operations
+- **`text-normalizer.js`** (`assets/js/lib/`) - Centralized MHG character normalization, shared with the main site and mirrored in `scripts/mhg_normalizer.py` (CONTRACTS.md Contract A)
 
 ### Data Flow
 
 1. Authority files loaded with 30-day IndexedDB caching
-2. TEI files uploaded and parsed (large files cached automatically)
+2. TEI corpus read from the pre-built index, not parsed as XML (`playground-main.js`: "use the index directly")
 3. Cross-references resolved between TEI texts and authority data
 4. Search queries utilize normalized patterns and variant resolution
 5. Results displayed with color-coded highlighting and context
@@ -155,9 +147,9 @@ npm run report
 ### Constraints
 
 **Must-Have Features (All Implemented):**
-- ✅ F1: TEI upload & parsing (bulk + drag & drop)
+- ✅ F1: TEI corpus loading from pre-built index (drag & drop upload UI was removed in the current redesign)
 - ✅ F2: Data structure overview (statistics, browsers)
-- ✅ F3: Explorative query engine (11 search types)
+- ✅ F3: Explorative query engine (6 authority explorers plus 12 analysis tools)
 - ✅ F4: Contextual results (snippets, metadata, cross-refs)
 - ✅ F5: 3-panel desktop layout
 - ✅ F6: XPath power-user interface
@@ -165,7 +157,7 @@ npm run report
 **Optional Features:**
 - ⏳ P1: Export functions (CSV/JSON download)
 - ⏳ P2: Visualizations (charts, networks)
-- ✅ P3: Session persistence (IndexedDB)
+- ❌ P3: Session persistence (IndexedDB) – war der Datei-Upload, entfernt mit #314
 
 **Non-Goals:**
 - ❌ Mobile/responsive design
@@ -177,9 +169,8 @@ npm run report
 ## Performance
 
 - **Normalization:** 0.003ms per operation
-- **IndexedDB:** Handles 6MB+ files efficiently
+- **IndexedDB:** Korpus- und Authority-Index über den gemeinsamen `CorpusLoader` (`MHDBDBMainSite`); der frühere Upload-Store ist mit #314 weg
 - **Caching:** 30-day expiration for authority files
-- **Test suite:** ~23 seconds for 38 tests
 
 ## Open Problems & Future Work
 
@@ -196,7 +187,7 @@ Research project with over 50 years of medieval text and concept research at the
 
 **Data types:**
 - **TEI-XML Texte:** Mittelhochdeutsche Literatur mit mehreren Annotationsniveaus
-- **7 Authority Files:** persons, works, lexicon, concepts, genres, names, variants
+- **7 searchable Authority Files:** persons, works, lexicon, concepts, genres, names, variants (plus `contributors.xml` as project-internal team register since 2026-04, not part of the Playground UI)
 - **Semantische Verknüpfungen:** Cross-References zwischen allen Dateien
 
 ### Ziel des Playground

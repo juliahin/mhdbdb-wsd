@@ -5,6 +5,8 @@
  */
 
 import { CorpusLoader } from '../assets/js/lib/corpus-loader.js';
+import { escapeHtml } from '../assets/js/lib/escape.js';
+import { fetchWbnetzEntries, decodeHtmlEntities, dictionaryTitle } from '../assets/js/lib/woerterbuchnetz.js';
 
 class LemmaPage {
     constructor() {
@@ -26,6 +28,8 @@ class LemmaPage {
             copyIdBtn: document.getElementById('copyIdBtn'),
             etymologySection: document.getElementById('etymologySection'),
             etymologyContent: document.getElementById('etymologyContent'),
+            originSection: document.getElementById('originSection'),
+            originContent: document.getElementById('originContent'),
             sensesSection: document.getElementById('sensesSection'),
             sensesContent: document.getElementById('sensesContent'),
             occurrencesSection: document.getElementById('occurrencesSection'),
@@ -38,6 +42,9 @@ class LemmaPage {
             compoundsSection: document.getElementById('compoundsSection'),
             compoundsCount: document.getElementById('compoundsCount'),
             compoundsContent: document.getElementById('compoundsContent'),
+            similarLemmataSection: document.getElementById('similarLemmataSection'),
+            similarLemmataCount: document.getElementById('similarLemmataCount'),
+            similarLemmataContent: document.getElementById('similarLemmataContent'),
         };
     }
 
@@ -76,7 +83,7 @@ class LemmaPage {
             const numericId = this.parseLemmaId();
 
             if (!numericId) {
-                this.showError('Keine Lemma-ID angegeben. Bitte verwenden Sie eine URL wie /lemma/879');
+                this.showError('Keine Lemma-ID angegeben. Alle Lemmata finden Sie im Wörterbuch.');
                 return;
             }
 
@@ -104,6 +111,7 @@ class LemmaPage {
             // Render variants, compounds, and navigation (from authority index)
             this.renderVariants(lemmaKey);
             this.renderCompounds(lemmaKey);
+            this.renderSimilarLemmata(lemma);
 
             // Load corpus index for occurrences (non-blocking)
             this.updateLoading('Lade Belegstellen...', 80);
@@ -132,7 +140,9 @@ class LemmaPage {
         // Title block
         this.elements.lemmaTitle.textContent = lemma.lemma;
         this.elements.lemmaNormalized.textContent = `Normalisiert: ${lemma.normalized}`;
-        this.elements.lemmaPos.textContent = lemma.pos || '—';
+        // #187: posAll[] zeigt alle POS-Werte (Fallback: Erstwert aus altem Cache)
+        this.elements.lemmaPos.textContent =
+            (lemma.posAll || (lemma.pos ? [lemma.pos] : [])).join(' ') || '–';
         this.elements.lemmaId.textContent = lemma.id;
 
         // Copy ID button
@@ -140,6 +150,12 @@ class LemmaPage {
             navigator.clipboard.writeText(lemma.id).then(() => {
                 this.elements.copyIdBtn.textContent = 'kopiert!';
                 setTimeout(() => { this.elements.copyIdBtn.textContent = 'kopieren'; }, 1500);
+            }).catch((err) => {
+                // Verweigerte Clipboard-Permission darf keine unhandled
+                // rejection sein und braucht Nutzer-Feedback (#167 Finding 59).
+                console.warn('[LemmaPage] Clipboard nicht verfügbar:', err);
+                this.elements.copyIdBtn.textContent = 'Kopieren nicht möglich';
+                setTimeout(() => { this.elements.copyIdBtn.textContent = 'kopieren'; }, 2500);
             });
         });
 
@@ -149,10 +165,23 @@ class LemmaPage {
             this.elements.etymologyContent.innerHTML = lemma.etymology.map(comp => {
                 const numId = comp.lemmaRef ? comp.lemmaRef.replace('lemma_', '') : null;
                 if (numId) {
-                    return `<a href="?id=${numId}" class="etymology-link">${comp.text}</a>`;
+                    return `<a href="?id=${numId}" class="etymology-link">${escapeHtml(comp.text)}</a>`;
                 }
-                return `<span class="etymology-link">${comp.text}</span>`;
+                return `<span class="etymology-link">${escapeHtml(comp.text)}</span>`;
             }).join(' <span class="text-slate-300">+</span> ');
+        }
+
+        // Herkunftssprache (kuratiert, Schicht B von #28): nur die Angabe plus
+        // ihre Quelle, kein Urteil über den Integrationsgrad des Worts.
+        if (lemma.origin && lemma.origin.languages && lemma.origin.languages.length > 0) {
+            this.elements.originSection.classList.remove('hidden');
+            const langs = lemma.origin.languages.map(l =>
+                `<span class="inline-block bg-brand-50 text-brand-700 px-2 py-0.5 rounded text-xs mr-1 mb-1">${escapeHtml(l.name)}${l.code ? ` <span class="text-brand-400 font-mono">${escapeHtml(l.code)}</span>` : ''}</span>`
+            ).join('');
+            const attribution = lemma.origin.attribution
+                ? `<p class="text-sm text-slate-600 mt-2">${escapeHtml(lemma.origin.attribution)}</p>`
+                : '';
+            this.elements.originContent.innerHTML = `<div>${langs}</div>${attribution}`;
         }
 
         // Senses
@@ -160,12 +189,34 @@ class LemmaPage {
             this.elements.sensesSection.classList.remove('hidden');
             this.elements.sensesContent.innerHTML = lemma.senses.map((sense, idx) => {
                 const conceptLabels = this.resolveConceptLabels(sense.conceptIds);
+                // Kuratierte Prosa steht VOR den Begriffs-Chips: wo eine
+                // Bedeutung ausformuliert ist, ist sie die Hauptinformation,
+                // die Begriffszuordnung bleibt die Klassifikation dazu.
+                const definition = sense.definition
+                    ? `<p class="text-sm text-slate-800 mb-2">${escapeHtml(sense.definition)}</p>`
+                    : '';
+                // Der Kommentar bekommt ein sichtbares Label: das Datenmodell
+                // trennt Bedeutungsangabe und Argumentation, eine Graustufe
+                // allein macht diese Trennung nicht lesbar. Seit #270 nennt
+                // das Label den Urheber, wo der Index ihn aufgeloest hat
+                // (commentRespName); "von" bezeichnet die Urheberschaft,
+                // keine gesonderte Pruefung (KZW 23.09.2026).
+                const commentLabel = sense.commentRespName
+                    ? `Kommentar von ${escapeHtml(sense.commentRespName)}`
+                    : 'Kommentar';
+                const comment = sense.comment
+                    ? `<div class="mb-2">
+                           <div class="text-xs text-slate-400 mb-0.5">${commentLabel}</div>
+                           <p class="text-sm text-slate-600 leading-relaxed">${escapeHtml(sense.comment)}</p>
+                       </div>`
+                    : '';
                 return `
                     <div class="border-l-2 border-brand-200 pl-4">
                         <div class="text-xs text-slate-400 mb-1">Bedeutung ${idx + 1}</div>
+                        ${definition}${comment}
                         <div class="text-sm text-slate-700">
                             ${conceptLabels.length > 0
-                                ? conceptLabels.map(c => `<span class="inline-block bg-slate-100 px-2 py-0.5 rounded text-xs mr-1 mb-1">${c}</span>`).join('')
+                                ? conceptLabels.map(c => `<span class="inline-block bg-slate-100 px-2 py-0.5 rounded text-xs mr-1 mb-1">${escapeHtml(c)}</span>`).join('')
                                 : '<span class="text-slate-400">Keine Begriffszuordnung</span>'
                             }
                         </div>
@@ -217,11 +268,11 @@ class LemmaPage {
         this.elements.occurrencesContent.innerHTML = occurrences.map(occ => `
             <div class="occurrence-row">
                 <div>
-                    <a href="../korpus.html?textId=${encodeURIComponent(occ.textId)}&lemmaIds=${lemmaKey.replace('lemma_', '')}"
+                    <a href="../korpus.html?textId=${encodeURIComponent(occ.textId)}&lemmaIds=${encodeURIComponent(lemmaKey)}"
                        class="text-sm font-medium text-brand-600 hover:text-brand-800 transition">
-                        ${occ.title}
+                        ${escapeHtml(occ.title)}
                     </a>
-                    ${occ.author ? `<span class="text-xs text-slate-400 ml-2">${occ.author}</span>` : ''}
+                    ${occ.author ? `<span class="text-xs text-slate-400 ml-2">${escapeHtml(occ.author)}</span>` : ''}
                 </div>
                 <span class="text-xs text-slate-400 flex-shrink-0">${occ.frequency}x</span>
             </div>
@@ -234,11 +285,6 @@ class LemmaPage {
                 label: 'MHDBDB (alt)',
                 url: `https://mhdbdb-old.sbg.ac.at/mhdbdb/App?action=Dic&lid=${numericId}`,
                 icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"></path></svg>'
-            },
-            {
-                label: 'MWB Online (Trier)',
-                url: `https://www.mhdwb-online.de/`,
-                icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>'
             },
             {
                 label: 'REALonline (IMAREAL)',
@@ -263,52 +309,59 @@ class LemmaPage {
     }
 
     /**
-     * Query Wörterbuchnetz API for matching lemmata in MHG dictionaries.
-     * Searches BMZ, Lexer, LexerN, and FindeB in parallel; renders results or hides section on failure.
+     * Query the Wörterbuchnetz HTTPS API for the five MHG dictionaries and
+     * render direct deep-links, grouped by dictionary.
+     *
+     * Uses the shared client in assets/js/lib/woerterbuchnetz.js (#73/#114,
+     * CONTRACTS §D.2) — session-cached, non-http(s) deep-links filtered.
+     * MWB deep-links use http://mhdwb-online.de — modern browsers allow navigation
+     * to http targets from https pages via <a target="_blank"> (no Mixed-Content block).
+     *
+     * The lemma page is the deep-dive surface and therefore the one place that
+     * spells the sigles out (#258 point 3): a heading per dictionary carries the
+     * full title, the cards below it drop the sigle they would otherwise repeat.
+     * No per-dictionary cap here — unlike the compact korpus panel, this section
+     * exists precisely to show everything the dictionaries have.
      */
     async fetchWoerterbuchnetz(normalizedForm) {
-        const wbnetzContainer = document.getElementById('wbnetzLinks');
-        if (!wbnetzContainer) return;
+        const results = await fetchWbnetzEntries(normalizedForm);
 
-        const dictionaries = ['BMZ', 'Lexer', 'LexerN', 'FindeB'];
-        const apiBase = 'https://api.woerterbuchnetz.de/open-api/dictionaries';
+        const section = document.getElementById('wbnetzSection');
+        const container = document.getElementById('wbnetzLinks');
+        if (!section || !container) return;
 
-        try {
-            const results = await Promise.allSettled(
-                dictionaries.map(sigle =>
-                    fetch(`${apiBase}/${sigle}/lemmata/${encodeURIComponent(normalizedForm)}`)
-                        .then(r => r.ok ? r.json() : null)
-                )
-            );
+        const bookIcon = '<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>';
 
-            const entries = [];
-            results.forEach((result, i) => {
-                if (result.status === 'fulfilled' && result.value?.result_set) {
-                    for (const entry of result.value.result_set) {
-                        entries.push({
-                            sigle: entry.sigle,
-                            lemma: this.decodeHtmlEntities(entry.lemma),
-                            gram: entry.gram || '',
-                            url: entry.wbnetzlink
-                        });
-                    }
-                }
-            });
-
-            if (entries.length > 0) {
-                document.getElementById('wbnetzSection').classList.remove('hidden');
-                const bookIcon = '<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>';
-                wbnetzContainer.innerHTML = entries.map(e =>
-                    `<a href="${e.url}" class="external-link" target="_blank" rel="noopener">
+        const groups = results
+            .filter(({ entries }) => entries.length > 0)
+            .map(({ sigle, entries }) => {
+                const cards = entries.map(e =>
+                    `<a href="${this.escapeAttr(e.wbnetzlink)}" class="external-link" target="_blank" rel="noopener">
                         ${bookIcon}
-                        <span class="font-semibold text-xs">${e.sigle}</span>
-                        ${e.lemma}${e.gram ? ` <span class="text-slate-400 text-xs">(${e.gram})</span>` : ''}
+                        ${this.escapeAttr(decodeHtmlEntities(e.lemma))}${e.gram ? ` <span class="text-slate-400 text-xs">(${this.escapeAttr(decodeHtmlEntities(e.gram))})</span>` : ''}
                     </a>`
                 ).join('');
-            }
-        } catch (e) {
-            console.warn('[LemmaPage] Wörterbuchnetz API unavailable:', e.message);
-        }
+                return `<div data-wbnetz-group="${this.escapeAttr(sigle)}">
+                    <h3 class="text-xs font-semibold text-slate-600 mb-2">
+                        ${this.escapeAttr(dictionaryTitle(sigle))}
+                        <span class="font-normal text-slate-400">(${this.escapeAttr(sigle)})</span>
+                    </h3>
+                    <div class="flex flex-wrap gap-3">${cards}</div>
+                </div>`;
+            });
+
+        if (groups.length === 0) return;
+        section.classList.remove('hidden');
+        container.innerHTML = groups.join('');
+    }
+
+    /**
+     * HTML/Attribut-Escaping für Werte aus der externen Wörterbuchnetz-API —
+     * delegiert an lib/escape.js (geteilt mit app.js), escapt auch
+     * Anführungszeichen (Attribut-Kontext href="...").
+     */
+    escapeAttr(str) {
+        return escapeHtml(str);
     }
 
     renderVariants(lemmaKey) {
@@ -329,7 +382,7 @@ class LemmaPage {
         this.elements.variantsCount.textContent = `(${variantForms.length})`;
         this.elements.variantsContent.innerHTML = variantForms.map(v =>
             `<a href="../korpus.html?search=${encodeURIComponent(v)}"
-                class="inline-block bg-slate-100 px-2 py-0.5 rounded text-xs mr-1 mb-1 hover:bg-brand-50 hover:text-brand-700 transition">${v}</a>`
+                class="inline-block bg-slate-100 px-2 py-0.5 rounded text-xs mr-1 mb-1 hover:bg-brand-50 hover:text-brand-700 transition">${escapeHtml(v)}</a>`
         ).join('');
     }
 
@@ -347,14 +400,64 @@ class LemmaPage {
         this.elements.compoundsContent.innerHTML = compounds.map(c => {
             const numId = c.id.replace('lemma_', '');
             return `<a href="?id=${numId}"
-                class="inline-block bg-slate-100 px-2 py-0.5 rounded text-xs mr-1 mb-1 hover:bg-brand-50 hover:text-brand-700 transition">${c.lemma}</a>`;
+                class="inline-block bg-slate-100 px-2 py-0.5 rounded text-xs mr-1 mb-1 hover:bg-brand-50 hover:text-brand-700 transition">${escapeHtml(c.lemma)}</a>`;
         }).join('');
     }
 
-    decodeHtmlEntities(str) {
-        const textarea = document.createElement('textarea');
-        textarea.innerHTML = str;
-        return textarea.value;
+    renderSimilarLemmata(lemma) {
+        if (!lemma.senses || lemma.senses.length === 0) return;
+
+        // Collect all unique concept IDs from this lemma's senses
+        const myConceptIds = new Set();
+        for (const sense of lemma.senses) {
+            if (sense.conceptIds) {
+                for (const cid of sense.conceptIds) myConceptIds.add(cid);
+            }
+        }
+        if (myConceptIds.size === 0) return;
+
+        // Find other lemmata with overlapping concepts
+        const similar = [];
+        for (const other of this.authorityIndex.lemmata) {
+            if (other.id === lemma.id || !other.senses) continue;
+
+            const shared = new Set();
+            for (const sense of other.senses) {
+                if (!sense.conceptIds) continue;
+                for (const cid of sense.conceptIds) {
+                    if (myConceptIds.has(cid)) shared.add(cid);
+                }
+            }
+
+            if (shared.size > 0) {
+                similar.push({ lemma: other, overlap: shared.size });
+            }
+        }
+        if (similar.length === 0) return;
+
+        // Sort by overlap (desc), then alphabetically for ties
+        similar.sort((a, b) =>
+            b.overlap - a.overlap || a.lemma.lemma.localeCompare(b.lemma.lemma)
+        );
+
+        // Cap at top N
+        const maxDisplay = 50;
+        const totalCount = similar.length;
+        const displayed = similar.slice(0, maxDisplay);
+
+        this.elements.similarLemmataSection.classList.remove('hidden');
+        this.elements.similarLemmataCount.textContent =
+            totalCount > maxDisplay
+                ? `(${maxDisplay} von ${totalCount})`
+                : `(${totalCount})`;
+
+        this.elements.similarLemmataContent.innerHTML = displayed.map(({ lemma: l, overlap }) => {
+            const numId = l.id.replace('lemma_', '');
+            const tooltip = `${overlap} gemeinsame Begriffszuordnung${overlap === 1 ? '' : 'en'}`;
+            return `<a href="?id=${numId}"
+                class="inline-block bg-slate-100 px-2 py-0.5 rounded text-xs mr-1 mb-1 hover:bg-brand-50 hover:text-brand-700 transition"
+                title="${tooltip}">${escapeHtml(l.lemma)}</a>`;
+        }).join('');
     }
 
     showError(message) {

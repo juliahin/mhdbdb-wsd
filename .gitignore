@@ -14,6 +14,23 @@ testing/tests/*.json
 testing/tests/*.png
 testing/screenshots/
 
+# Proposals (secret)
+proposals/
+
+# Claude Code local settings (machine-specific permissions)
+.claude/settings.local.json
+
+# Session-Worktrees (seit 2026-09-01 unter .claude/worktrees/, siehe
+# docs/playbooks/MASTERPLAN-AUTONOME-ISSUE-SESSION.md Paragraf 2.1 Regel 29).
+# NICHT .claude/agent-memory/: das ist bewusst getrackt, siehe das README dort.
+.claude/worktrees/
+
+# Laufmaterial, das ein Sessionende ueberleben muss, aber nicht ins
+# Repositorium gehoert: Messungen, die beim Start erhoben und bei der
+# Abnahme gegengeprueft werden (rules/shell-konventionen.md verlangt fuer
+# genau diesen Fall .claude/tmp/ plus gitignore).
+.claude/tmp/
+
 # IDE and editor files
 # .vscode/
 .vscode/*
@@ -43,7 +60,7 @@ logs/
 *.pid
 
 # POS disambiguation temp files (entire folder ignored)
-\temp
+temp/
 *.seed
 *.pid.lock
 
@@ -67,10 +84,35 @@ out/
 *.backup
 __pycache__/
 
-# Data wrangling cache files
-scripts/data-wrangling/.zotero_cache.json
+# Zotero API cache
+scripts/sync/.zotero_cache.json
+
+# Audit script outputs (regenerated on each run)
+scripts/audit/*.json
+# CSV-Reports von quantify-unannotated-tokens.py (#189) — disposable Diagnose,
+# landen default in data/audit/ und gehoeren nie in den Index-Datenbestand
+data/audit/
+# Arbeitsdateien der Pruefseiten-Generatoren build-review-364.py und
+# build-review-klaus.py (#469), nur im Wurzelverzeichnis. Die archivierten
+# Beispiele unter examples/review-pages/ sind davon nicht betroffen.
+/364-lemma-review.html
+/Klaus-Pruefung-390-115.html
+# Ausnahme: die #152-Ratschen-Baseline ist KEIN disposable Report, sie ist
+# die committete Referenzmenge des CI-Gates (check-authority-cross-refs.py)
+!scripts/audit/lexicon-baseline.json
+# Dasselbe fuer die #370-Ratsche im selben Gate: lemmatisierte Tokens ohne
+# @corresp je Sigle. Ein Anstieg heisst, ein Ingest hat die
+# Variantenverknuepfung ausgelassen.
+!scripts/audit/corresp-coverage-baseline.json
+scripts/audit/*-REPORT.md
+scripts/audit/lexicon-backfill-*.md
+scripts/audit/lexicon-backfill-*.xml
+docs/research/*.json
 
 # Debug and manual test files
 nul
 testing/manual-*.html
 testing/test-debug.html
+
+# Source-ZIPs in Ingest-Ordnern (Original-Daten von Beitragenden, untracked)
+ingest/**/*.zip

@@ -3,6 +3,58 @@
  * Core UI functions: status, results display, state coordination
  */
 
+import { lemmaRefMatchesId } from '../../../../assets/js/lib/lemma-match.js';
+
+// ==================== TEXT LABEL DISAMBIGUATION (#121) ====================
+
+/**
+ * Mehrere Siglen können denselben Werktitel tragen (AC1/AC2/AC3 sind alle
+ * "Der Ackermann aus Böhmen"). Für solche Titel-Dubletten liefert diese Map
+ * ein Label-Suffix "(Hrsg. Nachname, Jahr)" bzw. "(Jahr)", abgeleitet aus
+ * den biblStructs der Authority-Works (Editions-Zitat je Sigle, KZW #121).
+ * Nicht-Dubletten bekommen kein Suffix.
+ *
+ * @param {Array} texts  Corpus-Index-Texte ({id, title, ...})
+ * @param {Array} works  authorityData.works ({biblStructs: [{key, textContent}]})
+ * @returns {Map<string,string>} sigle -> " (Hrsg. X, 1969)" (mit führendem Leerzeichen)
+ */
+export function buildTextLabelDisambiguator(texts, works) {
+  const titleCounts = new Map();
+  for (const t of texts || []) {
+    if (t.title) titleCounts.set(t.title, (titleCounts.get(t.title) || 0) + 1);
+  }
+
+  const biblBySigle = new Map();
+  for (const w of works || []) {
+    for (const b of w.biblStructs || []) {
+      if (b.key && b.textContent) biblBySigle.set(b.key, b.textContent);
+    }
+  }
+
+  const suffixes = new Map();
+  for (const t of texts || []) {
+    if (!t.title || titleCounts.get(t.title) < 2) continue;
+    const citation = biblBySigle.get(t.id);
+    if (!citation) continue;
+
+    const years = citation.match(/\b(1[5-9]\d{2}|20[0-2]\d)\b/g);
+    const year = years ? years[years.length - 1] : null;
+
+    // Editor aus dem formatierten Zitat ("Hrsg. von Günther Jungbluth.");
+    // Klammer-Zusätze wie "(=Bibliothek ...)" beenden den Namen.
+    const edMatch = citation.match(/[Hh]rsg\.?\s*(?:von|v\.)?\s*([A-ZÄÖÜ][^.,;()]{2,40})/);
+    let surname = null;
+    if (edMatch) {
+      const nameParts = edMatch[1].trim().split(/\s+/);
+      surname = nameParts[nameParts.length - 1];
+    }
+
+    if (surname && year) suffixes.set(t.id, ` (Hrsg. ${surname}, ${year})`);
+    else if (year) suffixes.set(t.id, ` (${year})`);
+  }
+  return suffixes;
+}
+
 // ==================== STATUS MANAGEMENT ====================
 
 export function updateStatus(indicator, text) {
@@ -10,12 +62,15 @@ export function updateStatus(indicator, text) {
   const statusText = document.getElementById('statusText');
 
   if (statusIndicator) {
-    // Map emoji indicators to Heroicons
+    // Map emoji indicators to Heroicons.
+    // Größe muss zur .status-indicator-Box passen (14px): die früheren
+    // w-6/h-6-Icons sind aus der Box gelaufen und haben den Abstand zum
+    // Statustext aufgefressen. .status-indicator svg erzwingt es zusätzlich.
     const iconMap = {
-      '🔄': '<svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>',
-      '✅': '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
-      '📥': '<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 12l3 3m0 0l3-3m-3 3V9"></path></svg>',
-      '🗂️': '<svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>'
+      '🔄': '<svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>',
+      '✅': '<svg class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+      '📥': '<svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 12l3 3m0 0l3-3m-3 3V9"></path></svg>',
+      '🗂️': '<svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>'
     };
 
     const svgIcon = iconMap[indicator] || iconMap['🗂️']; // fallback to folder icon
@@ -31,68 +86,45 @@ export function updateAuthorityOverview(authorityData) {
   const stats = document.getElementById('authorityStats');
   if (!stats) return;
 
+  const ghBase = 'https://github.com/DigitalHumanitiesCraft/mhdbdb-tei-only/blob/main/authority-files';
+  const linkIcon = '<svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>';
+
   const items = [
-    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>', label: 'Authority Files', value: authorityData.files.length },
-    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path></svg>', label: 'Personen', value: authorityData.persons.length },
-    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>', label: 'Werke', value: authorityData.works.length },
-    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1h4a1 1 0 011 1v20a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1h4v3z"></path></svg>', label: 'Lemmata', value: authorityData.lemmata.length },
-    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>', label: 'Begriffe', value: authorityData.concepts.length },
-    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1h4a1 1 0 011 1v20a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1h4v3zm5 8a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>', label: 'Gattungen', value: authorityData.genres.length },
-    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>', label: 'Namen', value: authorityData.names.length },
-    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12M8 12h12m-12 5h12M3 7h.01M3 12h.01M3 17h.01"></path></svg>', label: 'Varianten', value: Object.keys(authorityData.variants || {}).length }
+    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path></svg>', label: 'Personen', value: authorityData.persons.length, ghFile: 'persons.xml', explorerBtn: 'showAuthorsBtn' },
+    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>', label: 'Werke', value: authorityData.works.length, ghFile: 'works.xml', explorerBtn: 'showWorksBtn' },
+    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1h4a1 1 0 011 1v20a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1h4v3z"></path></svg>', label: 'Lemmata', value: authorityData.lemmata.length, ghFile: 'lexicon.xml', explorerBtn: 'showLemmataBtn' },
+    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>', label: 'Begriffe', value: authorityData.concepts.length, ghFile: 'concepts.xml', explorerBtn: 'showConceptsBtn' },
+    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1h4a1 1 0 011 1v20a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1h4v3zm5 8a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>', label: 'Gattungen', value: authorityData.genres.length, ghFile: 'genres.xml', explorerBtn: 'showGenresBtn' },
+    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>', label: 'Namen', value: authorityData.names.length, ghFile: 'names.xml', explorerBtn: 'showNamesBtn' },
+    { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12M8 12h12m-12 5h12M3 7h.01M3 12h.01M3 17h.01"></path></svg>', label: 'Varianten', value: Object.keys(authorityData.variants || {}).length, ghFile: 'variants.xml', explorerBtn: null }
   ];
 
   stats.innerHTML = `
     <dl class="space-y-1">
       ${items
         .map(
-          ({ icon, label, value }) => `
+          ({ icon, label, value, ghFile, explorerBtn }) => {
+            const explorerLink = explorerBtn
+              ? `<button type="button" onclick="document.getElementById('${explorerBtn}').click()" class="text-brand-600 hover:text-brand-700 transition cursor-pointer" title="${label}-Explorer öffnen">${label}</button>`
+              : `<span>${label}</span>`;
+            const ghLink = ghFile
+              ? `<a href="${ghBase}/${ghFile}" target="_blank" rel="noopener" class="text-slate-400 hover:text-brand-600 transition" title="XML auf GitHub">${linkIcon}</a>`
+              : '';
+            return `
             <div class="flex items-center justify-between rounded-lg bg-white/80 px-3 py-1 ring-1 ring-slate-200/70">
               <dt class="flex items-center gap-2 text-xs text-slate-600">
-                <span class="w-3.5 h-3.5 [&>svg]:w-3.5 [&>svg]:h-3.5">${icon}</span>
-                <span>${label}</span>
+                <span class="inline-flex w-3.5 h-3.5 flex-shrink-0 items-center [&>svg]:w-3.5 [&>svg]:h-3.5">${icon}</span>
+                ${explorerLink}
+                ${ghLink}
               </dt>
               <dd class="text-xs font-semibold text-brand-700">${value}</dd>
             </div>
-          `
+          `;
+          }
         )
         .join('')}
     </dl>
   `;
-}
-
-export function updateTEIOverview(teiData) {
-  const overview = document.getElementById('teiOverview');
-  const stats = document.getElementById('teiStats');
-
-  if (teiData.files.length > 0 && overview && stats) {
-    overview.style.display = 'block';
-
-    const items = [
-      { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>', label: 'TEI-Dateien', value: teiData.files.length },
-      { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>', label: 'Wörter', value: teiData.words.length },
-      { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>', label: 'Textzeilen', value: teiData.lines.length },
-      { icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>', label: 'Annotationen', value: teiData.annotations.length }
-    ];
-
-    stats.innerHTML = `
-      <dl class="space-y-2">
-        ${items
-          .map(
-            ({ icon, label, value }) => `
-              <div class="flex items-center justify-between rounded-xl bg-white/80 px-4 py-2 shadow-sm ring-1 ring-brand-100/80">
-                <dt class="flex items-center gap-3 text-sm font-medium text-slate-600">
-                  <span class="text-lg">${icon}</span>
-                  <span>${label}</span>
-                </dt>
-                <dd class="text-base font-bold text-brand-700">${value}</dd>
-              </div>
-            `
-          )
-          .join('')}
-      </dl>
-    `;
-  }
 }
 
 // ==================== BUTTON STATE MANAGEMENT ====================
@@ -116,14 +148,56 @@ export function enableAuthorityQueries() {
   });
 }
 
-export function enableTEIQueries() {
-  const teiQueriesSection = document.getElementById('teiQueries');
-  if (teiQueriesSection) {
-    teiQueriesSection.style.display = 'block';
-  }
+// ==================== CSV-EXPORT (#448) ====================
+
+/**
+ * Der Export-Button der tabellarischen TEI-Werkzeuge, im Stil des
+ * Hapax-Buttons (#hxCsvExport). Das Format liegt in
+ * assets/js/lib/csv-export.js; hier nur das Markup, damit nicht jedes
+ * Werkzeug dieselbe SVG-Zeile kopiert.
+ *
+ * @param {string} id     Element-ID, an die das Werkzeug seinen Handler haengt
+ * @param {string} title  Tooltip: welche Zeilen die Datei enthaelt
+ */
+export function csvButton(id, title) {
+  return `<button type="button" id="${escapeHtml(id)}" title="${escapeHtml(title)}" class="ml-auto rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-brand-400 hover:text-brand-700 flex items-center gap-1.5">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"></path></svg>
+    CSV-Export
+  </button>`;
 }
 
 // ==================== RESULTS DISPLAY ====================
+
+/**
+ * HTML-Escape fuer Werte, die aus einer Nutzereingabe stammen.
+ *
+ * Modul-lokal statt aus assets/js/lib/escape.js importiert. DESIGN.md
+ * begruendet das fuer die TEI-Analyse-Module ("Escape helpers: per module,
+ * not imported"); diese Datei liegt in ui/core und nicht in ui/tei, folgt
+ * der Regel aber aus demselben Grund. Gemessen am 2026-09-10 halten 17
+ * Dateien im Playground eigene Kopien, escape.js importieren nur app.js und
+ * lemma-page.js.
+ *
+ * Gebraucht wird er wegen #427: die Ergebniskoepfe setzen den Suchbegriff
+ * roh ins innerHTML. Normalerweise ist das Selbst-XSS, weil eine Schreibform
+ * vor der Anzeige durch die Lemma-Aufloesung laeuft. Der Router hat aber
+ * einen Weg daran vorbei: traegt ein Term im Hash einen ids-Zeiger, nimmt
+ * resolveTerms die ID und prueft die Schreibform nie (multi-lemma-search.js).
+ * Ein geteilter Link fuehrt damit fremdes Markup in die Seite dessen, der
+ * ihn oeffnet.
+ */
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+// Escapt wird der TITEL, nicht die Ergebnisfelder. meta und snippet bauen die
+// vier Authority-Explorer bewusst mit Markup (genre-explorer.js escapt seine
+// Werte selbst und setzt dann Auszeichnung darum); ein pauschales Escapen
+// wuerde deren Ausgabe zerstoeren. Der Titel dagegen ist ueberall reiner Text,
+// und er ist die Stelle, an der die Nutzereingabe ankommt.
 
 export function displayResults(title, results) {
   const container = document.getElementById('resultsContainer');
@@ -132,7 +206,7 @@ export function displayResults(title, results) {
   if (!results || results.length === 0) {
     container.innerHTML = `
       <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center text-sm text-slate-500">
-        <p class="font-medium text-slate-600">${title}</p>
+        <p class="font-medium text-slate-600">${escapeHtml(title)}</p>
         <p class="mt-2 text-slate-500">Keine Ergebnisse gefunden.</p>
       </div>
     `;
@@ -152,12 +226,46 @@ export function displayResults(title, results) {
 
   container.innerHTML = `
     <div class="mb-4 flex items-center justify-between rounded-xl bg-slate-50/80 px-4 py-2 text-sm font-medium text-slate-600">
-      <span>${title}</span>
+      <span>${escapeHtml(title)}</span>
       <span class="text-sm uppercase tracking-wide text-slate-600">${results.length} Treffer</span>
     </div>
     <div class="space-y-3">
       ${resultsHTML}
     </div>
+  `;
+}
+
+/**
+ * Eine Meldung anzeigen, die kein Ergebnis ist.
+ *
+ * Existiert wegen #424: der Null-Treffer-Fall der Multi-Lemma- und der
+ * Nähe-Analyse hat seine Erklärung als einelementiges Ergebnis-Array durch
+ * displayResults geschickt. Das zählt, was es bekommt, und schrieb neben
+ * einen Titel mit "(0 Treffer)" ein Abzeichen mit "1 Treffer". Alan van Beek
+ * hat den Widerspruch im Testprotokoll zu #419 mit Screenshot gemeldet, in
+ * zwei aufeinanderfolgenden Testfällen.
+ *
+ * Der leere Zweig von displayResults kann das nicht auffangen: er rendert
+ * "Keine Ergebnisse gefunden." und lässt keinen Platz für den Grund. Genau
+ * den will man hier aber sagen, deshalb eine eigene Funktion statt eines
+ * Schalters. Eine Meldung hat keine Anzahl, also steht hier auch keine.
+ *
+ * @param {string} titel   Kopfzeile, in der die Trefferzahl bereits steht
+ * @param {string} grund   was passiert ist
+ * @param {string} rat     was man stattdessen versuchen kann
+ */
+export function displayHinweis(titel, grund, rat) {
+  const container = document.getElementById('resultsContainer');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="mb-4 rounded-xl bg-slate-50/80 px-4 py-2 text-sm font-medium text-slate-600">
+      <span>${escapeHtml(titel)}</span>
+    </div>
+    <article class="result-item rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+      <header class="result-meta text-xs font-semibold uppercase tracking-wide text-brand-600">${escapeHtml(grund)}</header>
+      <p class="result-snippet mt-2 text-sm leading-relaxed text-slate-700">${escapeHtml(rat)}</p>
+    </article>
   `;
 }
 
@@ -178,7 +286,7 @@ export function displaySummaryResults(title, summaryData, rawResults = null, lem
   if (!summaryData || summaryData.length === 0) {
     container.innerHTML = `
       <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center text-sm text-slate-500">
-        <p class="font-medium text-slate-600">${title}</p>
+        <p class="font-medium text-slate-600">${escapeHtml(title)}</p>
         <p class="mt-2 text-slate-500">Keine Ergebnisse gefunden.</p>
       </div>
     `;
@@ -190,7 +298,7 @@ export function displaySummaryResults(title, summaryData, rawResults = null, lem
 
   container.innerHTML = `
     <div class="mb-4 flex items-center justify-between rounded-xl bg-slate-50/80 px-4 py-2 text-sm font-medium text-slate-600">
-      <span>${title}</span>
+      <span>${escapeHtml(title)}</span>
       <span class="text-sm uppercase tracking-wide text-slate-600">${totalResults} Treffer · ${summaryData.length} Kontexte</span>
     </div>
     <div class="space-y-3">
@@ -199,10 +307,6 @@ export function displaySummaryResults(title, summaryData, rawResults = null, lem
   `;
 
   setupSummaryExpansion();
-}
-
-export function getRawResults() {
-  return { results: storedRawResults, lemmaIds: storedLemmaIds };
 }
 
 function createSummaryCard(summary, index) {
@@ -317,7 +421,9 @@ function setupSummaryExpansion() {
 }
 
 // Enrich file results with TEI text
-async function enrichFileResults(fileResults, lemmaIds) {
+// (exportiert für position-parity.spec.js — der Guard gegen leere <w> ist
+// der vierte Zählpfad der §B-Parität, #170)
+export async function enrichFileResults(fileResults, lemmaIds) {
   // Guard against null/undefined lemmaIds
   if (!lemmaIds || !Array.isArray(lemmaIds)) {
     console.warn(`No lemmaIds provided for enrichment`);
@@ -357,7 +463,17 @@ async function enrichFileResults(fileResults, lemmaIds) {
 
         const indexedWords = [];
         for (let i = 0; i < xpathIndexed.snapshotLength; i++) {
-          indexedWords.push(xpathIndexed.snapshotItem(i));
+          const w = xpathIndexed.snapshotItem(i);
+          // Paritäts-Guard (#170, analog #131): der Python-Build überspringt
+          // leere <w lemmaRef/> (build-corpus-index.py, text_content-Check) —
+          // ohne denselben Guard verschöbe ein einziges leeres <w> alle
+          // Kontextfenster hinter ihm (CONTRACTS §B). Der lemmaRef-Check
+          // prüft den Attribut-WERT, nicht nur die Existenz: der XPath
+          // [@lemmaRef] matcht auch lemmaRef="" — Python (falsy-Check) und
+          // Reader (falsy-Check) überspringen das, dieser Pfad muss es
+          // genauso tun (#184 Review-Finding, 2. Runde).
+          if (!w.getAttribute('lemmaRef') || !w.textContent.trim()) continue;
+          indexedWords.push(w);
         }
 
         // Get the matched word elements from index
@@ -402,12 +518,13 @@ async function enrichFileResults(fileResults, lemmaIds) {
         const highlightedParts = contextWords.map(word => {
           const text = word.textContent?.trim() || '';
           const lemmaRef = word.getAttribute('lemmaRef') || '';
+          // Exact lemma-id match (CONTRACTS §B.1) — never a substring. See #126.
 
           // Highlight matched lemmas
           for (let i = 0; i < lemmaIds.length; i++) {
             const lemmaId = lemmaIds[i];
             const cleanId = lemmaId.toString().replace('lemma_', '');
-            if (lemmaRef.includes(`lemma_${cleanId}`)) {
+            if (lemmaRefMatchesId(lemmaRef, `lemma_${cleanId}`)) {
               const color = LEMMA_COLORS[i % LEMMA_COLORS.length];
               return `<span style="background-color: ${color.bg}; color: ${color.text}; border-bottom: 2px solid ${color.border}; padding: 2px 4px; border-radius: 3px; font-weight: 500;">${text}</span>`;
             }
@@ -430,10 +547,14 @@ async function enrichFileResults(fileResults, lemmaIds) {
 // v4.0.0: Only proximity search remains (paragraph search removed)
 function createDetailsFromEnrichedResults(results) {
   return results.map((result) => {
-    // v4.0.0: Proximity results with contextText
+    // v4.0.0: Proximity results with contextText.
+    // Vers-Suche-Ergebnisse (#106 Punkt 8) tragen verseN — deren Label bleibt
+    // auch nach dem Enrichment "Gemeinsam in Vers N" statt Wortabstand.
     if (result.contextText !== undefined) {
       return {
-        meta: `Abstand: ${result.distance} Wörter`,
+        meta: result.verseN !== undefined
+          ? `Gemeinsam in Vers ${result.verseN}`
+          : `Abstand: ${result.distance} Wörter`,
         snippet: `"${result.contextText}"`
       };
     }
@@ -456,89 +577,6 @@ const LEMMA_COLORS = [
   { bg: '#fed7aa', text: '#7c2d12', border: '#fb923c' },  // Orange
 ];
 
-// Highlight matched words in text with different colors per lemma
-function highlightMatchedWords(text, matchingWords) {
-  let highlightedText = text;
-
-  console.log('Highlighting words:', Object.entries(matchingWords).map(([id, words]) =>
-    `lemma_${id}: [${words.map(w => w.text).join(', ')}]`
-  ).join(' | '));
-
-  const lemmaIds = Object.keys(matchingWords);
-
-  lemmaIds.forEach((lemmaId, index) => {
-    const words = matchingWords[lemmaId];
-    if (!words || words.length === 0) return;
-
-    // Get color for this lemma (cycle through palette)
-    const color = LEMMA_COLORS[index % LEMMA_COLORS.length];
-
-    words.forEach(word => {
-      if (!word.text) return;
-
-      // Escape special regex characters
-      const escapedWord = word.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      // Use word boundaries to match whole words only
-      const regex = new RegExp(`\\b${escapedWord}\\b`, 'gi');
-
-      highlightedText = highlightedText.replace(regex,
-        `<span class="highlight lemma-${index}" style="background-color: ${color.bg}; color: ${color.text}; border: 1px solid ${color.border}; padding: 2px 4px; border-radius: 3px; font-weight: 600;">$&</span>`
-      );
-    });
-  });
-
-  return highlightedText;
-}
-
-// ==================== FILE-GROUPED RESULTS ====================
-
-export function displayGroupedResults(title, groupedData) {
-  const container = document.getElementById('resultsContainer');
-  if (!container) return;
-
-  const groups = Object.entries(groupedData || {});
-  const totalResults = groups.reduce((sum, [, results]) => sum + results.length, 0);
-
-  const groupsHTML = groups
-    .map(([filename, results]) => {
-      const groupId = `group_${filename.replace(/[^a-z0-9]/gi, '_')}`;
-      return `
-        <section class="file-group">
-          <header class="file-group-header" data-group-id="${groupId}">
-            <span class="flex items-center gap-2 text-sm font-semibold text-slate-800">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-              ${filename}
-            </span>
-            <span class="file-group-count">${results.length}</span>
-          </header>
-          <div id="${groupId}" class="group-results">
-            ${results
-              .map(
-                (result) => `
-                  <div class="detail-item">
-                    <div class="detail-meta">${result.meta || ''}</div>
-                    <div class="detail-snippet">${result.snippet || result.text || ''}</div>
-                  </div>
-                `
-              )
-              .join('')}
-          </div>
-        </section>
-      `;
-    })
-    .join('');
-
-  container.innerHTML = `
-    <div class="mb-4 flex items-center justify-between rounded-xl bg-slate-50/80 px-4 py-2 text-sm font-medium text-slate-600">
-      <span>${title}</span>
-      <span class="text-sm uppercase tracking-wide text-slate-600">${totalResults} Treffer · ${groups.length} Dateien</span>
-    </div>
-    <div class="space-y-3">
-      ${groupsHTML}
-    </div>
-  `;
-}
-
 // ==================== WELCOME & ERROR STATES ====================
 
 export function showWelcomeMessage() {
@@ -549,62 +587,29 @@ export function showWelcomeMessage() {
     <div class="rounded-2xl border border-brand-100 bg-brand-50/70 p-8 text-center">
       <h3 class="text-lg font-semibold text-brand-700">MHDBDB Playground bereit!</h3>
       <p class="mt-3 text-sm text-brand-800/90">
-        Authority Files sind geladen. Laden Sie nun TEI-Textdateien oder nutzen Sie die Abfragen, um sofort mit der Forschung zu beginnen.
+        Authority Files sind geladen, das Korpus lädt im Hintergrund. Wählen Sie links eine Abfrage, um zu beginnen.
       </p>
     </div>
   `;
 }
 
-export function showError(message) {
-  const container = document.getElementById('resultsContainer');
-  if (!container) return;
-
-  const errorDiv = document.createElement('div');
-  errorDiv.className = 'rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm';
-  errorDiv.textContent = message;
-  container.insertBefore(errorDiv, container.firstChild);
-}
-
-// ==================== CONTAINER MANAGEMENT ====================
-
-export function renderToContainer(containerId, html) {
-  const container = document.getElementById(containerId);
-  if (container) {
-    container.innerHTML = html;
-    return true;
-  }
-  console.warn(`Container not found: ${containerId}`);
-  return false;
-}
-
-export function appendToContainer(containerId, html) {
-  const container = document.getElementById(containerId);
-  if (container) {
-    container.insertAdjacentHTML('beforeend', html);
-    return true;
-  }
-  console.warn(`Container not found: ${containerId}`);
-  return false;
-}
-
 // ==================== UI STATE COORDINATION ====================
 
-export function updateAllUI(authorityData, teiData) {
+export function updateAllUI(authorityData) {
   const totalAuthorityFiles = 7; // persons, works, lexicon, concepts, genres, names, variants
   const loadedLabel = `${authorityData.files.length}/${totalAuthorityFiles} Authority Files geladen`;
   const indicator = authorityData.files.length === totalAuthorityFiles ? '✅' : '📥';
   updateStatus(indicator, loadedLabel);
 
   updateAuthorityOverview(authorityData);
-  updateTEIOverview(teiData);
 
   enableAuthorityQueries();
 
-  if (teiData.files.length > 0) {
-    enableTEIQueries();
-  }
-
-  if (authorityData.files.length > 0 && teiData.files.length === 0) {
+  // Zweiter Teil der Bedingung war bis #325 `teiData.files.length === 0` und
+  // damit dauerhaft wahr: das Feld hatte seit dem Upload-Rückbau (#314) keinen
+  // Schreiber mehr. Die Bedingung prüft also nur noch, was sie ohnehin
+  // geprüft hat.
+  if (authorityData.files.length > 0) {
     showWelcomeMessage();
   }
 }
@@ -653,19 +658,4 @@ function setupDetailItemClickHandlers(detailsContainer, fileResults) {
       window.open(url, '_blank');
     });
   });
-}
-
-// ==================== EVENT DELEGATION HELPERS ====================
-
-export function delegateClick(containerId, selector, handler) {
-  const container = document.getElementById(containerId);
-  if (container) {
-    container.addEventListener('click', (e) => {
-      if (e.target.matches(selector)) {
-        handler(e);
-      }
-    });
-    return true;
-  }
-  return false;
 }

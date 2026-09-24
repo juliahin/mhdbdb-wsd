@@ -6,6 +6,7 @@
  */
 
 import { TextNormalizer } from '../../../assets/js/lib/text-normalizer.js';
+import { isStage3Match, stage3Distance } from '../../../assets/js/lib/lemma-resolve.js';
 
 export class AuthorityFilesManager {
   constructor(authorityData) {
@@ -15,7 +16,6 @@ export class AuthorityFilesManager {
     this.indexes = {
       genreToWorks: new Map(),
       workToGenres: new Map(),
-      genreHierarchy: new Map(),
       conceptToLemmas: new Map(),
     };
   }
@@ -43,20 +43,6 @@ export class AuthorityFilesManager {
       console.warn('[AuthorityFilesManager] Error building performance indexes:', error);
     }
   }
-
-  // ==================== DEAD CODE REMOVED ====================
-  // The following functions relied on parsedXML which no longer exists
-  // (authority data now loaded via pre-built index in main.js):
-  //   - loadAuthorityFiles()
-  //   - buildIndexes()
-  //   - buildGenreWorkIndexes()
-  //   - buildGenreHierarchyIndex()
-  //   - buildConceptLemmaIndex()
-  //   - processAuthorityFileContent()
-  //   - analyzeAuthorityFile()
-  //   - All extraction methods (extractPersons, extractWorks, etc.)
-  //   - findLemmaInXML()
-  //   - findWorksInGenre()
 
   // ==================== LEMMA RESOLUTION ====================
 
@@ -100,16 +86,21 @@ export class AuthorityFilesManager {
     const normalized = orthography.toLowerCase();
     const normalizedCharacters = TextNormalizer.normalizeMHG(normalized);
 
-    // Stage 1: Try exact match in lexicon (fastest, canonical forms)
-    // Try both original and normalized
-    const exactMatch = this.authorityData.lemmata.find(lemma => {
+    // Stage 1: Exact match in lexicon (canonical forms). Sammelt ALLE
+    // Homographen (z.B. rôt: NAM lemma_11330, NOM lemma_19417, ADJ
+    // lemma_4954) statt nur den ersten Array-Treffer — matches[0]-Konsumenten
+    // (Multi-Lemma-Suche, Kookkurrenz, Reim, Versposition) bekamen sonst
+    // je nach Index-Reihenfolge einen 1-Beleg-Eigennamen statt des
+    // hochfrequenten Appellativs (#163/#164). Sortierung: Korpus-Frequenz
+    // absteigend, bei Gleichstand diakritisch-exakte Eingabe zuerst.
+    const exactMatches = this.authorityData.lemmata.filter(lemma => {
       if (!lemma.lemma) return false;
       const lemmaLower = lemma.lemma.toLowerCase();
       const lemmaNormalized = TextNormalizer.normalizeMHG(lemmaLower);
       return lemmaLower === normalized || lemmaNormalized === normalizedCharacters;
     });
-    if (exactMatch) {
-      return [exactMatch];
+    if (exactMatches.length > 0) {
+      return this.rankHomographs(exactMatches, normalized);
     }
 
     // Stage 2: Search in variants index (orthographic variants from TEI corpus)
@@ -129,12 +120,78 @@ export class AuthorityFilesManager {
       }
     }
 
-    // Stage 3: Fallback to partial match in lexicon (includes search with normalization)
-    const partialMatches = this.authorityData.lemmata.filter(lemma => {
-      if (!lemma.lemma) return false;
-      return TextNormalizer.matchesNormalized(lemma.lemma, orthography);
-    });
+    // Stage 3: Partial-Match-Fallback, praefixorientiert in beide Richtungen
+    // (Stamm-Eingabe -> Lemma, flektierte Eingabe -> Lemma). Regel und
+    // Begruendung: assets/js/lib/lemma-resolve.js, Vertrag: CONTRACTS.md §C.
+    //
+    // Vorher stand hier ein einseitiger Infix-Test (Lemma enthaelt Eingabe),
+    // die Hauptseite testete bidirektional — dieselbe Eingabe lieferte je nach
+    // Oberflaeche andere Mengen (#169 Punkt #45). Seit #224 teilen sich beide
+    // dasselbe Praedikat. Die Infix-Discovery ("lantwin" enthaelt "win", was
+    // hier keinen Treffer mehr gibt, sofern eine Eingabe Stufe 3 ueberhaupt
+    // erreicht: "win" ist selbst Lemma und bricht oben bei Stufe 1 ab) faellt
+    // dabei bewusst weg; sie war der Traeger des #224-Rauschens.
+    //
+    // Sortierung wie bei den Homographen: erst Naehe zur Eingabe, dann
+    // Korpus-Frequenz, damit matches[0]-Konsumenten (Multi-Lemma-Suche,
+    // Kookkurrenz, Reim, Versposition) nicht wieder einen 1-Beleg-Eigennamen
+    // vor das hochfrequente Appellativ gesetzt bekommen (#163/#164).
+    const partialMatches = this.authorityData.lemmata
+      .map((lemma, idx) => ({
+        lemma,
+        idx,
+        norm: lemma.lemma ? TextNormalizer.normalizeMHG(lemma.lemma.toLowerCase()) : ''
+      }))
+      .filter(entry => isStage3Match(entry.norm, normalizedCharacters))
+      .sort((a, b) =>
+        (stage3Distance(a.norm, normalizedCharacters) - stage3Distance(b.norm, normalizedCharacters))
+        || (this.getCorpusFrequency(b.lemma.id) - this.getCorpusFrequency(a.lemma.id))
+        || (a.idx - b.idx)
+      )
+      .map(entry => entry.lemma);
     return partialMatches;
+  }
+
+  /**
+   * Homographen nach Korpus-Frequenz absteigend sortieren; bei Gleichstand
+   * gewinnt die diakritisch-exakte Schreibform der Eingabe, danach bleibt
+   * die Index-Reihenfolge stabil. Ist der Corpus-Index noch nicht geladen,
+   * sind alle Frequenzen 0 und die bisherige Reihenfolge bleibt erhalten.
+   */
+  rankHomographs(lemmata, normalizedInput) {
+    if (lemmata.length <= 1) return lemmata;
+    const decorated = lemmata.map((lemma, idx) => ({
+      lemma,
+      idx,
+      freq: this.getCorpusFrequency(lemma.id),
+      exact: lemma.lemma && lemma.lemma.toLowerCase() === normalizedInput ? 0 : 1
+    }));
+    decorated.sort((a, b) =>
+      (b.freq - a.freq) || (a.exact - b.exact) || (a.idx - b.idx)
+    );
+    return decorated.map(d => d.lemma);
+  }
+
+  /**
+   * Gesamtzahl der Vorkommen eines Lemmas im Korpus (Summe über alle
+   * texts[].lemmata[id]-Positionslisten des Corpus-Index). Ergebnisse werden
+   * gecacht — aber erst, sobald der Corpus-Index geladen ist, damit ein
+   * früher Aufruf (Autocomplete vor Corpus-Load) keine Nullen einfriert.
+   */
+  getCorpusFrequency(lemmaId) {
+    if (this._corpusFreqCache?.has(lemmaId)) {
+      return this._corpusFreqCache.get(lemmaId);
+    }
+    const texts = window.playground?.corpusData?.texts;
+    if (!texts || texts.length === 0) return 0;
+    let total = 0;
+    for (const t of texts) {
+      const positions = t.lemmata?.[lemmaId];
+      if (positions) total += positions.length;
+    }
+    if (!this._corpusFreqCache) this._corpusFreqCache = new Map();
+    this._corpusFreqCache.set(lemmaId, total);
+    return total;
   }
 
   findLemmaById(lemmaId) {
@@ -143,42 +200,54 @@ export class AuthorityFilesManager {
     );
   }
 
-  getLemmaSuggestions(partialInput, maxSuggestions = 10) {
-    const normalized = partialInput.toLowerCase();
-    return this.authorityData.lemmata
-      .filter(lemma => 
-        lemma.lemma && lemma.lemma.toLowerCase().startsWith(normalized)
-      )
-      .slice(0, maxSuggestions)
-      .map(lemma => ({
-        lemma: lemma.lemma,
-        id: lemma.id.replace('lemma_', ''),
-        pos: lemma.pos
-      }));
+  /**
+   * Live-Autocomplete-Suggestions: prefix-match auf `lemma.normalized`
+   * (mhd-normalisiert) mit includes-Fallback. Liefert vollständige Lemma-
+   * Objekte (`{id, lemma, pos, ...}` mit `lemma_X`-Präfix).
+   *
+   * Genutzt von lemma-distribution.js, verse-position-search.js,
+   * cooccurrence-ranking.js für Live-Dropdown im Lemma-Input. Siehe
+   * DESIGN.md §Live autocomplete dropdown.
+   *
+   * Eingabe wird mit TextNormalizer.normalizeMHG normalisiert (â→a, ê→e,
+   * ü→ue, æ→ae, ō→o, …) damit „ere" auch „êre" matcht — derselbe Normalizer,
+   * mit dem lemma.normalized gebaut wird (CONTRACTS §A). Linear scan über
+   * 43.754 Lemmata, ~5-10ms pro Aufruf — akzeptabel für keystroke-Frequenz.
+   */
+  getLemmaAutocompleteMatches(partialInput, maxSuggestions = 8) {
+    const trimmed = (partialInput || '').trim();
+    if (!trimmed) return [];
+    // Kanonischer Normalizer statt Inline-Regex-Kette: lemma.normalized ist
+    // mit normalizeMHG gebaut — eine abweichende Eingabe-Normalisierung
+    // (fehlende Ligaturen æ/œ, Makrons ā/ē/ī/ō/ū) liefert für „mære" oder
+    // „brōt" sonst keine Vorschläge (#167 Finding 86, CONTRACTS §A).
+    const needle = TextNormalizer.normalizeMHG(trimmed);
+    const lemmata = this.authorityData?.lemmata || [];
+    const startsWith = [];
+    const includes = [];
+    // Voll-Scan (43k) ohne Early-Break, sonst springen kurze Treffer wie „êre"
+    // unter längere wie „êrengir" weil das Lemma-Array nicht ID-sortiert ist.
+    // 43k Iterationen sind ~3-5ms — pro Keystroke akzeptabel.
+    for (const l of lemmata) {
+      if (!l.normalized) continue;
+      const ln = l.normalized;
+      if (ln.startsWith(needle)) startsWith.push(l);
+      else if (ln.includes(needle)) includes.push(l);
+    }
+    // Sortierung: exakt-match → kürzere Lemmata → alphabetisch. So steht
+    // „êre" über „êrengir" und „minne" über „minnesänger".
+    const sortByRelevance = (a, b) => {
+      const an = a.normalized;
+      const bn = b.normalized;
+      const aExact = an === needle ? 0 : 1;
+      const bExact = bn === needle ? 0 : 1;
+      if (aExact !== bExact) return aExact - bExact;
+      if (an.length !== bn.length) return an.length - bn.length;
+      return an.localeCompare(bn, 'de');
+    };
+    startsWith.sort(sortByRelevance);
+    includes.sort(sortByRelevance);
+    return [...startsWith, ...includes].slice(0, maxSuggestions);
   }
 
-  // ==================== UTILITY METHODS ====================
-
-  updateStatus(indicator, text) {
-    const statusIndicator = document.getElementById("statusIndicator");
-    const statusText = document.getElementById("statusText");
-
-    if (statusIndicator) statusIndicator.textContent = indicator;
-    if (statusText) statusText.textContent = text;
-
-    // Enhanced logging with cache information
-    console.log(`${indicator} ${text}`);
-  }
-
-  // ==================== DEAD CODE REMOVED ====================
-  // The following cache management methods relied on storageManager which no longer exists
-  // (authority data now loaded via CorpusLoader with Dexie.js caching):
-  //   - getCacheStatus()
-  //   - clearCache()
-  //   - clearExpiredCache()
-  //   - getLoadStatistics()
-  //   - refreshAuthorityFile()
-  //   - getStorageDebugInfo()
-  //
-  // Cache management is now handled by CorpusLoader in js/corpus-loader.js
 }

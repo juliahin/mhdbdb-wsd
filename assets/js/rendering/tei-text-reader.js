@@ -6,11 +6,35 @@
  * Metadata Source: Prioritizes TEI header data, falls back to corpus index for missing fields
  */
 
+import { lemmaRefMatchesId } from '../lib/lemma-match.js';
+
+/**
+ * Repository-Boilerplate im <editorialDecl>, das NICHT in die Leseansicht gehört (#250).
+ *
+ * Alle 667 Header führen ein <editorialDecl>. Der Abschnitt „Editorische Eingriffe"
+ * soll zeigen, was am TEXT gemacht wurde, nicht wie das Repository aufgebaut ist.
+ * Gemessen am Korpusstand vom 30.07.2026
+ * (scripts/audit/count-editorial-notes-and-div-heads.py, Teil A):
+ * 666 Absätze erklären wortidentisch die Auflösung lokaler Dateireferenzen
+ * (persons.xml#person_445 …), je einmal auf Deutsch und auf Englisch. Sie stehen
+ * als direkte <p>-Kinder des <editorialDecl> und tragen @xml:lang; die
+ * inhaltlichen Angaben stehen darunter in <normalization> ohne @xml:lang.
+ *
+ * Strukturell allein ist das nicht trennbar: FR1/FR2/FR3 tragen ihre
+ * Divergenz-Hinweise ebenfalls als direkte <p xml:lang="de">-Kinder. Deshalb der
+ * Präfix-Test. Er greift nur am Absatzanfang, damit WZB seinen Mischabsatz behält
+ * („Basiert auf der Lesefassung …", danach derselbe Boilerplate-Satz).
+ */
+const EDITORIAL_DECL_BOILERPLATE_PREFIXES = [
+    'Lokale Dateireferenzen',
+    'Local file references'
+];
+
 class TEITextReader {
     constructor(corpusIndex, authorityIndex, cache) {
         this.corpusIndex = corpusIndex;
         this.authorityIndex = authorityIndex;
-        this.cache = cache; // Reuse TextRenderer's TEICacheManager
+        this.cache = cache; // Shared TEICacheManager (created in app.js)
 
         this.currentTextId = null;
         this.currentLemmaId = null;
@@ -32,10 +56,17 @@ class TEITextReader {
     /**
      * Open reading view modal
      * @param {string} textId - Text ID to display
-     * @param {object} options - { lemmaId: string, lemmaIds: string[], targetPosition: number } for highlighting (optional)
+     * @param {object} options - { lemmaId: string, lemmaIds: string[], targetPosition: number, targetVerse: string, targetVerseId: string } for highlighting / verse jump (optional)
      * @param {object} elements - DOM element references
      */
     async openReadingView(textId, options = {}, elements) {
+        // Request-Generation-Guard (#168): Öffnet der User während eines
+        // langsamen Ladevorgangs (großes, ungecachtes TEI) einen anderen
+        // Text (z.B. Sigle-Link), darf der ältere Ladevorgang nach seinem
+        // await weder DOM noch Instanz-State überschreiben — sonst zeigen
+        // Lesebereich, aktive Sigle und Treffer-Navigation verschiedene Werke.
+        const mySeq = (this._loadSeq = (this._loadSeq || 0) + 1);
+
         this.currentTextId = textId;
 
         // Support both single lemmaId and multiple lemmaIds
@@ -51,6 +82,8 @@ class TEITextReader {
         }
 
         this.targetPosition = options.targetPosition || null;
+        this.targetVerse = options.targetVerse || null;
+        this.targetVerseId = options.targetVerseId || null;
         this.elements = elements;
 
         const lemmaInfo = this.currentLemmaIds.length > 0
@@ -71,6 +104,10 @@ class TEITextReader {
 
             // Load TEI file (cached)
             const teiDoc = await this.loadTEIFile(textMeta.filename);
+
+            // Ein neuerer openReadingView-Aufruf hat inzwischen übernommen —
+            // dieser ältere Ladevorgang darf nichts mehr rendern.
+            if (mySeq !== this._loadSeq) return;
 
             // Extract metadata (prioritizes TEI header, falls back to corpus index)
             const metadata = this.extractMetadata(teiDoc, textMeta);
@@ -100,9 +137,20 @@ class TEITextReader {
                 this.updateNavigationButtons();
 
                 // Scroll to target or first highlight after brief delay (wait for DOM to render)
-                setTimeout(() => this.scrollToHighlight(this.currentHighlightIndex), 600);
+                // — ein expliziter Vers-Deep-Link gewinnt gegen den Highlight-Scroll.
+                if (this.targetVerse === null && this.targetVerseId === null) {
+                    setTimeout(() => this.scrollToHighlight(this.currentHighlightIndex), 600);
+                }
             } else {
                 this.showNavigation(false);
+            }
+
+            // Vers-Deep-Link: über die Wort-ID (#193) oder über <l n="..."> (#59).
+            // Die Wort-ID gewinnt, sie ist die eindeutigere der beiden Angaben.
+            if (this.targetVerseId !== null) {
+                setTimeout(() => this.scrollToVerseId(this.targetVerseId), 600);
+            } else if (this.targetVerse !== null) {
+                setTimeout(() => this.scrollToVerse(this.targetVerse), 600);
             }
 
             // Hide loading
@@ -110,52 +158,23 @@ class TEITextReader {
 
         } catch (error) {
             console.error('[TEITextReader] Failed to open reading view:', error);
+            // Fehler eines überholten Ladevorgangs nicht anzeigen — sie
+            // würden Loading-State/Anzeige des neueren Aufrufs zerstören.
+            if (mySeq !== this._loadSeq) return;
             this.showLoading(false);
             this.showError(`Fehler beim Laden: ${error.message}`);
         }
     }
 
     /**
-     * Load TEI file from cache or network
+     * Load TEI file (cached in IndexedDB, revalidated per load — #151)
      */
     async loadTEIFile(filename) {
         try {
-            // Try cache first
-            const cachedDoc = await this.cache.get(filename);
-            if (cachedDoc) {
-                console.log(`[TEITextReader] ⚡ Loaded from cache: ${filename}`);
-                return cachedDoc;
-            }
-
-            // Cache miss - fetch from network
-            console.log(`[TEITextReader] 🌐 Fetching from network: ${filename}`);
             const startTime = Date.now();
-
-            const response = await fetch(`tei/${filename}`);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const xmlText = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(xmlText, 'text/xml');
-
-            // Check for parse errors
-            const parseError = doc.querySelector('parsererror');
-            if (parseError) {
-                throw new Error('XML parsing failed');
-            }
-
-            const loadTime = Date.now() - startTime;
-            console.log(`[TEITextReader] Loaded in ${(loadTime / 1000).toFixed(1)}s`);
-
-            // Cache for next time (don't wait)
-            this.cache.set(filename, doc).catch(err =>
-                console.error('[TEITextReader] Cache write failed:', err)
-            );
-
+            const doc = await this.cache.load(filename);
+            console.log(`[TEITextReader] Loaded ${filename} in ${((Date.now() - startTime) / 1000).toFixed(1)}s`);
             return doc;
-
         } catch (error) {
             console.error(`[TEITextReader] Failed to load ${filename}:`, error);
             throw error;
@@ -194,7 +213,13 @@ class TEITextReader {
 
             // External links
             handschriftencensus: null,
-            zoteroLinks: []
+            zoteroLinks: [],
+
+            // Excerpt relationship (from TEI header biblStruct, #134)
+            excerpt: null,
+
+            // Editorial interventions (from TEI header editorialDecl, #250)
+            editorialNotes: []
         };
 
         try {
@@ -207,6 +232,55 @@ class TEITextReader {
                     metadata.workId = corresp.split('#')[1];
                 }
             }
+
+            // 1b. Excerpt relationship (#134): a text is an excerpt of a larger
+            // work iff its header biblStruct carries a verse range
+            // (biblScope unit="verse"). An <analytic> title alone is NOT
+            // sufficient — 534 corpus headers have one for ordinary
+            // journal/book-section editions. Headers may carry SEVERAL
+            // biblStruct entries (book + bookSection, e.g. FB/HZ/WZB), so the
+            // verse-scoped one is searched for across all of them, not just
+            // the first in document order.
+            const excerptBibl = Array.from(teiDoc.querySelectorAll('sourceDesc biblStruct'))
+                .find(bs => Array.from(bs.querySelectorAll('imprint biblScope'))
+                    .some(scope => scope.getAttribute('unit') === 'verse'));
+            if (excerptBibl) {
+                const verseScope = Array.from(excerptBibl.querySelectorAll('imprint biblScope'))
+                    .find(bs => bs.getAttribute('unit') === 'verse');
+                const analyticTitle = excerptBibl.querySelector('analytic > title');
+                if (verseScope && analyticTitle && analyticTitle.textContent.trim()) {
+                    const contextNote = Array.from(excerptBibl.querySelectorAll('note'))
+                        .find(n => n.getAttribute('type') === 'context');
+                    metadata.excerpt = {
+                        title: analyticTitle.textContent.trim(),
+                        verseRange: verseScope.textContent.trim(),
+                        context: contextNote ? contextNote.textContent.trim() : null
+                    };
+                } else {
+                    // Authoring-Signal statt stillem No-op: der Banner lebt rein
+                    // von kuratierten Header-Daten — fehlt der analytic-Titel
+                    // zum Versbereich, soll das beim Kuratieren auffallen,
+                    // nicht erst in der manuellen QA (Review-Finding PR #178).
+                    console.warn('[TEITextReader] biblScope unit="verse" gefunden, aber kein <analytic><title>: Excerpt-Banner wird nicht angezeigt.');
+                }
+            }
+
+            // 1c. Editorische Eingriffe (#250): alle Absätze des <editorialDecl>,
+            // ohne das Repository-Boilerplate und ohne die englische Parallelfassung.
+            // Die Oberfläche ist deutsch; der @xml:lang-Test ist zusätzlich zum
+            // Präfix-Test, damit ein Wegfall des Attributs die Filterung nicht
+            // aushebelt. Reihenfolge bleibt Dokumentreihenfolge: bei FR1-FR3 steht
+            // der Band-Kontext vor den textspezifischen Eingriffen.
+            metadata.editorialNotes = Array.from(teiDoc.querySelectorAll('editorialDecl p'))
+                .map(p => ({
+                    text: (p.textContent || '').replace(/\s+/g, ' ').trim(),
+                    lang: p.getAttribute('xml:lang')
+                        || p.getAttributeNS('http://www.w3.org/XML/1998/namespace', 'lang')
+                }))
+                .filter(note => note.text
+                    && note.lang !== 'en'
+                    && !EDITORIAL_DECL_BOILERPLATE_PREFIXES.some(prefix => note.text.startsWith(prefix)))
+                .map(note => note.text);
 
             // 2. Look up work in authority index
             if (metadata.workId && this.authorityIndex.works) {
@@ -321,8 +395,158 @@ class TEITextReader {
     }
 
     /**
+     * Beginnt dieses <div> eine eigene, durchlaufende Verszählung bei 1?
+     *
+     * Zwei Bedingungen: die erste numerisch nummerierte <l> im Teilbaum trägt
+     * n="1", UND die 1 kommt im div genau einmal vor. Zählt das div dagegen
+     * durch (Kapitel-divs mit n="234" als erster Zeile), bleibt der Anker beim
+     * ersten Vers des Texts; zählt es strophenlokal (mehrere Einsen), gibt es
+     * gar keinen sinnvollen Ankerpunkt.
+     *
+     * Nicht-numerische @n (ALX- und NLA-Überschriftenzeilen „h_1") werden
+     * übersprungen, nicht als Zählungsstart gewertet. Siehe #138 und #127.
+     *
+     * Zeilen eines eingehängten Parallelzeugen zählen nicht mit, siehe
+     * isInNestedParallel().
+     *
+     * @param {Element} divEl
+     * @returns {boolean}
+     */
+    divRestartsNumbering(divEl) {
+        let first = null;
+        let einsen = 0;
+        for (const line of divEl.querySelectorAll('l[n]')) {
+            const n = line.getAttribute('n');
+            if (!/^\d+$/.test(n)) continue;
+            if (this.isInNestedParallel(line, divEl)) continue;
+            if (first === null) first = n;
+            if (n === '1') einsen += 1;
+        }
+        // Zwei Bedingungen, die zweite ist die wichtigere:
+        //   a) die erste numerische Zeile ist die 1
+        //   b) die 1 kommt im ganzen div GENAU EINMAL vor
+        //
+        // (b) trennt DURCHLAUFENDE Zählung von STROPHENLOKALER, nicht "mit
+        // Überschrift" von "ohne": 159 der qualifizierenden divs haben gar kein
+        // @type und rendern ebenfalls keine Überschrift, die sind gewollt.
+        // HUG zählt je Lied 1..27 durch, dort ist die 1 einmalig und der Anker
+        // gewollt. NLA dagegen hat 38 untypisierte <div>, in denen jede Strophe
+        // wieder bei 1 beginnt: ohne (b) bekäme der Text 38 zusätzliche
+        // Randeinsen, also genau das unruhige Randbild, das #127 beseitigt hat,
+        // nur über <div> statt über <lg> hereingekommen.
+        // Korpusweit hält (b) 1.959 divs und verwirft 1.169 strophenlokale in
+        // 84 Texten, was 1.007 unmotivierte Randeinsen verhindert
+        // (Stand 2026-09-08, Herleitung bei isInNestedParallel).
+        return first === '1' && einsen === 1;
+    }
+
+    /**
+     * Liegt der Knoten in einem Parallelzeugen INNERHALB von divEl? (#250)
+     *
+     * Seit #236 sitzt in FR3 eine div[@type="parallel"] innerhalb der
+     * div[@type="section"] des Basiszeugen. Deren eigene Verszählung beginnt
+     * ebenfalls bei 1; für Bedingung (b) aus divRestartsNumbering() sah der
+     * Teilbaum der section damit zwei Einsen, die section qualifizierte nicht
+     * mehr, und die sichtbare Randnummer wanderte vom Basiszeugen zum
+     * Parallelzeugen. Betroffen waren 19 der 127 FR3-Sections.
+     *
+     * Deshalb zählt jeder Zeuge nur seine eigenen Zeilen: beim Prüfen eines
+     * umgebenden div bleiben die Zeilen eingehängter Parallelzeugen außen vor.
+     * Der Parallelzeuge selbst wird davon nicht berührt, er wird beim eigenen
+     * Aufruf geprüft (divEl ist dann die parallel-div, die Schleife endet
+     * davor) und behält seine 1.
+     *
+     * Gemessen über alle 667 Texte mit
+     * scripts/audit/count-verse-numbering-resets.py, das diese Regel seit
+     * #302 mitführt. Wirkung DIESER Regel, gemessen bei ihrer Einführung:
+     * qualifizierende divs 1.473 → 1.492, der Zuwachs ausschließlich
+     * section-divs in FR3 (qualifizierende section-divs korpusweit
+     * 137 → 156), kein einziges div verliert seine Qualifikation.
+     * Sichtbare Randnummern 1.333 → 1.352 zusätzliche in denselben 49
+     * Texten, die Differenz liegt vollständig in FR3 (+117 → +136). DES2
+     * und PKP haben ebenfalls verschachtelte parallel-divs und bleiben
+     * unverändert.
+     *
+     * Diese vier Vorher/Nachher-Paare beschreiben, was die Regel getan hat,
+     * und bleiben deshalb stehen. Die Nachher-Werte sind aber Zeitpunkt-
+     * angaben: heute liefert dasselbe Skript 1.959 qualifizierende divs und
+     * 1.818 zusätzliche Randnummern in 50 Texten. Die Differenz ist genau
+     * ein Text und keine Regression dieser Regel. Der Willehalm hat seine
+     * 467 div[@type="chapter"] erst mit #358 bekommen und ist dadurch in
+     * die Statistik eingetreten: 1.492 + 467 = 1.959, 1.352 + 466 = 1.818,
+     * 49 + 1 = 50, und ein Diff der Pro-Text-Liste gegen den Stand vor #358
+     * enthält genau eine Zeile (WH +466). Kein anderer Text hat sich
+     * bewegt, FR3 steht unverändert bei +136, die section-Zahl 156 gilt
+     * unverändert.
+     *
+     * Dieselben Zahlen stehen in drei weiteren Blöcken (oben bei
+     * divRestartsNumbering, unten beim Zählungs-Anker, dazu docs/FEATURES.md
+     * beim Stichwort „Verse numbering per counting range"). Kein Gate deckt
+     * Zahlen in .js-Kommentaren ab, und doc-count-audit.py hat auf diese
+     * Markdown-Stelle keinen Anker; wer sie neu misst, zieht alle vier nach.
+     *
+     * Und nicht nur die vier: an #358 hängt jede korpusweite div-Zahl im
+     * Repository. Der Nenner „5.143 typisierte divs" bei hasOwnHeading und
+     * in docs/FEATURES.md ist derselbe Fall und stand bis 2026-09-08 auf dem
+     * Vor-#358-Stand. Wer nach einem Korpuszuwachs eine dieser Zahlen prüft,
+     * sucht am besten nach der Bezugsgröße statt nach der Zahl.
+     *
+     * Grenze der Regel: sie wirkt auf die PRÜFUNG, nicht auf die Render-
+     * Reihenfolge. In FR3 steht jeder Parallelzeuge hinter den Zeilen seines
+     * Basiszeugen, die sichtbare 1 fällt also auf den Basiszeugen. Läge ein
+     * Zeuge davor, qualifizierte die section zwar, aber die erste Zeile des
+     * Parallelzeugen verbrauchte den Anker. Heute gibt es keinen solchen Fall.
+     *
+     * @param {Element} node
+     * @param {Element} divEl Bezugs-div, dessen Zählung geprüft wird
+     * @returns {boolean}
+     */
+    isInNestedParallel(node, divEl) {
+        for (let a = node.parentElement; a && a !== divEl; a = a.parentElement) {
+            if (a.localName === 'div' && a.getAttribute('type') === 'parallel') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Trägt das div eine eigene Überschrift? (#250)
+     *
+     * Nur DIREKTE <head>-Kinder zählen: der <head> eines verschachtelten div
+     * (etwa der Parallelüberlieferung in FR3) gehört diesem, nicht dem
+     * umgebenden Abschnitt.
+     *
+     * Gebraucht wird das gegen die Doppelung aus #236: seit dort jeder Ton ein
+     * <head> mit GA-Nummer und Tonnamen trägt, stand „Lied 5" über
+     * „V. Langer Ton". Korpusweit betrifft das 1.097 der 5.143 typisierten divs
+     * in 35 Texten (scripts/audit/count-editorial-notes-and-div-heads.py,
+     * Teil B, Stand 2026-09-08). Der Nenner hing an derselben Tatsache wie
+     * die Verszählungs-Zahlen oben: er stand auf 4.676 und damit auf dem
+     * Stand vor #358, der dem Willehalm 467 typisierte divs gebracht hat
+     * (4.676 + 467 = 5.143). Zähler, Texte und Typaufschlüsselung sind davon
+     * unberührt, weil WH keinen einzigen <head> trägt.
+     *
+     * Das synthetische Label wird deshalb NICHT unterdrückt: in keinem dieser
+     * 1.097 Fälle enthält der <head> die Nummer aus @n (AC1 hat n="1" und
+     * „das i capitel", ABS n="1" und „basteten."), und 932 davon haben ein @n.
+     * Unterdrücken hieße, die einzige sichtbare Zählung zu entfernen. Stattdessen
+     * wird das Label zur übergeordneten Zeile der Überschrift gesetzt, damit
+     * beide als eine Einheit lesen statt als zwei konkurrierende Überschriften.
+     *
+     * @param {Element} divEl
+     * @returns {boolean}
+     */
+    divHasOwnHead(divEl) {
+        for (const child of divEl.children) {
+            if (child.localName === 'head') return true;
+        }
+        return false;
+    }
+
+    /**
      * Extract and format body text with TEI structure preservation
-     * Handles: <head>, <p>, <div>, <lg>, <l>, <lb>, <pb>, <hi rend="...">, <seg type="pc">
+     * Handles: <head>, <p>, <div>, <lg>, <l>, <lb>, <pb>, <hi rend="...">, <pc>, <seg>
      * @returns {object} { html: string, highlights: Array<{element, position}> }
      */
     extractAndFormatBody(teiDoc, lemmaId = null, lemmaIds = []) {
@@ -332,7 +556,7 @@ class TEITextReader {
         }
 
         const highlights = [];
-        const state = { wordPosition: 0 }; // Use object to pass by reference
+        const state = { wordPosition: 0, firstNumericLineShown: false }; // Use object to pass by reference
 
         // Create lemma-to-color mapping for multi-lemma mode
         const lemmaColorMap = {};
@@ -342,88 +566,224 @@ class TEITextReader {
             });
         }
 
-        // Process element recursively
-        const processElement = (el) => {
+        // Render a single TEI element to HTML (single path for both top-level and recursive)
+        this._renderElement = (el) => {
             const tagName = el.tagName.toLowerCase();
+            const children = () => this.processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state);
 
-            // Handle different TEI elements
             switch (tagName) {
                 case 'head':
-                    // Section heading
-                    return `<h3 class="section-head">${this.processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state)}</h3>`;
-
+                    return `<h3 class="section-head">${children()}</h3>`;
                 case 'p':
                 case 'ab':
-                    // Paragraph
-                    return `<p>${this.processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state)}</p>`;
-
-                case 'div':
-                    // Division (generic container)
-                    return `<div class="tei-div">${this.processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state)}</div>`;
-
-                case 'lg':
-                    // Line group (verse)
-                    return `<div class="verse-group">${this.processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state)}</div>`;
-
-                case 'l':
-                    // Single line (verse)
-                    return `<span class="verse-line">${this.processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state)}</span>`;
-
-                case 'lb':
-                    // Line break
+                    return `<p>${children()}</p>`;
+                case 'div': {
+                    const divType = el.getAttribute('type') || '';
+                    const divN = el.getAttribute('n') || '';
+                    // Zählungs-Anker pro <div> zurücksetzen, wenn dieses div seine
+                    // eigene Verszählung bei 1 beginnt (HUG: jedes Lied zählt neu).
+                    // Ohne den Reset zeigt nur das erste Lied seine „1", alle
+                    // folgenden setzen sichtbar erst bei 5 ein (#138, Julia 17.07.).
+                    //
+                    // Reichweite: 1.959 divs in 138 Texten erfüllen das
+                    // Kriterium (1.364 chapter, 252 song, 159 ohne @type,
+                    // 156 section, 21 parallel, 7 number); sichtbar werden
+                    // dadurch 1.818 zusätzliche Randnummern in 50 Texten. Größter
+                    // Fall ist PZ mit +826, dann WH +466, FR3 +136, CHH +53,
+                    // TKR +40, HUG +39 (Stand 2026-09-08, nach #236, der
+                    // Zeugentrennung aus #250 und dem Willehalm-Umbau aus
+                    // #358). Texte
+                    // mit durchlaufender Zählung sind unberührt, weil dort nur
+                    // der erste div bei n="1" beginnt.
+                    //
+                    // Alle Zahlen sind reproduzierbar mit
+                    // scripts/audit/count-verse-numbering-resets.py, das die
+                    // Render-Reihenfolge nachbaut und seit #302 auch die
+                    // Zeugentrennung kennt.
+                    //
+                    // Bewusst NUR auf div-Ebene, nie auf <lg>: NBB startet jede
+                    // Strophe bei n=1: ein lg-Reset stellte in jede Strophe eine
+                    // Marginal-„1" und brächte genau das jumbled margin zurück,
+                    // das #127 beseitigt hat. Die n="1"-Bedingung hält zusätzlich
+                    // durchlaufend gezählte Kapitel-divs unverändert; dort bleibt
+                    // der Anker der erste Vers des Texts.
+                    if (this.divRestartsNumbering(el)) {
+                        state.firstNumericLineShown = false;
+                    }
+                    const divLabels = {
+                        'song': 'Lied', 'chapter': 'Kapitel', 'recipe': 'Rezept',
+                        'number': 'Nr.', 'section': 'Abschnitt',
+                        'colophon': 'Kolophon', 'parallel': 'Parallelüberlieferung'
+                    };
+                    const label = divLabels[divType];
+                    // Trägt das div eine eigene Überschrift, wird das synthetische
+                    // Label ihr übergeordnet (kleiner, direkt darüber) statt als
+                    // gleichrangige zweite Überschrift daneben (#250, #236).
+                    // Begründung und Zahlen: divHasOwnHead().
+                    const ownHead = this.divHasOwnHead(el);
+                    const headerClasses = ownHead
+                        ? `tei-div-header tei-div-header-above-head tei-div-${this.escapeHtml(divType)}`
+                        : `tei-div-header tei-div-${this.escapeHtml(divType)}`;
+                    let header = '';
+                    if (divType === 'chapter' && !ownHead) {
+                        // Chapter headings render like <head> (h3.section-head).
+                        // Mit eigenem <head> entfällt das: zwei h3.section-head
+                        // untereinander sind die Doppelung aus #250.
+                        const heading = label && divN ? `${label} ${divN}` : label || divN;
+                        if (heading) header = `<h3 class="section-head">${this.escapeHtml(heading)}</h3>`;
+                    } else if (label && divN) {
+                        header = `<div class="${headerClasses}">${this.escapeHtml(label)} ${this.escapeHtml(divN)}</div>`;
+                    } else if (label) {
+                        header = `<div class="${headerClasses}">${this.escapeHtml(label)}</div>`;
+                    }
+                    return `<div class="tei-div tei-div-${this.escapeHtml(divType)}" data-type="${this.escapeHtml(divType)}" data-n="${this.escapeHtml(divN)}">${header}${children()}</div>`;
+                }
+                case 'lg': {
+                    const lgN = el.getAttribute('n') || '';
+                    const lgLabel = lgN ? `<span class="stanza-label">Strophe ${this.escapeHtml(lgN)}</span>` : '';
+                    return `<div class="verse-group" data-n="${this.escapeHtml(lgN)}">${lgLabel}${children()}</div>`;
+                }
+                case 'l': {
+                    const lineN = el.getAttribute('n') || '';
+                    // Marginal line number: the first verse line carrying a numeric
+                    // @n (anchor) and thereafter every 5th by ABSOLUTE @n, not render
+                    // order. Non-numeric @n (e.g. ALX heading lines "h_1") and bare
+                    // <l> without @n (WZB prose) get no number; stanza-local resets
+                    // (NBB l@n=1..4) never hit %5, so they keep only their "Strophe N"
+                    // labels and avoid a jumbled margin. See #127.
+                    //
+                    // Seit #138 ist der Anker nicht mehr dokumentweit einmalig: ein
+                    // <div>, das seine Zählung bei 1 neu beginnt, setzt ihn zurück
+                    // (divRestartsNumbering). In HUG bekommt damit jedes Lied seine
+                    // sichtbare „1"; NBB bleibt unverändert, weil dort die Strophen
+                    // und nicht die divs zurücksetzen.
+                    const isNumeric = /^\d+$/.test(lineN);
+                    // First numeric line (anchor) shows, then every 5th by absolute
+                    // @n. Once the anchor fires the flag stays set, so afterwards only
+                    // the %5 branch matters.
+                    const showNumber = isNumeric &&
+                        (!state.firstNumericLineShown || parseInt(lineN, 10) % 5 === 0);
+                    if (showNumber) state.firstNumericLineShown = true;
+                    const cls = showNumber ? 'verse-line verse-line-numbered' : 'verse-line';
+                    // data-core: the numeric part of this verse's first <w xml:id>
+                    // (PZ_33926_1 -> "33926"). @n alone cannot address a verse across
+                    // the corpus — in PZ it carries only the position inside the
+                    // thirty-line section (<div n="339"><l n="26">), in WH it likewise
+                    // carries only the position inside the section (the section itself
+                    // became <div type="chapter"> in #358, before that it existed
+                    // nowhere but in the word ids), and the Ambraser insert sits as
+                    // one <l n="4629"> covering the cores 462900 to 462957.
+                    // The word id is the one
+                    // identifier that is unique in every work, so `?verseId=PZ_33926`
+                    // resolves here. data-core-max only where an <l> spans more than
+                    // one verse, so the common case stays a single attribute.
+                    // Absent for verses without annotated words (#193).
+                    const range = this.verseCoreRange(el);
+                    const coreAttr = range
+                        ? ` data-core="${this.escapeHtml(range.first)}"`
+                          + (range.last !== range.first ? ` data-core-max="${this.escapeHtml(range.last)}"` : '')
+                        : '';
+                    return `<span class="${cls}" data-n="${this.escapeHtml(lineN)}"${coreAttr}>${children()}</span>`;
+                }
+                case 'lb': {
+                    const lbN = el.getAttribute('n') || '';
+                    // Nur numerische @n als sichtbare Marginal-Nummer
+                    // (.lb-number), analog zur <l>-Policy (#127). Technische
+                    // Kennungen wie "h_1" (Heading-Zeilen) rendern als eigener
+                    // .lb-anchor: kein Label, keine Margin-Box — aber data-n
+                    // bleibt erhalten, damit ?verse=-Deep-Links auf Prosa-
+                    // Zeilen (Druckzeilen-Zählung) weiter auflösen (#143).
+                    // Vorher lieferten h_-Zeilen leere .lb-number-Spans, die
+                    // .lb-number-Konsumenten (Tests, CSS-Margin) als sichtbare
+                    // Nummern missverstanden (#158/#162).
+                    if (lbN) {
+                        if (/^\d+$/.test(lbN)) {
+                            return `<br class="line-break"><span class="lb-number" data-n="${this.escapeHtml(lbN)}">${this.escapeHtml(lbN)}</span>`;
+                        }
+                        return `<br class="line-break"><span class="lb-anchor" data-n="${this.escapeHtml(lbN)}"></span>`;
+                    }
                     return '<br class="line-break">';
-
-                case 'pb':
-                    // Page break - show page number
+                }
+                case 'note': {
+                    const noteType = el.getAttribute('type');
+                    const noteN = el.getAttribute('n') || '';
+                    if ((noteType === 'date' || noteType === 'year') && noteN) {
+                        // Badge + Kindinhalt (#170): date/year-Notes sind heute
+                        // self-closing, aber ein künftig lemmatisiertes <w> darin
+                        // zählt im Python-Index und in KWIC mit (CONTRACTS §B) —
+                        // das Badge allein würde es im Reader verschlucken und
+                        // alle Highlights dahinter verschieben.
+                        return `<span class="note-badge note-${this.escapeHtml(noteType)}" title="${noteType === 'date' ? 'Datum' : 'Jahr'}">${this.escapeHtml(noteN)}</span>${children()}`;
+                    }
+                    return children();
+                }
+                case 'pb': {
                     const pageNum = el.getAttribute('n');
                     return pageNum ? `<span class="page-break" title="Seite ${pageNum}">[${pageNum}]</span>` : '';
-
-                case 'hi':
-                    // Highlighting (rend="initial", rend="upper_case_first_letter")
+                }
+                case 'hi': {
                     const rend = el.getAttribute('rend');
                     return this.processHi(el, rend, lemmaId, lemmaIds, lemmaColorMap, highlights, state);
-
+                }
+                case 'pc': {
+                    const join = el.getAttribute('join') || 'left';
+                    return `<span class="punctuation" data-join="${join}">${this.escapeHtml(el.textContent)}</span>`;
+                }
                 case 'seg':
-                    // Segment (type="pc" = punctuation)
-                    const type = el.getAttribute('type');
-                    if (type === 'pc') {
-                        return `<span class="punctuation">${this.escapeHtml(el.textContent)}</span>`;
-                    }
-                    return this.processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state);
-
-                case 'w':
-                    // Word element
+                    return children();
+                case 'w': {
                     const hasLemmaRef = el.getAttribute('lemmaRef');
+                    // Position parity with the Python build (CONTRACTS §B): only a
+                    // <w lemmaRef> with non-empty text content is counted. The build
+                    // skips empty ones (build-corpus-index.py: `if not text_content:
+                    // continue`); without this guard a future ingest with placeholder/
+                    // gap tokens would shift every later position relative to the index,
+                    // breaking hit-navigation and proximity search. 0 corpus cases today
+                    // -> no-op on current data. Enforced by position-parity.spec.js (#131).
+                    const hasText = el.textContent.trim().length > 0;
                     const result = this.processWord(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state);
-                    // Only increment for words with lemmaRef (matches corpus index counting)
-                    if (hasLemmaRef) {
+                    if (hasLemmaRef && hasText) {
                         state.wordPosition++;
                     }
                     return result;
-
-                case 'cb':
-                    // Column break
+                }
+                case 'cb': {
                     const colNum = el.getAttribute('n');
-                    const colType = el.getAttribute('type');
                     return colNum
                         ? `<span class="column-break" title="Spalte ${colNum}">[Sp. ${this.escapeHtml(colNum)}]</span>`
                         : '<span class="column-break">[Sp.]</span>';
-
+                }
+                case 'milestone': {
+                    const unit = el.getAttribute('unit') || '';
+                    const msN = el.getAttribute('n') || '';
+                    if (unit === 'verse' && msN) {
+                        return `<span class="verse-marker" title="Vers ${this.escapeHtml(msN)}">${this.escapeHtml(msN)}</span>`;
+                    }
+                    return '';
+                }
                 case 'caesura':
-                    // Metrical pause in verse
                     return '<span class="caesura" title="Zäsur">||</span>';
-
+                // #252: Ueberlieferungsluecken standen bis zur Migration als
+                // "( caesura )" da, also als Klammerpaar um einen
+                // Zaesur-Strich. Nach der Migration auf <gap/> waere die Zeile
+                // ohne diesen Zweig LEER: die Luecke wuerde maschinell
+                // auffindbar und fuer Lesende unsichtbar, was das Gegenteil
+                // der Absicht ist. @reason und @extent stehen im Titel, wenn
+                // die Edition sie hergibt; heute traegt jede Stelle
+                // reason="lost" und kein extent.
+                case 'gap': {
+                    const grund = el.getAttribute('reason') || '';
+                    const umfang = el.getAttribute('extent') || '';
+                    const titel = ['Überlieferungslücke', grund, umfang]
+                        .filter(Boolean).join(', ');
+                    return `<span class="gap" title="${this.escapeHtml(titel)}">[…]</span>`;
+                }
                 case 'supplied':
-                    // Editor-supplied text
-                    return `<span class="supplied" title="Editorische Ergänzung">[${this.processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state)}]</span>`;
-
+                    return `<span class="supplied" title="Editorische Ergänzung">[${children()}]</span>`;
                 case 'num':
-                    // Numeric value
-                    return `<span class="number">${this.processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state)}</span>`;
-
+                    return `<span class="number">${children()}</span>`;
                 default:
-                    // For unknown elements, process children
-                    return this.processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state);
+                    return children();
             }
         };
 
@@ -432,26 +792,34 @@ class TEITextReader {
         const children = Array.from(body.children);
 
         for (const child of children) {
-            html += processElement(child);
+            html += this._renderElement(child);
         }
 
-        return { html, highlights };
+        // Join punctuation to adjacent words based on @join attribute:
+        // join="left" → remove whitespace before (attach to preceding word)
+        //   Pass 1: whitespace directly before the punctuation span
+        //   Pass 2: trailing space inside a preceding element (e.g. <span>word </span><pc>)
+        // join="right" → remove whitespace after (attach to following word)
+        html = html.replace(/\s+(<span class="punctuation" data-join="left">)/g, '$1');
+        html = html.replace(/(\S)\s+(<\/\w+>\s*<span class="punctuation" data-join="left">)/g, '$1$2');
+        html = html.replace(/(<span class="punctuation" data-join="right">[^<]*<\/span>)\s+/g, '$1');
+
+        // Detect verse vs prose context
+        const hasVerse = !!body.querySelector('lg');
+
+        return { html, highlights, hasVerse };
     }
 
     /**
-     * Process <hi> element with rend attribute
+     * Process <hi> element with rend attribute — token-based for compound values
      */
     processHi(el, rend, lemmaId, lemmaIds, lemmaColorMap, highlights, state) {
         const content = this.processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state);
+        if (!rend) return `<span class="hi">${content}</span>`;
 
-        switch (rend) {
-            case 'initial':
-                return `<span class="initial">${content}</span>`;
-            case 'upper_case_first_letter':
-                return `<span class="upper-case-first">${content}</span>`;
-            default:
-                return `<span class="hi">${content}</span>`;
-        }
+        const tokens = rend.split(/\s+/);
+        const classes = tokens.map(t => `hi-${t}`).join(' ');
+        return `<span class="hi ${classes}">${content}</span>`;
     }
 
     /**
@@ -462,13 +830,14 @@ class TEITextReader {
         const wordText = wordEl.textContent.trim();
         const lemmaRef = wordEl.getAttribute('lemmaRef');
         const currentPosition = state.wordPosition;
+        // Highlight on exact @lemmaRef token match (CONTRACTS §B.1) — never a
+        // substring, which would wrongly match "lemma_308" inside "lemma_3089"
+        // (jâmer) and inflate the hit counter. See #126.
 
         // Multi-lemma mode: check all lemmaIds with colors
         if (lemmaIds.length > 0 && lemmaRef) {
             for (const searchLemmaId of lemmaIds) {
-                const lemmaRefPattern = `#${searchLemmaId}`;
-
-                if (lemmaRef.includes(lemmaRefPattern)) {
+                if (lemmaRefMatchesId(lemmaRef, searchLemmaId)) {
                     const color = lemmaColorMap[searchLemmaId];
                     const id = `highlight-${highlights.length}`;
                     highlights.push({ id, element: null, position: currentPosition }); // Track position
@@ -482,9 +851,7 @@ class TEITextReader {
 
         // Single lemma mode: standard highlighting
         if (lemmaId && lemmaRef) {
-            const lemmaRefPattern = `#${lemmaId}`;
-
-            if (lemmaRef.includes(lemmaRefPattern)) {
+            if (lemmaRefMatchesId(lemmaRef, lemmaId)) {
                 const id = `highlight-${highlights.length}`;
                 highlights.push({ id, element: null, position: currentPosition }); // Track position
                 return `<mark class="highlight" id="${id}">${this.escapeHtml(wordText)}</mark> `;
@@ -495,56 +862,21 @@ class TEITextReader {
     }
 
     /**
-     * Process children of element recursively
+     * Process children of element recursively, delegating element rendering
+     * to the _renderElement closure set up by extractAndFormatBody().
+     * Must only be called within an extractAndFormatBody() call chain.
      */
     processChildren(el, lemmaId, lemmaIds, lemmaColorMap, highlights, state) {
+        if (!this._renderElement) {
+            throw new Error('processChildren called outside extractAndFormatBody context');
+        }
         let result = '';
 
         for (const node of el.childNodes) {
             if (node.nodeType === Node.TEXT_NODE) {
                 result += this.escapeHtml(node.textContent);
             } else if (node.nodeType === Node.ELEMENT_NODE) {
-                const tagName = node.tagName.toLowerCase();
-
-                if (tagName === 'w') {
-                    const hasLemmaRef = node.getAttribute('lemmaRef');
-                    result += this.processWord(node, lemmaId, lemmaIds, lemmaColorMap, highlights, state);
-                    // Only increment for words with lemmaRef (matches corpus index counting)
-                    if (hasLemmaRef) {
-                        state.wordPosition++;
-                    }
-                } else if (tagName === 'lb') {
-                    result += '<br class="line-break">';
-                } else if (tagName === 'pb') {
-                    const pageNum = node.getAttribute('n');
-                    result += pageNum ? `<span class="page-break" title="Seite ${pageNum}">[${pageNum}]</span> ` : '';
-                } else if (tagName === 'hi') {
-                    const rend = node.getAttribute('rend');
-                    result += this.processHi(node, rend, lemmaId, lemmaIds, lemmaColorMap, highlights, state);
-                } else if (tagName === 'seg') {
-                    const type = node.getAttribute('type');
-                    if (type === 'pc') {
-                        result += this.escapeHtml(node.textContent);
-                    } else {
-                        result += this.processChildren(node, lemmaId, lemmaIds, lemmaColorMap, highlights, state);
-                    }
-                } else if (tagName === 'l') {
-                    result += `<span class="verse-line">${this.processChildren(node, lemmaId, lemmaIds, lemmaColorMap, highlights, state)}</span>`;
-                } else if (tagName === 'cb') {
-                    const colNum = node.getAttribute('n');
-                    result += colNum
-                        ? `<span class="column-break" title="Spalte ${colNum}">[Sp. ${this.escapeHtml(colNum)}]</span>`
-                        : '<span class="column-break">[Sp.]</span>';
-                } else if (tagName === 'caesura') {
-                    result += '<span class="caesura" title="Zäsur">||</span>';
-                } else if (tagName === 'supplied') {
-                    result += `<span class="supplied" title="Editorische Ergänzung">[${this.processChildren(node, lemmaId, lemmaIds, lemmaColorMap, highlights, state)}]</span>`;
-                } else if (tagName === 'num') {
-                    result += `<span class="number">${this.processChildren(node, lemmaId, lemmaIds, lemmaColorMap, highlights, state)}</span>`;
-                } else {
-                    // Recursively process other elements
-                    result += this.processChildren(node, lemmaId, lemmaIds, lemmaColorMap, highlights, state);
-                }
+                result += this._renderElement(node);
             }
         }
 
@@ -559,8 +891,21 @@ class TEITextReader {
         this.elements.readingTitle.textContent = metadata.title;
         this.elements.readingAuthor.textContent = metadata.author;
 
+        // Excerpt banner (#134): sichtbar über dem Text, bewusst NICHT im
+        // eingeklappten Metadaten-Bereich — die Ausschnittsbeziehung muss
+        // ohne Öffnen des Panels erkennbar sein (Akzeptanzkriterium #134).
+        let metadataHTML = '';
+        if (metadata.excerpt) {
+            metadataHTML += '<div class="excerpt-banner">';
+            metadataHTML += `<strong>${this.escapeHtml(metadata.excerpt.title)}</strong> – Ausschnitt aus: ${this.escapeHtml(metadata.title)} (Verse ${this.escapeHtml(metadata.excerpt.verseRange)}).`;
+            if (metadata.excerpt.context) {
+                metadataHTML += ` ${this.escapeHtml(metadata.excerpt.context)}`;
+            }
+            metadataHTML += '</div>';
+        }
+
         // Build comprehensive metadata HTML with collapsible section
-        let metadataHTML = '<div class="metadata-toggle-container">';
+        metadataHTML += '<div class="metadata-toggle-container">';
         metadataHTML += '<button class="metadata-toggle-btn" aria-expanded="false">';
         // Heroicon: chevron-right (collapsed state)
         metadataHTML += '<svg class="toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
@@ -570,6 +915,20 @@ class TEITextReader {
 
         // Wikidata Image Section (will be populated asynchronously)
         metadataHTML += '<div id="wikidataImageContainer" class="wikidata-image-container" style="display: none;"></div>';
+
+        // Section 0: Excerpt relationship (#134) — strukturierte Felder
+        // analog zur Tabelle im Issue (Ausschnitt/Gesamtwerk/Versbereich/Kontext)
+        if (metadata.excerpt) {
+            metadataHTML += '<div class="metadata-section">';
+            metadataHTML += '<h4 class="metadata-section-title">Ausschnitt</h4>';
+            metadataHTML += `<div class="metadata-row"><strong>Ausschnitt:</strong> ${this.escapeHtml(metadata.excerpt.title)}</div>`;
+            metadataHTML += `<div class="metadata-row"><strong>Gesamtwerk:</strong> ${this.escapeHtml(metadata.title)}</div>`;
+            metadataHTML += `<div class="metadata-row"><strong>Versbereich:</strong> ${this.escapeHtml(metadata.excerpt.verseRange)}</div>`;
+            if (metadata.excerpt.context) {
+                metadataHTML += `<div class="metadata-row"><strong>Kontext:</strong> ${this.escapeHtml(metadata.excerpt.context)}</div>`;
+            }
+            metadataHTML += '</div>';
+        }
 
         // Section 1: All Titles
         if (metadata.titles && metadata.titles.length > 0) {
@@ -649,7 +1008,8 @@ class TEITextReader {
             if (metadata.authorGnd) {
                 metadataHTML += `<a href="https://d-nb.info/gnd/${metadata.authorGnd}" target="_blank" rel="noopener" class="external-link" title="Autor*in GND: ${metadata.authorGnd}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg> GND</a>`;
             }
-            if (metadata.authorWikidata) {
+            // Wikidata-Link bei Anonym-Autor*innen unterdrücken (Issue #96 KZW-Comment)
+            if (metadata.authorWikidata && metadata.authorId !== 'person_anonym') {
                 metadataHTML += `<a href="https://www.wikidata.org/wiki/${metadata.authorWikidata}" target="_blank" rel="noopener" class="external-link" title="Autor*in Wikidata: ${metadata.authorWikidata}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg> Wikidata</a>`;
             }
             metadataHTML += '</div>';
@@ -687,6 +1047,26 @@ class TEITextReader {
             metadataHTML += `<a href="${metadata.handschriftencensus}" target="_blank" rel="noopener" class="external-link"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg> Handschriftencensus</a>`;
             metadataHTML += '</div>';
         }
+
+        // Section 7b: Editorische Eingriffe (#250, KZW-Entscheidung 29.07.2026)
+        // Ohne Eingriffe kein Abschnitt: 3 Texte (CEFB, GWTK, KVO) haben nach dem
+        // Boilerplate-Filter keinen einzigen Absatz mehr.
+        if (metadata.editorialNotes && metadata.editorialNotes.length > 0) {
+            metadataHTML += '<div class="metadata-section metadata-editorial">';
+            metadataHTML += '<h4 class="metadata-section-title">Editorische Eingriffe</h4>';
+            metadataHTML += '<p class="metadata-editorial-intro">Angaben aus dem TEI-Header dieses Texts. Wo die MHDBDB in die Textgestalt eingegriffen hat, ist für Zitate die gedruckte Ausgabe maßgeblich.</p>';
+            metadata.editorialNotes.forEach(note => {
+                metadataHTML += `<p class="metadata-editorial-note">${this.escapeHtml(note)}</p>`;
+            });
+            metadataHTML += '</div>';
+        }
+
+        // Section 8: TEI-XML-Download (Issue #96)
+        metadataHTML += '<div class="metadata-section metadata-tei-download">';
+        metadataHTML += '<p class="metadata-tei-download-text">Weitere Metadaten (u. a. Referenzedition und verantwortliche Editor*innen) sind in der zugehörigen TEI-XML dokumentiert; die Datei steht ';
+        metadataHTML += `<a href="tei/${this.escapeHtml(textId)}.tei.xml" download="${this.escapeHtml(textId)}.tei.xml" class="metadata-tei-download-link" title="TEI-XML-Datei herunterladen"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path></svg> hier</a>`;
+        metadataHTML += ' auch zum direkten Download bereit.</p>';
+        metadataHTML += '</div>';
 
         metadataHTML += '</div>'; // Close metadata-sections
         metadataHTML += '</div>'; // Close metadata-toggle-container
@@ -735,7 +1115,9 @@ class TEITextReader {
             });
         });
 
-        // Populate body text
+        // Populate body text with verse/prose context
+        this.elements.readingBody.classList.remove('verse-context', 'prose-context');
+        this.elements.readingBody.classList.add(bodyResult.hasVerse ? 'verse-context' : 'prose-context');
         this.elements.readingBody.innerHTML = bodyResult.html;
 
         // Populate highlight element references after DOM insertion
@@ -886,6 +1268,109 @@ class TEITextReader {
     }
 
     /**
+     * Kernzahlen der ersten und letzten <w xml:id> dieser Verszeile, als
+     * Strings: PZ_33926_1 -> "33926". Null, wenn der Vers keine annotierten
+     * Wörter trägt (dann gibt es kein data-core und keinen verseId-Sprung;
+     * gemessen betrifft das 4 Verse im Korpus).
+     *
+     * Warum eine Spanne und nicht nur der erste Kern: ein <l> kann mehr als
+     * einen Vers enthalten. Der Ambraser Einschub im Erec steht vollständig
+     * als <supplied> in <l n="4629"> und deckt die Kerne 462900 bis 462957
+     * ab, lückenlos. Mit nur dem ersten Kern fänden zehn Belegstellen ihr
+     * Ziel nicht und der Deep-Link liefe stumm ins Leere (#193).
+     */
+    verseCoreRange(lineEl) {
+        const XML_NS = 'http://www.w3.org/XML/1998/namespace';
+        let first = null, last = null;
+        for (const w of lineEl.getElementsByTagName('*')) {
+            if (w.localName !== 'w') continue;
+            const id = w.getAttributeNS(XML_NS, 'id') || w.getAttribute('xml:id');
+            const core = id && id.split('_')[1];
+            if (!core) continue;
+            if (first === null) first = core;
+            last = core;
+        }
+        return first === null ? null : { first, last };
+    }
+
+    /**
+     * Scroll zur Verszeile über ihre Wort-ID (?verseId=PZ_33926, #193).
+     * Anders als scrollToVerse ist das korpusweit eindeutig; die Sigle im
+     * Parameter ist redundant, aber macht den Link im Browser lesbar.
+     */
+    scrollToVerseId(verseId) {
+        const core = String(verseId).includes('_')
+            ? String(verseId).split('_')[1]
+            : String(verseId);
+        const scope = this.elements?.readingBody || document;
+        const safe = (window.CSS && CSS.escape) ? CSS.escape(core) : core.replace(/["\\]/g, '');
+
+        let line = scope.querySelector(`.verse-line[data-core="${safe}"]`);
+        if (!line) {
+            // Kein eigenes <l> für diesen Vers: er steckt in einem, das mehrere
+            // umfasst (Ambraser Einschub im Erec). Die Spanne durchsuchen. Der
+            // Sprung landet dann auf der richtigen Stelle, nur nicht zeilengenau,
+            // weil es die Zeile im gerenderten Text nicht gibt.
+            const wanted = parseInt(core, 10);
+            if (!Number.isNaN(wanted)) {
+                for (const candidate of scope.querySelectorAll('.verse-line[data-core-max]')) {
+                    const from = parseInt(candidate.getAttribute('data-core'), 10);
+                    const to = parseInt(candidate.getAttribute('data-core-max'), 10);
+                    if (wanted >= from && wanted <= to) { line = candidate; break; }
+                }
+            }
+        }
+        if (!line) {
+            console.warn(`[TEITextReader] Vers ${verseId} nicht gefunden (kein data-core="${core}")`);
+            return;
+        }
+        this.pulseLine(line, verseId);
+    }
+
+    /**
+     * Scroll zur Verszeile <l n="..."> (Vers-Deep-Link, #59 Naming-Explorer)
+     * oder zur Prosa-Zeile <lb n="..."> (Druckzeilen-Zählung, #143).
+     * data-n stammt aus dem 'l'- bzw. 'lb'-Rendering (renderElement).
+     * Hintergrund-Puls statt scale: verse-line ist eine ganze Zeile,
+     * Skalierung würde den Textfluss verschieben.
+     */
+    scrollToVerse(verseN) {
+        const scope = this.elements?.readingBody || document;
+        const safe = (window.CSS && CSS.escape)
+            ? CSS.escape(String(verseN))
+            : String(verseN).replace(/["\\]/g, '');
+        const line = scope.querySelector(`.verse-line[data-n="${safe}"], .lb-number[data-n="${safe}"], .lb-anchor[data-n="${safe}"]`);
+        if (!line) {
+            console.warn(`[TEITextReader] Vers ${verseN} nicht gefunden (kein <l n="${verseN}"> im Text)`);
+            return;
+        }
+        this.pulseLine(line, verseN);
+    }
+
+    /**
+     * Hinscrollen und kurz gelb hinterlegen. Von scrollToVerse und
+     * scrollToVerseId geteilt, damit die beiden Deep-Link-Wege sich gleich
+     * anfühlen und nicht auseinanderdriften.
+     */
+    pulseLine(line, label) {
+        const headerOffset = 120;
+        const offsetPosition = line.getBoundingClientRect().top + window.pageYOffset - headerOffset;
+        // Instant statt smooth: der Vers-Deep-Link springt direkt nach dem
+        // Page-Load, wo Chrome programmatische smooth-Scrolls teils verwirft
+        // (im Test: ROL blieb bei scrollY=0). Über sechsstellige Pixel-
+        // Distanzen ist instant ohnehin die bessere Orientierung.
+        window.scrollTo({ top: offsetPosition, behavior: 'auto' });
+
+        console.log(`[TEITextReader] Scrolled to verse ${label}`);
+
+        line.style.transition = 'background-color 0.4s ease';
+        line.style.backgroundColor = '#fef3c7'; // amber-100
+        setTimeout(() => {
+            line.style.backgroundColor = '';
+        }, 1600);
+    }
+
+    /**
      * Update navigation button states
      */
     updateNavigationButtons() {
@@ -986,28 +1471,6 @@ class TEITextReader {
 
         // Highlight active text in text list
         this.highlightTextInList(this.currentTextId);
-    }
-
-    closePanel() {
-        // Note: We might not actually want to hide the panel in the new UX
-        // For now, just reset state but keep panel visible
-
-        // Reset state
-        this.currentHighlights = [];
-        this.currentHighlightIndex = 0;
-        this.currentTextId = null;
-        this.currentLemmaId = null;
-
-        // Clear content
-        if (this.elements.readingBody) {
-            this.elements.readingBody.innerHTML = '';
-        }
-        if (this.elements.readingMetadata) {
-            this.elements.readingMetadata.classList.add('hidden');
-        }
-
-        // Remove text list highlighting
-        this.highlightTextInList(null);
     }
 
     /**

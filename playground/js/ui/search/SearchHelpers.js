@@ -15,6 +15,7 @@ export function createSearchInterface(config) {
     resultsId,
     totalCount,
     helpText = 'Geben Sie einen Suchbegriff ein, um zu starten.',
+    extraControlsHTML = '',
   } = config;
 
   return `
@@ -31,6 +32,7 @@ export function createSearchInterface(config) {
           class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
         />
       </div>
+      ${extraControlsHTML}
       <div
         id="${resultsId}"
         class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center text-sm text-slate-500"
@@ -43,6 +45,14 @@ export function createSearchInterface(config) {
 
 // ==================== SEARCH RESULT HANDLING ====================
 
+// Self-contained per module (DESIGN.md §Escaping-Konvention).
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
 export function handleSearchResults(searchTerm, matches, config) {
   const {
     searchTermForDisplay = searchTerm,
@@ -53,7 +63,7 @@ export function handleSearchResults(searchTerm, matches, config) {
   if (matches.length === 0) {
     return `
       <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center text-sm text-slate-500">
-        ${emptyMessage.replace('{term}', searchTermForDisplay)}
+        ${emptyMessage.replace('{term}', escapeHtml(searchTermForDisplay))}
       </div>
     `;
   }
@@ -65,7 +75,7 @@ export function handleSearchResults(searchTerm, matches, config) {
     matches: displayMatches,
     headerHTML: `
       <div class="rounded-xl bg-slate-50/80 px-4 py-2 text-sm font-medium text-slate-600">
-        ${matches.length} Treffer für "${searchTermForDisplay}"${countInfo}
+        ${matches.length} Treffer für "${escapeHtml(searchTermForDisplay)}"${countInfo}
       </div>
     `,
   };
@@ -88,7 +98,7 @@ export function setupSearchInput(inputId, searchHandler) {
 // ==================== RESULT ITEM GENERATION ====================
 
 export function generateResultItem(config) {
-  const { meta, title, subtitle = '', buttons = [], detailsId = '', highlight = false } = config;
+  const { meta, title, subtitle = '', buttons = [], detailsId = '', highlight = false, dimmed = false } = config;
 
   const buttonHTML = buttons
     .map(
@@ -111,13 +121,19 @@ export function generateResultItem(config) {
     : '';
 
   const titleClass = highlight ? 'highlight' : '';
+  // Dimmed cards (e.g. genres without assigned works, #119) use lighter,
+  // already-purged Tailwind classes — no opacity utility, so no CSS rebuild needed.
+  const articleClass = dimmed
+    ? 'result-item rounded-2xl border border-slate-100 bg-slate-50/60 p-4 shadow-sm'
+    : 'result-item rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm';
+  const titleColor = dimmed ? 'text-slate-500' : 'text-slate-900';
 
   return `
-    <article class="result-item rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm">
+    <article class="${articleClass}">
       <header class="result-meta text-xs font-semibold uppercase tracking-wide text-brand-600">${meta}</header>
       <div class="result-snippet mt-2 space-y-2">
         <div class="flex items-start justify-between gap-3">
-          <span class="${titleClass} text-sm font-semibold text-slate-900">${title}</span>
+          <span class="${titleClass} text-sm font-semibold ${titleColor}">${title}</span>
           <div class="flex flex-wrap gap-2">${buttonHTML}</div>
         </div>
         ${subtitleHTML}
@@ -129,19 +145,23 @@ export function generateResultItem(config) {
 
 // ==================== TOGGLE DETAILS FUNCTIONALITY ====================
 
-export function toggleDetails(detailsId, contentGenerator, emptyMessage = 'Details nicht verfügbar') {
+export function toggleDetails(detailsId, contentGenerator, emptyMessage = 'Details nicht verfügbar', contentKey = '') {
   const container = document.getElementById(detailsId);
   if (!container) return false;
 
   const isHidden = container.classList.contains('hidden') || container.style.display === 'none' || container.style.display === '';
 
-  if (!isHidden) {
+  // Sichtbar + gleicher Inhalt → zuklappen. Sichtbar + ANDERER contentKey
+  // (z.B. Wechsel „Werke" → „Autor*innen" im selben Genre-Panel) → Inhalt
+  // umschalten statt ausblenden (#167 Finding 16).
+  if (!isHidden && (!contentKey || container.dataset.contentKey === contentKey)) {
     container.classList.add('hidden');
     container.style.display = 'none';
     return true;
   }
 
   try {
+    container.dataset.contentKey = contentKey;
     const content = contentGenerator();
     if (content === null || content === '') {
       container.innerHTML = `
@@ -251,14 +271,31 @@ export const SearchPatterns = {
   /**
    * Multi-field search with MHG normalization
    * Searches across multiple fields, matching if ANY field contains the term
+   *
+   * Matches in both normalization directions (#419): normalizeMHG expands
+   * ae→ä so that "baeume" finds "Bäume", foldDiacritics collapses ä→a so
+   * that "baum" finds "Bäume". The only four callers are the concept,
+   * genre, name and work explorers, whose fields are modern German and
+   * English descriptors rather than Middle High German attestations, and
+   * German umlaut alternation puts the umlaut in the inflected form while
+   * the user types the stem. Measured on 2026-09-11 over every field these
+   * four callers actually compare, alternative terms included (the index
+   * carries altDE on 263 of 567 concepts and 250 of 615 genres): exactly one
+   * pair becomes equal under the fold that differs under normalizeMHG, and it
+   * is "Vogel" / "Vögel" inside concept_14020000, so no entry becomes
+   * indistinguishable from another. "baum" goes from 0 to 4 concepts.
    */
   multiFieldNormalized: (items, searchTerm, fieldGetters) => {
     const matchedItems = new Set();
 
     items.forEach((item) => {
-      const hasMatch = fieldGetters.some(
-        (getter) => getter(item) && TextNormalizer.matchesNormalized(getter(item), searchTerm)
-      );
+      const hasMatch = fieldGetters.some((getter) => {
+        const value = getter(item);
+        return value && (
+          TextNormalizer.matchesNormalized(value, searchTerm) ||
+          TextNormalizer.matchesFolded(value, searchTerm)
+        );
+      });
       if (hasMatch) {
         matchedItems.add(item);
       }

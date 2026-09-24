@@ -2,76 +2,271 @@
 
 Build, validation, and data transformation scripts for MHDBDB TEI corpus.
 
-## Index Generation
+## Verzeichnisstruktur
+
+```
+scripts/
+├── build-api.py                 # Statische JSON-API unter api/ generieren (#45)
+├── build-authority-index.py     # Authority-Index generieren
+├── build-corpus-index.py        # Korpus-Index generieren
+├── build-pages.py               # Nav/Footer/Matomo aus includes/ in alle Seiten injizieren (--check Drift-Gate)
+├── build-vendor.js              # Vendored JS-Dependencies bündeln
+├── python-bin.js                # Python-Interpreter auflösen statt raten (#318)
+├── run-python.js                # Wrapper, über den die npm-Skripte Python starten (#318)
+├── run-tests.js                 # Wrapper, über den npm test läuft; Verdikt aus report.json statt Konsolenzeile
+├── validate-indices.py          # Generierte Indexes validieren
+├── mhg_normalizer.py            # MHG-Textnormalisierung (shared lib)
+├── tei_namespaces.py            # TEI-Namespace-Erkennung für lxml-Bäume (shared lib)
+├── corpus_files.py              # welche Dateien der Korpus sind, in welcher Reihenfolge, plus Worker-Cap (shared lib, #287)
+├── insert-pb-from-linecode.py   # <pb> aus Legacy-Linecode einfügen (#26)
+├── insert-stanzas-from-linecode.py # Stanza-Anchors aus Legacy-Linecode (#23)
+├── insert-div-wrappers-138.py   # Editorische <div>-Hüllen für HUG und MBS (#138)
+├── insert-lg-stanzas-138.py     # <lg type="stanza"> in HUG-Lieder einfügen (#138)
+├── remove-stanza-numerals-138.py # Strophenziffern aus dem Verstext entfernen (#138)
+├── insert-div-chapters-358.py   # Willehalm-Dreißiger: `<pb n>` zu `<div type="chapter" n>` (#358)
+├── migrate-caesura-to-gap-252.py # Ueberlieferungsluecken von '( caesura )' auf <gap/> (#252)
+├── apply-308-375-432.py         # Die drei entschiedenen Korrekturen einer Nacht: Namensansetzung, waeren als ADJ, WH_6214_3 (#308/#375/#432)
+├── update-variant-count-372376.py # Dokumentierte Formenzahl von variants.xml nachziehen, wenn ein Typ dazukommt (#375)
+├── update-variant-count-372386.py # Dasselbe fuer zehn Typen auf einmal, und zusaetzlich die Mappingzahl: die steigt diesmal mit (#366/#375/#371)
+│
+├── ingest/                      # Korpus-Ingest je Vorhaben
+│   ├── ari/                     # ARITHMETIC, 6 Rechenbuch-Handschriften (#92)
+│   ├── frauenlob/               # Frauenlob-Revision (#236)
+│   ├── horses/                  # Arthurische Pferde (Borek), horses-index bauen (#193)
+│   ├── legacy-sources/          # Linecode-Quellen ins Repo spiegeln (#248)
+│   ├── naming/                  # Figurenbezeichnungen, naming-index bauen (#59)
+│   ├── pos-disambig/            # PoS-/Lemma-Disambiguierung in Batches (#189/#198)
+│   └── wzb/                     # Wenzelsbibel (#224 und Vorläufer)
+│
+├── audit/                       # Korpus- & Authority-Analyse, CI-Gates
+│   ├── audit-tei-corpus.py      # Element/Attribut-Inventar des Korpus
+│   ├── audit-authority-files.py # Struktur-Audit der Authority Files (authority→authority)
+│   ├── build-foreign-candidates-28.py # Kandidatenmenge Fremdsprachigkeit aus dem Begriffssystem (#28)
+│   ├── foreign-sense-contradictions-28.py # #28 Phase 2: Belege, deren @ana der Sprachzuordnung widerspricht, plus die Lemmata zur Handpruefung
+│   ├── build-issue-matrix.py    # Triage-Matrix #44 aus den Issue-Labels bauen (#44)
+│   ├── build-review-364.py      # Offline-Prüfseite #364 (fehlende Lemma-Ziele) aus Korpus und Authority-Files erzeugen (variants.xml gegen lexicon.xml) (#443)
+│   ├── build-review-klaus.py    # Offline-Prüfmappe #390/#115 (Wortgrenzen WZB, fehlende Bedeutungen) erzeugen (#443)
+│   ├── check-authority-cross-refs.py # Korpus→Authority Cross-Ref-Integrität (#44/#115)
+│   ├── compare-findebuch-resolution-259.py # dreistufige Auflösung gegen den Findebuch-Verweisgraph (#259)
+│   ├── check-author-refs.py     # Personennamen im Header gegen persons.xml: titleStmt/author (#228) und particDesc/listPerson (#308)
+│   ├── check-doc-inventories.py  # Specs und Audit-Skripte stehen in DEVELOPMENT.md, Skripte auch in diesem Baum (#329)
+│   ├── check-file-sizes.py      # Einzeldateien vor GitHubs harter 100-MiB-Wand stoppen (#350)
+│   ├── check-index-budget.py    # Index-Größenbudget gz und roh, warnt nur (#111, ADR-019)
+│   ├── check-index-version-bump.py # Inhalt geändert => Version gebumpt (#154)
+│   ├── check-index-versions.py  # Index-Versions-Konstanten konsistent
+│   ├── check-lexicon-senses.py  # jeder <entry> in lexicon.xml hat mindestens einen <sense>
+│   ├── check-naming-index.py    # naming-index: Provenienz + Sigle-Existenz (#152)
+│   ├── check-no-cdn.py          # keine externen <script src> und <link href> in committeten Seiten
+│   ├── check-no-em-dash.py      # keine Em-Dashes in HTML/JS/CSS und in jeder .md; Markdown nur im Diff (#292)
+│   ├── check-release-version.py # Release-Version gegen CITATION.cff und .zenodo.json
+│   ├── classify-lexicon-backfill.py # Backfill-Lücken in lexicon.xml klassifizieren (#115)
+│   ├── count-editorial-notes-and-div-heads.py # Zahlen hinter den Reader-Änderungen (#250)
+│   ├── count-verse-numbering-resets.py # Reichweite der Verszählung messen (#138)
+│   ├── coverage-bias-check.py   # Coverage-Bias der pro-1000-Raten (#309)
+│   ├── doc-count-audit.py       # Zählungen aus den Daten gegen die Doku prüfen
+│   ├── drop-negative-variant-corresp.py # tote @corresp aus <w> entfernen (#115)
+│   ├── measure-216-vrouwe-minne.py # Groesse der vrouwe-Luecke vor minne messen (#216/#387)
+│   ├── measure-stage3-resolution.py # Wirkung von Stufe 3 der Lemma-Auflösung (#224)
+│   ├── parallel-witness-bias.py # Verzerrung je Werkzeug durch Parallelüberlieferung (#255)
+│   ├── quantify-unannotated-tokens.py # unannotierte Wortformen korpusweit zählen (#189)
+│   ├── review-rounds.py         # Review-Runden pro gemergtem PR, mit Baseline vom 02.08.
+│   ├── survey-concept-distribution.py # Concepts für die Begriffs-Verteilung (#47)
+│   ├── validate-corpus.py       # Zwei-Stufen-Schema-Validierung
+│   ├── lexicon-baseline.json    # committete Referenzmenge des #152-Gates, per !-Regel vom *.json-Ignore ausgenommen
+│   ├── corresp-coverage-baseline.json # lemmatisierte Tokens ohne @corresp je Sigle, Ratsche im selben Gate (#370)
+│   └── TEXT_DATA_TABLE.xlsx     # Legacy-Linecode-Mapping
+│
+├── sync/                        # Externe Daten / Korpus → TEI/Authority
+│   ├── backfill-lexicon.py      # Kategorie-A-Stubs in lexicon.xml nachtragen (#115)
+│   ├── build-wbnetz-lemma-list.py  # MHDBDB-Verweise in der Trierer Lemmaliste auffrischen (#225)
+│   ├── enhance_works_with_zotero.py  # Zotero API → works.xml
+│   ├── extract-variants.py      # Korpus → variants.xml regenerieren (#44/#115)
+│   ├── find-mentions.py         # Erwähnende Publikationen suchen → Zotero „Zu prüfen"
+│   └── sync_tei_headers.py      # Authority Files → TEI-Header
+│
+├── review/                      # Kuratorische Prüfseiten, eine HTML-Datei zum Verschicken (#443)
+│                                # Dateien siehe review/README.md
+│
+└── _archived/                   # Referenz, nicht ausführen
+    ├── tei-transformation.py    # Original RDF/MySQL→TEI-Migration
+    ├── add-xml-model-pi.py      # xml-model-PI nachrüsten (#32 Stage 1)
+    ├── flatten-nested-hi.py     # verschachtelte <hi> auflösen (#32-Followup)
+    ├── migrate-header-credits.py # Editor-Attribution in die Header (#83)
+    ├── split-prose-mega-p.py    # Mega-<p> an <pb/> teilen (#32-Followup)
+    ├── convert-l-to-lb-143.py   # <l> → <lb/> in drei Prosatexten (#143, geschlossen)
+    └── wzb/                     # WZB-Sackgassen, siehe wzb/README.md
+```
+
+**In `ingest/` und `review/` stehen die einzelnen Skripte absichtlich nicht.**
+`check-doc-inventories.py` bindet vier Pfade (`scripts`, `audit`, `sync`,
+`_archived`) und vergleicht jeden `.py`-Namen aus diesem Baum gegen das
+Dateisystem. Ein Name aus einem Ordner, den es nicht scannt, gilt ihm als
+„genannt, aber nicht vorhanden“, und das Gate wird rot. Gemessen am 21.09.2026
+in beide Richtungen: der Eintrag der drei `review/`-Skripte kippte es, ihr
+Weglassen nicht. Wer die Namen hier haben will, nimmt vorher das Verzeichnis in
+die Pfadliste des Gates auf. Bis dahin steht die Auskunft in `README.md` des
+jeweiligen Ordners.
+
+Ein issue-gebundenes Einmal-Skript wandert nach `_archived/`, sobald sein Issue geschlossen ist. Die Grenze ist der Issue-Status, nicht die Frage, ob das Skript schon gelaufen ist: solange das Issue offen ist, kann eine Prüffrage einen erneuten Lauf erzwingen. Deshalb stehen die drei `*-138.py` oben, bis #138 geschlossen ist, und `convert-l-to-lb-143.py` liegt im Archiv. Die beiden `insert-*-from-linecode.py` sind keine Einmal-Skripte, sie werden für weitere Texte gebraucht.
+
+**Unter `ingest/` gilt die Issue-Grenze nicht.** Die Batch-Skripte unter `ingest/<ordner>/` (etwa `fix-367-waeren.py` in `pos-disambig/`) bleiben dort, auch wenn ihr Issue geschlossen ist, weil sie zusammen mit ihrem Provenienz-Log unter `ingest/pos-disambig/<N>-<name>/` gelesen werden: ein Batch-Skript ohne sein Log ist schwer zu lesen, und der Ordner ist die Chronik der Läufe. Entschieden von chsteiner am 23.09.2026 in #430 (Variante B); in Kauf genommen ist, dass `pos-disambig/` damit unbegrenzt wächst. `_archived/wzb/` widerspricht dem nicht: dort liegen vier abgelöste Pipeline-Skripte, keine Batch-Skripte eines geschlossenen Issues (siehe dessen `README.md`).
+
+**Unter `ingest/` stehen im Baum nur die Unterordner und keine Skriptnamen, und das ist kein Versehen.** Das Inventar-Gate `audit/check-doc-inventories.py` (#329) scannt vier Pfade: `scripts/` flach plus `audit/`, `sync/` und `_archived/`. `ingest/` ist nicht dabei, aber das Gate liest **jeden** Skriptnamen aus diesem Baum und hält ihn gegen die gescannten Verzeichnisse. Ein hier eingetragener Name aus `ingest/` ist damit „genannt, aber nicht vorhanden", und das Gate wird rot. Gemessen am 21.09.2026 mit einer Mutationsprobe: `apply-366-375-371.py` unter `pos-disambig/` in den Baum geschrieben, Gate gelaufen (64 im Dateisystem gegen 65 in dieser Datei, der Name namentlich als fehlend gemeldet), Zeile wieder entfernt, Gate grün. Wer ein Ingest-Skript dokumentieren will, tut das in seinem Provenienz-Log unter `ingest/pos-disambig/<batch>/`, nicht hier.
+
+Skripte im Archiv sind Referenz. Der Grund, sie nicht zu starten, ist nicht technisch, sondern inhaltlich: es sind abgeschlossene Einmal-Migrationen, deren Ergebnis längst im Korpus steht, und ein zweiter Lauf schreibt auf einen anderen Ausgangsstand als der erste. Technisch scheitert genau eines von sechs, nämlich `convert-l-to-lb-143.py`, das die Repo-Wurzel als `Path(__file__).resolve().parent.parent` berechnet und aus `_archived/` heraus auf `scripts/` zeigt; die übrigen fünf arbeiten CWD-relativ (`Path('tei').glob(...)`) und liefen aus dem Repo-Root ohne Fehlermeldung durch. Wer eines wieder braucht, verschiebt es zurück und prüft den Ausgangsstand, statt es aus `_archived/` heraus aufzurufen.
+
+## Build-Pipeline (Root)
+
+Die Build-Scripts werden über `npm run` aufgerufen und dürfen nicht verschoben werden.
 
 ### `build-authority-index.py`
-Processes all 7 authority files (`authority-files/*.xml`) and generates a compressed JSON index (`data/authority-index.json.gz`, ~1.3 MB). Includes lemmata with grammatical annotations, persons, works with bibliographic data, concepts, genres, names, and orthographic variants. Uses `mhg_normalizer.py` for text normalization to ensure search consistency.
+Verarbeitet die 7 inhaltstragenden Authority Files und generiert `data/authority-index.json.gz` (~3 MB). Enthält Lemmata, Personen, Werke, Konzepte, Gattungen, Namen und Varianten. `contributors.xml` (8. Authority-File seit 2026-04-14) wird bewusst **nicht** indiziert: es ist Projekt-interne Editor-Attribution, kein Suchinhalt. Seit #270 liest der Build die Datei trotzdem, um den Urheber eines kuratierten Kommentars als `commentRespName` neben dessen `@resp` zu schreiben.
 
 ### `build-corpus-index.py`
-Parses all 666 TEI files in `tei/` directory and generates a compressed document-level corpus index (`data/corpus-index.json.gz`, ~21 MB). Extracts lemma positions, word counts, and metadata for fast lookup. Enables <100ms search latency.
+Parst alle TEI-Dateien in `tei/` und generiert `data/corpus-index.json.gz` (~42 MB). Extrahiert Lemma-Positionen, Wortzählung und Metadaten. Die aktuelle Index-Version steht im `'version'`-Literal des Skripts und in `docs/TEI-MODEL.md` §11, nicht hier: zwei Stellen halten sich in Sync, drei driften.
 
-### `generate-manifest.py`
-Extracts metadata (title, author, sigle, word count) from all TEI file headers and generates `tei/manifest.json` (~182 KB). Used for quick corpus overview without parsing full TEI files.
-
-## Utilities
-
-### `mhg_normalizer.py`
-Middle High German text normalizer. Normalizes long vowels (â→a, ê→e), umlauts (ä→a, ö→o, ü→u), special characters (ʒ→z, ſ→s), and applies lowercase conversion. **CRITICAL:** Must produce identical results as JavaScript version (`playground/js/utils/text-normalizer.js`) to ensure search parity between build-time indices and runtime search.
+### `build-pages.py`
+Injiziert die geteilte Navigation + Footer + Matomo-Snippet aus `includes/_nav.html` / `includes/_footer.html` / `includes/_matomo.html` in die Marker-Regionen (`NAV:START`/`FOOTER:START`/`MATOMO:START`) der Seiten. Idempotent; `{{ROOT}}`-Token wird pro Seitentiefe ersetzt; aktive Nav-Seite bekommt `aria-current="page"`. Zwei Seitenlisten: `PAGES` bekommt die volle Chrome (Nav+Footer+Matomo); `MATOMO_PAGES` (Standalone-Seiten mit eigenem Layout wie `api/index.html`, `404.html`) bekommt nur das Matomo-Snippet vor `</head>`, ohne Header/Footer anzufassen. `--check` ist ein Drift-Gate (exit 1 bei Out-of-Sync, keine Writes). Nach Änderung an `includes/` ausführen — nicht die Seiten direkt editieren.
 
 ### `validate-indices.py`
-Validates structure, content, and integrity of generated index files. Checks JSON structure, required fields, data types, version numbers, and statistical reasonableness. Exit code 0 = success, 1 = validation failed.
+Validiert Struktur und Integrität der generierten Index-Dateien.
 
-## Data Wrangling
+### `mhg_normalizer.py`
+Mittelhochdeutsche Textnormalisierung in fünf Schritten: NFC-Komposition (#224), Kleinschreibung, Länge zu Kürze (â→a, ê→e, î→i, ô→o, û→u samt der Makron-Varianten ā ē ī ō ū), Umlaute zu **Digraphen** (ä→ae, ö→oe, ü→ue, dazu die Breve-Umlaute der Wenzelsbibel ŏ→oe, ŭ→ue), Ligaturen (æ→ae, œ→oe) und ǒ→o. **Muss identische Ergebnisse liefern wie die JS-Version** (`assets/js/lib/text-normalizer.js`); verbindlich ist Contract A in `docs/CONTRACTS.md`, diese Zeile ist die Kurzfassung.
 
-Scripts for transforming and updating TEI source data from external sources (Zotero, database exports, etc.).
+## audit/ — Korpus- & Authority-Analyse
 
-### `data-wrangling/enhance_works_with_zotero.py` ⭐ UPDATED
-Fetches editor data from Zotero API and updates `authority-files/works.xml` with `<editor>` elements in biblStruct entries. **Step 1 of 2** for Issue #19. Uses live Zotero API with pagination (1,602 items). Supports `--dry-run` (preview), `--cache` (save API response), and `--offline` (use cached data) modes. Rate-limited to 3 requests/second. Run `sync_tei_headers.py` afterwards to propagate changes to TEI files.
+Scripts für die Analyse und Validierung der TEI-Quelldaten. Entstanden im Rahmen von Issue #32 (TEI Model Consolidation).
 
-### `data-wrangling/sync_tei_headers.py` ⭐ NEW
-General-purpose tool for syncing authority files to TEI headers. Parameterizable with `--all`, `--works`, `--persons`, `--genres`, `--concepts`. Currently implements `--works` (syncs `<editor>` elements from works.xml). **Step 2 of 2** for Issue #19. Keeps TEI headers in sync with authority files (intentionally redundant). Supports `--dry-run` mode. Extensible architecture for future authority file types.
+### `audit-tei-corpus.py`
+Element- und Attribut-Inventar des gesamten Korpus. Analysiert alle TEI-Dateien (exkl. `.disamb.tei.xml`) und erzeugt eine vollständige Aufstellung aller Elemente, Attribute und Werte.
 
-### `data-wrangling/_ARCHIVED_tei-transformation.py`
-⚠️ **ARCHIVED REFERENCE ONLY - DO NOT RUN**. Original monolithic transformation script (1605 lines) from initial-data-wrangling branch. Preserved as reference library of useful functions (CSV parsing, TEI manipulation, namespace handling, etc.). Best practice: Extract specific functions into new focused scripts rather than running this file.
+### `audit-authority-files.py`
+Struktur-, Querverweis- und Datenqualitäts-Audit für alle 8 Authority Files. Prüft ID-Muster, verwaiste Referenzen und strukturelle Konsistenz **innerhalb** der Authority Files (authority→authority).
 
-## Usage
+### `check-authority-cross-refs.py`
+Korpus→Authority Cross-Reference-Integrität (#44/#115): scannt alle `tei/*.tei.xml` nach `@lemmaRef`/`@ana`/`@corresp`/`@ref`/`@target`, die auf nicht-existente Authority-`xml:id`s zeigen. `--check` macht daraus ein CI-Gate (scheitert bei unresolved refs außerhalb `lexicon.xml`; `lexicon.xml` wird als ID-Set-Ratsche gegen die committete `lexicon-baseline.json` gegated — neue dangling IDs = rot, tolerierter Backfill-Altbestand = grün, #152). `--update-baseline` zieht die Ratsche nach gelandetem Backfill nach. Läuft in `data-integrity.yml`.
+
+### `check-author-refs.py`
+Personennamen im TEI-Header gegen `persons.xml` (#228/#308), an zwei Stellen. Im `titleStmt`: leere `<author ref="..."/>` (Text erscheint autorlos), tote `@ref`, Abweichungen von der Referenzform `#person_N`, Textinhalte mit Zeilenumbruch (die so in Index und API landen) und Textinhalte, die vom `preferred`-Namen abweichen. Im `particDesc/listPerson` (seit #308): die `preferred`-Form der 671 Einträge in 666 Dateien, adressiert über `@corresp`. Dort ist eine Abweichung nie eine bibliographische Variante, sondern immer ein veralteter Spiegel, deshalb setzt sie den Exit-Code, die `titleStmt`-Namensabweichung dagegen nicht. Ein Eintrag ganz ohne `preferred`-Zeile bekommt eine eigene Klasse, statt aus der Grundmenge zu fallen: eine still schrumpfende Bezugsmenge ist genau der Fehler, den ein zählendes Gate sonst nicht melden kann. Die Untergrenze der Grundmenge kommt dabei nicht aus einer committeten Zahl, sondern aus den Daten: jede Autoren-ID des `titleStmt` muss im `particDesc` derselben Datei stehen. Ohne das fällt ein ganz gelöschtes `<person>`-Element durch alle Klassen, weil die sich sämtlich auf vorhandene Einträge beziehen. Die eine Sigle mit leerem `<listPerson/>` (VOR) steht namentlich im Skript, mit Grund, und wird gemeldet, sobald die Ausnahme überflüssig wird. **Läuft seit 14.09.2026 in `data-integrity.yml`** (Step 7b, nach der Cross-Ref-Prüfung): bis dahin blieb es draußen, solange der tote `@ref` in VOR offen war und unbeteiligte PRs rot gefärbt hätte, und genau den hat #308 behoben. Späte Position, weil es jede der 667 Dateien ganz parst: lokal auf Windows 1 min 47 s und 1 min 44 s, im ersten Lauf auf `main` 32 s (run 34910635460, Schritt 21). Zwei Maschinen, zwei Zahlen; was die Position begründet, ist das Verhältnis zum Nachbarschritt, der in derselben CI unter einer Sekunde bleibt. Ungeprüft bleiben die `alternative`-Formen und die `idno`-Zeilen desselben Blocks sowie die lokale `xml:id` gegen `@corresp`.
+
+### `check-index-version-bump.py`
+Versions-Bump-Gate (#154): hat sich der dekomprimierte Inhalt von corpus-/authority-index gegenüber `--base <rev>` geändert, muss der `version`-String mitgeändert sein: sonst invalidiert der Dexie-Cache nicht. Läuft in `data-integrity.yml` (Diff-Base = erster Elternteil des Merge-Refs bzw. `event.before` beim Push).
+
+### `check-naming-index.py`
+Naming-Index-Konsistenz (#152): `source.commit`-Provenienz vorhanden + alle `works[].sigle` existieren als `tei/<SIG>.tei.xml`. `--print-source-commit` liefert den Quell-Pin für die Workflows. Läuft in `data-integrity.yml` und `naming-index-update.yml`.
+
+### `check-index-versions.py`
+Prüft, dass die Index-Versions-Konstanten in Build-Skripten und `corpus-loader.js` synchron sind. Läuft in `data-integrity.yml`.
+
+### `validate-corpus.py`
+Zwei-Stufen-Validierung: TEI P5 (`tei_all.rng`) + MHDBDB-Constraints (`mhdbdb.rng`). Validiert alle Korpus-Dateien und meldet Fehler.
+
+### `TEXT_DATA_TABLE.xlsx`
+Linecode-Mapping aus dem Legacy-MHDBDB-System. Enthält die originalen Linecode-Definitionen pro Text in Spalte `LINECODE` (die kanonischen Templates liegen in `docs/data/linecode-templates.csv`, ebenfalls Spalte `LINECODE` — die frühere „Spalte E"-Annahme war falsch, siehe LINECODE.md). Referenz für strukturelle Rekonstruktion (Issues #23, #30, #31).
+
+## sync/ — Externe Daten → TEI/Authority
+
+Scripts für die Integration externer Datenquellen.
+
+### `enhance_works_with_zotero.py`
+Holt bibliographische Metadaten (v.a. Editor:innen) von der Zotero API und aktualisiert `authority-files/works.xml`. Unterstützt `--dry-run`, `--cache`, `--offline`.
+
+### `extract-variants.py`
+Regeneriert `authority-files/variants.xml` aus dem aktuellen Korpus (#44/#115). `variants.xml` ist **korpus-abgeleitet**: pro `<w @lemmaRef @corresp>` wird (Lemma, type-id, Form) gesammelt; xml:id-Eindeutigkeit via Mehrheitsentscheid. Ersetzt den veralteten, nur auf `initial-data-wrangling` liegenden Generator (las das Pre-#32-`@wordRef`). Dry-Run-Default, `--apply` überschreibt. **Nach `--apply`: Authority-Index neu bauen + Version bumpen.**
+
+### `find-mentions.py`
+Sucht Publikationen, die die MHDBDB erwähnen, und legt die noch unbekannten in der Zotero-Gruppe 5043625 an, Sammlung „Zu prüfen (automatisch gefunden)" (`NHIA2I6N`) unter „Erwähnende Publikationen". Quellen: Zenodo, OpenAlex, OpenAIRE, Crossref, Semantic Scholar. **Fasst weder `tei/` noch `authority-files/` an und löst keinen Index-Rebuild aus**; einziges Schreibziel ist Zotero, und dort nur die Neuanlage. Dry-Run-Default, `--write` legt an, `MAX_NEU` deckelt auf 30 pro Lauf. Zugangsdaten über `ZOTERO_API_KEY` und `OPENALEX_API_KEY`, nie im Repo. Braucht `requests` (steht bewusst nicht in `requirements.txt`, die pinnt nur die Build-Kette, #125).
+
+- **Abgleich gegen den Bestand, nicht gegen eine Merkliste.** Verglichen wird gegen alle Einträge der Gruppe, nicht nur gegen „Erwähnende Publikationen": sonst meldet der Lauf als neu, was längst unter „Eigene Publikationen" liegt. Titelgleichheit auf's Zeichen reicht dabei nicht, „Neidhart in der MHDBDB" und „Neidhart in der MHDBDB: Sachregister" sind dieselbe Arbeit. Verglichen werden deshalb Wortmengen mit grober Grundformbildung; ab 85 Prozent Überlappung gilt ein Titel als bekannt, ab 60 Prozent als Dublettenverdacht und wird markiert statt verworfen. Eine Prozentzahl allein entscheidet dabei nichts, weil kurze Titel sonst kollidieren („Quantifizierende historische Semantik" teilt zwei Wörter mit einem Galloromania-Band): der Dublettenverdacht ab 60 Prozent verlangt zusätzlich drei gemeinsame Wörter, das Urteil „bekannt" ab 85 Prozent verlangt drei gemeinsame Wörter **oder** ein zweites, titelunabhängiges Merkmal. Nötig ist dieses zweite Merkmal, weil die Überlappung im Teilmengenfall rechnerisch immer 1,0 ist: steckt die Wortmenge des Kandidaten ganz in der des Bestandstitels, ist jede Prozenthürde wirkungslos. Als Merkmal zählt ein gemeinsamer Nachname, ersatzweise dasselbe Jahr. Das Jahr allein ist schwach, weil sich der Bestand auf wenige Jahre und ein Fachgebiet ballt, und zählt daher nur, solange es der Autorenlage nicht widerspricht: kennen beide Seiten ihre Verfasser und teilen keinen, ist das ein Unterschied und kein fehlendes Merkmal. Fehlt es, wird der Fund vorgelegt und als Dublettenverdacht markiert statt verworfen: ein überflüssiger Eintrag in der Prüfablage kostet einen Klick, ein still verworfener Fund ist unsichtbar.
+- **Ein leeres Ergebnis ist nicht automatisch ein Befund.** OpenAlex antwortet bei Drosselung mit HTTP 200 und `count=0`. Die Kanarienvogel-Abfrage in `src_openalex()` wertet einen Nulltreffer auf das Token „MHDBDB" als Ausfall; der Lauf meldet sich dann als unvollständig, statt „nichts Neues" zu berichten. Dasselbe gilt für die übrigen vier Quellen, die bei Drosselung mit 429 oder 503 antworten: eine Abfrage ohne Antwort landet in `PROBLEME`, sonst meldet sich ein Lauf als vollständig, in dem vier von fünf Quellen geschwiegen haben. Und auf der Gegenseite: eine Seite der Zotero-Abgleichsbasis, die nicht geladen werden konnte, ist kein Listenende. Die Basis wird gegen die serverseitige Gesamtzahl gegengeprüft, und `--write` verweigert die Arbeit, wenn sie lückenhaft ist, denn gegen eine kurze Basis gilt Bekanntes als neu. Ist die Gesamtzahl selbst nicht abrufbar, gilt die Basis als ungeprüft und damit als lückenhaft: sonst schaltete der Ausfall des einen Aufrufs, an dem die Sperre hängt, genau diese Sperre ab. Nach außen trägt das der **Exit-Status**: 0 nur, wenn nichts offen blieb, sonst 1, im Trockenlauf wie beim Schreiben. Beim Schreiben zählt zu „offen" auch die Kappung durch `MAX_NEU`, die kein Fehler ist, aber Funde liegen lässt; im Trockenlauf wird nichts angelegt, und `candidates.json` enthält alle Kandidaten. Die unbeaufsichtigte Monatsroutine sieht nichts anderes als diesen Status.
+- **Präzision vor Vollständigkeit.** Ein Treffer zählt nur mit Projektname in Titel oder Abstract oder aus der Suche nach einem eindeutigen Token, und Token-Treffer gelten nur bei Quellen, die Abstracts indexieren (`TOKEN_QUELLEN`). Crossref sucht unscharf über Titelfelder: die Adresse `mhdbdb.sbg.ac.at` zerfällt dort in „mhdbdb / sbg / ac / at" und zieht Wechselrichter, die Satellitenmission SBG-TIR und Salzburger Landesrecht herein.
+- Arbeiten des MHDBDB-Teams (Liste `TEAM`) werden als `eigene-publikation?` getaggt, damit sie nicht versehentlich als fremde Erwähnung durchgehen.
+- **Kein Autor ist besser als ein erfundener.** Manche Quellen liefern die ganze Verfasserzeile als einen Namen; bei OpenAlex geschah das mit `10.58079/16jkg`, und weil am letzten Leerzeichen getrennt wurde, stand in Zotero danach der Autor „Alan van Beek und Julia Hintersteiner Katharina Zeppezauer-Wachauer" (Eintrag `2VJQBB2M`). `split_name()` verweigert die Zerlegung deshalb bei „und", bei gemischter Komma-Semikolon-Zeichensetzung und ab fünf Wörtern; die Rohangabe wandert unzerlegt nach `extra` und wird kuratorisch aufgelöst.
+
+### `sync_tei_headers.py`
+Spiegelt die Werk-Identifier aus `works.xml` in den `msIdentifier` der TEI-Header (667 Dateien). Gespiegelt werden `handschriftencensus`, `GND` und `wikidata`; `sigle` und `mwb-sigle` bleiben header-eigen (CONTRACTS.md F.4). Aufgelöst wird über das `@corresp` des Headers, nicht über die Sigle: TRO trägt zwei `works.xml`-Einträge, und die Sigle ist dort mehrdeutig (#395).
+
+- `--works` schreibt **chirurgisch**, also per Textersetzung nur im `msIdentifier`-Block, und lässt alles andere byteweise stehen, Zeilenenden eingeschlossen.
+- `--works --check` ist das CI-Gate (#399, `data-integrity.yml`): vergleicht Inhalte statt Formatierung, schreibt nichts, Exit 1 bei Abweichung, rund eine Sekunde über alle 667 Dateien (gemessen 08.09.2026). Rot wird es auch, wenn eine Datei gar keinen lesbaren `msIdentifier` mehr hat (fehlender Block oder nicht parsebares XML). Das war bis zur Bot-Runde vom 07.09. nur eine Warnung, und damit konnte der ganze Block verschwinden, ohne dass das Gate anschlug.
+- `--works --bibl-struct` ist der alte Weg über lxml, der zusätzlich die `listBibl` zieht. **Er verliert dabei Daten und wird deshalb nur bewusst benutzt:** er löscht alle Nicht-Sigle-`idno` und damit die 19 `mwb-sigle`, die `works.xml` gar nicht kennt (gemessen 07.09.2026 auf einer Korpuskopie: 19 Dateien vorher, 0 nachher), er ändert bei AK, FR3, HZ, LUU und WZB die Bibliographie inhaltlich, und er serialisiert nebenbei alle 667 Dateien neu (Korpus 1.432,5 auf 1.430,6 MB). `--check` bemerkt den Verlust nicht, weil es `mwb-sigle` bewusst nicht prüft.
+- `--all` läuft für `works` über denselben chirurgischen Pfad wie `--works`. Das ist kein Detail: bis zur Reviewrunde vom 07.09. fiel `--all` still in den alten lxml-Weg und hätte die 19 `mwb-sigle` gelöscht, ohne dass ein Gate angeschlagen hätte.
+- `--persons`, `--genres`, `--concepts` sind deklarierte Stubs. `main()` weist sie ab, bevor eine Klasse instanziiert wird: Fehlermeldung, Exit 1, kein Traceback. Unter `--all` werden sie mit einer Warnung übersprungen. Das `NotImplementedError` in den Klassen ist nur beim direkten Aufruf erreichbar.
+
+## review/: Kuratorische Prüfseiten
+
+Generatoren für Seiten, die an eine Fachwissenschaftlerin gehen und dort ohne
+Installation im Browser geöffnet werden. Das Gegenstück zu `audit/`: dort steht,
+was eine Maschine entscheiden kann, hier das, was eine Person entscheiden muss.
+
+Die ausführliche Beschreibung des Formats, seiner Spec-Felder und der einen
+Entscheidung, die es trägt, steht in [`review/README.md`](review/README.md).
+Das erzeugte Material liegt nicht hier, sondern neben seinen Daten unter
+`ingest/review/<vorgang>/`.
+
+### `review_page.py`
+Das Prüfseiten-Format aus #443. Nimmt eine Fallliste entgegen und gibt eine
+vollständige HTML-Seite zurück: CSS, JavaScript und Daten eingebettet, keine
+externen Verweise, weil eine nachladende Seite unter `file://` an CORS
+scheitert. Speichert die Antworten im Browser und exportiert sie als JSON und
+als lesbaren HTML-Bericht. Kennt keinen Vorgang und keine Korpusdaten.
+
+### `collect-359-evidence.py`
+Holt die Belegstellen zu Boreks Pferdewortlisten aus den 667 TEI-Dateien, mit
+Kontextfenster (#359). `--counts` misst nur, `--write` schreibt
+`ingest/review/359-borek/evidence.json`. Die `@lemmaRef`-Prüfung ist
+token-exakt (CONTRACTS.md §B.1), nie ein Teilstring-Vergleich.
+
+### `build-359-page.py`
+Setzt Belege und Bewertungen zur fertigen Seite zusammen (#359). `--pruefen`
+gleicht nur ab und schreibt nichts. Der Abgleich ist streng und bricht ab bei
+einem Fall ohne Bewertung, einer Bewertung ohne Fall, einer Fundstelle, die
+unter den gemessenen Belegen nicht vorkommt, einem Vorschlag ohne tragenden
+Beleg und **einem Zitat, das so in keinem Beleg steht**, geprüft in jedem Feld,
+dessen Text auf die Karte kommt. Am Ende prüft er zusätzlich das fertige
+Dokument auf Rückwärtsstriche im sichtbaren Text und schreibt nichts, wenn er
+welche findet.
+
+## _archived/ — Referenz
+
+### `tei-transformation.py`
+Originales Transformationsscript aus dem `initial-data-wrangling`-Branch (~2000 Zeilen). Enthält nützliche Utility-Funktionen (CSV-Parsing, TEI-Erstellung, ID-Normalisierung). **Nicht ausführen** — bei Bedarf einzelne Funktionen extrahieren.
+
+## Verwendung
+
+**Der verbindliche Ablauf nach einer Änderung in `tei/` oder `authority-files/` steht in [`docs/DATA-MODEL.md` → Data-Change-Lifecycle](../docs/DATA-MODEL.md#data-change-lifecycle)**, samt Routing-Tabelle (welche Schritte der konkrete Fall überhaupt braucht) und der Angabe, welche davon die CI abfängt. Die Zeilen hier sind die Aufrufe, nicht das Verfahren: wer nur sie liest, vergisst den Versions-Bump und `api/`, und die Suche liefert dann bis zu 30 Tage lang den alten Stand aus dem IndexedDB-Cache.
 
 ```bash
-# After updating TEI or authority files, rebuild all indices
-python scripts/build-authority-index.py
+# Nach Aenderung in tei/, vollstaendiger Fall, Reihenfolge zaehlt
+# 1. Version bumpen (build-*-index.py + assets/js/lib/corpus-loader.js), dann:
+python scripts/audit/check-index-versions.py
 python scripts/build-corpus-index.py
-python scripts/generate-manifest.py
+python scripts/sync/extract-variants.py --apply     # nur bei neuen Formen
+python scripts/build-authority-index.py             # nur nach --apply
+python scripts/build-api.py
+python scripts/audit/check-authority-cross-refs.py --check
 
-# Validate generated indices
+# Nach Aenderung in authority-files/
+# 1. Version bumpen, dann:
+python scripts/build-authority-index.py
+python scripts/build-api.py
+
+# Indexe validieren, Korpus gegen Schema validieren
 python scripts/validate-indices.py
+python scripts/audit/validate-corpus.py
 
-# Update editor metadata from Zotero API (Issue #19) - 2-step workflow
-python scripts/data-wrangling/enhance_works_with_zotero.py --dry-run  # Step 1: Preview works.xml changes
-python scripts/data-wrangling/enhance_works_with_zotero.py --cache    # Step 1: Update works.xml + save cache
-python scripts/data-wrangling/sync_tei_headers.py --works --dry-run   # Step 2: Preview TEI header changes
-python scripts/data-wrangling/sync_tei_headers.py --works             # Step 2: Sync TEI headers
-python scripts/build-authority-index.py                               # Rebuild index
-
-# Offline mode (use cached Zotero data)
-python scripts/data-wrangling/enhance_works_with_zotero.py --offline --dry-run
-
-# Sync all authority files to TEI headers (future use)
-python scripts/data-wrangling/sync_tei_headers.py --all --dry-run     # Preview all changes
-python scripts/data-wrangling/sync_tei_headers.py --all               # Sync all authority data
+# Zotero-Sync (immer erst --dry-run)
+python scripts/sync/enhance_works_with_zotero.py --dry-run
+python scripts/sync/enhance_works_with_zotero.py --cache
+python scripts/sync/sync_tei_headers.py --works --check     # Gate, schreibt nichts
+python scripts/sync/sync_tei_headers.py --works --dry-run
+python scripts/sync/sync_tei_headers.py --works
 ```
 
 ## Best Practices
 
-### Archived Scripts
-Scripts prefixed with `_ARCHIVED_` are preserved for reference only and should not be executed. They contain useful functions that can be extracted for new focused scripts. Example: `_ARCHIVED_tei-transformation.py`
-
-### Data Wrangling Workflow
-1. Run script with `--dry-run` to preview changes
-2. Review proposed changes
-3. Run script without `--dry-run` to apply
-4. Review git diff of modified files
-5. Rebuild indices
-6. Commit changes
-
-### Note
-Data wrangling scripts modify source TEI files. Always review changes before committing.
+- **Immer `--dry-run` zuerst** bei sync-Scripts
+- **`git diff` prüfen** nach jeder Transformation
+- **Den Lifecycle abarbeiten, nicht nur die Indexe neu bauen**: Bump und `api/` gehören dazu, und beide fallen ohne CI erst beim Nutzer auf
+- **Im Zweifel bauen**: seit #125 sind die Builds deterministisch, ein Lauf ohne Quelländerung erzeugt keinen Diff
+- **Archived Scripts nicht ausführen**, bei Bedarf einzelne Funktionen extrahieren

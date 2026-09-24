@@ -2,9 +2,16 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Corpus Loading and Management', () => {
+  // #326: Beide goto zeigten bis August 2026 auf `testing/test.html`, das mit
+  // dem Eigenbau-Test-Framework entfallen ist. Gebraucht wird hier nur eine
+  // Same-Origin-Seite, die beim Laden selbst kein IndexedDB anfasst, sonst
+  // liefe sie der Seed-Datenbank unten in die Quere. `hilfe.html` lädt als
+  // einziges lokales Skript `site-chrome.js`, und das öffnet Datenbanken erst
+  // im Klick-Handler des Reset-Knopfs. Der Playground selbst taugt nicht: sein
+  // Start löscht die Alt-Datenbank, die der Test gerade anlegen will.
   test.beforeEach(async ({ page }) => {
     // Clear all IndexedDB storage before each test
-    await page.goto('/testing/test.html');
+    await page.goto('/hilfe.html');
     await page.evaluate(async () => {
       // Clear IndexedDB
       const dbs = await indexedDB.databases();
@@ -15,232 +22,42 @@ test.describe('Corpus Loading and Management', () => {
     });
   });
 
-  test('IndexedDB corpus operations - schema version 2', async ({ page }) => {
-    await page.goto('/testing/test.html');
+  // #314: Der Playground hat keinen Datei-Upload mehr, damit hat die Datenbank
+  // MHDBDB_Playground keinen Schreiber. Statt sie per Schema-Migration zu
+  // pflegen (so lief es bis #280), löscht der Playground-Start sie einmalig.
+  // Geprüft an einer von Hand angelegten Alt-Datenbank.
+  test('Alt-Datenbank MHDBDB_Playground wird beim Start entfernt', async ({ page }) => {
+    await page.goto('/hilfe.html');
 
-    const result = await page.evaluate(async () => {
-      const { IndexedDBManager } = await import('../playground/js/indexed-db-manager.js');
-      const dbManager = new IndexedDBManager();
-
-      await dbManager.initialize();
-
-      // Verify database version
-      if (dbManager.dbVersion !== 2) {
-        throw new Error(`Expected DB version 2, got ${dbManager.dbVersion}`);
-      }
-
-      // Verify corpus_tei_files store exists
-      const storeNames = Array.from(dbManager.db.objectStoreNames);
-      if (!storeNames.includes('corpus_tei_files')) {
-        throw new Error('corpus_tei_files store not found');
-      }
-
-      return { success: true, version: dbManager.dbVersion, stores: storeNames };
+    const seeded = await page.evaluate(async () => {
+      await new Promise((resolve, reject) => {
+        const request = indexedDB.open('MHDBDB_Playground', 3);
+        request.onupgradeneeded = (event) => {
+          event.target.result.createObjectStore('tei_files', { keyPath: 'filename' });
+        };
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction(['tei_files'], 'readwrite');
+          tx.objectStore('tei_files').put({ filename: 'alt.xml', content: '<TEI/>' });
+          // Verbindung schließen, sonst blockiert sie das spätere deleteDatabase
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = () => reject(tx.error);
+        };
+        request.onerror = () => reject(request.error);
+      });
+      const dbs = await indexedDB.databases();
+      return dbs.some((d) => d.name === 'MHDBDB_Playground');
     });
+    expect(seeded).toBe(true);
 
-    expect(result.success).toBe(true);
-    expect(result.version).toBe(2);
-    expect(result.stores).toContain('corpus_tei_files');
-    expect(result.stores).toContain('tei_files');
-    expect(result.stores).toContain('authority_files');
-  });
+    await page.goto('/playground/index.html');
+    await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
 
-  test('IndexedDB corpus operations - save and load corpus file', async ({ page }) => {
-    await page.goto('/testing/test.html');
-
-    const result = await page.evaluate(async () => {
-      const { IndexedDBManager } = await import('../playground/js/indexed-db-manager.js');
-      const dbManager = new IndexedDBManager();
-
-      await dbManager.initialize();
-
-      // Create test TEI content
-      const testFilename = 'TEST.tei.xml';
-      const testContent = `<?xml version="1.0" encoding="UTF-8"?>
-<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:id="TEST">
-  <teiHeader>
-    <titleStmt>
-      <title xml:lang="de">Test Document</title>
-      <author ref="#person_1">Test Author</author>
-    </titleStmt>
-  </teiHeader>
-  <text><body><p>Test content</p></body></text>
-</TEI>`;
-
-      const testMetadata = {
-        sigle: 'TEST',
-        title: 'Test Document',
-        author: 'Test Author',
-        authorRef: '#person_1',
-        workRef: 'works.xml#work_1'
-      };
-
-      // Save corpus file
-      const saved = await dbManager.saveCorpusFile(testFilename, testContent, testMetadata);
-      if (!saved) throw new Error('Failed to save corpus file');
-
-      // Load corpus file
-      const loaded = await dbManager.loadCorpusFile(testFilename);
-      if (!loaded) throw new Error('Failed to load corpus file');
-
-      // Verify content matches
-      if (loaded !== testContent) {
-        throw new Error('Content mismatch');
-      }
-
-      // List corpus files
-      const files = await dbManager.listCorpusFiles();
-      const testFile = files.find(f => f.filename === testFilename);
-
-      if (!testFile) throw new Error('Test file not in list');
-      if (testFile.sigle !== 'TEST') throw new Error('Metadata not preserved');
-
-      return {
-        success: true,
-        fileCount: files.length,
-        metadata: testFile
-      };
+    const stillThere = await page.evaluate(async () => {
+      const dbs = await indexedDB.databases();
+      return dbs.some((d) => d.name === 'MHDBDB_Playground');
     });
-
-    expect(result.success).toBe(true);
-    expect(result.fileCount).toBe(1);
-    expect(result.metadata.sigle).toBe('TEST');
-    expect(result.metadata.title).toBe('Test Document');
-    expect(result.metadata.author).toBe('Test Author');
-  });
-
-  test('IndexedDB corpus operations - isCorpusLoaded check', async ({ page }) => {
-    await page.goto('/testing/test.html');
-
-    const result = await page.evaluate(async () => {
-      const { IndexedDBManager } = await import('../playground/js/indexed-db-manager.js');
-      const dbManager = new IndexedDBManager();
-
-      await dbManager.initialize();
-
-      // Initially corpus should not be loaded (0/666)
-      let isLoaded = await dbManager.isCorpusLoaded();
-      if (isLoaded) throw new Error('Corpus should not be loaded initially');
-
-      let count = await dbManager.getCorpusCount();
-      if (count !== 0) throw new Error(`Expected 0 files, got ${count}`);
-
-      // Add test files (not all 666, just a few for testing)
-      for (let i = 1; i <= 5; i++) {
-        await dbManager.saveCorpusFile(
-          `TEST${i}.tei.xml`,
-          `<TEI>Content ${i}</TEI>`,
-          { sigle: `TEST${i}`, title: `Test ${i}`, author: 'Test' }
-        );
-      }
-
-      // Should still not be loaded (5/666)
-      isLoaded = await dbManager.isCorpusLoaded();
-      if (isLoaded) throw new Error('Corpus should not be fully loaded yet');
-
-      count = await dbManager.getCorpusCount();
-      if (count !== 5) throw new Error(`Expected 5 files, got ${count}`);
-
-      return { success: true, partialCount: count };
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.partialCount).toBe(5);
-  });
-
-  test('IndexedDB corpus operations - copy to playground', async ({ page }) => {
-    await page.goto('/testing/test.html');
-
-    const result = await page.evaluate(async () => {
-      const { IndexedDBManager } = await import('../playground/js/indexed-db-manager.js');
-      const dbManager = new IndexedDBManager();
-
-      await dbManager.initialize();
-
-      // Create and save corpus file
-      const filename = 'COPY_TEST.tei.xml';
-      const content = '<TEI>Copy test content</TEI>';
-      const metadata = {
-        sigle: 'COPY',
-        title: 'Copy Test',
-        author: 'Test Author',
-        authorRef: '#person_1',
-        workRef: 'works.xml#work_1'
-      };
-
-      await dbManager.saveCorpusFile(filename, content, metadata);
-
-      // Copy to playground
-      const copied = await dbManager.copyCorpusToPlayground(filename);
-      if (!copied) throw new Error('Failed to copy corpus file');
-
-      // Load from playground store
-      const loadedFromPlayground = await dbManager.loadTEIFile(filename);
-      if (!loadedFromPlayground) throw new Error('File not in playground store');
-
-      if (loadedFromPlayground !== content) {
-        throw new Error('Content mismatch after copy');
-      }
-
-      // Verify both stores have the file
-      const corpusFiles = await dbManager.listCorpusFiles();
-      const teiFiles = await dbManager.listTEIFiles();
-
-      const inCorpus = corpusFiles.some(f => f.filename === filename);
-      const inPlayground = teiFiles.some(f => f.filename === filename);
-
-      if (!inCorpus) throw new Error('File missing from corpus store');
-      if (!inPlayground) throw new Error('File missing from playground store');
-
-      return { success: true, inBothStores: true };
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.inBothStores).toBe(true);
-  });
-
-  test('Corpus Loader - manifest parsing', async ({ page }) => {
-    await page.goto('/testing/test.html');
-
-    const result = await page.evaluate(async () => {
-      // Directly fetch manifest instead of using CorpusLoader (avoids path issues in test)
-      const manifestUrl = '/tei/manifest.json';
-      const response = await fetch(manifestUrl);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch manifest: ${response.statusText}`);
-      }
-
-      const manifest = await response.json();
-
-      if (!manifest) throw new Error('Manifest not loaded');
-      if (!manifest.files) throw new Error('No files in manifest');
-      if (manifest.totalFiles !== 666) {
-        throw new Error(`Expected 666 files, got ${manifest.totalFiles}`);
-      }
-
-      // Check first file has required fields
-      const firstFile = manifest.files[0];
-      const requiredFields = ['filename', 'path', 'sigle', 'title', 'author', 'size'];
-
-      for (const field of requiredFields) {
-        if (!(field in firstFile)) {
-          throw new Error(`Missing field: ${field}`);
-        }
-      }
-
-      return {
-        success: true,
-        totalFiles: manifest.totalFiles,
-        totalSizeMB: manifest.totalSizeMB,
-        firstFile: firstFile
-      };
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.totalFiles).toBe(666);
-    expect(result.totalSizeMB).toBeGreaterThan(1000); // Should be ~1523 MB
-    expect(result.firstFile.filename).toContain('.tei.xml');
+    expect(stillThere).toBe(false);
   });
 
   test('Corpus index structure after auto-load', async ({ page }) => {
@@ -272,7 +89,7 @@ test.describe('Corpus Loading and Management', () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.textCount).toBe(666);
+    expect(result.textCount).toBe(667);
     expect(result.hasAllFields).toBe(true);
   });
 
@@ -283,7 +100,7 @@ test.describe('Corpus Loading and Management', () => {
     await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
 
     const includedCount = await page.locator('#includedCount').textContent();
-    expect(parseInt(includedCount)).toBe(666);
+    expect(parseInt(includedCount)).toBe(667);
   });
 
   test('TEIFilesManager - available in playground', async ({ page }) => {
@@ -298,8 +115,10 @@ test.describe('Corpus Loading and Management', () => {
 
       return {
         success: true,
-        hasMethods: typeof teiManager.isTEIFile === 'function' &&
-                    typeof teiManager.loadCorpusIntoPlayground === 'function'
+        // #314: isTEIFile und loadCorpusIntoPlayground gehörten zum
+        // Upload-Pfad und sind entfernt. Geprüft wird jetzt der aktive
+        // Einstiegspunkt der Multi-Lemma-Suche.
+        hasMethods: typeof teiManager.searchMultipleLemmasUsingIndex === 'function'
       };
     });
 
@@ -318,8 +137,8 @@ test.describe('Corpus Loading and Management', () => {
       const texts = window.playground?.corpusData?.texts;
       if (!texts) throw new Error('No corpusData.texts');
 
-      if (texts.length !== 666) {
-        throw new Error(`Expected 666 loaded texts, got ${texts.length}`);
+      if (texts.length !== 667) {
+        throw new Error(`Expected 667 loaded texts, got ${texts.length}`);
       }
 
       // Verify lemmaIndex is also populated
@@ -330,43 +149,8 @@ test.describe('Corpus Loading and Management', () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.loaded).toBe(666);
+    expect(result.loaded).toBe(667);
     expect(result.lemmaCount).toBeGreaterThan(0);
   });
 
-  test('Clear corpus files operation', async ({ page }) => {
-    await page.goto('/testing/test.html');
-
-    const result = await page.evaluate(async () => {
-      const { IndexedDBManager } = await import('../playground/js/indexed-db-manager.js');
-      const dbManager = new IndexedDBManager();
-
-      await dbManager.initialize();
-
-      // Add test files
-      for (let i = 1; i <= 5; i++) {
-        await dbManager.saveCorpusFile(
-          `CLEAR${i}.tei.xml`,
-          `<TEI>Clear test ${i}</TEI>`,
-          { sigle: `CLR${i}`, title: `Clear ${i}`, author: 'Test' }
-        );
-      }
-
-      let count = await dbManager.getCorpusCount();
-      if (count !== 5) throw new Error(`Expected 5 files before clear, got ${count}`);
-
-      // Clear corpus
-      const cleared = await dbManager.clearCorpusFiles();
-      if (cleared !== 5) throw new Error(`Expected to clear 5 files, cleared ${cleared}`);
-
-      // Verify empty
-      count = await dbManager.getCorpusCount();
-      if (count !== 0) throw new Error(`Expected 0 files after clear, got ${count}`);
-
-      return { success: true, cleared };
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.cleared).toBe(5);
-  });
 });

@@ -15,7 +15,7 @@ test.describe('Playground Authority Index Loading', () => {
         });
 
         // Navigate to playground
-        await page.goto('http://localhost:8080/playground/');
+        await page.goto('/playground/');
 
         // Wait for authority data to load
         await page.waitForSelector('#statusText:has-text("Authority Files geladen")', { timeout: 15000 });
@@ -32,7 +32,7 @@ test.describe('Playground Authority Index Loading', () => {
     });
 
     test('authority data populated correctly from index', async ({ page }) => {
-        await page.goto('http://localhost:8080/playground/');
+        await page.goto('/playground/');
         await page.waitForSelector('#statusText:has-text("Authority Files geladen")', { timeout: 15000 });
 
         const authorityStats = await page.evaluate(() => {
@@ -57,9 +57,45 @@ test.describe('Playground Authority Index Loading', () => {
         expect(authorityStats.names).toBeGreaterThan(80);
     });
 
-    test('authority searches work with index data', async ({ page }) => {
-        await page.goto('http://localhost:8080/playground/');
+    test('person altNames and altNormalized are index-parallel (#307)', async ({ page }) => {
+        await page.goto('/playground/');
         await page.waitForSelector('#statusText:has-text("Authority Files geladen")', { timeout: 15000 });
+
+        const alt = await page.evaluate(() => {
+            const persons = window.playground?.authorityData?.persons || [];
+            const withAlt = persons.filter(p => p.altNames && p.altNames.length);
+            // CONTRACTS §G.3: altNormalized[i] gehoert zu altNames[i]. Faellt das
+            // auseinander, zeigt der Explorer die falsche Trefferform an.
+            const mismatched = withAlt.filter(
+                p => !p.altNormalized || p.altNormalized.length !== p.altNames.length
+            ).map(p => p.id);
+            const rietenburg = persons.find(p => p.id === 'person_127');
+            return {
+                withAlt: withAlt.length,
+                totalForms: withAlt.reduce((n, p) => n + p.altNames.length, 0),
+                mismatched,
+                rietenburgAlt: rietenburg ? rietenburg.altNames : null,
+                rietenburgNorm: rietenburg ? rietenburg.altNormalized : null
+            };
+        });
+
+        console.log('Person alternative names:', alt);
+
+        expect(alt.mismatched).toEqual([]);
+        expect(alt.withAlt).toBeGreaterThan(70);
+        expect(alt.totalForms).toBeGreaterThan(90);
+        // Der Anlassfall aus #228: Nebenform vorhanden und normalisiert.
+        expect(alt.rietenburgAlt).toContain('Burggraf von Rietenburg');
+        expect(alt.rietenburgNorm).toContain('burggraf von rietenburg');
+    });
+
+    test('authority searches work with index data', async ({ page }) => {
+        await page.goto('/playground/');
+        await page.waitForSelector('#statusText:has-text("Authority Files geladen")', { timeout: 15000 });
+
+        // #410, zweite Runde: der Block "Register & Indizes (Authority
+        // Files)" ist ausgeliefert aufgeklappt, das frueher noetige Oeffnen
+        // entfaellt.
 
         // Click "Lemmata anzeigen"
         await page.click('#showLemmataBtn');
@@ -79,7 +115,7 @@ test.describe('Playground Authority Index Loading', () => {
     });
 
     test('corpus browser available after auto-load', async ({ page }) => {
-        await page.goto('http://localhost:8080/playground/');
+        await page.goto('/playground/');
 
         // Wait for corpus auto-load to complete
         await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
@@ -91,31 +127,37 @@ test.describe('Playground Authority Index Loading', () => {
         console.log('✅ Corpus browser available after auto-load');
     });
 
-    test('corpus auto-loads 666 texts', async ({ page }) => {
-        await page.goto('http://localhost:8080/playground/');
+    test('corpus auto-loads 667 texts', async ({ page }) => {
+        await page.goto('/playground/');
 
         // Wait for corpus auto-load to complete
         await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
 
         // Check included count
         const includedCount = await page.locator('#includedCount').textContent();
-        expect(parseInt(includedCount)).toBe(666);
+        expect(parseInt(includedCount)).toBe(667);
 
-        console.log('✅ Corpus auto-loaded 666 texts');
+        console.log('✅ Corpus auto-loaded 667 texts');
     });
 
-    test('performance: authority index loads within 10 seconds', async ({ page }) => {
+    test('performance: authority index loads within 20 seconds', async ({ page }) => {
         const startTime = Date.now();
 
-        await page.goto('http://localhost:8080/playground/');
-        await page.waitForSelector('#statusText:has-text("Authority Files geladen")', { timeout: 15000 });
+        await page.goto('/playground/');
+        await page.waitForSelector('#statusText:has-text("Authority Files geladen")', { timeout: 30000 });
 
         const loadTime = Date.now() - startTime;
 
         console.log(`⏱️  Authority index load time: ${loadTime}ms (${(loadTime / 1000).toFixed(1)}s)`);
 
-        // Pre-built index should load in under 10 seconds
-        expect(loadTime).toBeLessThan(10000);
+        // Threshold raised from 10s to 20s on 2026-08-05, the wait from 15s to 30s so
+        // the assertion stays the deciding limit. Isolated, the load takes 5.5 to 5.9s
+        // (measured, three runs); under the full suite plus a second session it crossed
+        // 10s in two of three runs, i.e. the test was measuring machine load. 20s still
+        // catches what it exists for: runtime XML parsing cost around 30s before the
+        // pre-built indexes replaced it (documented in ARCHITECTURE.md, not measured
+        // here; that code path is gone).
+        expect(loadTime).toBeLessThan(20000);
 
         if (loadTime < 3000) {
             console.log('✅ Excellent performance: < 3s');

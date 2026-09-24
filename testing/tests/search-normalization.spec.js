@@ -15,14 +15,18 @@ test.describe('Search Normalization Test Suite', () => {
 
     test.beforeAll(async ({ browser }) => {
         page = await browser.newPage();
-        await page.goto('http://localhost:8080/playground/');
+        await page.goto('/playground/');
 
-        // Wait for authority files to load
+        // Wait for authority files to load.
+        // 60000, nicht 30000: vor der Signaturkorrektur war der Timeout
+        // wirkungslos, real band das Testbudget. Das hier ist ein beforeAll,
+        // ein Fehlschlag reißt die ganze Datei mit statt eines Tests, also
+        // wird die Schwelle nicht nebenbei verschärft.
         await page.waitForFunction(() => {
             return window.playground &&
                    window.playground.authorityManager &&
                    window.playground.authorityManager.authorityData.lemmata.length > 0;
-        }, { timeout: 30000 });
+        }, null, { timeout: 60000 });
 
         console.log('✓ Authority files loaded');
     });
@@ -39,7 +43,10 @@ test.describe('Search Normalization Test Suite', () => {
                 const persons = window.playground.authorityManager.authorityData.persons;
                 const searchTerm = 'eckhart';
 
-                // Simulate searchAuthors() logic
+                // Bildet nur den preferredName-Pfad von searchAuthors() ab. Seit
+                // #307 sucht der Explorer zusaetzlich ueber person.altNames; dieser
+                // Zweig wird in search-with-corpus.spec.js "Search 1b" gegen die
+                // echte UI geprueft, nicht hier nachgebaut.
                 const matches = window.SearchPatterns.textContainsNormalized(
                     persons,
                     searchTerm,
@@ -253,21 +260,31 @@ test.describe('Search Normalization Test Suite', () => {
                 // Stage 2: Exact variants match
                 // Stage 3: Partial match fallback
 
+                // expectedLemma prüft die Stufe wirklich (Audit #112):
+                // Stage 1/2 liefern bei eindeutigen Lemmata genau EIN Lemma
+                // (Exact bzw. Variants-Hit auf lemma_879), Stage 3 (Partial)
+                // liefert viele Treffer.
                 const testCases = [
-                    { input: 'brôt', stage: 1, desc: 'Exact lexicon match' },
-                    { input: 'brott', stage: 2, desc: 'Exact variant match' },
-                    { input: 'brot', stage: 2, desc: 'Normalized variant match' },
-                    { input: 'fri', stage: 3, desc: 'Partial match fallback' }
+                    { input: 'brôt', stage: 1, desc: 'Exact lexicon match', expectedLemma: 'lemma_879', exactCount: 1 },
+                    { input: 'brott', stage: 2, desc: 'Exact variant match', expectedLemma: 'lemma_879', exactCount: 1 },
+                    { input: 'brot', stage: 2, desc: 'Normalized variant match', expectedLemma: 'lemma_879', exactCount: 1 },
+                    // 'minnecl' statt 'fri': 'fri' ist real ein Variants-Hit
+                    // (Stage 2, → lemma_7226) — 'minnecl' hat weder Exact-
+                    // noch Variants-Eintrag und trifft 5 Lemmata partial.
+                    { input: 'minnecl', stage: 3, desc: 'Partial match fallback', minCount: 2 }
                 ];
 
                 const results = testCases.map(tc => {
-                    const lemmaIds = manager.searchLemmaByOrthography(tc.input);
+                    const lemmas = manager.searchLemmaByOrthography(tc.input);
                     return {
                         input: tc.input,
                         expectedStage: tc.stage,
                         description: tc.desc,
-                        foundLemmas: lemmaIds.length,
-                        lemmaIds: lemmaIds.slice(0, 3) // First 3 results
+                        expectedLemma: tc.expectedLemma || null,
+                        exactCount: tc.exactCount || null,
+                        minCount: tc.minCount || 1,
+                        foundLemmas: lemmas.length,
+                        foundIds: lemmas.slice(0, 5).map(l => l.id)
                     };
                 });
 
@@ -275,12 +292,48 @@ test.describe('Search Normalization Test Suite', () => {
             });
 
             result.testResults.forEach(tc => {
-                console.log(`  Stage ${tc.expectedStage}: "${tc.input}" → ${tc.foundLemmas} lemmas`);
-                console.log(`    ${tc.description}`);
-                if (tc.lemmaIds.length > 0) {
-                    console.log(`    Found: ${tc.lemmaIds.join(', ')}`);
+                console.log(`  Stage ${tc.expectedStage}: "${tc.input}" → ${tc.foundLemmas} lemmas [${tc.foundIds.join(', ')}]`);
+                if (tc.exactCount !== null) {
+                    expect(tc.foundLemmas, `${tc.input}: Stage ${tc.expectedStage} muss genau ${tc.exactCount} Treffer liefern`).toBe(tc.exactCount);
                 }
-                expect(tc.foundLemmas).toBeGreaterThan(0);
+                if (tc.expectedLemma) {
+                    expect(tc.foundIds, `${tc.input}: erwartetes Lemma`).toContain(tc.expectedLemma);
+                }
+                expect(tc.foundLemmas).toBeGreaterThanOrEqual(tc.minCount);
+            });
+        });
+
+        test('8b. searchLemmaByOrthography - Homographen frequenz-sortiert (#163/#164)', async () => {
+            // "rôt" existiert dreimal im Lexikon: lemma_11330 "Rot" (NAM,
+            // 1 Korpus-Beleg), lemma_19417 "rot" (NOM, 1 Beleg), lemma_4954
+            // "rôt" (ADJ, 1567 Belege). Stage 1 muss ALLE Homographen liefern,
+            // frequenz-sortiert, damit matches[0]-Konsumenten (Multi-Lemma-
+            // Suche, Kookkurrenz, Reim, Versposition) das plausibelste Lemma
+            // bekommen — nicht das zufällig erste im Index (#164: rôt+munt
+            // lieferte 0 Treffer, weil der Eigenname "Rot" gewann).
+            await page.waitForFunction(() => {
+                return window.playground?.corpusData?.texts?.length > 0;
+            }, null, { timeout: 60000 });
+
+            const result = await page.evaluate(() => {
+                const manager = window.playground.authorityManager;
+                return ['rôt', 'rot'].map(input => {
+                    const lemmas = manager.searchLemmaByOrthography(input);
+                    return {
+                        input,
+                        count: lemmas.length,
+                        firstId: lemmas[0]?.id,
+                        ids: lemmas.map(l => l.id)
+                    };
+                });
+            });
+
+            result.forEach(r => {
+                console.log(`  "${r.input}" → ${r.count} Homographen, erster: ${r.firstId} [${r.ids.join(', ')}]`);
+                expect(r.count, `${r.input}: alle Homographen müssen zurückkommen`).toBe(3);
+                expect(r.firstId, `${r.input}: frequentestes Lemma (ADJ rôt) muss zuerst stehen`).toBe('lemma_4954');
+                expect(r.ids).toContain('lemma_11330');
+                expect(r.ids).toContain('lemma_19417');
             });
         });
 
@@ -462,39 +515,40 @@ test.describe('Search Normalization Test Suite', () => {
 
             expect(result.performant).toBe(true);
         });
-    });
-});
 
-test.describe('Search Normalization - Visual Summary', () => {
-    test('Display comprehensive test report', async () => {
-        console.log('\n' + '='.repeat(80));
-        console.log('SEARCH NORMALIZATION TEST SUITE - SUMMARY');
-        console.log('='.repeat(80));
-        console.log('\n✅ All 11 Search Entry Points Tested\n');
+        // #419/#437: foldDiacritics ist die Gegenrichtung zu normalizeMHG und
+        // endet mit einem generischen Zerlegungsdurchlauf. Der tilgt eine
+        // Eingabe, die nur aus kombinierenden Zeichen besteht, restlos, und
+        // `includes('')` ist true: ohne Guard traf ein solcher Begriff jeden
+        // Eintrag. Eine zu volle Trefferliste sieht nicht nach einem Fehler
+        // aus, deshalb steht der Fall hier als Test und nicht als Notiz.
+        test('14. foldDiacritics - Gegenrichtung, Akzente und der Leerfall', async () => {
+            const result = await page.evaluate(() => {
+                const akut = String.fromCharCode(0x301);
+                const T = window.TextNormalizer;
+                return {
+                    // Der Fall aus Alans Protokoll: Stamm ohne Umlaut findet
+                    // die Flexionsform mit Umlaut.
+                    baumFindetBaeume: T.matchesFolded('Bäume', 'baum'),
+                    // Die alte Richtung darf dadurch nicht verloren gehen.
+                    baeumeBleibt: T.matchesNormalized('Bäume', 'baeume'),
+                    // Akzent ausserhalb der deutschen Umlautmenge.
+                    malmariee: T.matchesFolded('Malmariée-Lied', 'malmariee'),
+                    // Der Leerfall, beide Seiten.
+                    faltungLeer: T.foldDiacritics(akut) === '',
+                    leerTrifftNichts: T.matchesFolded('Bäume', akut),
+                    // Kontrollwert: die MHD-Normalisierung hat den Fall nie
+                    // gehabt, sie tilgt kombinierende Zeichen nicht.
+                    normalizedTrifftAuchNicht: T.matchesNormalized('Bäume', akut)
+                };
+            });
 
-        console.log('A. Authority Files Exploration (6 searches):');
-        console.log('   1. ✓ Autoren anzeigen - Author search with normalization');
-        console.log('   2. ✓ Werke anzeigen - Works search with normalization');
-        console.log('   3. ✓ Lemmata anzeigen - Lexicon search (brôt → brot)');
-        console.log('   4. ✓ Begriffe anzeigen - Concepts multi-field search');
-        console.log('   5. ✓ Gattungen anzeigen - Genres multi-field search');
-        console.log('   6. ✓ Namen anzeigen - Names multi-field search');
-
-        console.log('\nB. TEI Text Analysis (5 searches):');
-        console.log('   7. ✓ Variants.xml Integration - 192,674 orthographic forms');
-        console.log('   8. ✓ 3-Stage Resolution - Lexicon → Variants → Partial');
-        console.log('   9. ✓ Multi-Lemma Search - Variant spelling resolution');
-        console.log('   10. ✓ TextNormalizer - All MHG character rules');
-        console.log('   11. ✓ matchesNormalized - Flexible matching');
-
-        console.log('\nC. Integration:');
-        console.log('   12. ✓ All components loaded and functional');
-        console.log('   13. ✓ Performance validated (< 1ms per normalization)');
-
-        console.log('\n' + '='.repeat(80));
-        console.log('Implementation: text-normalizer.js (centralized utility)');
-        console.log('Coverage: 100% of search entry points');
-        console.log('Status: ✅ COMPLETE');
-        console.log('='.repeat(80) + '\n');
+            expect(result.baumFindetBaeume).toBe(true);
+            expect(result.baeumeBleibt).toBe(true);
+            expect(result.malmariee).toBe(true);
+            expect(result.faltungLeer).toBe(true);
+            expect(result.leerTrifftNichts).toBe(false);
+            expect(result.normalizedTrifftAuchNicht).toBe(false);
+        });
     });
 });

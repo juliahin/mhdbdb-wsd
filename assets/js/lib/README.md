@@ -32,23 +32,99 @@ const loader = new CorpusLoader();
 const authorityData = await loader.loadAuthorityIndex();
 ```
 
-### `indexed-db-base.js`
-Base class for IndexedDB operations (used by both apps).
+### `lemma-match.js`
+Exact-token matching of a searched lemma id against a `@lemmaRef` (CONTRACTS §B.1). Single source for the highlight/match decision, shared by reader and playground (#130 — was 6 inline copies).
 
 **Exports:**
-- `IndexedDBBase` class with common CRUD operations
+- `lemmaRefMatchesId(lemmaRef, lemmaId)` → boolean (exact whitespace-separated token, never a substring)
 
 **Usage:**
 ```javascript
-import { IndexedDBBase } from '../../lib/indexed-db-base.js';
+import { lemmaRefMatchesId } from '../../lib/lemma-match.js';
 
-class MyStorage extends IndexedDBBase {
-  constructor() {
-    super('MyDB', 1, [
-      { name: 'files', keyPath: 'id', indexes: [...] }
-    ]);
-  }
-}
+lemmaRefMatchesId('lexicon.xml#lemma_308', 'lemma_308');  // true
+lemmaRefMatchesId('lexicon.xml#lemma_3089', 'lemma_308'); // false (substring trap)
+```
+
+### `lemma-resolve.js`
+Prädikat und Sortier-Distanz für Stufe 3 der Lemma-Auflösung (CONTRACTS §C, ADR-016). Geteilt von Korpussuche und Playground, damit beide dieselbe Präfix-Regel verwenden (#224 — vorher zwei divergierende Substring-Varianten).
+
+Bewusst NICHT geteilt wird die Orchestrierung der drei Stufen: beide Aufrufer halten ihre Lemmata unterschiedlich (vorberechnetes `normalized` gegen Laufzeit-Normalisierung) und ranken unterschiedlich (Index-Reihenfolge gegen Korpus-Frequenz).
+
+**Exports:**
+- `isStage3Match(lemmaNormalized, queryNormalized)` → boolean
+- `stage3Distance(lemmaNormalized, queryNormalized)` → number (Längendifferenz, kleiner ist näher)
+- `MIN_LEMMA_PREFIX_LENGTH` → 3 (Mindestlänge nur in der Richtung „Eingabe beginnt mit Lemma")
+
+**Usage:**
+```javascript
+import { isStage3Match, stage3Distance } from '../../lib/lemma-resolve.js';
+
+isStage3Match('minnecl', 'minnecl');   // true (Präfix)
+isStage3Match('minneclich', 'minnecl'); // true (Lemma beginnt mit der Eingabe)
+isStage3Match('mi', 'minnecl');         // false (zu kurz für die Rückrichtung)
+```
+
+### `escape.js`
+HTML- und Attribut-Escaping für Hauptseite und Lemma-Seiten. Escaped auch Anführungszeichen, weil die Werte in Attribut-Kontexte interpoliert werden (`href="..."`) und der frühere textContent-Trick dort einen Attribute-Breakout offenließ (Review zu PR #157). Die Playground-TEI-Module halten nach dokumentierter Konvention eigene Kopien (DESIGN.md, Playground TEI-Analysis Module Pattern).
+
+**Exports:**
+- `escapeHtml(text)` → String (`& < > " '`, `null` und `undefined` werden zu `''`)
+
+**Usage:**
+```javascript
+import { escapeHtml } from '../../lib/escape.js';
+
+escapeHtml('Wolfram <von> "Eschenbach"');
+```
+
+### `woerterbuchnetz.js`
+Abfrage der fünf Wörterbücher des Trierer Wörterbuchnetzes für das Metadaten-Panel der Leseansicht. Vertrag und Parsing-Weg stehen in CONTRACTS.md §D.2.
+
+**Exports:**
+- `DICTIONARIES` → `['MWB', 'Lexer', 'LexerN', 'BMZ', 'FindeB']`
+- `DICTIONARY_TITLES`, `dictionaryTitle(sigle)` → Klarnamen zur Sigle
+- `decodeHtmlEntities(str)` → String
+- `fetchWbnetzEntries(normalizedForm)` → Promise mit den Treffern je Wörterbuch
+
+**Usage:**
+```javascript
+import { fetchWbnetzEntries } from '../../lib/woerterbuchnetz.js';
+
+const treffer = await fetchWbnetzEntries('brot');
+```
+
+### `genre-tree.js`
+Werke je Gattung einschließlich aller Untergattungen (#433). Geteilt vom Gattungs-Vorschlag im Textfilter der Korpussuche und vom Gattungsbaum im Playground, damit beide dieselbe Menge meinen. Die Hierarchie ist ein DAG (`genre.parents[]`, mehrere Eltern möglich), die Werkmenge deshalb eine Vereinigung, keine Summe.
+
+**Exports:**
+- `buildGenreSubtrees(genres, genreToWorks)` → `{ children, subtreeWorks }` (`genreToWorks` als Map oder als Objekt aus `authorityIndex.maps`)
+- `workIdFromRef(workRef)` → `"work_89"` aus `"works.xml#work_89"`
+
+**Usage:**
+```javascript
+import { buildGenreSubtrees } from '../../lib/genre-tree.js';
+
+const { subtreeWorks } = buildGenreSubtrees(authorityIndex.genres, authorityIndex.maps.genreToWorks);
+subtreeWorks.get(minnesangId).size; // Werke von Minnesang und allen Untergattungen
+```
+
+### `csv-export.js`
+CSV-Export im Hausformat aus #114: Komma als Trenner, Quoting nach RFC 4180 nur bei Bedarf, CRLF, UTF-8 mit BOM. Geteilt von der Ergebnistabelle der Korpussuche (`app.js`) und den tabellarischen Playground-Werkzeugen (#448). Der ältere Hapax-Export im Playground trennt mit Semikolon und bleibt so, weil ein Formatwechsel bestehende Auswertungen bräche.
+
+**Exports:**
+- `csvCell(value)` → String (eine Zelle, `null` und `undefined` werden zu `''`)
+- `toCsv(header, rows)` → String (Kopfzeile und Zeilen als Arrays von Zellwerten, CRLF-getrennt)
+- `csvFilenamePart(text, fallback)` → dateinamensicherer Baustein, höchstens 40 Zeichen
+- `csvDateStamp()` → `"2026-09-23"`
+- `downloadCsv(filename, csv)` → startet den Download, setzt das BOM selbst
+
+**Usage:**
+```javascript
+import { toCsv, downloadCsv, csvDateStamp } from '../../lib/csv-export.js';
+
+const csv = toCsv(['Lemma', 'Absolut'], [['minne', 1234], ['êre, guot', 56]]);
+downloadCsv(`mhdbdb-wortfrequenz-${csvDateStamp()}.csv`, csv);
 ```
 
 ## Design Principles

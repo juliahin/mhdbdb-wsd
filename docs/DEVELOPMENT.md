@@ -1,0 +1,545 @@
+# Development
+
+This document describes the development workflow, build processes, and deployment procedures for the MHDBDB TEI Repository.
+
+## Prerequisites
+
+- **Node.js 16+** (for npm scripts and testing)
+- **Python 3.13+** with lxml (for building pre-built indexes)
+- **Web Browser** (Chrome/Chromium preferred for testing)
+- **Git** (for version control)
+
+**Note:** Pre-built indexes are included in repository, so Python is only needed if modifying source XML files.
+
+## Project Setup
+
+```bash
+# Clone repository
+git clone https://github.com/DigitalHumanitiesCraft/mhdbdb-tei-only.git
+cd mhdbdb-tei-only
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run serve
+# Opens on http://localhost:8080 (or on MHDBDB_TEST_PORT, see Testing)
+```
+
+### Directory Structure
+
+```
+mhdbdb-tei-only/
+├── assets/                # Main site static assets
+│   ├── css/               # Stylesheets (korpus.css, tailwind)
+│   ├── js/                # Main site JavaScript
+│   │   ├── app.js         # Application entry point
+│   │   ├── site-chrome.js # Shared nav/footer behavior (mobile menu, current-year, clear-site-data), loaded on every page
+│   │   ├── search/        # Search engine
+│   │   ├── rendering/     # TEI text reader, text renderer
+│   │   ├── storage/       # TEI cache manager
+│   │   └── lib/           # Shared utilities (corpus-loader, text-normalizer, lemma-match)
+│   └── images/            # Static images
+├── includes/              # Nav/footer/matomo single-source partials (_nav.html, _footer.html, _matomo.html), build-injected by scripts/build-pages.py
+├── authority-files/       # 8 XML authority files (incl. contributors.xml)
+├── tei/                   # TEI corpus files
+├── data/                  # Pre-built indexes (generated)
+├── scripts/               # Python build scripts
+├── playground/            # Playground interface (self-contained sub-app)
+├── lemma/                 # Persistent lemma pages (Issue #42)
+├── publications/          # Project outputs (blog posts, reports)
+├── testing/               # Playwright tests
+├── docs/                  # Documentation hub
+├── schema/                # RELAX NG schemas (mhdbdb.rnc, mhdbdb-authority.rnc, examples)
+├── index.html             # Landing page
+├── korpus.html            # Main site search + reading view
+├── woerterbuch.html       # Dictionary: A–Z register of all lemmata (#117)
+├── impressum.html         # Legal notice (#62)
+├── barrierefreiheit.html  # Accessibility statement
+├── hilfe.html             # Help hub (entry point)
+├── hilfe-korpussuche.html # Corpus search guide
+├── hilfe-playground.html  # Playground guide
+├── hilfe-daten.html       # What the data is, for readers
+├── hilfe-daten-beitragen.html  # Schema conversion guide for TEI contributors (#68 part 1)
+├── hilfe-schema.html      # Normative TEI schema + Prism examples (#78)
+└── 404.html               # Lemma-page redirect (GitHub-Pages-Workaround)
+```
+
+## Building Pre-Built Indexes
+
+Pre-built indexes are included in repository. Rebuild only when modifying source XML files.
+
+### When to Rebuild
+
+> **Canonical, ordered step sequence:** [DATA-MODEL.md → Data-Change-Lifecycle](DATA-MODEL.md#data-change-lifecycle). The list here is only the short form of the triggers.
+
+**Authority Index:**
+- Authority XML files modified
+- Cross-references added/changed
+- New GND/Wikidata identifiers
+
+**Corpus Index:**
+- TEI files added/removed/modified
+- Word annotations changed
+
+**Variants:**
+- TEI corpus modified (new orthographic forms)
+- Usually paired with corpus index rebuild
+
+### Build Commands
+
+```bash
+# Build authority index (consumes authority-files/variants.xml, no extraction step)
+python scripts/build-authority-index.py
+# Output: data/authority-index.json.gz (~3 MB)
+
+# Build corpus index
+python scripts/build-corpus-index.py
+# Output: data/corpus-index.json.gz (~42 MB; current version in TEI-MODEL.md §11)
+
+# Validate indices
+python scripts/validate-indices.py
+
+# Build static JSON API from the two indexes (#45), alias: npm run build:api
+python scripts/build-api.py
+# Output: api/ (2,742 plain JSON files, ~14 MB). Single-shot target, needs a clean data/.
+# Run build:api ALONE to regenerate only the API from the already-committed indexes
+# (no index rebuild). To rebuild the indexes AND the API together (kept in lockstep),
+# use `npm run build:data` / `npm run build` (see below).
+```
+
+### Frontend Build Commands
+
+```bash
+# Rebuild the purged Tailwind stylesheet (run after new utility classes appear in HTML/JS)
+npm run build:css        # assets/css/tailwind-input.css → assets/css/tailwind-output.css (--minify)
+
+# Bundle vendored JS dependencies (PrismJS, pako, Dexie: no runtime CDN dependencies,
+# sources pinned via package.json/package-lock, output committed under assets/vendor/)
+npm run build:vendor     # node scripts/build-vendor.js
+
+# Re-inject the shared nav + footer into every registered page after editing
+# includes/_nav.html or includes/_footer.html (NOT the pages directly):
+python scripts/build-pages.py            # rewrite changed pages (idempotent)
+python scripts/build-pages.py --check    # exit 1 if any page is out of sync (drift gate)
+
+# Build the full derived layer in dependency order: corpus index, variants.xml, authority index, API
+npm run build:data       # build:corpus && extract-variants --apply && build:authority && build-api --allow-dirty
+# build-api runs with --allow-dirty here because the just-rebuilt indexes in data/ are still uncommitted (dirty)
+
+# Aggregate: CSS + vendor + the full data chain (npm run build now includes build:data)
+npm run build            # build:css && build:vendor && build:data
+```
+
+**Note on variants:** `authority-files/variants.xml` is corpus-derived. Regenerate it with `python scripts/sync/extract-variants.py --apply` after the corpus gains new orthographic forms, then rebuild the authority index and bump its version. Full step sequence: [DATA-MODEL.md → Data-Change-Lifecycle](DATA-MODEL.md#data-change-lifecycle).
+
+### Version Increment
+
+After significant changes, increment version in build script to force browser cache invalidation:
+
+```python
+# In build-authority-index.py / build-corpus-index.py the version sits as an
+# inline dict literal inside the index, e.g. 'version': '1.4.0' (there is NO
+# VERSION constant). It has to be bumped together with the matching constant in
+# assets/js/lib/corpus-loader.js (INDEX_VERSION / AUTHORITY_INDEX_VERSION);
+# check-index-versions.py enforces parity. Current state: TEI-MODEL.md §11.
+```
+
+## Testing
+
+### Playwright Tests
+
+```bash
+npm test              # Run all tests (headless), 5.0 to 5.3 min (6 workers)
+npm run test:changed  # Only specs touched since origin/main
+npm run test:quick    # Three specs as a smoke test, 22 tests (main-site, playground, corpus)
+npm run test:ui       # Interactive mode
+npm run test:debug    # Debug with breakpoints
+npm run test:headed   # Visible browser
+npm run report        # View HTML report
+```
+
+**The first three run through `scripts/run-tests.js`, and its last line is the result.** The question "did the suite pass?" used to have three answers that lie in different ways, and the issue playbook had grown four separate rules around them (§2.1, since 2026-08-05 merged into rule 6). The wrapper answers it once: it deletes the stale `report.json` before the run, refuses to start when the test port (8080 unless `MHDBDB_TEST_PORT` says otherwise) is served by a different working tree, sets `PW_TEST_HTML_REPORT_OPEN=never`, and builds its verdict from `testing/test-results/report.json` rather than from the console line or the exit code. On a run without filters it also compares the spec files on disk against the files that appear in the report, so a run whose population silently shrank comes out red instead of green with a smaller number. Both sides of that comparison are measured at runtime; there is no maintained expected count that could drift.
+
+The verdict line names the test count, the file count and the working tree that was measured, and belongs in the PR verification block as it stands. Exit codes: 0 green, 1 red, 2 the run never happened (no report written, a foreign server on the test port, or an invalid `MHDBDB_TEST_PORT`). `test:ui`, `test:debug` and `test:headed` stay unwrapped, they run under supervision and write no usable report.
+
+**Python interpreter (#318).** Two specs call Python (`normalization-parity`, `position-parity`), and so do the npm build scripts. The interpreter is searched for, not guessed: `scripts/python-bin.js` tries `python3.13`, `python3`, `python` and `py` in that order and takes the first one reporting 3.13 or newer. If it finds none, that is a hard error listing what was tried, not a silent skip. Before that, `python3.13` was a fixed string in the calls; under Windows that name only exists for an installation from the Microsoft Store, while the python.org installer conversely does not put `python.exe` on the PATH by default and registers only `py`. Deviating setups (venv, Conda) point `MHDBDB_PYTHON` at the path of the real `python.exe`, not at a `.bat` shim:
+
+```bash
+MHDBDB_PYTHON=.venv/bin/python npm test          # Bash
+$env:MHDBDB_PYTHON = ".venv\Scripts\python.exe"  # PowerShell, then npm test
+```
+
+Positional arguments in Playwright are **regular expressions against the file path**, not file names. Unanchored, the filter `corpus.spec.js` in `test:quick` therefore also pulled in `playground-corpus.spec.js` and `search-with-corpus.spec.js`: in the July 2026 state 47 tests in five files instead of 29 in three (today it is 22 in three, see above), and among them of all things the file with the most `waitForTimeout` calls. Since #323 the filters are anchored at the end with `$` and disciplined at the front by the prefix `tests.`. A `^` would be wrong and would find nothing at all: Playwright matches against the **absolute** path, measured (`^main-site\.spec\.js$` and `^tests.main-site\.spec\.js$` both yield zero tests, `tests.main-site\.spec\.js$` yields 14). Whoever changes the selection counts it with `-- --list`; that does not start the `webServer` and costs seconds.
+
+`test:changed` (`--only-changed=origin/main`) is the everyday command while working on a branch: only what the branch touched runs. **Before pushing, `npm test` stays mandatory.** `--only-changed` follows the Node imports of the specs, and since #318 there is exactly one: both parity specs import `scripts/python-bin.js`. A change there therefore pulls them into the run correctly, unlike everything else in the table below. The rest of the project code is reached at runtime, not imported: site code through the browser (`await import('/assets/js/…')` inside `page.evaluate`), Python through `execFileSync`, fixtures and vendored files through the path. The command is blind to:
+
+| What | tested by | how it is reached |
+|---|---|---|
+| `assets/js/`, `playground/js/`, `tei/`, `data/` | almost every spec | browser, `localhost:8080` |
+| `scripts/mhg_normalizer.py` | `normalization-parity.spec.js` | `execFileSync` |
+| `scripts/build-corpus-index.py` | `position-parity.spec.js` | `importlib`, from inside the helper |
+| `testing/helpers/extract_word_positions.py` | `position-parity.spec.js` | `execFileSync` |
+| `tei/PL1.tei.xml`, `tei/OVG.tei.xml` | `position-parity.spec.js` | path (Python) and browser |
+| `testing/fixtures/*.tei.xml` | `position-parity.spec.js` | path |
+| `assets/vendor/`, all HTML pages | `vendor.spec.js` | `readdirSync`/`readFileSync` |
+
+The Python rows are the nastiest, because there one expects the opposite. `scripts/mhg_normalizer.py` and `scripts/build-corpus-index.py` are one half each of the parity promises in the hard constraints in `CLAUDE.md`, and the two `*-parity.spec.js` are their guards. For the build script the path is additionally hidden: `extract_word_positions.py` is a shim that loads the real `extract_word_data()` via `importlib` instead of reimplementing it. Whoever changes the Python side and runs `test:changed` gets zero specs, which is precisely not the test that checks the change (measured for `mhg_normalizer.py`).
+
+Particularly relevant for this repository are `tei/` and `data/`: with ingest running these are the most frequently changed directories, and both are blind because they are loaded over `localhost:8080`. Two pitfalls around the ref: `origin/main` has to exist (it does not in a shallow clone), and it has to be current. Whoever has not fetched for a while compares against an old state and gets too many or too few specs, so run `git fetch origin main` first. If the selection stays empty, the command ends with exit 0 (measured, Playwright 1.55.1): `--pass-with-no-tests` is not needed.
+
+**Test configuration:** `testing/playwright.config.js`
+- Always use `npm test` – never `npx playwright test` from the project root (config and `baseURL` live in `testing/`, and only the npm route goes through the wrapper that forms the verdict)
+- Automated web server startup on port 8080, or on the port in `MHDBDB_TEST_PORT` when it is set (#465). The variable is read in one place, `testing/test-port.js`, by the config, by `scripts/run-tests.js` and by `npm run serve` (`testing/serve.js`) alike; anything but an integer from 1 to 65535 stops the run with exit 2. Two worktrees can test side by side with one command each: `npm test` in the first, `MHDBDB_TEST_PORT=8081 npm test` in the second (PowerShell: `$env:MHDBDB_TEST_PORT = "8081"`, then `npm test`). Mind the memory: on 2026-09-23, on a machine with 64 GB, a side-by-side pair of full runs at six workers each was stopped for lack of memory. Run full suites one at a time, or lower the workers of each with `-- --workers=2`.
+- Headless Chrome with `--disable-web-security`
+- 60-second timeout per test
+- **6 workers locally, 2 in CI** (#323), overridable on weaker machines with `npm test -- --workers=2`: 20.4 min with one worker against 5.0 to 5.3 min with six, over the same 276 tests, five runs. The reasoning for both numbers sits as a comment in the config; in short, the bottleneck is the single-threaded `http-server` and the Chromium heap, not the core count, and standard CI runners have too few vCPUs for six
+- **`retries: 1`** (everywhere, CI included) plus `failOnFlakyTests: true`. The retry exists only so that a timing flake under six workers leaves a trace behind; without `failOnFlakyTests` it would also prettify the run, because Playwright ends with exit 0 as soon as a test turns green on the second attempt. With the option the run stays red and the trace file is there all the same
+- **`fullyParallel: false` is deliberate.** `search-normalization.spec.js` shares one page created in `beforeAll` across all tests of the file, in order to load the index once instead of fourteen times. Test parallelism would not break the page (Playwright runs `beforeAll` again per worker), but it would break the saving: the index would be loaded up to six times
+
+### Test File Inventory
+
+Completeness against `testing/tests/` is gated by `scripts/audit/check-doc-inventories.py` (runs in `no-cdn-check.yml`, callable locally without dependencies; the same script also checks the script table further down). A new spec without a row here turns CI red: this table is the only place stating what a spec is for. Until #329 ten out of thirty were missing.
+
+| File | Category | What it tests |
+|------|----------|--------------|
+| `main-site.spec.js` | Main site | Landing page, search page loading, search results, reading view |
+| `search-engine.spec.js` | Main site | SearchEngine class: resolution, filtering, deduplication |
+| `genre-filter-suggestion.spec.js` | Main site | Genre suggestions in the text filter: a click selects the texts of the genre including its subgenres, checked against an oracle computed from the index files; typing alone leaves the selection unchanged (#433, #204) |
+| `search-normalization.spec.js` | Main site | MHG normalization functions in browser context |
+| `search-with-corpus.spec.js` | Main site | Search against real corpus data |
+| `reading-view.spec.js` | Main site | TEI reading view rendering, highlighting, navigation |
+| `results-table.spec.js` | Main site | Corpus search results table view (#114): columns, sorting |
+| `tei-caching.spec.js` | Main site | IndexedDB TEI cache behavior |
+| `error-handling.spec.js` | Main site | Graceful error handling |
+| `woerterbuch.spec.js` | Main site | A–Z register over the authority index, pagination, deep links (#117) |
+| `lemma-page.spec.js` | Lemma pages | URL parsing, data rendering, external links |
+| `comment-attribution.spec.js` | Lemma pages, Playground | Author of a curated comment: every `commentResp` in the authority index carries a `commentRespName`, and both the lemma page and the playground's Lemma Explorer label the comment "Kommentar von <name>"; a lemma without a comment shows no such label (#270) |
+| `playground.spec.js` | Playground | Start page loads (title, `#authorityOverview`), reset button visible, modules load without `console.error`/`pageerror` (#331). Since #326 only these three tests |
+| `playground-authority-index.spec.js` | Playground | Authority index loading, data structure integrity |
+| `playground-corpus.spec.js` | Playground | Corpus index loading, search functions |
+| `concept-distribution.spec.js` | Playground | Concept distribution analysis (concept → senses → lemmata → texts) |
+| `cooccurrence-ranking.spec.js` | Playground | Co-occurrence ranking and homograph resolution of the multi-lemma search (#163/#164) |
+| `proximity-and-resolution.spec.js` | Playground | Proximity window for three or more lemmata, overlap dedup, lemma resolution (#169) |
+| `multi-lemma-verse.spec.js` | Playground | Search mode „Im selben Vers" over `lineStarts[]`/`lineEnds[]` (#106) |
+| `rhyme-dictionary.spec.js` | Playground | Rhyme dictionary: verse-ending scan plus suffix heuristic (#106) |
+| `verse-ending-profile.spec.js` | Playground | Verse-ending profile: top-N lemmata at verse ends, scope selector (#106) |
+| `hapax-legomena.spec.js` | Playground | Corpus-wide hapax/dis/tris aggregation, filter toolbar, detail panel (#196) |
+| `word-component-search.spec.js` | Playground | Word-component mode in the lemma explorer, for research on compounds (#239) |
+| `lemma-occurrence-handoff.spec.js` | Playground | „Belege suchen" from the lemma explorer: the `ids` route parameter and its pinned resolution against a homograph group (#58) |
+| `naming-explorer.spec.js` | Playground | Character naming: route, work/character selection, category tabs, mandatory attribution (#59) |
+| `horses-explorer.spec.js` | Playground | Arthurian horses: route, horse selection, event filter, attribution, and the `?verseId=` deep link into the reading view (#193) |
+| `genre-explorer.spec.js` | Playground | Genre tree: `genres[].parents` as the transitive reduction, the two roots, empty branches marked, and categories with several parents opening independently at each of their positions (#361) |
+| `text-comparison-filter.spec.js` | Playground | Typing filter above both text lists of the text comparison: folded match on siglum, title and author, auto-select of a single remaining text, selection kept when the filter misses it (#435) |
+| `playground-csv-export.spec.js` | Playground | CSV export of the nine tabular TEI tools: house format (BOM, CRLF, comma), header row verbatim, and the file carrying the whole set where the table stops at top-N or a display limit (#448). The older hapax export is not covered here |
+| `normalization-parity.spec.js` | Cross-cutting | Python/JS normalizer agreement (see [CONTRACTS.md](CONTRACTS.md#a-mhg-normalization-parity)) |
+| `lemma-matching.spec.js` | Cross-cutting | Lemma highlight matching exactness, #130 (see [CONTRACTS.md](CONTRACTS.md#b1-lemma-highlight-matching-contract)) |
+| `position-parity.spec.js` | Cross-cutting | Python/JS word-position agreement, #131 (see [CONTRACTS.md](CONTRACTS.md#b-position-counting-contract)) |
+| `site-chrome.spec.js` | Cross-cutting | Build-injected nav/footer + mobile-menu (`build-pages.py`) |
+| `vendor.spec.js` | Cross-cutting | Runtime libraries come from `assets/vendor/`, no CDN dependency: no external `<script src>` and no external `<link>` that triggers a fetch (runtime counterpart to `no-cdn-check.yml`, same rules) |
+| `result-header-escaping.spec.js` | Cross-cutting | The playground result header escapes the search input: markup arriving through a shared `#multi-lemma&…&ids=…` link must not become an element (#427) |
+| `review-364.spec.js` | Review pages | The archived #364 review page in `examples/review-pages/`, opened as a local file without a server: decisions, open state, persistence, JSON round trip and import rejection, HTML report, offline operation (#443). Tests the archived copy, not the template in `scripts/audit/` |
+| `review-klaus.spec.js` | Review pages | The archived #390/#115 review page for Klaus, same approach: word-boundary and sense decisions, group transfer, export and import, operation with browser storage disabled (#443). Tests the archived copy, not the template |
+| `cross-reference-test.spec.js` | Data integrity | Authority/corpus cross-reference validity |
+| `corpus.spec.js` | Data integrity | Corpus index structure validation |
+| `visual-mobile-test.spec.js` | Visual | Responsive screenshots + touch target size across several viewports (iPhone SE 375px … desktop 1440px) |
+
+### CI: Data Integrity
+
+**Workflow:** `.github/workflows/data-integrity.yml` (since #125 it consolidates the former `schema-validation.yml` + `index-version-check.yml`)
+**Triggers:** PRs + main pushes touching `schema/`, `tei/`, `authority-files/`, the three index `.json.gz` files (corpus/authority/naming), `api/**`, the build scripts (`build-*-index.py`, `build-api.py`, `mhg_normalizer.py`), `scripts/sync/`, `scripts/audit/`, `scripts/ingest/naming/`, `corpus-loader.js` or `requirements.txt`. Plus `workflow_dispatch`.
+
+**The workflow file carries a second numbering of its own, and the two do not correspond.** Its header comment runs `0, 1, 1a … 1d, 2 … 8`, with letters so that a step inserted later shows its position without renumbering the digits below it. Inserting one does shift the letters, as #399 shifted `1b` to `1c` and `1c` to `1d`; what stays put is `2` to `8`. What is check 11 here (freshness of the indexes) is Step 6 there. Compare the two lists by name, never by number.
+
+**Sixteen checks, cheap to expensive (fail fast);** beforehand a helper step determines the diff base (PR: first parent of the merge ref, `git rev-parse HEAD^1`; push: `event.before`) for checks 4 and 13:
+
+1. **Index version constants** (#47.3) – the build scripts and `corpus-loader.js` have to name the same versions, otherwise the IndexedDB cache invalidation does not fire. Locally: `python scripts/audit/check-index-versions.py`.
+2. **Documented counts against the data** (#382/#398) – every count anchored in the docs and on the delivered pages is held against the actual corpus and authority files. Second, because it is cheap (six seconds) and depends on no earlier step. Locally: `python scripts/audit/doc-count-audit.py --check`. Two limits, both written out at the step itself: the workflow's path filters name neither `docs/**` (a documentation-only PR changes the *claimed* number) nor anything under `playground/` (a playground PR changes the *measured* number). The six code-derived quantities come from three different places, and that matters for the remedy: `ui_modules`, `tei_tools` and `pattern_modules` from `playground/js/ui/`; `curated_datasets` from a constant in the script itself, hence already covered by `scripts/audit/**`; and `authority_explorers` plus `entry_points` by `re.findall` over `playground/index.html`. Closing the second gap therefore needs both `playground/js/ui/**` and `playground/index.html`. In both cases the drift surfaces at the next data run instead of immediately.
+3. **Work identifiers against `works.xml`** (#399) – for `handschriftencensus`, `GND` and `wikidata` `authority-files/works.xml` is the master and the `msIdentifier` of each TEI header is a mirror; this step holds the 667 headers against it. It compares **content, not formatting**, because a plain sync-and-diff would reserialize all 667 files through lxml and leave the gate permanently red. Also red when a file has no readable `msIdentifier` at all (missing block or unparsable XML), and that case gets its own message: `--works` cannot create a block, it is hand work in the TEI file. Third, because it is cheap (around a second over all 667, measured 2026-09-08) and, like check 2, depends on no earlier step. Locally: `python scripts/sync/sync_tei_headers.py --works --check`. The contract behind it is [CONTRACTS §F.4](CONTRACTS.md#f4-work-identity-worksxml-leads-the-tei-header-mirrors); `sigle` and `mwb-sigle` stay header-owned and are deliberately not checked.
+4. **Index version bump gate** (#154) – if the decompressed content of the corpus or authority index changed against the diff base, the `version` string has to have changed too; otherwise the version bump was forgotten and the Dexie cache does not invalidate (users keep the old index for up to 30 days). Locally: `python scripts/audit/check-index-version-bump.py --base origin/main`. Without a determinable diff base (workflow_dispatch, force push) the check is skipped.
+5. **Index budget self-test** (#111) – checks that the budget measurement still measures what it is meant to. It exists because check 6 will report nothing for the foreseeable future (the corpus index sits at 84 percent), and a gate that never speaks is indistinguishable from a gate that no longer works. Locally: `python scripts/audit/check-index-budget.py --selftest`.
+6. **Index budget** (#111, ADR-019) – gz size for the wire and the cache, uncompressed size for RAM after `JSON.parse`. **A breach warns and never turns the run red** (Chris, 2026-08-08): the index grows through legitimate annotation work, and a red gate would block the next backfill until somebody has built a splitting. The step does go red when the **measurement itself** fails (`exit 2`), which is why it belongs in this list at all. Locally: `python scripts/audit/check-index-budget.py`.
+7. **RNC→RNG sync check** (P2-14) – regenerates `.rng` from `.rnc`, any diff fails.
+8. **TEI P5 pin** – the committed `tei_all.rng` is checked against the pinned version (4.11.0).
+9. **Freshness of variants.xml** (#125) – `extract-variants.py --apply` has to reproduce the committed file byte for byte („corpus changed, variants.xml forgotten"). Blocking and BEFORE check 11: the index comparison alone cannot detect variants drift.
+10. **Freshness of the API** (#45) – `build-api.py` has to reproduce the committed `api/` byte for byte (plain JSON, `git diff` suffices). Before the index gate, because the CI index rebuild leaves `data/` gz-dirty.
+11. **Freshness of the indexes** (#125, rebuild-and-compare) – both indexes are built fresh and compared decompressed against the committed state („source or build script changed, rebuild forgotten"). This works only because the builds are deterministic.
+12. **Naming index consistency** (#152) – `source.commit` provenance present and every `works[].sigle` exists as `tei/<SIG>.tei.xml` (a sigle rename would otherwise silently break the reader link in the playground). Offline, always runs. Locally: `python scripts/audit/check-naming-index.py`.
+13. **Freshness of the naming index** (#152, rebuild-and-compare) – a rebuild from the `source.commit` pinned inside the index has to reproduce the committed state. Runs ONLY if naming paths changed against the diff base (external fetch to `lindabeutel/Naming-analysis`; no external network dependency on every data PR, the #125 principle).
+14. **Cross-reference integrity** (#44/#115/#152) – dangling refs outside `lexicon.xml` break the build; `lexicon.xml` is gated as an **id-set ratchet** against the committed baseline (`scripts/audit/lexicon-baseline.json`): any id outside the baseline is red (even with a compensating backfill in the same PR), tolerated legacy stock is green, a shrunken actual state gives a `::warning` → run `--update-baseline` and commit the file diff along.
+15. **Person names in the header against `persons.xml`** (#228/#308) – the second mirror beside the `msIdentifier` of check 3. Two sites: `titleStmt/author` (empty element, dead `@ref`, prefix outlier) and, since #308, `particDesc/listPerson/.../persName[@type="preferred"]`, 671 entries in 666 of the 667 files, addressed through `@corresp`. A deviation in the second one is never a bibliographic variant, always a stale mirror, which is why it is a hard exit code while the `titleStmt` name deviation stays a report. The same applies to an entry with **no** `preferred` line at all: it gets its own class rather than dropping out of the population, because a silently shrinking denominator is the one failure a count-based gate cannot report. Locally: `python scripts/audit/check-author-refs.py --check`. It sits here rather than next to check 3 because it parses each of the 667 files in full: 1 min 47 s and 1 min 44 s in two local runs on Windows, and 32 s in the first run on `main` (run 34910635460, step 21), against under a second for check 3 in the same run, which stops at the `msIdentifier` via `iterparse`. The two numbers measure different machines; the ratio is what places the step. It was deliberately kept out of CI until 2026-09-14 while the dead `@ref` in VOR was open, so that an unrelated PR would not go red for it; #308 closed that case. The population has a lower bound that comes from the data rather than from a committed number: every author id in a file's `titleStmt` must have an entry in that file's `particDesc`. Without it a deleted `<person>` element falls into none of the classes above (they all speak about entries that exist), the count drops silently from 671 to 670 and `--check` stays green; `schema/mhdbdb.rnc:211` allows an empty `listPerson`, so nothing else catches it either. The one sigle that carries an empty `<listPerson/>` today (VOR) is named in `LEERE_LISTPERSON` with its reason, and the script reports that exception as soon as it becomes unnecessary. What it does **not** check: the `alternative` forms and the `idno` lines of the same block, which mirror `persons.xml` too, and the local `xml:id` against `@corresp`.
+16. **Two-stage RelaxNG validation** (P2-13) – stage 1 `tei_all.rng` (warnings, the #30 baseline), stage 2 `mhdbdb.rng`/`mhdbdb-authority.rng` (hard gate). Deliberately last, as the most expensive check.
+
+**Note on dependency pins:** lxml and rnc2rng are pinned in `requirements.txt` (single source, CI installs from it) so that serialization changes in newer versions do not show up as drift false alarms. Locally use `pip install -r requirements.txt`; after a pin bump regenerate `variants.xml` and rebuild the `.rng` files.
+
+**Debugging failures:**
+- Version drift → run `python scripts/audit/check-index-versions.py` locally, align the constants
+- Documented count drift (#382/#398) → run `python scripts/audit/doc-count-audit.py --check` locally; it names file, key and both numbers. Pull the documented value to the measured one, never the other way round, and leave dated historical statements (`docs/journal-archive.md`, ADR numbers) alone
+- Index budget red (#111) → that is **not** a budget breach, a breach only warns. A red step means the measurement failed; run `python scripts/audit/check-index-budget.py` locally, and `--selftest` for the thresholds
+- Work identifier drift (#399) → `python scripts/sync/sync_tei_headers.py --works` writes the mirror surgically (string replacement inside the `msIdentifier` block only, every other byte including the line endings stays). **Never** `--bibl-struct` for this: that path reserializes all 667 files and loses data, among it the 19 `mwb-sigle` that `works.xml` does not know. If the gate instead reports a file without a readable `msIdentifier`, the generator cannot help, the block has to be written by hand
+- Bump forgotten (#154) → bump the version in `build-*-index.py` + `corpus-loader.js`, rebuild the index, all in one commit
+- RNG drift → `python -m rnc2rng schema/mhdbdb.rnc schema/mhdbdb.rng` locally, commit
+- variants or index freshness → work through the Data-Change-Lifecycle in DATA-MODEL.md (regenerate, rebuild, bump, all in one commit)
+- API freshness → `python scripts/build-api.py` locally, commit `api/` along
+- Stage 2 failure → `python scripts/audit/validate-corpus.py --sample <SIGLE>` locally
+- TEI version mismatch → bump `EXPECTED` in the workflow and `schema/README.md`
+
+### CI: Release Version Check (Zenodo)
+
+**Workflow:** `.github/workflows/release-version-check.yml`
+**Triggers:** pushing tags `v*` + `workflow_dispatch`.
+
+**Background (#91, 2026-06-10):** on release Zenodo pulls the record metadata from `.zenodo.json`. A `version` field hardcoded there and forgotten while tagging produces a Zenodo record with a wrong version, without an error and without a warning. Hence two rules: `.zenodo.json` has **no** `version` field (Zenodo then takes the tag name automatically; the git tag is the single source of truth), and `CITATION.cff → version` has to match the tag (it feeds GitHub's „Cite this repository" widget).
+
+**Timing:** the check runs on the tag push, the Zenodo webhook only fires when the GitHub release is published. If the check fails, delete the tag, fix `CITATION.cff`, tag again: Zenodo has not seen anything yet.
+
+**Release procedure:** (1) `CITATION.cff`: bump `version` and `date-released` (update the `.zenodo.json` contributors if needed), (2) `git tag vX.Y.Z && git push origin vX.Y.Z`, (3) create the GitHub release (`gh release create vX.Y.Z`) → Zenodo automatically archives a new version under the concept DOI `10.5281/zenodo.20627656`.
+
+**Locally:** `python scripts/audit/check-release-version.py v1.1.0`
+
+### CI: File Size Guard
+
+**Workflow:** `.github/workflows/file-size-check.yml`
+**Triggers:** every PR and every push to `main`, plus `workflow_dispatch`. Deliberately **no** `paths:` filter, see below.
+
+**Background (#350, 2026-08-04):** GitHub blocks files larger than 100 MiB on push and warns from 50 MiB. That is the only size limit with teeth. Repository size itself has a recommendation only (under 1 GB ideal, under 5 GB strongly recommended), and the sole documented consequence of exceeding it is an email from GitHub Support. Measured on 2026-08-04, `tei/OVG.tei.xml` sits at 62.9 MiB and is the only file above the 50 MiB warning threshold; in the history it already stood at 79.7 MiB. Annotation work grows TEI files without anyone watching the file size.
+
+**Why 90 MiB and not 100:** this gate cannot prevent a rejected push. GitHub refuses the push before any workflow starts, and by then the commit already exists locally. The purpose is advance warning while the push still goes through and the file can still be split in an orderly way. A gate that warns at 100 MiB never warns. A `::warning` from 75 MiB marks the point where a splitting plan belongs on the table.
+
+**Why no path filter:** a file can grow too large in any directory. `data-integrity.yml` covers the likely candidates but not `ingest/` (which already holds a 31 MB TSV) and no newly created folder. A guard that first has to decide which folder may grow carries the same boundary problem the project dropped for the em-dash gate on 2026-08-03. The run costs seconds because `git ls-tree -l` supplies the sizes and no file is read.
+
+**Locally, and this is the actual safety net:** `python scripts/audit/check-file-sizes.py`
+
+### CI: Claude Review Bot
+
+**Workflow:** `.github/workflows/claude-code-review.yml`, `--model opus`, `--max-turns 100` since `6fbf7e002` (50 before that).
+
+The rules a session has to follow are in [CLAUDE.md → Git Rules](../CLAUDE.md#git-rules). This section holds the measurements they rest on, because they are dated and they age.
+
+**A red check is not a finding, and not proof that there is none.** Four runs, each read in the job log rather than inferred from the check state:
+
+| PR | Entries in the bot's prompt | Outcome |
+|----|----|----|
+| #368 | none, the platform computed no diff | `error_max_turns` after 6:24 min, not one checklist item ticked |
+| #379 | 16 | genuine `error_max_turns` (`is_error: true`), nothing delivered |
+| #377 | 34 | checklist ticked in full, two findings, `subtype: success`, `is_error: false`, 59 turns |
+| #382 | 10 | checklist ticked in full, four findings, `subtype: success`, `is_error: false`, 56 turns |
+
+**Count the entries in the `<changed_files>` block of the job log, and do not mix them up with the PR's file count.** They are two different sets. #382 shows the gap: 10 entries in the prompt of the run that fired on „pull request opened", 13 files in the PR today, because three arrived with later commits. Both numbers are correct. Measured on 2026-09-18 in run `33395376578` and with `gh pr view 382 --json files`. #368 carried 531 files by `git show --stat 4458686ab`, and `gh pr view 368 --json changedFiles` returns 0 to this day: there the platform never computed a diff at all.
+
+**#377 and #382 were finished reviews that the action merely marked red**, having spent 59 and 56 turns against a `--max-turns` of 50 (the raise to 100 came later). Nothing is lost when that happens: the comment is posted about ninety seconds into the run (09:10:53 on a run that failed at 09:20:37; 13:10:42 on one that failed at 13:19:28) and it survives the failure. Only the green tick is discarded, never the review. The turn numbers in this section come from the coordinating session's reading of the job logs and have not been remeasured since.
+
+**No configuration fixes the red tick.** `base-action/src/run-claude-sdk.ts` in the pinned `v1` throws unconditionally on a `success` above the budget, and no input controls it. Do not go looking for a switch.
+
+**Do not judge from the REST field whether the diff was computed.** `gh api .../pulls/377 -q .changed_files` returns 0 while `gh pr view 377 --json files` returns 34. That false 0 is exactly what the dismissal of #377 was built on: the comment carried two measured findings, the red check was written off as a platform limit nine minutes later, and the PR was merged with the comment unread. Read the `<changed_files>` block in the job log, or use `--json files`.
+
+**Do not rerun, and do not split the PR.** A run that genuinely aborted aborts identically on a rerun; comment the situation on the PR instead, so the red check does not get read as a finding. Splitting a data PR into a corpus commit and an index commit buys a bot pass at the price of a state in which the index does not match the corpus, which is what the Data-Change-Lifecycle forbids. What actually matters is gated anyway: `data-integrity.yml` rebuilds `variants.xml`, both indexes and the static API and compares them against the committed state, a stronger statement about a data PR than any reading of the diff.
+
+**The bot cannot execute Python, and that holds whether or not the run completes.** It said so itself on #386 on 2026-09-02: „Python ist in diesem Job nicht ausführbar (`python3 …` wird von der Berechtigungsschicht abgelehnt). Ich konnte das Skript also nicht laufen lassen." It listed the numbers it could not check (227.652, 7.546.243, 210.262, the 430, 92,4 %), declared them neither confirmed nor disputed, and used `grep` for whatever was checkable without a run. **On a measurement PR the bot therefore reviews the code and not the result.** That is not a defect, it is the reason the local `fable-reviewer` stands beside it rather than instead of it: that one has Bash and can recompute. On #391 it recomputed fifteen numbers from a prose entry with command and result, and flagged the three it could not measure as unchecked instead of passing over them.
+
+**Green runs are not an all-clear, and the plausible explanations have been ruled out one by one.** Measured in the job logs as of 2026-09-02: #377 (34 files) 59 turns red, #382 (13) 56 red, #386 (9) 28 then 27 green, #388 (5) 28 green, #389 (18) 46 green, #391 (1) green, #381 green. The obvious explanation, the raise of `--max-turns` to 100, does **not** hold: every run in that list stayed below the old budget of 50 and would have been green without it. Neither does diff size: 18 files took fewer turns than 13. What aborted #368 and #379 is still open, so do not adopt a fresh explanation without measuring it.
+
+**Since then the workflow has stopped going red, and that is an observation rather than a fix.** Measured on 2026-09-18 over the last 200 runs (`gh run list --workflow claude-code-review.yml --limit 200 --status failure`): the last red run of any kind was `chore/naming-index-update` on 2026-09-07, and the last one on a data PR was #382 on 2026-08-31. Nobody changed anything that would explain it, and no PR of #368's size has run since, so the table above still describes what to expect from a large data PR.
+
+**Two reading rules from the same measurements.** A merge marks the then-running bot `skipped` and two rapid pushes produce `cancelled`; **neither is a statement about the review**. And `gh pr checks` shows only the last run (on #386 it says `SKIPPED` although two complete reviews exist), so use `gh run list --workflow claude-code-review.yml` for the history.
+
+### Audit Scripts Reference
+
+Diagnostic and validation scripts in `scripts/audit/`. Completeness against the directory is gated by `scripts/audit/check-doc-inventories.py`, the same script as for the spec table above. Until #329 this table named 11 of 22 scripts, among them neither of the em-dash and no-CDN gates that run in every CI.
+
+The same run gates two further listings outside this file, both added on 2026-08-06 for the same reason: they inventory a directory, nobody checked them, and both had drifted. The directory tree in [`scripts/README.md`](../scripts/README.md) lists the same scripts a second time and one directory level wider (the `scripts/` root plus `audit/`, `sync/` and `_archived/`); it had missed `check-file-sizes.py`, which stood here and in `file-size-check.yml` but not there. The module list in [`assets/js/lib/README.md`](../assets/js/lib/README.md) described four of six modules, which broke that file's own design principle that every module carries a usage example.
+
+Two inventories of the same thing, one gated and one not, and the ungated one wins: it sits next to the code and gets read first.
+
+Two kinds are mixed here, and the difference is the important one: **gates** have an exit code and are called by a workflow, **diagnostics** measure something for a human and are run by hand. Where a workflow calls, the row says so.
+
+| Script | Purpose |
+|--------|-------|
+| `validate-corpus.py` | Two-stage RelaxNG validation of all 667 corpus and 8 authority files (called by data-integrity.yml) |
+| `check-index-versions.py` | Version consistency between build scripts and loader, called by `data-integrity.yml` (details above) |
+| `check-index-version-bump.py` | Version bump gate (#154): index content changed against `--base` ⇒ the `version` string has to change with it. Called by `data-integrity.yml` (details above) |
+| `check-release-version.py` | Release tag against `CITATION.cff` version; forbids a `version` field in `.zenodo.json`. Called by `release-version-check.yml` (details above) |
+| `check-file-sizes.py` | Size guard (#350) against GitHub's hard 100 MiB per-file block: red from 90 MiB, `::warning` from 75 MiB. Called by `file-size-check.yml` (details above), stdlib only, reads no file content. `--selftest` secures parser and thresholds against synthetic input, because the gate is expected to stay green for years (27 MiB of headroom today) and a permanently green gate proves nothing |
+| `check-index-budget.py` | Index budget (#111, ADR-019) for every `data/*.json.gz`, on two axes: gz size for the wire and the cache, uncompressed size for RAM after `JSON.parse`. The second one is why this exists next to `check-file-sizes.py`, which only ever sees the size on disk. **Warns without turning the run red** (exit 0 even when a budget is breached, exit 2 only when the measurement itself fails), because an overrun is not a defect in the commit that triggers it. Decimal MB, unlike `check-file-sizes.py`, which counts MiB after GitHub's wall. Called by `data-integrity.yml`; `--json` for machine-readable output, `--selftest` covers the thresholds and the streaming measurement |
+| `build-issue-matrix.py` | Writes the countable half of the triage matrix (#44) from the issue labels: quick stats, the ping list from `wait:*` and one table per autonomy level, between the `MATRIX` markers in the issue body. Everything outside the markers stays hand-written. Two different dates, on purpose: the tables show the last comment by anyone, the ping list shows the last comment **by the person being waited on** (for `wait:extern`, the last comment not from our own side), so that our own follow-up does not reset the clock. Run daily by `issue-matrix.yml`, not as a PR gate: the staleness comes from ticket movement, not from code changes, so a gate would redden other people's PRs without fixing anything. Also checks the label axes and turns red on a gap (a ticket without `auto:*`, an `auto:blocked` without `wait:*`) and on a value it does not know (an `auto:`, `area:` or `effort:` label outside the vocabulary in the script). The vocabulary check is the one the count alone cannot do: an unknown value passes as "exactly one label" and then drops out of every count that runs over the constants. What that costs differs per axis: an unknown `auto:` shows up in no table at all, because the tables are built per autonomy level, while an unknown `area:` or `effort:` still gets its row and prints the raw value in the cell. In all three cases the headline count keeps counting the ticket. `--selftest` covers counting, sorting and marker replacement without network access |
+| `build-review-364.py` | Generator for the portable #364 review page (missing lemma targets, #443): read-only extraction from the corpus and the authority files (`variants.xml` entries whose target is missing from `lexicon.xml`, concept labels from `concepts.xml`), rendered into `review-364.template.html` with the commit and source checksums embedded. Writes a working file into the repository root and never touches the archived example under `examples/review-pages/`. No workflow calls it |
+| `build-review-klaus.py` | Generator for the #390/#115 review page for Klaus (WZB word boundaries, missing sense targets, #443), on the base styling of the #364 template. `--extract` writes a source snapshot, `--snapshot` renders one without parsing again and refuses it if a source hash has changed. Writes into the repository root like the one above; no workflow calls it |
+| `audit-authority-files.py` | Structure, cross-references and data quality **within** the 8 authority files (authority→authority; id patterns, orphaned references, structural consistency) |
+| `check-authority-cross-refs.py` | **Corpus→authority** cross-ref integrity: dangling `@lemmaRef`/`@ana`/`@corresp`/`@ref`/`@target`. `--check` is the CI gate in `data-integrity.yml`: unresolved refs outside `lexicon.xml` are red immediately; `lexicon.xml` acts as an id-set ratchet against `lexicon-baseline.json` (#152), new ids red, legacy stock green; `--update-baseline` advances the ratchet. The only detector of derived-file drift (#44/#115) |
+| `check-naming-index.py` | Naming index consistency (#152): `source.commit` present and every `works[].sigle` exists in `tei/`; `--print-source-commit` yields the pin for the workflows. Called by `data-integrity.yml` and `naming-index-update.yml` (details above) |
+| `audit-tei-corpus.py` | Corpus-wide spot checks (e.g. missing `<l>`/`<lg>`, unusual xml:id patterns, encoding anomalies) |
+| `check-lexicon-senses.py` | `lexicon.xml` sanity: lemmata without `<sense>`, senses without `conceptIds` |
+| `doc-count-audit.py` | Drift detector between the actual corpus and authority counts and the values anchored in the docs. Heuristic: window of ±2 absolute or ±2 % relative, strict keyword anchor immediately after the number. Runs in `data-integrity.yml` as a `--check` gate since 2026-09-06 (#398), and by hand as a health-check tool. Placed in the data workflow rather than next to the other doc gates in `no-cdn-check.yml` because it parses `variants.xml` and needs lxml, which that stdlib-only workflow does not have; the run costs about six seconds. Two known limits, and they are different in kind: the workflow's path filters name neither `docs/**` nor `*.html`, so a documentation-only PR that introduces a wrong number changes the *claimed* value without triggering the run; and they do not name anything under `playground/` either, so a playground PR changes the *measured* value. The six code-derived quantities (`CODE_LABELS`) come from three places: three from `playground/js/ui/`, one from a constant in the script itself (already covered by `scripts/audit/**`), and `authority_explorers` plus `entry_points` from `playground/index.html`. In both cases the drift surfaces at the next data run, in the second case inside a PR that has nothing to do with it. Buying immediate detection needs both `playground/js/ui/**` and `playground/index.html` in the filters, at the price of running this 45-minute workflow on every playground change; that trade has not been made. Note in passing that `playground/index.html` sits on both sides of this gate, as a measured source and as a documentation target for `variants_normalized`. Plus a self-check reporting which configured (file, key) pairs check nothing: either the anchor word is missing, or it stands in prose only instead of behind a number (#342) |
+| `check-doc-inventories.py` | Inventory gate (#329) for four listings, in both directions each: „Test File Inventory" in this file against `testing/tests/`, „Audit Scripts Reference" in this file against `scripts/audit/`, the directory tree in `scripts/README.md` against `scripts/` plus `audit/`, `sync/`, `_archived/`, and the `###` module headings in `assets/js/lib/README.md` against that directory (the last two added 2026-08-06). Three listing forms, one rule read from three sides: tables and headings are prose and their code blocks are examples, the tree is itself a code block and the prose around it is not the listing. stdlib only, called by `no-cdn-check.yml`; `--selftest` checks the scanner against synthetic input in 40 cases |
+| `check-no-cdn.py` | Gate in `no-cdn-check.yml`: no external `<script src>` and no external `<link>` that triggers a fetch in committed HTML pages, runtime libraries come from `assets/vendor/` (#78), fonts are system fonts. `rel="canonical"` and its relatives are exempt because they are declarations, not requests. The runtime counterpart is `vendor.spec.js` |
+| `check-no-em-dash.py` | Gate in `no-cdn-check.yml` (#140): no em-dashes in user-visible HTML/JS/CSS or in any `.md`, code comments exempt. HTML, JS and CSS are checked in full; Markdown only in the lines that are new against `--diff-base <rev>` (#292), fences and inline code excluded, every `.md` in the repo and no folder exempt. Narrowing it to "user-visible Markdown" was built and discarded on 2026-08-03: the whitelist cost more than the rule it saved and opened two holes of its own. `--selftest` secures scanner, file selection and diff layer against mutations, because several earlier versions were fail-opens that passed every test case |
+| `check-author-refs.py` | Author statements in `titleStmt` against `persons.xml` (#228), six overlapping error classes. The trigger was seven texts with `<author ref="#person_N"/>` and **no** text content: schema-valid, reference intact, and still authorless in the frontend. Since #308 it also checks the header's second name site, `particDesc/listPerson/.../persName[@type="preferred"]` (671 entries in 666 files), addressed through `@corresp`. That one is a pure mirror of `persons.xml`, so a deviation is never a variant, always a stale mirror, and `--check` exits 1 on it |
+| `classify-lexicon-backfill.py` | Read-only classification of the open `lexicon.xml` gaps (#115/#44). Groups every unresolved reference by lemma and separates „entry missing entirely" from „only the sense missing"; the sense-to-concept assignment stays curatorial |
+| `quantify-unannotated-tokens.py` | Survey of the `<w>` **without** `@lemmaRef` (#189): coverage per text, surface forms aggregated corpus-wide, homograph flag. CSV reports, no corpus change |
+| `coverage-bias-check.py` | Follow-up question to the previous one (#309): does the uneven annotation coverage skew the per-thousand rates of the analysis tools, and in which direction? Not trivial, because for rare items the numerator is pushed down as well |
+| `compare-findebuch-resolution-259.py` | Checks our three-stage lemma resolution against the Findebuch reference graph (#259), an independently curated mapping of attested spellings onto lemmata. Read-only, needs the Trier dump via `--dump` (it lives under gitignored `temp/`, not in the repo, and never enters one). Reports two partitions, because only the second tests anything: where the spelling is a lemma of ours as well, stage 1 always wins by construction, so stages 2 and 3 are only exercised on the complement. The finding list it writes carries Trier spellings and must not be committed; the report on stdout counts and names none |
+| `build-foreign-candidates-28.py` | Candidate set for the origin annotation of #28, track 1: every lemma whose senses point at `concept_23123000` or one of its 17 language categories, with corpus attestations. Read-only, writes `ingest/foreign-lang/28-gleis1-kandidaten.csv`, no workflow calls it. Two things it does deliberately: it builds the set over `@lemmaRef` and never over string search in `lexicon.xml` (the token form does not occur there, see #28 of 2026-08-10), and it includes the root of the hull, because 27 lemmata hang on it alone and they are the vocabulary the texts use to speak about language itself |
+| `foreign-sense-contradictions-28.py` | Phase 2 of #28: the two sets to start a review with, instead of a frequency cutoff. Read-only, writes `ingest/foreign-lang/28-phase2-ana-widerspruch.csv` and `28-phase2-handpruefung.csv`, no workflow calls it. The first set is the tokens whose `@ana` points at a sense that carries no language concept: there the annotated stock says outright that the language reading is not meant here, which makes it the sharpest purely mechanical exclusion criterion track 1 has, and a small one. The second is the lemmata above 500 attestations, which decide more than three quarters of the non-name tokens and are few enough to read one by one; a frequency cutoff would be wrong, because `niht` (noise) and `bischof`, `klâr`, `engel` (real loanwords) sit in the same class. It imports the concept hull from `build-foreign-candidates-28.py` rather than rebuilding it: that hull is where track 1 once went wrong, silently losing the 27 lemmata that hang on the root |
+| `measure-216-vrouwe-minne.py` | Sizing measurement for #216 track 3, continued in #387: how many `<w>` are formally *vrouwe* without a `@lemmaRef`, and how many of those stand immediately before a *minne* form. Read-only. It reports two adjacency counts side by side on purpose, over the `<w>` sequence and over the direct children of the verse line, because the second finds only 40 of the 155 pairs measured on 2026-09-01: `<w>` frequently sits inside a `<hi>`. Both numbers are that day's state and not what a run prints today: the batch `ingest/pos-disambig/216-vrouwe155/` annotated 152 of those tokens on 2026-09-06, so they now carry a `@lemmaRef` and drop out of a measurement that asks for the ones without. A run against today's corpus finds 3 pairs |
+| `measure-stage3-resolution.py` | Impact measurement for stage 3 of the lemma resolution (#224): how many short lemmata the earlier bidirectional substring matching washed into every search |
+| `parallel-witness-bias.py` | Per-tool measurement for #255: recomputes every counting rule in CONTRACTS §H with and without the tokens inside a `<div type="parallel">`, in two scenarios (every parallel div, or only the numbered ones). Read-only, no workflow calls it. Two guards make it more than an estimate: a parity check against the built index (`wordCount` and `lineEnds` per text, abort on mismatch), and control figures next to the two results that would otherwise be unreadable, namely the within-block rhyme rate beside the seam rhyme count and a length-matched random sample beside the type-token ratio |
+| `survey-concept-distribution.py` | Mirrors `concept-distribution.js` one to one in Python and measures lemma count, matching texts and occurrences per concept (#47 R2), to find browser edge cases with very large concepts |
+| `count-verse-numbering-resets.py` | Reach of the #138 verse numbering: which `<div>` reset the margin numbering, and how many margin numbers that adds. Rebuilds the render order instead of estimating; two earlier estimates by text-window heuristic were both wrong |
+| `count-editorial-notes-and-div-heads.py` | Measurement procedure behind the two reader changes from #250 (editorial interventions in the metadata panel, label above an own `head` heading). Both depend on corpus properties that shift with every ingest |
+| `review-rounds.py` | Impact measurement for the local reviewer (2026-08-02): review rounds per merged PR, with the baseline from before the switch. Needs `gh`, no corpus access. The measurement procedure sits in the docstring and depends on two conditions: `use_sticky_comment` stays off (otherwise one comment is no longer one run), and the CI action stays the only LLM commenter |
+| `drop-negative-variant-corresp.py` | One-off migration (#115): removes dead `@corresp="variants.xml#type_-N"` (legacy punctuation codes, never defined in `variants.xml`) from `<w>`. Already applied, the corpus contains 0 such references today; kept as evidence of the change |
+
+### Skipped Tests (Issue #43 – resolved)
+
+No tests are currently skipped (0 skipped project-wide). 25 tests were disabled before commit `259bc505a` (2026-02-24, „88 passing, 0 skipped"), and they did not all sit in one file: measured against `259bc505a^`, 9 of them were in `main-site.spec.js` and 4 in `tei-caching.spec.js` (both under `test.describe.skip`), and those 13 are the ones that were **reactivated**. The remaining 12 were **deleted** rather than revived: 5 in `visual-mobile-test.spec.js` (one `test.skip` per viewport, and that file itself stayed), 3 in `modal-debug.spec.js` and 4 in `modal-simple.spec.js` (both under `test.describe.skip`, both files removed). The commit deleted five debug specs in all, but only those two carried skips: `check-console`, `corpus-debug` and `playground-quick-test` were **active** tests when they were removed. #43 is settled with that.
+
+### Manual Testing Checklist
+
+Before deploying:
+- [ ] Search for common word (e.g., "vriunt")
+- [ ] Search with variant (e.g., "brot" → "brôt")
+- [ ] Text selection and filtering
+- [ ] Open reading view
+- [ ] Playground explorers
+- [ ] Multi-lemma proximity search
+- [ ] Playground → main site navigation
+
+## Git Workflow
+
+### Branch Strategy
+
+- **main:** Production-ready code, stable releases
+- **Feature branches:** `feature/your-feature-name`
+- **Historical branches:** measured against `git branch -r` on 2026-09-02, only one of these still exists
+  - `initial-data-wrangling` - RDF/Relational DB → TEI transformation (archived, still on `origin`)
+  - `pre-main-site` - Old XML parsing architecture (deleted)
+  - `feature/wenzelsbibel-ingest` - Wenzelsbibel text ingest (Issue #34); the branch is gone, the WZB work has been on `main` since the 2026-05-08 ingest
+
+### Development Workflow
+
+```bash
+# 1. Create feature branch
+git checkout -b feature/your-feature-name
+
+# 2. Make changes and test locally
+npm run serve
+# Test in browser...
+
+# 3. Run automated tests
+npm test
+
+# 4. CRITICAL: Wait for user to test and approve
+# DO NOT COMMIT without user approval!
+
+# 5. Commit with descriptive message
+# Stage specific files BY NAME — never `git add .` / `git add -A`.
+# Concurrent sessions share the working dir; a blanket add captures another
+# session's staged files (see CLAUDE.md Git Rules, commit 8b5d0e6ac mishap).
+git add path/to/file1 path/to/file2
+git commit -m "Add feature: description
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+# 6. Push (ONLY AFTER USER APPROVAL)
+git push -u origin feature/your-feature-name
+
+# 7. Merge via pull request. This is a convention, not a lock:
+# measured 2026-09-02, the ruleset on `main` carries exactly two rules,
+# `deletion` and `non_fast_forward`. There is no required review and no
+# required status check, so a fast-forward `git push origin main` DOES go
+# through. What the ruleset prevents is deleting the branch and rewriting
+# its history, which means „never force push to main" from CLAUDE.md is one
+# of the few rules here that is technically enforced rather than agreed.
+# Open the PR anyway, so the gates in data-integrity.yml and
+# no-cdn-check.yml get to run before the merge:
+gh pr create --fill
+gh pr merge --squash
+```
+
+Small documentation changes are the exception and go straight to `main`, see CLAUDE.md → Git Rules.
+
+### Commit Guidelines
+
+**DO:**
+- Use descriptive messages (not "fix bug" or "update file")
+- Include context (what changed and why)
+- Reference issues/PRs when applicable
+- Add AI-assisted footer
+
+**DON'T:**
+- Commit without user testing and approval
+- Force push to main
+- Skip hooks or validation
+
+### Autonomous sessions (playbooks)
+
+For autonomous issue work and PR merge sessions there are reusable procedures with an operating contract, gates and known failure modes in [`docs/playbooks/`](playbooks/). They only run after an explicit kickoff by the user and are updated with the lessons after every session.
+
+## Deployment
+
+### GitHub Pages
+
+**Hosting:** GitHub Pages (static site, free)
+**URL:** https://dhcraft.org/mhdbdb-tei-only/
+**Branch:** `main` (automatically deployed)
+
+### Deployment Process
+
+1. Push to `main` branch
+2. GitHub Actions automatically builds and deploys
+3. Site updates within 2-5 minutes
+
+### Pre-Deployment Checklist
+
+- [ ] All tests passing
+- [ ] Manual testing complete
+- [ ] Pre-built indexes rebuilt (if XML sources changed)
+- [ ] Documentation updated
+- [ ] User has tested and approved changes
+
+### Post-Deployment Verification
+
+1. Visit https://dhcraft.org/mhdbdb-tei-only/
+2. Test main site search
+3. Test playground explorers
+4. Verify pre-built indexes load correctly
+
+### Cache Invalidation
+
+Increment the version number in the build scripts to force a browser refetch. The
+version sits as a dict literal in the index, not as a constant; see [Version
+Increment](#version-increment) above for the exact place and its counterpart in
+`corpus-loader.js`.
+
+## Historical Context: Initial Data Wrangling
+
+### Branch: `initial-data-wrangling`
+
+The MHDBDB project originally maintained data in multiple formats (RDF, relational database, partial XML). To create a single source of truth, all data was transformed into TEI-compliant XML documents.
+
+**Process:**
+1. Extract from RDF (semantic concepts, genre hierarchies, names)
+2. Extract from relational DB (persons, works, lemmata, bibliographic references)
+3. Transform to TEI with consistent cross-reference patterns
+4. Validate against TEI P5 schema
+
+**Output:** 7 content-bearing TEI authority files in the `authority-files/` directory (the 8th, `contributors.xml`, was added later on 2026-04-14 as part of the editor-attribution feature and is not part of this legacy export)
+
+**Status:** Archived (completed, preserved for reference)
+
+**Benefits of TEI as single source:**
+- Interoperability (TEI is widely supported standard)
+- Self-describing (metadata embedded with data)
+- Version control friendly (XML diffs are readable)
+- Future-proof (TEI will be supported for decades)
+
+**Trade-off:** Large file sizes (solved with pre-built indexes)
+
+---
+
+For data structures, see [DATA-MODEL.md](DATA-MODEL.md).
+For technical architecture, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For user-facing features, see [FEATURES.md](FEATURES.md).
+For architecture decisions, see [DECISIONS.md](DECISIONS.md).

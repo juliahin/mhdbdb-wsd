@@ -6,9 +6,10 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { resolvePython, pythonEnv } from '../../scripts/python-bin.js';
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -32,6 +33,22 @@ const TEST_CASES = [
   { input: 'sǒne', expected: 'sone' },
   { input: 'cæsar', expected: 'caesar' },
   { input: 'œnologie', expected: 'oenologie' },
+  // Schritt 0, NFC (#224): zerlegte Umlaute müssen wie komponierte
+  // normalisieren. Escapes statt Literale, weil ein Editor mit
+  // Auto-Normalisierung die zerlegte Form still zu NFC zusammenzöge und den
+  // Test damit lautlos entwerten würde.
+  { input: 'bo\u0308ses', expected: 'boeses' },
+  { input: 'Mu\u0308hldorf', expected: 'muehldorf' },
+  // Breve-Umlaute (#224, KZW 28.07.). Die Wenzelsbibel schreibt Umlaute mit
+  // Breve; Klaus Schmidts Eingabe war bo + U+0306 + ses aus der Leseansicht.
+  { input: 'bo\u0306ses', expected: 'boeses' },   // zerlegt, NFC zieht zusammen
+  { input: 'b\u014fses', expected: 'boeses' },    // praekomponiert
+  { input: 'w\u016dnschet', expected: 'wuenschet' },
+  // Breve auf w/n ist böhmische Schreibkonvention, kein Umlaut: getilgt
+  // statt zu einem Digraphen aufgelöst (ADR-017, Julia 06.08.).
+  { input: 'few\u0306er', expected: 'fewer' },   // -> lemma_7108 viur
+  { input: 'wenn\u0306', expected: 'wenn' },     // -> lemma_7385 wan
+  { input: 'Ew\u0306er', expected: 'ewer' },     // Grossbuchstabe
   { input: '', expected: '' },
 ];
 
@@ -40,8 +57,14 @@ test.describe('MHG Normalization Parity', () => {
     const scriptPath = path.join(__dirname, '../../scripts/mhg_normalizer.py');
 
     try {
-      // Run Python self-test
-      execSync(`python3.13 "${scriptPath}"`, { encoding: 'utf-8' });
+      // Run Python self-test. execFileSync statt execSync: ohne Shell gibt es
+      // kein Zitier-Problem, wenn der Interpreter oder das Skript in einem
+      // Pfad mit Leerzeichen liegt (unter Windows die Regel, nicht die
+      // Ausnahme).
+      execFileSync(resolvePython(), [scriptPath], {
+        encoding: 'utf-8',
+        env: pythonEnv(),
+      });
     } catch (error) {
       throw new Error(`Python normalizer self-test failed:\n${error.message}`);
     }
@@ -49,7 +72,7 @@ test.describe('MHG Normalization Parity', () => {
 
   test('JavaScript normalizer matches Python for all test cases', async ({ page }) => {
     // Navigate to playground to access TextNormalizer
-    await page.goto('http://localhost:8080/playground/');
+    await page.goto('/playground/');
 
     // Load TextNormalizer module
     const normalizationResults = await page.evaluate(async (testCases) => {
@@ -84,7 +107,7 @@ test.describe('MHG Normalization Parity', () => {
   });
 
   test('Python and JavaScript produce identical output', async ({ page }) => {
-    await page.goto('http://localhost:8080/playground/');
+    await page.goto('/playground/');
 
     // Test subset of cases by calling both normalizers
     const testInputs = ['brôt', 'wîn', 'schöne', 'mære', 'Âventiure'];
@@ -96,11 +119,17 @@ test.describe('MHG Normalization Parity', () => {
         return TextNormalizer.normalizeMHG(text);
       }, input);
 
-      // Get Python result
-      const scriptPath = path.join(__dirname, '../../scripts/mhg_normalizer.py');
-      const pythonResult = execSync(
-        `python3.13 -c "from scripts.mhg_normalizer import normalize_mhg; print(normalize_mhg('${input}'), end='')"`,
-        { encoding: 'utf-8', cwd: path.join(__dirname, '../..') }
+      // Get Python result. Der Prüfstring geht als argv-Element hinein und
+      // nicht mehr interpoliert in den Python-Quelltext: sonst zerlegt ein
+      // Apostroph im Testfall das Literal, und ein Testfall mit Apostroph
+      // ist bei mittelhochdeutschen Formen jederzeit denkbar.
+      const pythonResult = execFileSync(
+        resolvePython(),
+        ['-c',
+         'import sys; from scripts.mhg_normalizer import normalize_mhg; '
+         + 'print(normalize_mhg(sys.argv[1]), end="")',
+         input],
+        { encoding: 'utf-8', cwd: path.join(__dirname, '../..'), env: pythonEnv() }
       );
 
       console.log(`Input: "${input}" | JS: "${jsResult}" | Python: "${pythonResult}"`);
@@ -110,7 +139,7 @@ test.describe('MHG Normalization Parity', () => {
   });
 
   test('Normalization is idempotent', async ({ page }) => {
-    await page.goto('http://localhost:8080/playground/');
+    await page.goto('/playground/');
 
     const testCases = ['brôt', 'wîn', 'schöne'];
 
@@ -129,7 +158,7 @@ test.describe('MHG Normalization Parity', () => {
   });
 
   test('matchesNormalized works correctly', async ({ page }) => {
-    await page.goto('http://localhost:8080/playground/');
+    await page.goto('/playground/');
 
     const testCases = [
       { text: 'brôt', search: 'brot', shouldMatch: true },
@@ -151,7 +180,7 @@ test.describe('MHG Normalization Parity', () => {
   });
 
   test('exactMatchNormalized works correctly', async ({ page }) => {
-    await page.goto('http://localhost:8080/playground/');
+    await page.goto('/playground/');
 
     const testCases = [
       { text: 'brôt', search: 'brot', shouldMatch: true },

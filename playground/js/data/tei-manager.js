@@ -1,909 +1,42 @@
 /**
  * MHDBDB Playground - TEI Files Manager
- * Handles TEI file upload, parsing, and structural analysis with IndexedDB
+ * Multi-Lemma-Suche über den vorgebauten Korpus-Index.
+ *
+ * Der früher hier liegende Upload-Pfad (Datei einlesen, XML-DOM parsen,
+ * darin suchen) ist mit #314 entfernt: die Upload-UI war beim Redesign
+ * weggefallen, damit war der ganze Zweig unerreichbar. Die Suche läuft
+ * ausschließlich über data/corpus-index.json.gz, und Positionen sind
+ * damit durchgängig die aus CONTRACTS Paragraph B.
  */
 
-import { TEIStorageManager } from './storage/tei-storage.js';
+// Kein Import mehr aus lemma-match.js: der einzige Nutzer von
+// lemmaRefMatchesId war hier der XML-Pfad, den #314 entfernt hat, und der
+// Import blieb danach ungenutzt stehen. Die Nähesuche unten braucht ihn nicht:
+// sie liest words[] aus dem Korpus-Index, und dort steht genau eine Lemma-ID
+// je Position (build-corpus-index.py, #170), also gibt es keine
+// whitespace-getrennte Liste zu tokenisieren. Siehe CONTRACTS §B.1.
 
 export class TEIFilesManager {
-    constructor(teiData) {
-        this.teiData = teiData;
-        this.storageManager = new TEIStorageManager();
-    }
-
-    // ==================== FILE VALIDATION ====================
-
-    isTEIFile(file) {
-        return file.type === 'text/xml' ||
-               file.name.endsWith('.xml') ||
-               file.name.endsWith('.tei');
-    }
-
-    // ==================== DATA MANAGEMENT ====================
-
-    /**
-     * Clear all TEI data (used when switching between upload and corpus loading)
-     */
-    async clearAllTEIData() {
-        console.log('🗑️ Clearing all TEI data...');
-
-        // Clear in-memory data
-        this.teiData.files = [];
-        this.teiData.parsedXML = [];
-        this.teiData.words = [];
-        this.teiData.lines = [];
-        this.teiData.annotations = [];
-        this.teiData.lemmaCounts = {};
-
-        // Clear storage cache (IndexedDB)
-        await this.storageManager.clearAllCache();
-
-        console.log('✅ All TEI data cleared');
-    }
-
-    // ==================== SESSION STORAGE INTEGRATION ====================
-
-    async loadFromCache() {
-        try {
-            const cachedFiles = await this.storageManager.listCachedFiles();
-            let loadedCount = 0;
-
-            for (const cachedFile of cachedFiles) {
-                const content = await this.storageManager.loadFromCache(cachedFile.filename);
-                if (content) {
-                    await this.processTEIFromContent(cachedFile.filename, content, true);
-                    loadedCount++;
-                }
-            }
-
-            if (loadedCount > 0) {
-                console.log(`📁 Loaded ${loadedCount} TEI files from IndexedDB cache`);
-            }
-
-            return loadedCount;
-        } catch (error) {
-            console.error('❌ Error loading TEI files from storage:', error);
-            return 0;
-        }
-    }
-
-    async processTEIFromContent(filename, content, isCachedFile = false, fileObj = null) {
-        try {
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(content, 'text/xml');
-
-            const parseError = xmlDoc.querySelector('parsererror');
-            if (parseError) {
-                throw new Error('XML Parsing Error: ' + parseError.textContent);
-            }
-
-            // Extract metadata from TEI header
-            const metadata = this.extractTEIMetadata(xmlDoc);
-
-            // Create a file-like object if not provided
-            if (!fileObj) {
-                fileObj = {
-                    name: filename,
-                    size: content.length,
-                    type: 'text/xml',
-                    isCachedFile: isCachedFile,
-                    // Add extracted metadata
-                    title: metadata.title,
-                    author: metadata.author,
-                    authorRef: metadata.authorRef
-                };
-            } else {
-                // Add session file flag and metadata to existing file object
-                fileObj.isCachedFile = isCachedFile;
-                fileObj.title = metadata.title;
-                fileObj.author = metadata.author;
-                fileObj.authorRef = metadata.authorRef;
-            }
-
-            this.teiData.files.push(fileObj);
-            this.teiData.parsedXML.push({
-                filename: filename,
-                doc: xmlDoc,
-                content: content,
-                isCachedFile: isCachedFile
-            });
-
-            this.analyzeTEIStructure(xmlDoc, filename);
-            console.log(`TEI File processed: ${filename} ${isCachedFile ? '(from cache)' : ''}`);
-
-        } catch (error) {
-            console.error(`Error processing ${filename}:`, error);
-            throw error;
-        }
-    }
-
-    extractTEIMetadata(xmlDoc) {
-        const metadata = {
-            title: '',
-            author: '',
-            authorRef: ''
-        };
-
-        try {
-            // Extract title from titleStmt
-            const titleElement = xmlDoc.querySelector('titleStmt title[xml\\:lang="de"]') ||
-                                 xmlDoc.querySelector('titleStmt title');
-            if (titleElement) {
-                metadata.title = titleElement.textContent.trim();
-            }
-
-            // Extract author from titleStmt
-            const authorElement = xmlDoc.querySelector('titleStmt author');
-            if (authorElement) {
-                metadata.author = authorElement.textContent.trim();
-                metadata.authorRef = authorElement.getAttribute('ref') || '';
-            }
-        } catch (error) {
-            console.warn(`Failed to extract metadata:`, error);
-        }
-
-        return metadata;
-    }
-
-    // ==================== FILE PROCESSING ====================
-
-    async processTEIFile(file) {
-        try {
-            // Check if file is already in storage to avoid duplicates
-            if (await this.storageManager.isInCache(file.name)) {
-                console.log(`⚠️ File ${file.name} already exists in storage`);
-                return 'duplicate';
-            }
-
-            const content = await this.readFileAsText(file);
-
-            // Try to save to storage
-            const savedToCache = await this.storageManager.saveToCache(file.name, content);
-
-            // Process the file
-            await this.processTEIFromContent(file.name, content, false, file);
-
-            // Add storage info
-            const lastIndex = this.teiData.files.length - 1;
-            if (this.teiData.files[lastIndex]) {
-                this.teiData.files[lastIndex].savedToCache = savedToCache;
-            }
-
-        } catch (error) {
-            console.error(`Error processing ${file.name}:`, error);
-            throw error;
-        }
-    }
-
-    analyzeTEIStructure(xmlDoc, filename) {
-        // Extract words (w elements)
-        const words = xmlDoc.querySelectorAll('w');
-        words.forEach((word, index) => {
-            const id = word.getAttribute('xml:id');
-            const lemmaRef = word.getAttribute('lemmaRef');
-            const pos = word.getAttribute('pos');
-            const text = word.textContent?.trim();
-            
-            if (text) {
-                this.teiData.words.push({
-                    id, text, lemmaRef, pos, filename, index
-                });
-            }
-        });
-
-        // Extract lines (l elements)
-        const lines = xmlDoc.querySelectorAll('l');
-        lines.forEach((line, index) => {
-            const n = line.getAttribute('n');
-            const text = line.textContent?.trim();
-            
-            if (text) {
-                this.teiData.lines.push({
-                    n, text, filename, index
-                });
-            }
-        });
-
-        // Extract annotations/semantic references
-        const annotatedElements = xmlDoc.querySelectorAll('[meaningRef], [conceptRef]');
-        annotatedElements.forEach((element, index) => {
-            const meaningRef = element.getAttribute('meaningRef');
-            const conceptRef = element.getAttribute('conceptRef');
-            const text = element.textContent?.trim();
-            
-            this.teiData.annotations.push({
-                text, meaningRef, conceptRef, filename, index,
-                tagName: element.tagName
-            });
-        });
-
-        console.log(`TEI Analysis complete: ${words.length} words, ${lines.length} lines, ${annotatedElements.length} annotations`);
-    }
-
-    // ==================== SEARCH AND FILTERING ====================
-
-    searchWordsInText(searchTerm) {
-        return this.teiData.words.filter(word => 
-            (word.lemmaRef && word.lemmaRef.includes(searchTerm)) ||
-            word.text.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }
-
-    findWordsByLemmaRef(lemmaRef) {
-        return this.teiData.words.filter(word => 
-            word.lemmaRef && word.lemmaRef.includes(lemmaRef)
-        );
-    }
-
-    findLinesByText(searchTerm) {
-        return this.teiData.lines.filter(line => 
-            line.text.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }
-
-    getWordContext(wordIndex, filename, contextSize = 3) {
-        // Find surrounding words for context
-        const wordsInFile = this.teiData.words.filter(w => w.filename === filename);
-        const targetWordIndex = wordsInFile.findIndex(w => w.index === wordIndex);
-        
-        if (targetWordIndex === -1) return null;
-
-        const start = Math.max(0, targetWordIndex - contextSize);
-        const end = Math.min(wordsInFile.length, targetWordIndex + contextSize + 1);
-        
-        return wordsInFile.slice(start, end);
-    }
-
-    getLineContext(lineNumber, filename, contextSize = 2) {
-        // Find surrounding lines for context
-        const linesInFile = this.teiData.lines.filter(l => l.filename === filename);
-        const targetLine = linesInFile.find(l => l.n === lineNumber);
-        
-        if (!targetLine) return null;
-
-        const targetIndex = linesInFile.indexOf(targetLine);
-        const start = Math.max(0, targetIndex - contextSize);
-        const end = Math.min(linesInFile.length, targetIndex + contextSize + 1);
-        
-        return linesInFile.slice(start, end);
-    }
-
-    // ==================== CROSS-REFERENCE RESOLUTION ====================
-
-    resolveLemmaReferences(authorityData) {
-        // Add resolved lemma information to words
-        return this.teiData.words.map(word => {
-            if (!word.lemmaRef) return word;
-
-            const lemmaId = word.lemmaRef.split('#')[1];
-            const lemma = authorityData.lemmata.find(l => l.id === lemmaId);
-            
-            return {
-                ...word,
-                resolvedLemma: lemma
-            };
-        });
-    }
-
-    resolveConceptReferences(authorityData) {
-        // Add resolved concept information to annotations
-        return this.teiData.annotations.map(annotation => {
-            const resolvedConcepts = [];
-            
-            if (annotation.conceptRef) {
-                const conceptId = annotation.conceptRef.split('#')[1];
-                const concept = authorityData.concepts.find(c => c.id === conceptId);
-                if (concept) resolvedConcepts.push(concept);
-            }
-            
-            return {
-                ...annotation,
-                resolvedConcepts
-            };
-        });
-    }
-
-    // ==================== STATISTICAL ANALYSIS ====================
-
-    getWordFrequency() {
-        const frequency = {};
-        this.teiData.words.forEach(word => {
-            const text = word.text.toLowerCase();
-            frequency[text] = (frequency[text] || 0) + 1;
-        });
-        
-        return Object.entries(frequency)
-            .sort(([,a], [,b]) => b - a)
-            .slice(0, 100); // Top 100 most frequent words
-    }
-
-    getLemmaFrequency() {
-        const frequency = {};
-        this.teiData.words.forEach(word => {
-            if (word.lemmaRef) {
-                const lemmaId = word.lemmaRef.split('#')[1];
-                frequency[lemmaId] = (frequency[lemmaId] || 0) + 1;
-            }
-        });
-        
-        return Object.entries(frequency)
-            .sort(([,a], [,b]) => b - a)
-            .slice(0, 50); // Top 50 most frequent lemmata
-    }
-
-    getPOSDistribution() {
-        const distribution = {};
-        this.teiData.words.forEach(word => {
-            if (word.pos) {
-                distribution[word.pos] = (distribution[word.pos] || 0) + 1;
-            }
-        });
-        
-        return distribution;
-    }
-
-    // ==================== EXPORT FUNCTIONS ====================
-
-    exportWordsAsCSV() {
-        const headers = ['filename', 'text', 'pos', 'lemmaRef', 'line'];
-        const rows = this.teiData.words.map(word => [
-            word.filename,
-            word.text,
-            word.pos || '',
-            word.lemmaRef || '',
-            word.line || ''
-        ]);
-        
-        return this.arrayToCSV([headers, ...rows]);
-    }
-
-    exportLinesAsCSV() {
-        const headers = ['filename', 'lineNumber', 'text'];
-        const rows = this.teiData.lines.map(line => [
-            line.filename,
-            line.n || '',
-            line.text
-        ]);
-        
-        return this.arrayToCSV([headers, ...rows]);
-    }
-
-    exportAnnotationsAsCSV() {
-        const headers = ['filename', 'text', 'tagName', 'meaningRef', 'conceptRef'];
-        const rows = this.teiData.annotations.map(annotation => [
-            annotation.filename,
-            annotation.text,
-            annotation.tagName,
-            annotation.meaningRef || '',
-            annotation.conceptRef || ''
-        ]);
-        
-        return this.arrayToCSV([headers, ...rows]);
-    }
-
-    // ==================== UTILITY METHODS ====================
-
-    readFileAsText(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = e => resolve(e.target.result);
-            reader.onerror = reject;
-            reader.readAsText(file);
-        });
-    }
-
-    arrayToCSV(array) {
-        return array.map(row => 
-            row.map(field => 
-                typeof field === 'string' && field.includes(',') 
-                    ? `"${field.replace(/"/g, '""')}"` 
-                    : field
-            ).join(',')
-        ).join('\n');
-    }
-
-    // ==================== XPATH UTILITIES ====================
-
-    executeXPathOnTEI(xpath) {
-        const results = [];
-
-        this.teiData.parsedXML.forEach(xmlData => {
-            try {
-                const xpathResult = xmlData.doc.evaluate(
-                    xpath,
-                    xmlData.doc,
-                    null,
-                    XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
-                    null
-                );
-
-                for (let i = 0; i < xpathResult.snapshotLength; i++) {
-                    const node = xpathResult.snapshotItem(i);
-                    results.push({
-                        filename: xmlData.filename,
-                        nodeName: node.nodeName,
-                        textContent: node.textContent?.trim(),
-                        outerHTML: node.outerHTML?.substring(0, 300)
-                    });
-                }
-            } catch (error) {
-                results.push({
-                    filename: xmlData.filename,
-                    error: error.message
-                });
-            }
-        });
-
-        return results;
-    }
-
-    // ==================== MULTI-LEMMA SEARCH ====================
-
-    /**
-     * Helper method to get XML doc from either uploaded file or corpus index
-     * Handles both structures transparently
-     */
-    async getXMLDoc(xmlData) {
-        // Check if this is an uploaded file (has 'doc' property)
-        if (xmlData.doc) {
-            return xmlData.doc;
-        }
-
-        // Otherwise, it's from corpus index (has xmlDoc getter that returns a Promise)
-        if ('xmlDoc' in xmlData) {
-            try {
-                // xmlDoc is a getter, not a function - access it as a property
-                const doc = await xmlData.xmlDoc;
-                return doc;
-            } catch (error) {
-                console.error(`Failed to load XML for ${xmlData.filename}:`, error);
-                return null;
-            }
-        }
-
-        console.warn(`No XML doc available for ${xmlData.filename}`);
-        return null;
-    }
-
-    async searchMultipleLemmas(lemmaIds, contextType = 'document') {
-        const results = [];
-
-        for (const xmlData of this.teiData.parsedXML) {
-            // Get XML doc (handles both uploaded files and corpus index)
-            const doc = await this.getXMLDoc(xmlData);
-            if (!doc) continue;
-
-            if (contextType === 'document') {
-                // Search across entire document
-                const containsAllLemmas = lemmaIds.every(lemmaId => {
-                    const elements = doc.querySelectorAll(`w[lemmaRef*="lexicon.xml#lemma_${lemmaId}"]`);
-                    return elements.length > 0;
-                });
-
-                if (containsAllLemmas) {
-                    const matchingWords = this.extractMatchingWordsFromDocument(doc, lemmaIds);
-                    results.push({
-                        filename: xmlData.filename,
-                        context: 'document',
-                        matchingWords: matchingWords,
-                        totalWords: this.teiData.words.filter(w => w.filename === xmlData.filename).length
-                    });
-                }
-            }
-        }
-
-        return results;
-    }
-
-    async findCooccurringLemmas(lemmaIds, maxDistance = 10) {
-        const results = [];
-
-        for (const xmlData of this.teiData.parsedXML) {
-            // Get XML doc (handles both uploaded files and corpus index)
-            const doc = await this.getXMLDoc(xmlData);
-            if (!doc) continue;
-
-            const words = doc.querySelectorAll('w');
-            const wordArray = Array.from(words);
-            
-            // Find positions of each lemma
-            const lemmaPositions = {};
-            lemmaIds.forEach(lemmaId => {
-                lemmaPositions[lemmaId] = [];
-                wordArray.forEach((word, index) => {
-                    const lemmaRef = word.getAttribute('lemmaRef');
-                    if (lemmaRef && lemmaRef.includes(`lexicon.xml#lemma_${lemmaId}`)) {
-                        lemmaPositions[lemmaId].push({
-                            index: index,
-                            word: word,
-                            text: word.textContent?.trim()
-                        });
-                    }
-                });
-            });
-            
-            // Find co-occurrences within specified distance
-            const cooccurrences = this.findProximityMatches(lemmaPositions, maxDistance, wordArray);
-            
-            if (cooccurrences.length > 0) {
-                results.push({
-                    filename: xmlData.filename,
-                    cooccurrences: cooccurrences,
-                    maxDistance: maxDistance
-                });
-            }
-        }
-
-        return results;
-    }
-
-    extractMatchingWordsFromParagraph(paragraph, lemmaIds) {
-        const matchingWords = {};
-        
-        lemmaIds.forEach(lemmaId => {
-            matchingWords[lemmaId] = [];
-            
-            // Try multiple selector approaches
-            const selectors = [
-                `w[lemmaRef*="lexicon.xml#lemma_${lemmaId}"]`,
-                `w[lemmaRef="lexicon.xml#lemma_${lemmaId}"]`,
-                `w[lemmaRef$="#lemma_${lemmaId}"]`
-            ];
-            
-            const foundWords = new Set(); // Avoid duplicates
-            
-            selectors.forEach(selector => {
-                const words = paragraph.querySelectorAll(selector);
-                words.forEach(word => {
-                    const wordId = word.getAttribute('xml:id');
-                    if (!foundWords.has(wordId)) {
-                        foundWords.add(wordId);
-                        matchingWords[lemmaId].push({
-                            text: word.textContent?.trim(),
-                            id: wordId,
-                            lemmaRef: word.getAttribute('lemmaRef')
-                        });
-                    }
-                });
-            });
-            
-        });
-        
-        return matchingWords;
-    }
-
-    extractMatchingWordsFromDocument(doc, lemmaIds) {
-        const matchingWords = {};
-        
-        lemmaIds.forEach(lemmaId => {
-            matchingWords[lemmaId] = [];
-            
-            // Try multiple selector approaches
-            const selectors = [
-                `w[lemmaRef*="lexicon.xml#lemma_${lemmaId}"]`,
-                `w[lemmaRef="lexicon.xml#lemma_${lemmaId}"]`,
-                `w[lemmaRef$="#lemma_${lemmaId}"]`
-            ];
-            
-            const foundWords = new Set(); // Avoid duplicates
-            
-            selectors.forEach(selector => {
-                const words = doc.querySelectorAll(selector);
-                words.forEach(word => {
-                    const wordId = word.getAttribute('xml:id');
-                    if (!foundWords.has(wordId)) {
-                        foundWords.add(wordId);
-                        matchingWords[lemmaId].push({
-                            text: word.textContent?.trim(),
-                            id: wordId,
-                            lemmaRef: word.getAttribute('lemmaRef'),
-                            context: this.getWordParagraphContext(word)
-                        });
-                    }
-                });
-            });
-            
-        });
-        
-        return matchingWords;
-    }
-
-    findProximityMatches(lemmaPositions, maxDistance, wordArray) {
-        const cooccurrences = [];
-        const lemmaIds = Object.keys(lemmaPositions);
-        
-        if (lemmaIds.length < 2) return cooccurrences;
-        
-        // Compare positions between first lemma and others
-        const firstLemmaId = lemmaIds[0];
-        const firstLemmaPositions = lemmaPositions[firstLemmaId];
-        
-        firstLemmaPositions.forEach(firstPos => {
-            lemmaIds.slice(1).forEach(otherLemmaId => {
-                const otherPositions = lemmaPositions[otherLemmaId];
-                
-                otherPositions.forEach(otherPos => {
-                    const distance = Math.abs(firstPos.index - otherPos.index);
-                    
-                    if (distance <= maxDistance) {
-                        const startIndex = Math.min(firstPos.index, otherPos.index);
-                        const endIndex = Math.max(firstPos.index, otherPos.index);
-                        const contextWords = wordArray.slice(
-                            Math.max(0, startIndex - 3),
-                            Math.min(wordArray.length, endIndex + 4)
-                        );
-                        
-                        cooccurrences.push({
-                            lemma1: { id: firstLemmaId, ...firstPos },
-                            lemma2: { id: otherLemmaId, ...otherPos },
-                            distance: distance,
-                            context: contextWords.map(w => w.textContent?.trim()).join(' ')
-                        });
-                    }
-                });
-            });
-        });
-        
-        return cooccurrences;
-    }
-
-    getWordParagraphContext(wordElement) {
-        const paragraph = wordElement.closest('p');
-        if (paragraph) {
-            return {
-                paragraphId: paragraph.getAttribute('n') || paragraph.getAttribute('xml:id'),
-                text: paragraph.textContent?.trim().substring(0, 200) + '...'
-            };
-        }
-        return null;
-    }
-
-    // ==================== SESSION MANAGEMENT ====================
-
-    async removeTEIFile(filename) {
-        try {
-            // Remove from storage
-            const removedFromStorage = await this.storageManager.removeFromCache(filename);
-
-            // Remove from in-memory data
-            this.teiData.files = this.teiData.files.filter(file => file && file.name !== filename);
-            this.teiData.parsedXML = this.teiData.parsedXML.filter(xml => xml.filename !== filename);
-
-            // Remove related analysis data
-            this.teiData.words = this.teiData.words.filter(word => word.filename !== filename);
-            this.teiData.lines = this.teiData.lines.filter(line => line.filename !== filename);
-            this.teiData.annotations = this.teiData.annotations.filter(annotation => annotation.filename !== filename);
-
-            console.log(`🗑️ TEI file removed: ${filename}`);
-            return removedFromStorage;
-        } catch (error) {
-            console.error(`❌ Error removing ${filename}:`, error);
-            return false;
-        }
-    }
-
-    async clearAllCachedFiles() {
-        try {
-            const cachedFiles = await this.storageManager.listCachedFiles();
-
-            // Remove all files from storage
-            const removedCount = await this.storageManager.clearAllCache();
-
-            // Remove session files from in-memory data
-            this.teiData.files = this.teiData.files.filter(file => !file || !file.isCachedFile);
-            this.teiData.parsedXML = this.teiData.parsedXML.filter(xml => !xml.isCachedFile);
-
-            // Remove related analysis data for session files
-            cachedFiles.forEach(cachedFile => {
-                const filename = cachedFile.filename;
-                this.teiData.words = this.teiData.words.filter(word => word.filename !== filename);
-                this.teiData.lines = this.teiData.lines.filter(line => line.filename !== filename);
-                this.teiData.annotations = this.teiData.annotations.filter(annotation => annotation.filename !== filename);
-            });
-
-            console.log(`🧹 Cleared all cached TEI files: ${removedCount} files removed`);
-            return removedCount;
-        } catch (error) {
-            console.error('❌ Error clearing all cached files:', error);
-            return 0;
-        }
-    }
-
-    async getStorageInfo() {
-        return {
-            cachedFiles: await this.storageManager.listCachedFiles(),
-            quota: await this.storageManager.getStorageQuotaInfo(),
-            stats: await this.storageManager.getStorageStats()
-        };
-    }
-
-    // ==================== CORPUS LOADING ====================
-
-    async loadCorpusIntoPlayground(progressCallback) {
-        console.log('📦 Loading corpus into playground using pre-built index...');
-
-        try {
-            // Dynamically import CorpusLoader from main site
-            const { CorpusLoader } = await import('../../../assets/js/lib/corpus-loader.js');
-
-            // Create corpus loader with correct base path (playground is in playground/ subdirectory)
-            const corpusLoader = new CorpusLoader('../data');
-
-            // Wait for database to initialize
-            await corpusLoader.dbReady;
-
-            // Load corpus index
-            if (progressCallback) progressCallback(0, 666);
-            console.log('📥 Loading corpus index...');
-            const corpusIndex = await corpusLoader.loadCorpusIndex();
-
-            console.log(`📚 Corpus index loaded: ${corpusIndex.texts.length} texts`);
-
-            // Create TEI file wrappers (lazy-loading)
-            let loadedCount = 0;
-            for (const text of corpusIndex.texts) {
-                // Create metadata structure compatible with playground
-                const teiData = {
-                    filename: text.filename,
-                    title: text.title,
-                    author: text.author,
-                    authorRef: text.authorRef,
-                    workRef: text.workRef,
-                    genre: text.genre || '',
-                    wordCount: text.wordCount,
-                    lemmata: text.lemmata,
-
-                    // Lazy-load full XML when needed
-                    _xml: null,
-                    get xmlDoc() {
-                        if (!this._xml) {
-                            return this.loadXML();
-                        }
-                        return Promise.resolve(this._xml);
-                    },
-                    async loadXML() {
-                        if (this._xml) return this._xml;
-
-                        try {
-                            const response = await fetch(`../tei/${this.filename}`);
-                            if (!response.ok) {
-                                throw new Error(`HTTP ${response.status}`);
-                            }
-                            const xmlText = await response.text();
-                            const parser = new DOMParser();
-                            this._xml = parser.parseFromString(xmlText, 'text/xml');
-                            return this._xml;
-                        } catch (error) {
-                            console.error(`Failed to load XML for ${this.filename}:`, error);
-                            throw error;
-                        }
-                    }
-                };
-
-                // Add to playground's TEI files list (both files and parsedXML arrays)
-                // Note: We don't add to this.teiData.files (file objects), only to parsedXML
-                this.teiData.parsedXML.push(teiData);
-                loadedCount++;
-
-                if (progressCallback && loadedCount % 10 === 0) {
-                    progressCallback(loadedCount, corpusIndex.texts.length);
-                }
-            }
-
-            if (progressCallback) progressCallback(loadedCount, corpusIndex.texts.length);
-
-            console.log(`✅ Corpus loaded: ${loadedCount} files (lazy-loading enabled)`);
-
-            // Store corpus index reference for fast searches
-            this.corpusIndex = corpusIndex;
-
-            return { loaded: loadedCount, skipped: 0, total: loadedCount };
-
-        } catch (error) {
-            console.error('❌ Corpus loading failed:', error);
-            throw error;
-        }
-    }
+    // Kein Konstruktor mehr: bis #325 nahm er ein teiData-Objekt entgegen und
+    // legte es auf this.teiData, gelesen hat es hier nie jemand. Der Zustand
+    // dieser Klasse ist corpusIndex, und den setzt playground-main.js von
+    // außen, nachdem der Index geladen ist.
 
     // ==================== INDEX-BASED SEARCH (FAST) ====================
 
     /**
-     * Check if corpus is loaded from pre-built index (enables fast search)
-     */
-    hasCorpusIndex() {
-        return this.corpusIndex && this.corpusIndex.texts && this.corpusIndex.lemmaIndex;
-    }
-
-    /**
-     * Find texts containing all specified lemmas using index (instant filtering)
-     */
-    findTextsContainingLemmas(lemmaIds) {
-        if (!this.hasCorpusIndex()) return null;
-
-        console.log(`🔍 Filtering ${this.corpusIndex.texts.length} texts using index...`);
-
-        // Get texts for each lemma from lemmaIndex
-        const textSets = lemmaIds.map(lemmaId => {
-            const lemmaKey = lemmaId.toString().startsWith('lemma_') ? lemmaId : `lemma_${lemmaId}`;
-            return new Set(this.corpusIndex.lemmaIndex[lemmaKey] || []);
-        });
-
-        // Find intersection (texts containing ALL lemmas)
-        const firstSet = textSets[0];
-        const intersection = Array.from(firstSet).filter(textId =>
-            textSets.every(set => set.has(textId))
-        );
-
-        console.log(`   Found ${intersection.length} texts containing all ${lemmaIds.length} lemmas`);
-        return intersection;
-    }
-
-    /**
-     * Find proximity matches using index data (word positions)
-     * Returns: {textId: [{lemma1Pos, lemma2Pos, distance}, ...]}
-     */
-    findProximityMatchesInIndex(lemmaIds, maxDistance) {
-        if (!this.hasCorpusIndex()) return null;
-
-        const candidateTextIds = this.findTextsContainingLemmas(lemmaIds);
-        if (!candidateTextIds || candidateTextIds.length === 0) return {};
-
-        console.log(`🔍 Checking proximity in ${candidateTextIds.length} candidate texts...`);
-
-        const matches = {};
-
-        for (const textId of candidateTextIds) {
-            // Find text data
-            const text = this.corpusIndex.texts.find(t => t.id === textId);
-            if (!text || !text.lemmata) continue;
-
-            // Get positions for each lemma
-            const positionSets = lemmaIds.map(lemmaId => {
-                const lemmaKey = lemmaId.toString().startsWith('lemma_') ? lemmaId : `lemma_${lemmaId}`;
-                return text.lemmata[lemmaKey] || [];
-            });
-
-            // Check all position combinations for proximity
-            const proximityMatches = [];
-
-            // For each position of first lemma
-            for (const pos1 of positionSets[0]) {
-                // Check if any position of second lemma is within maxDistance
-                for (const pos2 of positionSets[1]) {
-                    const distance = Math.abs(pos1 - pos2);
-                    if (distance <= maxDistance && distance > 0) {
-                        proximityMatches.push({
-                            positions: [pos1, pos2],
-                            distance: distance
-                        });
-                    }
-                }
-            }
-
-            if (proximityMatches.length > 0) {
-                matches[textId] = proximityMatches;
-            }
-        }
-
-        console.log(`   Found ${Object.keys(matches).length} texts with proximity matches`);
-        return matches;
-    }
-
-    /**
-     * Fast multi-lemma search using index data (when available)
-     * Falls back to XML search for uploaded files
+     * Multi-Lemma-Suche über den vorgebauten Korpus-Index.
      */
     async searchMultipleLemmasUsingIndex(lemmaIds, contextType = 'document', maxDistance = 10) {
-        // v4.0.0: Use document-level index (no paragraph mode)
+        // v4.0.0: Dokumentweiter Index, drei Modi. Der frühere
+        // paragraph-Modus fiel mit v4.0.0 weg.
         const corpusData = window.playground?.corpusData;
         if (!corpusData || !corpusData.texts) {
-            console.warn('⚠️ Corpus data not available, falling back to XML search');
-            // Fallback to XML-based search if index unavailable
-            if (contextType === 'proximity') {
-                return await this.findCooccurringLemmas(lemmaIds, maxDistance);
-            } else {
-                return await this.searchMultipleLemmas(lemmaIds, contextType);
-            }
+            // Früher lief hier ein XML-Fallback für hochgeladene Dateien.
+            // Der ist mit #314 weg; ohne Index gibt es nichts zu durchsuchen,
+            // und ein stilles [] würde wie "keine Treffer" aussehen.
+            console.error('Korpus-Index nicht geladen, Multi-Lemma-Suche nicht möglich');
+            throw new Error('Korpus-Index nicht verfügbar');
         }
 
         // v4.0.0: Pure index-based search (instant results!)
@@ -911,126 +44,130 @@ export class TEIFilesManager {
 
         if (contextType === 'proximity') {
             return this.searchProximityUsingEnhancedIndex(lemmaIds, maxDistance, corpusData);
+        } else if (contextType === 'verse') {
+            return this.searchVerseUsingEnhancedIndex(lemmaIds, corpusData);
         } else if (contextType === 'document') {
             return this.searchDocumentUsingEnhancedIndex(lemmaIds, corpusData);
         }
 
-        return [];
+        // Aus demselben Grund wie oben: ein stilles [] sähe wie "keine Treffer"
+        // aus. Erreichbar ist der Zweig heute nicht (die UI hat drei Radios,
+        // und der Router ignoriert unbekannte Modi aus dem Hash), aber genau
+        // diese Konstellation hat den Upload-Pfad 1300 Zeilen lang konserviert.
+        throw new Error(`Unbekannter Suchmodus: ${contextType}`);
     }
 
     /**
-     * v4.0.0: Document search using index (fast filtering)
-     * Paragraph mode removed in v4.0.0
+     * "Im selben Vers"-Suche (#106 Punkt 8): Kookkurrenz eingeschränkt auf ein
+     * gemeinsames <l>, über die lineStarts[]/lineEnds[]-Arrays des Corpus-Index
+     * v4.1.0+ (CONTRACTS §B: word-index-Grenzen pro Vers, inklusive).
+     *
+     * Prosa-Texte (leere lineStarts) werden übersprungen — dort gibt es keine
+     * Verse (#106 Caveat). Ergebnis-Shape ist identisch zur Proximity-Suche
+     * (matchPositions/distance/contextStart/contextEnd/contextLemmas), plus
+     * verseN (1-basierte Versnummer im Text) für die Anzeige; Expand und
+     * Reader-Deep-Links funktionieren dadurch unverändert.
      */
-    async searchDocumentUsingIndex(lemmaIds) {
-        console.log(`🚀 Using index-based document search (fast path)`);
-
-        // Step 1: Fast filtering using index
-        const candidateTextIds = this.findTextsContainingLemmas(lemmaIds);
-        if (!candidateTextIds || candidateTextIds.length === 0) return [];
+    searchVerseUsingEnhancedIndex(lemmaIds, corpusData) {
+        // Dieselbe Degeneration wie im Nähe-Pfad, andere Ursache: die
+        // Vergleichsschleife startet bei i = 1 und läuft mit einem Lemma
+        // gar nicht, allInVerse bliebe true und jeder Vers mit dem Lemma
+        // wäre ein Treffer.
+        //
+        // Deshalb einmal normalisieren, deduplizieren und mit DIESER Liste
+        // weiterarbeiten. Nur zu zaehlen genuegt nicht: "7532" und
+        // "lemma_7532" sind dieselbe ID, ein Aufruf mit
+        // ['7532','lemma_7532','9999'] kaeme sonst durch den Guard, und der
+        // doppelte Eintrag laege per Konstruktion im selben Vers wie der
+        // Anker. Eine Anfrage ueber drei Lemmata waere still als eine ueber
+        // zwei beantwortet. Die Funktionskoerper vertragen bare IDs.
+        lemmaIds = [...new Set(lemmaIds.map(id => String(id).replace(/^lemma_/, '')))];
+        if (lemmaIds.length < 2) return [];
 
         const results = [];
+        const includedTexts = corpusData.includedTexts || new Set();
 
-        // Step 2: Load XML only for matching texts
-        console.log(`📥 Loading XML for ${candidateTextIds.length} matching texts...`);
+        // Binärsuche: Index des Verses, der Wortposition pos enthält, sonst -1.
+        // lineStarts ist aufsteigend sortiert; Wörter außerhalb jedes <l>
+        // (Überschriften, Noten) liegen zwischen lineEnds[v] und lineStarts[v+1].
+        const verseIndexFor = (pos, lineStarts, lineEnds) => {
+            let lo = 0, hi = lineStarts.length - 1, found = -1;
+            while (lo <= hi) {
+                const mid = (lo + hi) >> 1;
+                if (lineStarts[mid] <= pos) { found = mid; lo = mid + 1; }
+                else { hi = mid - 1; }
+            }
+            return (found !== -1 && pos <= lineEnds[found]) ? found : -1;
+        };
 
-        for (const textId of candidateTextIds) {
-            const textData = this.teiData.parsedXML.find(t =>
-                t.filename && t.filename.replace('.tei.xml', '') === textId
-            );
+        corpusData.texts.forEach(text => {
+            if (!includedTexts.has(text.id)) return;
+            if (!text.words || !text.lemmata) return;
+            if (!text.lineStarts || text.lineStarts.length === 0) return; // Prosa
 
-            if (!textData) continue;
-
-            const doc = await this.getXMLDoc(textData);
-            if (!doc) continue;
-
-            // Document-level search (already filtered by index)
-            const matchingWords = this.extractMatchingWordsFromDocument(doc, lemmaIds);
-            results.push({
-                filename: textData.filename,
-                title: textData.title,
-                author: textData.author,
-                context: 'document',
-                matchingWords: matchingWords,
-                totalWords: Object.values(textData.lemmata || {}).flat().length
+            // Alle Positionen je Lemma aus der Reverse-Map lemmata{} —
+            // multi-ref-bewusst per CONTRACTS §B.1 (words[] hält nur die
+            // erste @lemmaRef-ID pro <w>).
+            //
+            // Kein Vergleich mit dem Nähe-Pfad: searchProximityUsingEnhancedIndex
+            // scannt weiterhin words[] und ist damit die bekannte Abweichung
+            // von der Consumer-Rule, nicht das Vorbild. Folgenlos ist das nur,
+            // solange kein <w> mehrere Referenzen trägt; gemessen am Korpus
+            // sind das derzeit 0 von 7.532.998 @lemmaRef-Werten.
+            const lemmaPositions = {};
+            lemmaIds.forEach(lemmaId => {
+                const lemmaKey = lemmaId.toString().startsWith('lemma_') ? lemmaId : `lemma_${lemmaId}`;
+                lemmaPositions[lemmaId] = text.lemmata[lemmaKey] || [];
             });
-        }
-
-        console.log(`✅ Index-based search complete: ${results.length} matches`);
-        return results;
-    }
-
-    /**
-     * Proximity search using index data (super fast!)
-     */
-    async searchProximityUsingIndex(lemmaIds, maxDistance) {
-        console.log(`🚀 Using index-based proximity search (fast path)`);
-
-        const proximityMatches = this.findProximityMatchesInIndex(lemmaIds, maxDistance);
-        if (!proximityMatches) {
-            // Index not available, fall back to XML search
-            console.log('   Index not available, falling back to XML search');
-            return await this.findCooccurringLemmas(lemmaIds, maxDistance);
-        }
-
-        const results = [];
-
-        // Now fetch XML only for matching texts (not all 666!)
-        console.log(`📥 Loading XML for ${Object.keys(proximityMatches).length} matching texts...`);
-
-        for (const [textId, matches] of Object.entries(proximityMatches)) {
-            // Find the text data
-            const textData = this.teiData.parsedXML.find(t =>
-                t.filename && t.filename.replace('.tei.xml', '') === textId
-            );
-
-            if (!textData) {
-                console.warn(`   Text ${textId} not found in parsedXML`);
-                continue;
+            if (Object.values(lemmaPositions).some(positions => positions.length === 0)) {
+                return;
             }
 
-            // Load XML for this specific text
-            const doc = await this.getXMLDoc(textData);
-            if (!doc) continue;
+            // Für jeden Vers, der das erste Lemma enthält: alle anderen prüfen.
+            // Ein Vers zählt höchstens einmal (seenVerses), egal wie oft das
+            // erste Lemma darin steht.
+            const firstPositions = lemmaPositions[lemmaIds[0]];
+            const seenVerses = new Set();
 
-            // Get all words
-            const words = doc.querySelectorAll('w');
-            const wordArray = Array.from(words);
+            firstPositions.forEach(firstPos => {
+                const v = verseIndexFor(firstPos, text.lineStarts, text.lineEnds);
+                if (v === -1 || seenVerses.has(v)) return;
+                seenVerses.add(v);
 
-            // Extract context for each proximity match
-            for (const match of matches) {
-                const positions = match.positions;
-                const distance = match.distance;
+                const vStart = text.lineStarts[v];
+                const vEnd = text.lineEnds[v];
+                const nearbyPositions = {};
+                let allInVerse = true;
+                for (let i = 1; i < lemmaIds.length; i++) {
+                    const pos = lemmaPositions[lemmaIds[i]].find(p => p >= vStart && p <= vEnd);
+                    if (pos === undefined) { allInVerse = false; break; }
+                    nearbyPositions[lemmaIds[i]] = pos;
+                }
+                if (!allInVerse) return;
 
-                // Get surrounding context (±10 words)
-                const minPos = Math.min(...positions);
-                const maxPos = Math.max(...positions);
-                const contextStart = Math.max(0, minPos - 10);
-                const contextEnd = Math.min(wordArray.length, maxPos + 10);
+                const allPositions = [firstPos, ...Object.values(nearbyPositions)];
+                const minPos = Math.min(...allPositions);
+                const maxPos = Math.max(...allPositions);
 
-                const contextWords = wordArray.slice(contextStart, contextEnd);
-                const contextText = contextWords.map(w => w.textContent).join(' ');
-
-                // Highlight the matching words
-                const highlightedWords = {};
-                lemmaIds.forEach((lemmaId, idx) => {
-                    highlightedWords[lemmaId] = positions[idx];
-                });
+                // Kontext: der ganze Vers plus etwas Umgebung
+                const contextStart = Math.max(0, vStart - 5);
+                const contextEnd = Math.min(text.words.length, vEnd + 6);
 
                 results.push({
-                    filename: textData.filename,
-                    title: textData.title,
-                    author: textData.author,
-                    matchPositions: positions,
-                    distance: distance,
-                    contextText: contextText,
+                    filename: text.filename,
+                    title: text.title,
+                    author: text.author || 'Unbekannt',
+                    matchPositions: allPositions,
+                    distance: maxPos - minPos,
+                    verseN: v + 1,
                     contextStart: contextStart,
-                    contextEnd: contextEnd
+                    contextEnd: contextEnd,
+                    contextLemmas: text.words.slice(contextStart, contextEnd)
                 });
-            }
-        }
+            });
+        });
 
-        console.log(`✅ Index-based search complete: ${results.length} proximity matches`);
+        console.log(`✅ Verse search complete: ${results.length} verses containing all lemmata`);
         return results;
     }
 
@@ -1057,12 +194,31 @@ export class TEIFilesManager {
             });
 
             if (containsAll) {
-                // Count total matches for each lemma
-                const matchingWords = {};
+                // Bis #327 stand hier ein matchingWords-Objekt mit der Trefferzahl
+                // je Lemma. Sein letzter Leser war formatMatchingWordsOrCounts in
+                // tei-ui.js, und der hatte selbst keinen Aufrufer mehr; mit dessen
+                // Löschung wurde das Feld rein schreibend und verschwand. Danach
+                // blieb nur totalWords übrig, und die Anzeige nahm es als Belegzahl:
+                // im CEFB standen für `arm` (lemma_286) 11.250 statt 3. Gemeldet
+                // von KZW am 2026-09-08 in #58. Die Zahl hing dabei gar nicht am
+                // gesuchten Lemma, sie war für jedes Lemma desselben Textes
+                // dieselbe.
+                //
+                // matchCount ist jetzt wieder die Belegzahl: text.lemmata[id] ist
+                // die Positionsliste des Lemmas in diesem Text, ihre Länge also die
+                // Zahl der Belege. Bei mehreren Lemmata werden die Listen summiert,
+                // denn die Dokumentsuche verlangt ohnehin, dass alle vorkommen.
+                //
+                // totalWords steht hier nicht mehr. Nach der Umstellung der Anzeige
+                // auf matchCount hätte es keinen Leser mehr gehabt, und genau dieser
+                // Zustand hat #58 erzeugt: ein rein schreibendes Feld, das beim
+                // nächsten Aufräumen als Anzeigequelle einsprang. Wer die Textlänge
+                // braucht, findet sie in corpusData.texts[*].wordCount.
+                let matchCount = 0;
                 lemmaIds.forEach(lemmaId => {
                     const cleanId = lemmaId.toString().replace('lemma_', '');
                     const positions = text.lemmata[`lemma_${cleanId}`] || text.lemmata[cleanId] || [];
-                    matchingWords[lemmaId] = positions.length;
+                    matchCount += positions.length;
                 });
 
                 results.push({
@@ -1070,8 +226,7 @@ export class TEIFilesManager {
                     title: text.title,
                     author: text.author || 'Unbekannt',
                     context: 'document',
-                    matchingWords: matchingWords,
-                    totalWords: text.wordCount
+                    matchCount
                 });
             }
         });
@@ -1083,55 +238,87 @@ export class TEIFilesManager {
     // v4.0.0: Paragraph search removed (document-level indexing only)
 
     /**
-     * Enrich v3.0.0 compact results with actual TEI text
+     * Index der ersten Position >= value in einer aufsteigend sortierten Liste
+     * (untere Schranke), sonst list.length.
      */
-    async enrichResultsWithTEIText(results, lemmaIds) {
-        console.log('📄 Fetching TEI files to extract actual text...');
+    lowerBound(list, value) {
+        let lo = 0, hi = list.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (list[mid] < value) lo = mid + 1;
+            else hi = mid;
+        }
+        return lo;
+    }
 
-        for (const result of results) {
-            try {
-                // Fetch TEI file
-                const teiPath = `../tei/${result.filename}`;
-                const response = await fetch(teiPath);
-                if (!response.ok) continue;
+    /**
+     * Kleinstes Fenster der Breite maxDistance, das firstPos und je eine
+     * Position aus jeder weiteren Positionsliste enthält (#169 Befund #15).
+     *
+     * Vorher prüfte die Nähesuche jedes weitere Lemma nur gegen den Anker
+     * firstPos. Bei „innerhalb 5 Wörter" passierten damit B bei Anker−5 und
+     * C bei Anker+5 beide, obwohl sie real 10 auseinanderliegen. Die daneben
+     * berechnete `actualDistance` meldete die 10 dann sogar korrekt: der
+     * Filter hatte sie nur schon durchgelassen. KZW hat den Fix am 28.07. in
+     * #169 freigegeben, sinkende Trefferzahlen ab 3 Lemmata inklusive.
+     *
+     * Es genügt nicht, die alte Auswahl nachträglich an der Spanne zu prüfen
+     * und sonst zu verwerfen: `positions.find()` nahm die erste Position im
+     * Ankerfenster, nicht die günstigste. Bei B = {90, 110}, C = {109},
+     * firstPos = 100 und maxDistance = 10 fiele der Treffer sonst weg, obwohl
+     * B = 110 zusammen mit C = 109 und dem Anker eine Spanne von genau 10
+     * bildet. Deshalb wird über die möglichen Fensteranfänge iteriert und die
+     * kleinste tragfähige Spanne gewählt; das hält zugleich die angezeigte
+     * Distanz minimal.
+     *
+     * @param {number} firstPos - Ankerposition (erstes Lemma)
+     * @param {number[][]} otherPositionLists - aufsteigend sortierte Positionen
+     *   der weiteren Lemmata, in Eingabereihenfolge
+     * @param {number} maxDistance - erlaubte Spanne in Wörtern
+     * @returns {number[]|null} gewählte Positionen in Listenreihenfolge, oder
+     *   null, wenn kein Fenster alle Lemmata trägt
+     */
+    findCoveringWindow(firstPos, otherPositionLists, maxDistance) {
+        if (otherPositionLists.length === 0) return [];
 
-                const xmlText = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(xmlText, 'text/xml');
-
-                // Get paragraphs
-                const paragraphs = doc.querySelectorAll('p, lg');
-                const para = paragraphs[result.paragraphIndex];
-
-                if (para) {
-                    // Extract paragraph text
-                    result.text = para.textContent?.trim() || '';
-
-                    // Extract matching words with actual text
-                    const words = para.querySelectorAll('w[lemmaRef]');
-                    result.matchingWords = {};
-
-                    lemmaIds.forEach(lemmaId => {
-                        const cleanId = lemmaId.toString().replace('lemma_', '');
-                        result.matchingWords[lemmaId] = [];
-
-                        words.forEach(word => {
-                            const lemmaRef = word.getAttribute('lemmaRef');
-                            if (lemmaRef && (lemmaRef.includes(`lemma_${cleanId}`) || lemmaRef.includes(cleanId))) {
-                                result.matchingWords[lemmaId].push({
-                                    text: word.textContent?.trim() || '',
-                                    lemmaRef: lemmaRef
-                                });
-                            }
-                        });
-                    });
-                }
-            } catch (error) {
-                console.warn(`Failed to enrich ${result.filename}:`, error);
+        // Ein optimales Fenster beginnt immer auf einer belegten Position:
+        // entweder auf dem Anker selbst oder auf einer Position links davon,
+        // die noch in Reichweite liegt.
+        const candidates = new Set([firstPos]);
+        for (const list of otherPositionLists) {
+            for (let i = this.lowerBound(list, firstPos - maxDistance);
+                 i < list.length && list[i] <= firstPos; i++) {
+                candidates.add(list[i]);
             }
         }
 
-        console.log('✅ TEI text enrichment complete');
+        let best = null;
+        let bestSpan = Infinity;
+
+        for (const windowStart of [...candidates].sort((a, b) => a - b)) {
+            const windowEnd = windowStart + maxDistance;
+            if (firstPos > windowEnd) continue;
+
+            const chosen = [];
+            let covered = true;
+            for (const list of otherPositionLists) {
+                const i = this.lowerBound(list, windowStart);
+                if (i >= list.length || list[i] > windowEnd) {
+                    covered = false;
+                    break;
+                }
+                chosen.push(list[i]);
+            }
+            if (!covered) continue;
+
+            const span = Math.max(firstPos, ...chosen) - Math.min(firstPos, ...chosen);
+            if (span < bestSpan) {
+                bestSpan = span;
+                best = chosen;
+            }
+        }
+
+        return best;
     }
 
     /**
@@ -1139,8 +326,44 @@ export class TEIFilesManager {
      * Finds lemmas within maxDistance words of each other
      */
     async searchProximityUsingEnhancedIndex(lemmaIds, maxDistance, corpusData) {
+        // Weniger als zwei VERSCHIEDENE Lemmata lassen die Fenstersuche
+        // degenerieren: ohne abzudeckende Restliste liefert findCoveringWindow
+        // ein leeres Array, das ist truthy, und jede Fundstelle käme als
+        // Treffer mit Abstand 0 zurück. Die Oberfläche fängt den Fall schon ab
+        // und erklärt ihn; dieser Guard steht für den nächsten Aufrufer.
+        // Einmal normalisieren, deduplizieren und mit DIESER Liste
+        // weiterarbeiten. Nur zu zaehlen genuegt nicht: "7532" und
+        // "lemma_7532" sind dieselbe ID, ein Aufruf mit
+        // ['7532','lemma_7532','9999'] kaeme sonst durch den Guard und
+        // truege dieselbe Positionsliste zweimal als abzudeckende Liste
+        // ein. Die deckt sich selbst ab. Die gemeldete Distanz bleibt
+        // dabei gleich (das dritte Lemma muss ohnehin abgedeckt werden,
+        // und windowStart = firstPos ist immer tragfaehig), der Unterschied
+        // steht in matchPositions: dort stuende die Trefferposition
+        // doppelt, [12, 12, 30] statt [12, 30]. Eine Anfrage ueber drei
+        // Lemmata waere still als eine ueber zwei beantwortet.
+        //
+        // Beobachtbare Folge in der Oberflaeche hat das heute keine: das
+        // Feld wird nur in ui-helpers.js als Math.min fuer die
+        // Sprungposition gelesen, und ein Duplikat verschiebt das Minimum
+        // nicht. Der Guard ist Vertragshygiene fuer den naechsten
+        // Aufrufer und auf API-Ebene getestet. Die Funktionskoerper
+        // vertragen bare IDs.
+        lemmaIds = [...new Set(lemmaIds.map(id => String(id).replace(/^lemma_/, '')))];
+        if (lemmaIds.length < 2) return [];
+
         const results = [];
         const includedTexts = corpusData.includedTexts || new Set();
+
+        // Der Wortabstand kommt aus einem Eingabefeld mit max="50", die
+        // Hash-Route prüft ihn aber nur auf > 0 (router.js, Parameter dist).
+        // Die alte Ankerprüfung war unabhängig von maxDistance teuer, die
+        // Fenstersuche nicht: ihre Kandidatenmenge wächst mit der Distanz.
+        // Ein hand-getipptes dist=9999 auf einem häufigen Lemma träfe damit
+        // die Kandidatensuche, deshalb hier auf den deklarierten UI-Bereich
+        // klemmen statt sich auf die Oberfläche zu verlassen.
+        const parsed = Number(maxDistance);
+        maxDistance = Number.isFinite(parsed) ? Math.max(0, Math.min(50, parsed)) : 10;
 
         corpusData.texts.forEach(text => {
             // Skip excluded texts
@@ -1179,51 +402,38 @@ export class TEIFilesManager {
             const firstLemma = lemmaIds[0];
             const firstPositions = lemmaPositions[firstLemma];
 
+            // Positionslisten der weiteren Lemmata, in der Reihenfolge der
+            // Eingabe; aufsteigend sortiert, weil sie aus einem Index-Scan
+            // über words[] stammen.
+            const otherPositionLists = lemmaIds.slice(1).map(id => lemmaPositions[id]);
+
             firstPositions.forEach(firstPos => {
-                // Check if all other lemmas have at least one occurrence within maxDistance
-                const nearbyPositions = {};
-                let allNearby = true;
+                // #169 Befund #15: alle gewählten Positionen müssen zusammen in
+                // ein Fenster der Breite maxDistance passen, nicht nur einzeln
+                // in Ankernähe liegen.
+                const chosen = this.findCoveringWindow(firstPos, otherPositionLists, maxDistance);
+                if (chosen === null) return;
 
-                for (let i = 1; i < lemmaIds.length; i++) {
-                    const lemmaId = lemmaIds[i];
-                    const positions = lemmaPositions[lemmaId];
+                const allPositions = [firstPos, ...chosen];
+                const minPos = Math.min(...allPositions);
+                const maxPos = Math.max(...allPositions);
+                const actualDistance = maxPos - minPos;
 
-                    // Find closest position to firstPos
-                    const nearbyPos = positions.find(pos =>
-                        Math.abs(pos - firstPos) <= maxDistance
-                    );
+                // Extract context (±10 words)
+                const contextStart = Math.max(0, minPos - 10);
+                const contextEnd = Math.min(text.words.length, maxPos + 11);
 
-                    if (nearbyPos !== undefined) {
-                        nearbyPositions[lemmaId] = nearbyPos;
-                    } else {
-                        allNearby = false;
-                        break;
-                    }
-                }
-
-                if (allNearby) {
-                    // Calculate actual distance (max distance between any pair)
-                    const allPositions = [firstPos, ...Object.values(nearbyPositions)];
-                    const minPos = Math.min(...allPositions);
-                    const maxPos = Math.max(...allPositions);
-                    const actualDistance = maxPos - minPos;
-
-                    // Extract context (±10 words)
-                    const contextStart = Math.max(0, minPos - 10);
-                    const contextEnd = Math.min(text.words.length, maxPos + 11);
-
-                    // Store positions and metadata - UI will fetch TEI for actual text
-                    results.push({
-                        filename: text.filename,
-                        title: text.title,
-                        author: text.author || 'Unbekannt',
-                        matchPositions: allPositions,
-                        distance: actualDistance,
-                        contextStart: contextStart,
-                        contextEnd: contextEnd,
-                        contextLemmas: text.words.slice(contextStart, contextEnd)
-                    });
-                }
+                // Store positions and metadata - UI will fetch TEI for actual text
+                results.push({
+                    filename: text.filename,
+                    title: text.title,
+                    author: text.author || 'Unbekannt',
+                    matchPositions: allPositions,
+                    distance: actualDistance,
+                    contextStart: contextStart,
+                    contextEnd: contextEnd,
+                    contextLemmas: text.words.slice(contextStart, contextEnd)
+                });
             });
         });
 
@@ -1231,6 +441,15 @@ export class TEIFilesManager {
 
         // v4.0.0: Deduplicate overlapping matches
         // Keep only the closest match when context windows overlap
+        //
+        // #169 Befund #48: bis 2026-07 sortierte diese Stelle nach contextStart
+        // und behielt damit den zuerst STARTENDEN Treffer, während Kommentar
+        // und Log-Zeile „keeping shorter distance" das Gegenteil behaupteten.
+        // Bei Überlappung bekam der Nutzer also gegebenenfalls die weiter
+        // entfernte Kookkurrenz angezeigt. Jetzt entscheidet tatsächlich die
+        // Distanz: pro Datei aufsteigend nach Distanz greedy auswählen, bei
+        // Gleichstand der frühere Treffer. Ausgegeben wird wieder in
+        // Lesereihenfolge, damit die Anzeige dem Textverlauf folgt.
         const deduplicated = [];
 
         // Group by filename first
@@ -1242,30 +461,27 @@ export class TEIFilesManager {
 
         // For each file, remove overlapping matches (keep closest)
         Object.entries(byFile).forEach(([filename, fileResults]) => {
-            // Sort by contextStart for easier overlap detection
-            fileResults.sort((a, b) => a.contextStart - b.contextStart);
+            const byDistance = [...fileResults].sort((a, b) =>
+                (a.distance - b.distance) || (a.contextStart - b.contextStart)
+            );
 
-            fileResults.forEach(result => {
-                // Check if this result overlaps with any already added result
-                const overlaps = deduplicated.some(existing => {
-                    if (existing.filename !== result.filename) return false;
+            const kept = [];
+            byDistance.forEach(result => {
+                const overlapping = kept.find(existing =>
+                    Math.max(existing.contextStart, result.contextStart) <
+                    Math.min(existing.contextEnd, result.contextEnd)
+                );
 
-                    // Check if context windows overlap
-                    const overlapStart = Math.max(existing.contextStart, result.contextStart);
-                    const overlapEnd = Math.min(existing.contextEnd, result.contextEnd);
-                    const hasOverlap = overlapStart < overlapEnd;
-
-                    if (hasOverlap) {
-                        console.log(`  🔄 Overlap detected: ${filename} [${result.contextStart}-${result.contextEnd}] overlaps with [${existing.contextStart}-${existing.contextEnd}], keeping shorter distance (${existing.distance} vs ${result.distance})`);
-                    }
-
-                    return hasOverlap;
-                });
-
-                if (!overlaps) {
-                    deduplicated.push(result);
+                if (overlapping) {
+                    console.log(`  🔄 Overlap detected: ${filename} [${result.contextStart}-${result.contextEnd}] overlaps with [${overlapping.contextStart}-${overlapping.contextEnd}], keeping shorter distance (${overlapping.distance} vs ${result.distance})`);
+                    return;
                 }
+
+                kept.push(result);
             });
+
+            kept.sort((a, b) => a.contextStart - b.contextStart);
+            deduplicated.push(...kept);
         });
 
         const removedCount = results.length - deduplicated.length;
@@ -1276,34 +492,4 @@ export class TEIFilesManager {
         return deduplicated;
     }
 
-    /**
-     * Enrich v3.0.0 proximity results with actual TEI text
-     */
-    async enrichProximityResultsWithText(results) {
-        console.log('📄 Fetching TEI files for proximity context...');
-
-        for (const result of results) {
-            try {
-                const teiPath = `../tei/${result.filename}`;
-                const response = await fetch(teiPath);
-                if (!response.ok) continue;
-
-                const xmlText = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(xmlText, 'text/xml');
-
-                // Get all words
-                const words = doc.querySelectorAll('w');
-
-                // Extract context text
-                const contextWords = Array.from(words).slice(result.contextStart, result.contextEnd);
-                result.contextText = contextWords.map(w => w.textContent?.trim()).join(' ');
-
-            } catch (error) {
-                console.warn(`Failed to enrich proximity result ${result.filename}:`, error);
-            }
-        }
-
-        console.log('✅ Proximity text enrichment complete');
-    }
 }

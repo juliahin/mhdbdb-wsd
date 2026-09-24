@@ -4,7 +4,7 @@
 MHG (Middle High German) Text Normalizer
 
 CRITICAL: This module MUST produce IDENTICAL normalization results
-as playground/js/utils/text-normalizer.js
+as assets/js/lib/text-normalizer.js
 
 Any discrepancy will cause search failures between build-time indices
 and runtime search.
@@ -13,6 +13,7 @@ Parity tests: testing/tests/normalization-parity.spec.js
 """
 
 import sys
+import unicodedata
 import io
 
 # Force UTF-8 output for Windows console
@@ -24,11 +25,13 @@ def normalize_mhg(text):
     """
     Normalize Middle High German text for consistent search.
 
-    Must match TextNormalizer.normalizeMHG() in text-normalizer.js EXACTLY.
+    Must match TextNormalizer.normalizeMHG() in assets/js/lib/text-normalizer.js EXACTLY.
 
     Transformations:
     - Long vowels → short: â→a, ê→e, î→i, ô→o, û→u (and ā,ē,ī,ō,ū variants)
     - Umlauts → digraphs: ä→ae, ö→oe, ü→ue
+    - Breve-Umlaute (WZB): ŏ→oe, ŭ→ue
+    - Breve als boehmische Schreibkonvention (WZB): w-breve→w, n-breve→n
     - Ligatures: æ→ae, œ→oe
     - Special: ǒ→o
     - Lowercase all
@@ -45,8 +48,20 @@ def normalize_mhg(text):
     # Must match JavaScript order and replacements EXACTLY
     # JavaScript: text.toLowerCase().replace(/[âā]/g, 'a').replace(...)
 
-    # Step 1: Lowercase FIRST (like JavaScript)
-    normalized = text.lower()
+    # Step 0: Unicode-Komposition (#224). Muss mit .normalize('NFC') in
+    # text-normalizer.js uebereinstimmen. Ein "oe" kann als ein Zeichen
+    # (U+00F6) oder als o + kombinierendes Trema (U+006F U+0308) kodiert
+    # sein; nur die komponierte Form trifft die Umlaut-Regeln unten.
+    # Der Schritt aendert die Build-Ausgabe an genau drei Datensaetzen
+    # (person_1052, person_1332, work_435 tragen ein zerlegtes ue); der
+    # Authority-Index geht dadurch auf 1.6.2, drei api/-Dateien aendern sich.
+    # Lemmata und Varianten-Schluessel bleiben unveraendert. Kuenftige Ingests
+    # sind damit gegen dieselbe Falle abgesichert.
+    # Siehe docs/CONTRACTS.md Contract A, Schritt 0.
+    normalized = unicodedata.normalize('NFC', text)
+
+    # Step 1: Lowercase (like JavaScript)
+    normalized = normalized.lower()
 
     # Step 2: Replace long vowels with circumflex and macron
     normalized = normalized.replace('â', 'a').replace('ā', 'a')
@@ -59,6 +74,36 @@ def normalize_mhg(text):
     normalized = normalized.replace('ä', 'ae')
     normalized = normalized.replace('ö', 'oe')
     normalized = normalized.replace('ü', 'ue')
+    # Breve ueber o/u ist in der Wenzelsbibel das Umlautzeichen, nicht ein
+    # eigener Laut (#224). Belegt an den lemmatisierten WZB-Tokens:
+    # bo+breve+ses -> lemma_788 boese, scho+breve+ne -> lemma_5280 schoene.
+    # Von 469 lemmatisierten Breve-Tokens sitzen 405 auf o/u.
+    # Greift nach Schritt 0, weil NFC das kombinierende Breve (U+0306) auf
+    # o/u zu U+014F/U+016D zusammenzieht.
+    normalized = normalized.replace('ŏ', 'oe')
+    normalized = normalized.replace('ŭ', 'ue')
+
+    # Breve ueber w und n ist kein Umlautzeichen, sondern boehmische
+    # Schreibkonvention (few-breve-er = viur, ew-breve-er = ir,
+    # wenn-breve = wan). Es wird daher getilgt statt zu einem Digraphen
+    # aufgeloest (editorische Entscheidung Julia/KZW 06.08., ADR-017).
+    # Betrifft 113 WZB-Tokens, davon 64 lemmatisiert. Ohne die Regel war
+    # keines davon per Eingabe auffindbar: w+U+0306 und n+U+0306 haben keine
+    # praekomponierte Form, Schritt 0 laesst sie deshalb stehen.
+    # Steht nach o/u-Breve, damit die Reihenfolge der Umlautregeln unberuehrt
+    # bleibt, und nach Schritt 1, damit auch Grossbuchstaben greifen.
+    # Escapes statt Literale: ein kombinierendes Zeichen im Quelltext ist
+    # unsichtbar und ein Editor mit Auto-Normalisierung koennte es still
+    # veraendern.
+    normalized = normalized.replace('w\u0306', 'w')
+    normalized = normalized.replace('n\u0306', 'n')
+
+    # Breve auf den uebrigen Basiszeichen bleibt unangetastet (23 WZB-Tokens:
+    # y 5, a 5, v 4, r 2, m 2, i 2, e 2, z 1). Grund ist NICHT die fehlende
+    # praekomponierte Form - fuer a/e/i gibt es sie (U+0103, U+0115, U+012D)
+    # und Schritt 0 erzeugt sie auch. Grund ist, dass es zu wenige Belege sind
+    # und keiner davon lemmatisiert ist: halses, namen, geslagen, schepfen,
+    # erschinen.
 
     # Step 4: Ligatures
     normalized = normalized.replace('æ', 'ae')
@@ -68,63 +113,6 @@ def normalize_mhg(text):
     normalized = normalized.replace('ǒ', 'o')
 
     return normalized
-
-
-def matches_normalized(text, search_term):
-    """
-    Check if text contains search term (with normalization).
-
-    Args:
-        text (str): Text to search in
-        search_term (str): Term to search for
-
-    Returns:
-        bool: True if normalized text contains normalized search term
-    """
-    if not text or not search_term:
-        return False
-
-    normalized_text = normalize_mhg(text)
-    normalized_search = normalize_mhg(search_term)
-
-    return normalized_search in normalized_text
-
-
-def exact_match_normalized(text, search_term):
-    """
-    Check for exact match (with normalization).
-
-    Args:
-        text (str): Text to compare
-        search_term (str): Term to match exactly
-
-    Returns:
-        bool: True if normalized texts are identical
-    """
-    if not text or not search_term:
-        return False
-
-    return normalize_mhg(text) == normalize_mhg(search_term)
-
-
-def starts_with_normalized(text, search_term):
-    """
-    Check if text starts with search term (with normalization).
-
-    Args:
-        text (str): Text to check
-        search_term (str): Term to check for at start
-
-    Returns:
-        bool: True if normalized text starts with normalized search term
-    """
-    if not text or not search_term:
-        return False
-
-    normalized_text = normalize_mhg(text)
-    normalized_search = normalize_mhg(search_term)
-
-    return normalized_text.startswith(normalized_search)
 
 
 # Test cases for validation
@@ -146,6 +134,22 @@ TEST_CASES = [
     ('sǒne', 'sone'),  # ǒ→o
     ('cæsar', 'caesar'),  # æ→ae
     ('œnologie', 'oenologie'),  # œ→oe
+    # Schritt 0, NFC (#224): zerlegte Umlaute muessen wie komponierte
+    # normalisieren. Ohne die NFC-Komposition bleibt das kombinierende Trema
+    # stehen und die Umlaut-Regeln greifen nicht.
+    # Escapes statt Literale: ein Editor mit Auto-Normalisierung wuerde die
+    # zerlegte Form still zu NFC zusammenziehen und den Test entwerten.
+    ('bo\u0308ses', 'boeses'),        # o + kombinierendes Trema statt ö
+    ('Mu\u0308hldorf', 'muehldorf'),  # dito mit ü und Grossbuchstabe
+    # Breve-Umlaute (#224, WZB). Escapes wie oben.
+    ('bo\u0306ses', 'boeses'),     # zerlegt: NFC zieht zu o-Breve zusammen
+    ('b\u014fses', 'boeses'),      # praekomponiert
+    ('w\u016dnschet', 'wuenschet'),
+    # Breve auf w/n ist boehmische Schreibkonvention, kein Umlaut: getilgt
+    # statt zu einem Digraphen aufgeloest (ADR-017).
+    ('few\u0306er', 'fewer'),    # -> lemma_7108 viur
+    ('wenn\u0306', 'wenn'),      # -> lemma_7385 wan
+    ('Ew\u0306er', 'ewer'),      # Grossbuchstabe, Schritt 1 greift zuerst
     ('', ''),
     (None, ''),
 ]
