@@ -29,12 +29,12 @@ Dieses Repository ist der alleinige Master der Daten (kein laufender Re-Export a
 | Aspekt | **Hauptseite** ([index.html](index.html)) | **Playground** ([playground/](playground/index.html)) |
 |--------|-------------------------------------------|--------------------------------------------------------|
 | **Zweck** | Öffentliche Suche & Lektüre | Erweiterte Forschung & Analyse |
-| **Suche** | Einzel-Lemma mit Filtern und KWIC-Belegen | Multi-Lemma, Proximity und elf Korpusanalysen |
+| **Suche** | Einzel-Lemma mit Filtern und KWIC-Belegen | Multi-Lemma, Proximity und weitere Korpusanalysen |
 | **Zielgruppe** | Allgemeines Publikum, Studierende | Forschende, Mediävist:innen |
 
-**Hauptseite:** Einzel-Lemma-Suche mit mittelhochdeutscher Normalisierung, ausklappbaren KWIC-Belegen (Keyword-in-Context mit Vers-/Zeilenangabe), Textauswahl per Checkbox, A–Z-[Wörterbuch](woerterbuch.html) zu allen 43.713 Lemmata mit eigenen persistenten [Lemma-Seiten](lemma/) (client-seitig gerendert) sowie eine Reading View mit Multi-Lemma-Highlighting, Metadaten-Panel (Wikidata/GND), Wörterbuch-Links in fünf Wörterbücher des Wörterbuchnetzes (MWB, Lexer, LexerN, BMZ, FindeB) und TEI-Download pro Text.
+**Hauptseite:** Einzel-Lemma-Suche mit mittelhochdeutscher Normalisierung, ausklappbaren KWIC-Belegen (Keyword-in-Context mit Vers-/Zeilenangabe), Textauswahl per Checkbox, A–Z-[Wörterbuch](woerterbuch.html) zu allen 43.710 Lemmata mit eigenen persistenten [Lemma-Seiten](lemma/) (client-seitig gerendert) sowie eine Reading View mit Multi-Lemma-Highlighting, Metadaten-Panel (Wikidata/GND), Wörterbuch-Links in fünf Wörterbücher des Wörterbuchnetzes (MWB, Lexer, LexerN, BMZ, FindeB) und TEI-Download pro Text.
 
-**Playground:** sechs Register und Indizes (Authority Files) plus elf Korpusanalysen über dem vorgeladenen Korpus: Multi-Lemma-Suche (Dokument- und Proximity-Ebene), Lemmasuche nach Versposition, Wortfrequenz, Echte Hapaxlegomena, Text-Statistiken, Lemma-Verteilung, Begriffs-Verteilung, Textvergleich, Kookkurrenz-Ranking, Reim-Wörterbuch und Versendings-Profil. Dazu zwei kuratierte Forschungsdatensätze in eigener Rubrik (#194): Erweiterte Figurenbezeichnungen und Arthurische Pferde, beide Beta.
+**Playground:** Register und Indizes (Authority Files) plus Korpusanalysen über dem vorgeladenen Korpus: Multi-Lemma-Suche (Dokument- und Proximity-Ebene), Lemmasuche nach Versposition, Wortfrequenz, Echte Hapaxlegomena, Text-Statistiken, Lemma-Verteilung, Begriffs-Verteilung, Textvergleich, Kookkurrenz-Ranking, Reim-Wörterbuch und Versendings-Profil. Dazu kuratierte Forschungsdatensätze in eigener Rubrik (#194): Erweiterte Figurenbezeichnungen und Arthurische Pferde, beide Beta.
 
 Beide Interfaces nutzen vorgebaute Indizes für die Suche und laden TEI-Dateien on-demand für die Text-Anzeige.
 
@@ -45,7 +45,7 @@ Beide Interfaces nutzen vorgebaute Indizes für die Suche und laden TEI-Dateien 
 - **[docs/INDEX.md](docs/INDEX.md)**: Wissensbasis mit Verweisen auf alle Spezial-Dokumente
 
 ### Für Nutzer:innen
-- **[hilfe.html](hilfe.html)**: Hilfe-Hub mit Themen-Seiten zu [Korpussuche](hilfe-korpussuche.html), [Playground](hilfe-playground.html), [Daten](hilfe-daten.html), [Daten beitragen](hilfe-daten-beitragen.html) und [Schema](hilfe-schema.html)
+- **[hilfe.html](hilfe.html)**: Hilfe-Hub mit Themen-Seiten zu [Korpussuche](hilfe-korpussuche.html), [Playground](hilfe-playground.html), [Passende Begriffe finden](hilfe-begriffe-finden.html), [Daten](hilfe-daten.html), [Daten beitragen](hilfe-daten-beitragen.html) und [Schema](hilfe-schema.html)
 
 ## Schnellstart
 
@@ -81,7 +81,7 @@ npm run report             # Letzten Testreport anzeigen
 
 ### Programmatischer Zugriff
 
-**Statische JSON-API:** Authority-Records und Text-Metadaten liegen als 2.742 zitierfähige JSON-Dateien unter [`/api/`](https://dhcraft.org/mhdbdb-tei-only/api/index.json) vor, direkt von GitHub Pages serviert (kein Backend). Einstieg, URL-Schema und Beispiele: [API-Dokumentation](https://dhcraft.org/mhdbdb-tei-only/api/index.html).
+**Statische JSON-API:** Authority-Records und Text-Metadaten liegen als zitierfähige JSON-Dateien unter [`/api/`](https://dhcraft.org/mhdbdb-tei-only/api/index.json) vor, direkt von GitHub Pages serviert (kein Backend). Einstieg, URL-Schema und Beispiele: [API-Dokumentation](https://dhcraft.org/mhdbdb-tei-only/api/index.html).
 
 TEI-Dateien referenzieren Authority-Daten über `xml:id`:
 ```xml

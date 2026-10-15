@@ -91,7 +91,7 @@
       <editorialDecl>
         <p xml:lang="de">Lokale Dateireferenzen (z.B. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) verweisen auf kontrollierte Vokabulare im authority-files Verzeichnis dieses Repositorys. Diese internen Querverweise ermöglichen die Verknüpfung mit Personen-, Werk-, Lemma-, Konzept-, Genre- und Namensautoritätsdateien.</p>
         <p xml:lang="en">Local file references (e.g. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) point to controlled vocabularies in the authority-files directory of this repository. These internal cross-references enable linking to person, work, lemma, concept, genre, and name authority files.</p>
-      <normalization><p>Vollständig lemmatisiert, aber noch nicht  disambiguiert.</p><p>Links zu Cod. Pal. germ. 91.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
+      <normalization><p>Vollständig lemmatisiert, teilweise semantisch disambiguiert.</p><p>Links zu Cod. Pal. germ. 91.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
       <classDecl>
         <taxonomy xml:id="genres">
           <bibl>Genreklassifikation gemäß der Textreihentypologie <ptr target="https://www.mhdbdb.sbg.ac.at/textreihen"/></bibl>
@@ -131,6 +131,8 @@
       <change when="2026-08-24" who="#editor">#216 Serie 1 (minne): 40 homographie-ambige Tokens der Form minne kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu minne NOM bzw. minnen VRB; LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/216-minne/). 2 weitere Tokens der Form minne blieben bewusst unannotiert (Review).</change>
       <change when="2026-08-24" who="#editor">#369 Serie 2 (stat): 289 homographie-ambige Tokens der Form stat kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu stat NOM bzw. stan/sten VRB; LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/369-stat/).</change>
       <change when="2026-09-23" who="#editor">#252 zweiter Durchgang: 1 Stelle des Auslassungsmusters ( caesura ) innerhalb einer Zeile mit Wortlaut auf &lt;gap reason="lost"/&gt; migriert, nach der Freigabe von KZW vom 22.09.2026. Nur das Muster ersetzt, umliegender Text sowie Satz- und Redezeichen unverändert.</change>
+      <change when="2026-09-30" who="#editor">#493: Angabe zur semantischen Disambiguierung in encodingDesc/normalization an den Stand der Annotation angeglichen (200362 von 250688 lemmatisierten Tokens tragen einen Begriff in @ana). Vorher: &#34;Vollständig lemmatisiert, aber noch nicht disambiguiert.&#34;</change>
+      <change when="2026-10-10" who="#editor">#460 jagen: 4 Tokens als Verbform gelesen, von lemma_3103 jagât (NOM) auf lemma_3102 jagen (VRB) umgehängt, @ana entfällt; neu geprägte Variantentypen nach der Regel aus #367.</change>
     </revisionDesc>
   </teiHeader>
   <text>
@@ -270856,7 +270858,7 @@
           <hi rend="initial">
             <w xml:id="PL1_137012_0" lemmaRef="lexicon.xml#lemma_20874" pos="NAM" ana="lexicon.xml#lemma_20874_sense_34428" corresp="variants.xml#type_92233">hestor</w>
           </hi>
-          <w xml:id="PL1_137012_1" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+          <w xml:id="PL1_137012_1" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
           <w xml:id="PL1_137012_2">sin</w>
           <w xml:id="PL1_137012_3" lemmaRef="lexicon.xml#lemma_4377" pos="ADJ ADV NEG" ana="lexicon.xml#lemma_4377_sense_6838" corresp="variants.xml#type_158951">nit</w>
           <w xml:id="PL1_137012_4">lang</w>
@@ -280888,7 +280890,7 @@
           <w xml:id="PL1_138416_3" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3504">dem</w>
           <w xml:id="PL1_138416_4" lemmaRef="lexicon.xml#lemma_5660" pos="NOM" corresp="variants.xml#type_19847">spere</w>
           <w xml:id="PL1_138416_5" lemmaRef="lexicon.xml#lemma_6467" pos="CNJ" ana="lexicon.xml#lemma_6467_sense_10233" corresp="variants.xml#type_22825">und</w>
-          <w xml:id="PL1_138416_6" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+          <w xml:id="PL1_138416_6" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
           <w xml:id="PL1_138416_7" lemmaRef="lexicon.xml#lemma_1762" pos="PRO" ana="lexicon.xml#lemma_1762_sense_2752" corresp="variants.xml#type_6020">es</w>
           <w xml:id="PL1_138416_8" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3506">den</w>
           <w xml:id="PL1_138416_9" lemmaRef="lexicon.xml#lemma_22638" pos="NOM" ana="lexicon.xml#lemma_22638_sense_36816" corresp="variants.xml#type_125892">steynweg</w>
@@ -347800,7 +347802,7 @@
           <hi rend="upper_case_first_letter">
             <w xml:id="PL1_147712_10" lemmaRef="lexicon.xml#lemma_116" pos="ADV" ana="lexicon.xml#lemma_116_sense_150" corresp="variants.xml#type_289">alda</w>
           </hi>
-          <w xml:id="PL1_147712_11" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+          <w xml:id="PL1_147712_11" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
           <w xml:id="PL1_147712_12">er</w>
           <w xml:id="PL1_147712_13">sie</w>
           <w xml:id="PL1_147712_14" lemmaRef="lexicon.xml#lemma_5601" pos="ADV" ana="lexicon.xml#lemma_5601_sense_8764" corresp="variants.xml#type_19596">so</w>
@@ -422656,7 +422658,7 @@
           <w xml:id="PL1_158305_11" lemmaRef="lexicon.xml#lemma_4172" pos="PRP" ana="lexicon.xml#lemma_4172_sense_6544" corresp="variants.xml#type_14531">mit</w>
           <w xml:id="PL1_158305_12" lemmaRef="lexicon.xml#lemma_1517" pos="PRO" ana="lexicon.xml#lemma_1517_sense_2355" corresp="variants.xml#type_32780">im</w>
           <w xml:id="PL1_158305_13" lemmaRef="lexicon.xml#lemma_6467" pos="CNJ" ana="lexicon.xml#lemma_6467_sense_10233" corresp="variants.xml#type_22825">und</w>
-          <w xml:id="PL1_158305_14" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+          <w xml:id="PL1_158305_14" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
         
         <lb n="6"/>
           <w xml:id="PL1_158306_0">yn</w>

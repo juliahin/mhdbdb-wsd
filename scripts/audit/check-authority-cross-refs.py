@@ -15,7 +15,9 @@ Reference attributes scanned (on any element):
 
 Out of scope: internal refs (#fragment without a file part) and external URIs
 (http...). The authority->authority direction is covered by
-`audit-authority-files.py` (and was clean as of 2026-05-28).
+`audit-authority-files.py` (and was clean as of 2026-05-28), with one
+exception gated here: --check fails on any #type_N in lexicon.xml sense/@ana
+that variants.xml does not carry (extract-variants.py --apply prunes them).
 
 Output:
   scripts/audit/authority-cross-refs-audit.json   (machine-readable, Phase-2 cleanup input)
@@ -35,6 +37,7 @@ The committed scripts/audit/lexicon-baseline.json pins the tolerated dangling
 lexicon-ID set (#152 ratchet); --check fails on any id outside it.
 """
 
+import concurrent.futures
 import io
 import json
 import re
@@ -47,7 +50,7 @@ from lxml import etree
 
 # Gemeinsame Korpusauswahl (#287).
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from corpus_files import TEI_DIR, corpus_files  # noqa: E402
+from corpus_files import PROJECT_ROOT, TEI_DIR, corpus_files, default_jobs  # noqa: E402
 
 # Konvention in scripts/audit/ (#329): Windows-Konsolen laufen auf cp1252,
 # und Audit-Skripte geben Korpus- und Lexikonformen aus. Die MHG-Breven ŏ
@@ -66,7 +69,10 @@ TEI_NS = '{http://www.tei-c.org/ns/1.0}'
 REF_ATTRS = ('lemmaRef', 'ana', 'corresp', 'ref', 'target')
 
 # Authority files live here; we resolve fragments against their xml:id sets.
-AUTHORITY_DIR = Path('authority-files')
+# An der Repo-Wurzel dieses Skripts verankert wie TEI_DIR, nicht am cwd: sonst
+# liest ein Aufruf aus einer anderen Kopie (Worktree) Korpus und Authority aus
+# zwei verschiedenen Staenden (fehlerjournal.md 104).
+AUTHORITY_DIR = PROJECT_ROOT / 'authority-files'
 SCRIPT_DIR = Path(__file__).resolve().parent
 JSON_OUT = SCRIPT_DIR / 'authority-cross-refs-audit.json'
 
@@ -132,6 +138,22 @@ def count_missing_corresp(tree):
             continue
         n += 1
     return n
+
+
+def orphan_ana_in_lexicon(variant_ids):
+    """Verwaiste #type_N in lexicon.xml sense/@ana (Richtung Authority ->
+    Authority, die der Korpus-Scan oben nicht sieht, weil er nur tei/ liest).
+
+    Die Mengenfunktion kommt aus extract-variants.py, das dieselben Tokens bei
+    --apply entfernt: Bereinigung und Gate sollen dieselbe Menge meinen.
+    """
+    import importlib.util
+    pfad = Path(__file__).resolve().parents[1] / 'sync' / 'extract-variants.py'
+    spec = importlib.util.spec_from_file_location('extract_variants', pfad)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    lex = etree.parse(str(AUTHORITY_DIR / 'lexicon.xml')).getroot()
+    return mod.orphan_ana_tokens(lex, variant_ids)
 
 
 def load_corresp_baseline():
@@ -230,6 +252,48 @@ def iter_refs(elem):
             yield attr, target_file, fragment
 
 
+# Paralleler Scan (#284-Muster): der Worker parst eine Datei und gibt nur das
+# zurueck, was die Aggregation braucht, naemlich die NICHT aufgeloesten Refs in
+# Dokumentreihenfolge. Die Aggregation selbst bleibt im Elternprozess und laeuft
+# in Dateireihenfolge, damit Zaehler, Einfuegereihenfolgen und damit der
+# JSON-Bericht byte-gleich zur seriellen Fassung bleiben.
+_AUTH_IDS = None
+
+
+def _scan_init(auth_ids):
+    global _AUTH_IDS
+    _AUTH_IDS = auth_ids
+
+
+def scan_file(fp):
+    """(sigle, ohne @corresp, gescannte Refs, [(attr, tf, frag), ...] unaufgeloest)."""
+    tree = etree.parse(str(fp))
+    unresolved = []
+    scanned = 0
+    for elem in tree.iter():
+        if not isinstance(elem.tag, str):
+            continue
+        for attr, tf, frag in iter_refs(elem):
+            scanned += 1
+            ids = _AUTH_IDS.get(tf)
+            if ids is not None and frag in ids:
+                continue
+            unresolved.append((attr, tf, frag))
+    return sigle_of(fp), count_missing_corresp(tree), scanned, unresolved
+
+
+def iter_scans(files, auth_ids, jobs):
+    """scan_file je Datei IN DATEIREIHENFOLGE (executor.map, chunksize=1 wegen
+    der Groessenstreuung bis 66 MB, wie in build-corpus-index.py)."""
+    if jobs <= 1:
+        _scan_init(auth_ids)
+        yield from map(scan_file, files)
+        return
+    with concurrent.futures.ProcessPoolExecutor(
+            max_workers=jobs, initializer=_scan_init, initargs=(auth_ids,)) as pool:
+        yield from pool.map(scan_file, files, chunksize=1)
+
+
 def main():
     check = '--check' in sys.argv
     # Zwei Ratschen, zwei Anlaesse. Die #152-Ratsche wird nur nach einer
@@ -241,8 +305,14 @@ def main():
     # jeweiligen Bereich. Das nackte Flag bleibt "beides", damit die in #152
     # dokumentierte Aufrufform weiter gilt.
     update_scope = None
+    jobs = default_jobs()
     for arg in sys.argv[1:]:
-        if arg == '--update-baseline':
+        if arg.startswith('--jobs='):
+            jobs = int(arg.split('=', 1)[1])
+            if jobs < 1:
+                print('--jobs muss mindestens 1 sein')
+                return 1
+        elif arg == '--update-baseline':
             update_scope = 'all'
         elif arg.startswith('--update-baseline='):
             update_scope = arg.split('=', 1)[1]
@@ -252,14 +322,15 @@ def main():
         return 1
     update_baseline = update_scope is not None
     if not TEI_DIR.exists() or not AUTHORITY_DIR.exists():
-        print('Error: run from repo root (tei/ and authority-files/ required)')
+        print(f'Error: tei/ oder authority-files/ fehlt unter {PROJECT_ROOT}')
         return 1
 
     print('Building authority id-sets...')
     auth_ids = build_authority_ids()
 
     base_files = corpus_files()
-    print(f'\nScanning {len(base_files)} base corpus files...')
+    jobs = min(jobs, len(base_files)) or 1
+    print(f'\nScanning {len(base_files)} base corpus files with {jobs} worker process(es)...')
 
     total_scanned = 0
     total_unresolved = 0
@@ -271,34 +342,26 @@ def main():
     missing_target_files = Counter()          # referenced .xml that we do not have
     missing_corresp = {}                      # sigle -> indexierte <w> ohne @corresp (#370)
 
-    for i, fp in enumerate(base_files):
+    scans = iter_scans(base_files, auth_ids, jobs)
+    for i, (sigle, ohne_corresp, scanned, unresolved) in enumerate(scans):
         if (i + 1) % 100 == 0:
             print(f'  {i + 1}/{len(base_files)}...', flush=True)
-        sigle = sigle_of(fp)
-        tree = etree.parse(str(fp))
-        missing_corresp[sigle] = count_missing_corresp(tree)
-        for elem in tree.iter():
-            if not isinstance(elem.tag, str):
-                continue
-            for attr, tf, frag in iter_refs(elem):
-                total_scanned += 1
-                known_file = tf in auth_ids
-                if not known_file:
-                    missing_target_files[tf] += 1
-                resolved = known_file and frag in auth_ids[tf]
-                if resolved:
-                    continue
-                # --- unresolved ---
-                total_unresolved += 1
-                by_target[tf] += 1
-                by_attr[attr] += 1
-                d = distinct[(tf, frag)]
-                d['count'] += 1
-                d['sigles'].add(sigle)
-                ps = per_sigle[sigle]
-                ps['unresolved'] += 1
-                ps['ids'][f'{tf}#{frag}'] += 1
-                ps['by_target'][tf] += 1
+        missing_corresp[sigle] = ohne_corresp
+        total_scanned += scanned
+        for attr, tf, frag in unresolved:
+            if tf not in auth_ids:
+                missing_target_files[tf] += 1
+            total_unresolved += 1
+            by_target[tf] += 1
+            by_attr[attr] += 1
+            d = distinct[(tf, frag)]
+            d['count'] += 1
+            d['sigles'].add(sigle)
+            ps = per_sigle[sigle]
+            ps['unresolved'] += 1
+            ps['ids'][f'{tf}#{frag}'] += 1
+            ps['by_target'][tf] += 1
+    scans.close()
 
     print(f'  done. {total_scanned:,} authority-targeted refs scanned.\n')
 
@@ -500,6 +563,20 @@ def main():
                   f'Entweder @corresp nachtragen oder den Anstieg bewusst und '
                   f'begruendet via --update-baseline aufnehmen.')
             return 1
+        # Verwaiste Typ-Tokens in lexicon.xml sense/@ana: keine Ratsche, 0 ist
+        # der einzige zulaessige Stand, weil extract-variants.py --apply sie im
+        # selben Lauf entfernt, in dem sie entstehen.
+        ana_orphans = orphan_ana_in_lexicon(auth_ids['variants.xml'])
+        if ana_orphans:
+            n = sum(len(o) for _, o in ana_orphans.values())
+            sample = ', '.join(f'{sid} {" ".join(o)}' for sid, (_, o)
+                               in sorted(ana_orphans.items())[:3])
+            print(f'\n::error file=authority-files/lexicon.xml::'
+                  f'CI CHECK FAILED: {n} Typ-Tokens in {len(ana_orphans)} '
+                  f'sense/@ana zeigen auf Typen, die variants.xml nicht fuehrt '
+                  f'(z.B. {sample}). "python scripts/sync/extract-variants.py '
+                  f'--apply" entfernt sie; lexicon.xml mitcommitten.')
+            return 1
         gefallen = {s: (alt, corresp_now.get(s, 0))
                     for s, alt in corresp_baseline.items()
                     if corresp_now.get(s, 0) < alt}
@@ -507,7 +584,8 @@ def main():
               f'lexicon.xml = {lex_refs:,} refs / {len(current_lex_ids):,} distinct ids, '
               f'alle innerhalb der Baseline ({len(baseline):,} tolerierte IDs, #44/#115/#152). '
               f'Tokens ohne @corresp = {sum(corresp_now.values()):,}, keine Sigle ueber '
-              f'ihrer Baseline (#370).')
+              f'ihrer Baseline (#370). Verwaiste Typ-Tokens in lexicon.xml '
+              f'sense/@ana = 0.')
         if gefallen:
             zeilen = ', '.join(f'{s} {alt:,} auf {neu:,}'
                                for s, (alt, neu) in sorted(gefallen.items()))

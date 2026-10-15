@@ -7,6 +7,19 @@
 import { CorpusLoader } from '../assets/js/lib/corpus-loader.js';
 import { escapeHtml } from '../assets/js/lib/escape.js';
 import { fetchWbnetzEntries, decodeHtmlEntities, dictionaryTitle } from '../assets/js/lib/woerterbuchnetz.js';
+import { parseLemmaIdInput } from '../assets/js/lib/lemma-id-input.js';
+import { COMPONENT_ONLY_NOTE, buildComponentRefSet, isComponentOnly } from '../assets/js/lib/component-only.js';
+
+/**
+ * Suchbegriff fuer einen Link in die Korpussuche. Seit #467 liest die Suche
+ * eine reine Ziffernfolge als Lemma-Nummer; eine Schreibform wie "1"
+ * (lemma_53328) oder die Variante "2" fuehrte dann auf ein fremdes Lemma
+ * (lemma_1, lemma_2). Solche Formen verlinken deshalb die ID des Lemmas,
+ * dem sie gehoeren; alle anderen bleiben Wortsuchen.
+ */
+function korpusSuchbegriff(form, lemmaId) {
+    return parseLemmaIdInput(form) ? lemmaId : form;
+}
 
 class LemmaPage {
     constructor() {
@@ -26,6 +39,8 @@ class LemmaPage {
             lemmaPos: document.getElementById('lemmaPos'),
             lemmaId: document.getElementById('lemmaId'),
             copyIdBtn: document.getElementById('copyIdBtn'),
+            componentOnlyNote: document.getElementById('componentOnlyNote'),
+            componentOnlyText: document.getElementById('componentOnlyText'),
             etymologySection: document.getElementById('etymologySection'),
             etymologyContent: document.getElementById('etymologyContent'),
             originSection: document.getElementById('originSection'),
@@ -108,6 +123,12 @@ class LemmaPage {
             // Render lemma data
             this.renderLemma(lemma);
 
+            // #228: reiner Wortbestandteil, dieselbe Regel wie im Wörterbuch
+            if (isComponentOnly(lemma, buildComponentRefSet(this.authorityIndex.lemmata))) {
+                this.elements.componentOnlyText.textContent = COMPONENT_ONLY_NOTE;
+                this.elements.componentOnlyNote.classList.remove('hidden');
+            }
+
             // Render variants, compounds, and navigation (from authority index)
             this.renderVariants(lemmaKey);
             this.renderCompounds(lemmaKey);
@@ -178,8 +199,13 @@ class LemmaPage {
             const langs = lemma.origin.languages.map(l =>
                 `<span class="inline-block bg-brand-50 text-brand-700 px-2 py-0.5 rounded text-xs mr-1 mb-1">${escapeHtml(l.name)}${l.code ? ` <span class="text-brand-400 font-mono">${escapeHtml(l.code)}</span>` : ''}</span>`
             ).join('');
+            // Seit #270 (KZW 25.09.2026) mit Urheber, wo der Index ihn
+            // aufgeloest hat; ohne Namen kein Label, nichts wird ergaenzt.
+            const originLabel = lemma.origin.respName
+                ? `<div class="text-xs text-slate-400 mt-2 mb-0.5">Herkunftserklärung von ${escapeHtml(lemma.origin.respName)}</div>`
+                : '';
             const attribution = lemma.origin.attribution
-                ? `<p class="text-sm text-slate-600 mt-2">${escapeHtml(lemma.origin.attribution)}</p>`
+                ? `${originLabel}<p class="text-sm text-slate-600 ${originLabel ? '' : 'mt-2'}">${escapeHtml(lemma.origin.attribution)}</p>`
                 : '';
             this.elements.originContent.innerHTML = `<div>${langs}</div>${attribution}`;
         }
@@ -192,8 +218,13 @@ class LemmaPage {
                 // Kuratierte Prosa steht VOR den Begriffs-Chips: wo eine
                 // Bedeutung ausformuliert ist, ist sie die Hauptinformation,
                 // die Begriffszuordnung bleibt die Klassifikation dazu.
+                // Urheber der Definition wie beim Kommentar (#270, KZW
+                // 25.09.2026); ohne aufgeloesten Namen bleibt sie ohne Label.
+                const definitionLabel = sense.definitionRespName
+                    ? `<div class="text-xs text-slate-400 mb-0.5">Definition von ${escapeHtml(sense.definitionRespName)}</div>`
+                    : '';
                 const definition = sense.definition
-                    ? `<p class="text-sm text-slate-800 mb-2">${escapeHtml(sense.definition)}</p>`
+                    ? `${definitionLabel}<p class="text-sm text-slate-800 mb-2">${escapeHtml(sense.definition)}</p>`
                     : '';
                 // Der Kommentar bekommt ein sichtbares Label: das Datenmodell
                 // trennt Bedeutungsangabe und Argumentation, eine Graustufe
@@ -293,7 +324,7 @@ class LemmaPage {
             },
             {
                 label: 'Im Korpus suchen',
-                url: `../korpus.html?search=${encodeURIComponent(lemma.lemma)}`,
+                url: `../korpus.html?search=${encodeURIComponent(korpusSuchbegriff(lemma.lemma, `lemma_${numericId}`))}`,
                 icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg>'
             }
         ];
@@ -381,7 +412,7 @@ class LemmaPage {
         this.elements.variantsSection.classList.remove('hidden');
         this.elements.variantsCount.textContent = `(${variantForms.length})`;
         this.elements.variantsContent.innerHTML = variantForms.map(v =>
-            `<a href="../korpus.html?search=${encodeURIComponent(v)}"
+            `<a href="../korpus.html?search=${encodeURIComponent(korpusSuchbegriff(v, lemmaKey))}"
                 class="inline-block bg-slate-100 px-2 py-0.5 rounded text-xs mr-1 mb-1 hover:bg-brand-50 hover:text-brand-700 transition">${escapeHtml(v)}</a>`
         ).join('');
     }

@@ -3,7 +3,8 @@
  * Tests for auto-loading pre-built corpus into playground
  */
 
-import { test, expect } from '@playwright/test';
+// Warmer Context pro Worker (#488): kein Storage-Zustand, keine Routes.
+import { test, expect } from '../warm-page.js';
 
 test.describe('Playground Corpus Loading', () => {
 
@@ -74,6 +75,17 @@ test.describe('Playground Corpus Loading', () => {
  */
 test.describe('Playground: Korpusauswahl wirkt (#204)', () => {
 
+    // Korpusweite Zahl der minne-Vorkommen (lemma_4130), so formatiert, wie
+    // das Kookkurrenz-Ranking sie anzeigt. Aus dem Index gelesen statt
+    // eingetragen: als feste Zahl brach sie bei jeder minne-Annotation, und
+    // die not.toContainText-Proben unten waeren danach still gruen geblieben.
+    async function korpusweitMinne(page) {
+        const n = await page.evaluate(() => window.playground.corpusData.texts
+            .reduce((s, t) => s + (t.lemmata['lemma_4130']?.length || 0), 0));
+        expect(n).toBeGreaterThan(1000);
+        return n.toLocaleString('de-DE');
+    }
+
     test.beforeEach(async ({ page }) => {
         await page.goto('/playground/');
         await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
@@ -120,6 +132,7 @@ test.describe('Playground: Korpusauswahl wirkt (#204)', () => {
             window.playground.corpusData.texts.find(t => t.id === 'CR').lemmata['lemma_4130'].length
         );
         expect(erwartet).toBe(14);
+        const korpusweit = await korpusweitMinne(page);
 
         await page.locator('#showCooccurrenceRankingBtn').click();
         await page.waitForSelector('#coRkSearchBtn', { state: 'visible', timeout: 60000 });
@@ -129,7 +142,7 @@ test.describe('Playground: Korpusauswahl wirkt (#204)', () => {
 
         await expect(page.locator('#resultsContainer')).toContainText(`${erwartet} Vorkommen`, { timeout: 15000 });
         // Der korpusweite Wert darf gerade NICHT mehr dastehen
-        await expect(page.locator('#resultsContainer')).not.toContainText('7.161 Vorkommen');
+        await expect(page.locator('#resultsContainer')).not.toContainText(`${korpusweit} Vorkommen`);
     });
 
     test('Kookkurrenz verwirft ein Ergebnis, das ueber eine andere Textmenge lief', async ({ page }) => {
@@ -138,18 +151,19 @@ test.describe('Playground: Korpusauswahl wirkt (#204)', () => {
         // korpusweites Ergebnis. Gemessen am 15.09.: nach korpusweitem "minne"
         // (7.161) und Verengung auf CR stand beim erneuten Oeffnen weiter
         // 7.161 statt 14, und zwar dauerhaft, nicht nur bis zum Neuoeffnen.
+        const korpusweit = await korpusweitMinne(page);
         await page.locator('#showCooccurrenceRankingBtn').click();
         await page.waitForSelector('#coRkSearchBtn', { state: 'visible', timeout: 60000 });
         await page.fill('#coRkQuery', 'minne');
         await page.press('#coRkQuery', 'Escape');
         await page.click('#coRkSearchBtn');
-        await expect(page.locator('#resultsContainer')).toContainText('7.161 Vorkommen', { timeout: 30000 });
+        await expect(page.locator('#resultsContainer')).toContainText(`${korpusweit} Vorkommen`, { timeout: 30000 });
 
         await page.locator('#fileFilter').fill('mori');
         await page.locator('#selectOnlyVisibleBtn').click();
         await page.locator('#showCooccurrenceRankingBtn').click();
 
-        await expect(page.locator('#resultsContainer')).not.toContainText('7.161 Vorkommen');
+        await expect(page.locator('#resultsContainer')).not.toContainText(`${korpusweit} Vorkommen`);
         expect(await page.evaluate(() => window.playground.ui.cooccurrenceRanking.state.result)).toBeNull();
 
         // Und neu gerechnet kommt der Wert des Einzeltexts heraus
@@ -547,4 +561,225 @@ test.describe('Playground: Korpusauswahl wirkt (#204)', () => {
         expect(neueSigle.imFeld).toBe(neueSigle.erwartet);
     });
 
+});
+
+
+test.describe('Auswahlhinweis (#442)', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/playground/');
+        await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
+        await page.evaluate(() => {
+            window.playground.corpusData.includedTexts = new Set(['CR']);
+            window.playground.updateFileBrowserStats();
+        });
+    });
+
+    // Die drei ohne Eingabefeld rechnen schon beim Oeffnen ueber die Auswahl,
+    // bei ihnen genuegt show().
+    const OHNE_FELD = ['wordFrequency', 'textStatistics', 'verseEndingProfile'];
+    // Die vier mit Eingabefeld zeigen nach show() nur das leere Formular. Erst
+    // die Suche macht aus dem Panel eine Aussage ueber die Auswahl (#442).
+    const MIT_FELD = {
+        lemmaDistribution: ['#ldQuery', '#ldSearchBtn'],
+        versePositionSearch: ['#vpsQuery', '#vpsSearchBtn'],
+        conceptDistribution: ['#cdQuery', '#cdSearchBtn'],
+        cooccurrenceRanking: ['#coRkQuery', '#coRkSearchBtn']
+    };
+    const SUCHBEGRIFF = { conceptDistribution: 'Liebe' };
+
+    async function auswahlTauschen(page, sigle) {
+        await page.evaluate(id => {
+            window.playground.corpusData.includedTexts = new Set([id]);
+            window.playground.updateFileBrowserStats();
+        }, sigle);
+    }
+
+    // Escape vor dem Klick, weil die Autocomplete-Liste den Suchknopf verdeckt
+    // und `page.click` sonst bis zum Timeout wartet. Gemessen: bei „minne" ist
+    // `ldAutocomplete` sichtbar und `elementFromPoint` ueber dem Knopf trifft
+    // einen Vorschlag statt des Knopfes, bei einem Begriff ohne Vorschlaege
+    // („xyzqwertz") trifft es den Knopf. Escape ist der Weg, den auch die
+    // Nutzerin hat (`e.key === 'Escape'` in allen vier Werkzeugen).
+    async function suchen(page, feld, knopf, begriff) {
+        await page.fill(feld, begriff);
+        await page.press(feld, 'Escape');
+        await page.click(knopf);
+    }
+
+    test('alle sieben Analysepanels melden den Tausch gleicher Groesse und seine Ruecknahme', async ({ page }) => {
+        for (const name of OHNE_FELD) {
+            await page.evaluate(async name => { await window.playground.ui[name].show(); }, name);
+            await auswahlTauschen(page, 'WH');
+            await expect(page.locator('#corpusScopeNotice')).toBeVisible();
+            await auswahlTauschen(page, 'CR');
+            await expect(page.locator('#corpusScopeNotice')).toHaveCount(0);
+        }
+        for (const [name, [feld, knopf]] of Object.entries(MIT_FELD)) {
+            await page.evaluate(async name => { await window.playground.ui[name].show(); }, name);
+            await suchen(page, feld, knopf, SUCHBEGRIFF[name] || 'minne');
+            await expect(page.locator(feld)).toHaveValue(SUCHBEGRIFF[name] || 'minne');
+            await auswahlTauschen(page, 'WH');
+            await expect(page.locator('#corpusScopeNotice')).toBeVisible();
+            await auswahlTauschen(page, 'CR');
+            await expect(page.locator('#corpusScopeNotice')).toHaveCount(0);
+        }
+    });
+
+    // Befund des CI-Review-Bots an PR #538, gemessen und bestaetigt: der
+    // Hinweis erschien ueber dem leeren Formular und behauptete ein Ergebnis,
+    // das nie berechnet worden war. „Neu berechnen" rendert dann das leere
+    // Formular erneut, der Knopf fuehrt also nirgendwohin.
+    test('ohne Suche kein Hinweis: das leere Formular behauptet kein Ergebnis', async ({ page }) => {
+        for (const name of Object.keys(MIT_FELD)) {
+            await page.evaluate(async name => { await window.playground.ui[name].show(); }, name);
+            await auswahlTauschen(page, 'WH');
+            await expect(page.locator('#corpusScopeNotice')).toHaveCount(0);
+            await auswahlTauschen(page, 'CR');
+        }
+    });
+
+    test('ein Begriff ohne Treffer behauptet ebenfalls kein Ergebnis', async ({ page }) => {
+        await page.evaluate(() => window.playground.ui.lemmaDistribution.show());
+        await suchen(page, '#ldQuery', '#ldSearchBtn', 'xyzqwertz');
+        await expect(page.locator('#resultsContainer')).toContainText('Kein Lemma gefunden');
+        await auswahlTauschen(page, 'WH');
+        await expect(page.locator('#corpusScopeNotice')).toHaveCount(0);
+    });
+
+    // Befund des CI-Review-Bots an PR #539: erst ein Treffer (gestempelt), dann
+    // ein Begriff ohne Treffer. Der Stempel der ersten Suche darf das leere
+    // Panel nicht mehr als Ergebnis ausgeben.
+    test('nach Treffer und Fehlschlag behauptet das Panel kein Ergebnis', async ({ page }) => {
+        for (const [name, [feld, knopf]] of Object.entries(MIT_FELD)) {
+            await page.evaluate(async name => { await window.playground.ui[name].show(); }, name);
+            await suchen(page, feld, knopf, SUCHBEGRIFF[name] || 'minne');
+            await page.waitForFunction(name => !window.playground.ui[name].state.computing, name, { timeout: 60000 });
+            await suchen(page, feld, knopf, 'xyzqwertz');
+            await auswahlTauschen(page, 'WH');
+            await expect(page.locator('#corpusScopeNotice'), name).toHaveCount(0);
+            await auswahlTauschen(page, 'CR');
+        }
+    });
+
+    // Der Nullbefund ist eine Aussage ueber die Auswahl und wird gestempelt:
+    // „keine Vorkommen in den ausgewaehlten Texten" gilt nur fuer diese.
+    test('der Nullbefund gehoert zur Auswahl und wird gemeldet', async ({ page }) => {
+        await page.evaluate(() => window.playground.ui.lemmaDistribution.show());
+        await suchen(page, '#ldQuery', '#ldSearchBtn', 'minne');
+        await expect(page.locator('#resultsContainer')).not.toContainText('Bitte Lemma eingeben');
+        await auswahlTauschen(page, 'WH');
+        await expect(page.locator('#corpusScopeNotice')).toBeVisible();
+    });
+
+    test('Neu berechnen aktualisiert die Statistik, Navigation entfernt den Hinweis', async ({ page }) => {
+        await page.evaluate(() => window.playground.ui.textStatistics.show());
+        await page.evaluate(() => {
+            window.playground.corpusData.includedTexts = new Set(['WH']);
+            window.playground.updateFileBrowserStats();
+        });
+        expect(await page.evaluate(() => window.playground.ui.textStatistics._stats.map(t => t.id))).toEqual(['CR']);
+        await page.getByRole('button', { name: 'Neu berechnen', exact: true }).click();
+        await expect(page.locator('#corpusScopeNotice')).toHaveCount(0);
+        expect(await page.evaluate(() => window.playground.ui.textStatistics._stats.map(t => t.id))).toEqual(['WH']);
+        await page.evaluate(() => {
+            window.playground.corpusData.includedTexts.clear();
+            window.playground.updateFileBrowserStats();
+        });
+        await expect(page.locator('#corpusScopeNotice')).toBeVisible();
+        await page.evaluate(async () => {
+            const { navigate } = await import('/playground/js/ui/core/router.js');
+            navigate('multi-lemma');
+            window.playground.ui.multiLemmaSearch.close();
+        });
+        await expect(page.locator('#corpusScopeNotice')).toBeVisible();
+        await page.evaluate(async () => {
+            const { navigate } = await import('/playground/js/ui/core/router.js');
+            navigate('authors');
+        });
+        await expect(page.locator('#corpusScopeNotice')).toHaveCount(0);
+    });
+
+    test('Multi-Lemma-Neuberechnung behaelt Modus, Distanz und Lemma-Zeiger', async ({ page }) => {
+        await page.evaluate(async () => {
+            const ui = window.playground.ui.multiLemmaSearch;
+            ui.lemmas = ['minne'];
+            ui.lemmaIdHints = new Map([['minne', '4130']]);
+            ui.searchModeRadios.forEach(r => { r.checked = r.value === 'document'; });
+            ui.proximityDistance.value = '25';
+            await ui.executeSearch();
+            window.playground.corpusData.includedTexts = new Set(['WH']);
+            window.playground.updateFileBrowserStats();
+            window.repeatedSearch = null;
+            const original = ui.executeSearch.bind(ui);
+            ui.executeSearch = () => {
+                window.repeatedSearch = { terms: [...ui.lemmas], hints: [...ui.lemmaIdHints],
+                    mode: ui.getSelectedSearchMode(), distance: ui.proximityDistance.value };
+                return original();
+            };
+        });
+        await page.getByRole('button', { name: 'Neu berechnen', exact: true }).click();
+        expect(await page.evaluate(() => window.repeatedSearch)).toEqual({
+            terms: ['minne'], hints: [['minne', '4130']], mode: 'document', distance: '25'
+        });
+        await expect(page.locator('#corpusScopeNotice')).toHaveCount(0);
+    });
+});
+
+
+test('Auswahlaenderung waehrend einer Berechnung bleibt nach deren Ende sichtbar (#442)', async ({ page }) => {
+    await page.goto('/playground/');
+    await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
+    await page.evaluate(() => {
+        const pg = window.playground;
+        pg.corpusData.includedTexts = new Set(['CR']);
+        pg.updateFileBrowserStats();
+        const tool = pg.ui.cooccurrenceRanking;
+        tool.show();
+        tool.state.query = 'minne';
+        const original = tool.computeCooccurrences.bind(tool);
+        tool.computeCooccurrences = async (...args) => {
+            const result = await original(...args);
+            await new Promise(resolve => { window.finishScopeComputation = resolve; });
+            return result;
+        };
+        window.scopeComputation = tool.runSearch();
+    });
+    await page.waitForFunction(() => !!window.finishScopeComputation);
+    await page.evaluate(() => {
+        window.playground.corpusData.includedTexts = new Set(['WH']);
+        window.playground.updateFileBrowserStats();
+    });
+    await expect(page.locator('#corpusScopeNotice')).toBeVisible();
+    await page.evaluate(async () => {
+        window.finishScopeComputation();
+        await window.scopeComputation;
+    });
+    await expect(page.locator('#resultsContainer')).toContainText('14 Vorkommen');
+    await expect(page.locator('#corpusScopeNotice')).toBeVisible();
+    await page.evaluate(() => {
+        window.finishScopeComputation = null;
+        window.scopeComputation = window.playground.ui.cooccurrenceRanking.runSearch();
+    });
+    await page.waitForFunction(() => !!window.finishScopeComputation);
+    await page.evaluate(() => {
+        window.playground.corpusData.includedTexts.clear();
+        window.playground.updateFileBrowserStats();
+    });
+    await page.getByRole('button', { name: 'Neu berechnen', exact: true }).click();
+    await page.evaluate(async () => {
+        window.finishScopeComputation();
+        await window.scopeComputation;
+    });
+    await expect(page.locator('#resultsContainer')).toContainText('Kein Text ausgew\u00e4hlt');
+    await expect(page.locator('#corpusScopeNotice')).toHaveCount(0);
+    // Der Rueckweg (Review an #539): wer danach wieder einen Text anhakt,
+    // bekommt Hinweis und "Neu berechnen" zurueck, statt vor der
+    // Fehlermeldung stehen zu bleiben.
+    await page.evaluate(() => {
+        window.playground.corpusData.includedTexts = new Set(['CR']);
+        window.playground.updateFileBrowserStats();
+    });
+    await expect(page.locator('#corpusScopeNotice')).toBeVisible();
+    await page.getByRole('button', { name: 'Neu berechnen', exact: true }).click();
+    await expect(page.locator('#resultsContainer')).not.toContainText('Kein Text ausgew\u00e4hlt');
 });

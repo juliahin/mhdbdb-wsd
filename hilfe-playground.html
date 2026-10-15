@@ -143,7 +143,7 @@
                 das Forschungswerkzeug der MHDBDB. Gedacht für mediävistische und
                 digital-humanistische Fragestellungen, die mit einer einfachen Einzelwort-Suche
                 nicht beantwortbar sind: Kookkurrenzen, mehrere Lemmata gleichzeitig, Zugriff auf
-                die sechs Register.
+                die Register.
             </p>
         </section>
 
@@ -171,7 +171,7 @@
                 Der <a href="playground/index.html" class="text-brand-600 hover:text-brand-700 font-medium">Playground</a>
                 erweitert die Korpussuche um drei Säulen: Erstens die <strong>Mehr-Lemma- und
                 Kookkurrenz-Suche</strong> – mehrere Lemmata gleichzeitig suchen und prüfen, wie
-                nahe sie im Text zusammenstehen. Zweitens die sechs
+                nahe sie im Text zusammenstehen. Zweitens die
                 <strong>Register &amp; Indizes</strong> zum Durchsuchen: Autor*innen, Werke, das Wörterbuch, die
                 Begriffstaxonomie, Gattungen und Eigennamen; technisch sind das die Authority
                 Files. Drittens die <strong>Korpusanalysen</strong> über dem vorgeladenen
@@ -196,9 +196,9 @@
             <ol class="space-y-2 text-sm text-slate-700 mb-4 ml-4 list-decimal list-inside">
                 <li><strong>Korpus-Browser</strong> (links) – alle 667 Texte sind standardmäßig aktiv. Hier schränken Sie die Analyse auf bestimmte Werke, Autor*innen oder Gattungen ein.</li>
                 <li><strong>Abfragen</strong> (Mitte) – vier Blöcke, von denen die oberen beiden offen stehen.
-                    <strong>Korpusanalysen</strong>: Sie bringen ein Wort oder einen Begriff mit (Multi-Lemma-Suche, Kookkurrenz-Ranking, Lemmasuche nach Versposition, Reim-Wörterbuch, Begriffs-Verteilung, Lemma-Verteilung).
-                    <strong>Register &amp; Indizes (Authority Files)</strong>: die sechs Nachschlagewerke zu Autor*innen, Werken, Wortschatz, Begriffen, Gattungen und Namen.
-                    <strong>Weitere Korpusanalysen</strong>: Sie bringen einen Text oder eine Autor*in mit (Echte Hapaxlegomena, Wortfrequenz-Analyse, Text-Statistiken, Versendings-Profil, Textvergleich).
+                    <strong>Korpusanalysen</strong>: Ausgangspunkt ist ein Wort oder ein Begriff (Multi-Lemma-Suche, Kookkurrenz-Ranking, Lemmasuche nach Versposition, Reim-Wörterbuch, Begriffs-Verteilung, Lemma-Verteilung).
+                    <strong>Register &amp; Indizes (Authority Files)</strong>: die Nachschlagewerke zu Autor*innen, Werken, Wortschatz, Begriffen, Gattungen und Namen.
+                    <strong>Weitere Korpusanalysen</strong>: Ausgangspunkt sind Texte, Werke oder das Œuvre von Autor*innen (Echte Hapaxlegomena, Wortfrequenz-Analyse, Text-Statistiken, Versendings-Profil, Textvergleich).
                     <strong>Experimentelle Forschungsdaten</strong>: Erweiterte Figurenbezeichnungen und Arthurische Pferde (beide Beta).</li>
                 <li><strong>Ergebnisse</strong> (rechts) – die Trefferliste zur aktuellen Abfrage, mit farbkodiertem Highlighting und Klick-Navigation in die Leseansicht.</li>
             </ol>
@@ -228,9 +228,15 @@
                 Auch ein einzelnes Lemma ist erlaubt. Jedes eingegebene Lemma erscheint als
                 entfernbarer Chip – so sehen Sie sofort, was die Suche berücksichtigt.
             </p>
+            <p class="text-slate-700 leading-relaxed mb-3">
+                Eine Lemma-Nummer geht mit und ohne Vorsatz, <code class="px-2 py-0.5 bg-slate-100 rounded text-sm">879</code>
+                ebenso wie <code class="px-2 py-0.5 bg-slate-100 rounded text-sm">lemma_879</code>. Sie steht für genau
+                dieses Lemma, und der Chip zeigt dahinter, welches es ist (<em>= brôt</em>). Eine Nummer, die es
+                nicht gibt, meldet der Chip als unbekannt.
+            </p>
             <p class="text-slate-700 leading-relaxed">
                 Die dreistufige Variantenauflösung aus der Korpussuche gilt auch hier: exakter
-                Treffer im Wörterbuch, dann Prüfung gegen 233.978 normalisierte Schreibvarianten, dann
+                Treffer im Wörterbuch, dann Prüfung gegen 234.264 normalisierte Schreibvarianten, dann
                 als Fallback der Wortanfang in beide Richtungen. Sonderzeichen (â, ê, î, ô, û, ä, ö, ü, dazu die
                 Breve-Umlaute ŏ und ŭ aus der Wenzelsbibel) werden automatisch normalisiert.
                 Seit Juli 2026 greift der Fallback nur am Wortanfang, nicht im Wortinneren.
@@ -244,7 +250,7 @@
                 Unterschied, der bei gleich geschriebenen Lemmata zählt: <em>sin</em>, <em>wal</em>,
                 <em>mal</em> und <em>de</em> stehen mehrfach im Wörterbuch, und die Auflösung über
                 die Schreibform nimmt davon immer den häufigsten Eintrag. Insgesamt betrifft das
-                991 der 43.713 Lemmata. Im Chip steht weiterhin die Schreibform, festgelegt ist nur,
+                991 der 43.710 Lemmata. Im Chip steht weiterhin die Schreibform, festgelegt ist nur,
                 welches Lemma gemeint ist; tippen Sie denselben Begriff von Hand nach, gilt wieder
                 die normale Auflösung.
             </p>
@@ -283,8 +289,21 @@
                 <p class="text-sm text-slate-700 leading-relaxed">
                     Listet alle Texte auf, die sämtliche angegebenen Lemmata irgendwo enthalten –
                     unabhängig vom Abstand. Ideal für Fragen wie: "Welche Texte behandeln sowohl
-                    <em>triuwe</em> als auch <em>zwîvel</em>?" Das Ergebnis ist dokumentbasiert,
-                    nicht stellenbasiert.
+                    <em>triuwe</em> als auch <em>zwîvel</em>?" Die Suche wählt Texte aus, nicht
+                    Stellen: jede Karte steht für einen Text und nennt die Zahl der Belege darin,
+                    bei mehreren Lemmata auch die Zahl je Lemma.
+                </p>
+                <p class="text-sm text-slate-700 leading-relaxed mt-2">
+                    Ein Klick auf die Karte klappt sie auf und zeigt die <strong>Fundstellen</strong>:
+                    je Beleg Vers oder Zeile und ein paar Wörter Kontext, das gesuchte Wort
+                    hervorgehoben. Bei mehreren Lemmata stehen die Fundstellen nach Lemma getrennt,
+                    jedes in seiner Farbe. Ein Klick auf eine Fundstelle öffnet die Leseansicht
+                    genau an dieser Stelle. Je Lemma und Text zeigt die Karte bis zu 50 Fundstellen;
+                    hat ein Text mehr, sagt ein Hinweis, wie viele es insgesamt sind. Der Knopf
+                    <strong>Gesamten Text öffnen</strong> auf jeder Karte öffnet den ganzen Text
+                    in der Leseansicht, mit allen Belegen der gesuchten Lemmata hervorgehoben; dort
+                    springen Sie mit den Pfeilen von Beleg zu Beleg. Der Text wird erst beim
+                    Aufklappen geladen, bei sehr umfangreichen Texten dauert das einen Moment.
                 </p>
             </div>
 
@@ -293,7 +312,27 @@
                 Jedes Lemma bekommt eine eigene Farbe. In der Trefferliste sehen Sie die
                 Belegstelle mit Kontext und farblich hervorgehobenen Lemmata. Ein Klick auf einen
                 Treffer öffnet die Leseansicht der Hauptseite mit allen Lemmata in denselben Farben
-                und springt direkt zur Fundstelle.
+                und springt direkt zur Fundstelle. In der Dokument-Suche stehen die Fundstellen
+                in der aufgeklappten Karte des Textes.
+            </p>
+
+            <h3 class="text-lg font-semibold text-slate-900 mt-6 mb-2">Fundstellen exportieren</h3>
+            <p class="text-slate-700 leading-relaxed mb-3">
+                Über der Trefferliste stehen die Knöpfe <strong>CSV-Export</strong> und
+                <strong>XLSX-Export</strong>. Die Datei enthält alle Treffer der Suche, nicht nur
+                die bis zu 50 angezeigten je Text (in der Dokument-Suche je Lemma und Text), und eine Zeile je Fundstelle: Sigle, Titel,
+                Autor*in, Vers oder Zeile, die Wort-IDs der Belegwörter und den Kontext. Die
+                Wort-ID macht die Stelle eindeutig, auch wo ein Text seine Verse abschnittsweise
+                neu zählt. In der Dokument-Suche ist jede Zeile ein einzelner Beleg eines der
+                gesuchten Lemmata, mit zehn Wörtern Kontext auf jeder Seite.
+            </p>
+            <p class="text-slate-700 leading-relaxed">
+                Jede Zeile nennt außerdem die Suche (Modus, Abstand, Lemmata mit ID) und die
+                Textauswahl, wie sie beim Start der Suche galten. Die XLSX-Datei öffnet sich in
+                Excel ohne Importeinstellungen und hat ein zweites Blatt "Suche" mit diesen
+                Angaben, der Version des Korpus-Index und der Lizenz. Für den Export werden die
+                betroffenen Texte nachgeladen; das dauert bei vielen Treffern eine Weile, der
+                Fortschritt steht neben den Knöpfen.
             </p>
         </section>
 
@@ -381,13 +420,16 @@
                 Komma, die Kodierung UTF-8; in Excel öffnen Sie die Datei am sichersten über
                 "Daten" und "Aus Text/CSV". Die
                 Hapaxlegomena haben ihren eigenen, älteren Export mit Semikolon. Diagramme
-                (Konzept- und Lemmaverteilung) und die Trefferkarten der Multi-Lemma-Suche
-                lassen sich nicht als CSV herunterladen.
+                (Konzept- und Lemmaverteilung) lassen sich nicht als CSV herunterladen. Die
+                Multi-Lemma-Suche exportiert ihre Fundstellen als CSV und XLSX, siehe
+                <a href="#multi-lemma" class="text-brand-600 hover:text-brand-700 font-medium">Abschnitt 3</a>.
             </p>
 
             <h3 class="text-lg font-semibold text-slate-900 mt-6 mb-2">Im Block "Korpusanalysen"</h3>
             <p class="text-slate-700 leading-relaxed mb-4">
-                Ausgangspunkt ist ein einzelnes Wort oder ein Begriff. Der Block steht
+                Ausgangspunkt ist ein Wort oder ein Begriff. Die Werkzeuge erschließen seine
+                Belege, sein gemeinsames Auftreten mit anderen Wörtern, seine Verspositionen
+                und Reime sowie seine Verteilung im Korpus. Der Block steht
                 aufgeklappt oben in der Abfragespalte; neben den hier beschriebenen Werkzeugen
                 enthält er die Multi-Lemma-Suche und die Lemmasuche nach Versposition, die
                 eigene Abschnitte haben.
@@ -449,6 +491,8 @@
                     Kandidaten werden angezeigt (etwa bei "love" → Intimität und Liebe/Zuneigung);
                     eine aufklappbare Liste der zugeordneten Lemmata erlaubt die Validierung der
                     Auswahl.
+                    Kein passender Begriff für Ihr Thema? Dann hilft
+                    <a href="hilfe-begriffe-finden.html" class="text-brand-600 hover:text-brand-700 font-medium">Passende Begriffe finden</a>.
                 </p>
             </div>
 
@@ -464,9 +508,9 @@
 
             <h3 id="block-weitere-korpusanalysen" class="text-lg font-semibold text-slate-900 mt-6 mb-2 scroll-mt-24">Im Block "Weitere Korpusanalysen"</h3>
             <p class="text-slate-700 leading-relaxed mb-4">
-                Ausgangspunkt ist ein Text, ein Werk oder eine Autor*in: Sie fragen, was dessen
-                Wortschatz auszeichnet, was nur dort einmal vorkommt und wie er sich gegen
-                andere Texte verhält. Der Block ist zugeklappt ausgeliefert; ein Klick auf die
+                Ausgangspunkt sind Texte, Werke oder das Œuvre von Autor*innen. Die Werkzeuge
+                untersuchen Wortschatz, Worthäufigkeiten, korpusweit seltene Wörter und
+                Versendungen und ermöglichen Textvergleiche. Der Block ist zugeklappt ausgeliefert; ein Klick auf die
                 Überschrift öffnet ihn, und Ihre Wahl bleibt für den nächsten Besuch erhalten.
             </p>
 
@@ -636,17 +680,21 @@
                 <div class="rounded-xl border border-slate-200 bg-white p-4">
                     <h3 class="font-semibold text-slate-900 mb-1">Erweiterte Figurenbezeichnungen</h3>
                     <p class="text-sm text-slate-700 leading-relaxed">
-                        Kuratierte Bezeichnungspraktiken jenseits des Eigennamens für vier Werke
-                        (Eneasroman, Iwein, Rolandslied, Trojanerkrieg) aus Linda Beutel-Thurows
-                        Dissertationsprojekt <em>Naming-analysis</em>. Pro Figur sind die Lemmata nach
-                        Kategorien gegliedert: Eigennamen, Antonomasien ("der rîter" für Iwein) und
-                        Epitheta ("der küene"), je mit Häufigkeit und aufklappbaren Belegstellen samt
+                        Kuratierte Erfassung jeder Nennung einer Figur, mit Versstelle und benennender
+                        Instanz, für vier Werke (Eneasroman, Iwein, Rolandslied, Trojanerkrieg) aus Linda
+                        Beutel-Thurows Dissertationsprojekt <em>Naming-analysis</em>. Unterschieden werden
+                        Bezeichnungsvarianten, die für sich allein stehen (Eigenname oder Antonomasie, etwa
+                        "der rîtaere" für Iwein), und Epitheta ("der küene"), die als Attribut hinzutreten und
+                        nicht allein stehen können. Pro Figur stehen die Lemmata nach Eigennamen,
+                        Antonomasien und Epitheta gegliedert, je mit Häufigkeit und aufklappbaren Belegstellen samt
                         Versangabe und Sprecher (Erzähler, Figurenrede oder Selbstnennung). Dazu kommt
                         der <em>Deckname</em>, der die Figur wie ein Name benennt, ohne ihr Name zu sein:
                         er erscheint nur dort, wo er kuratiert vorliegt, derzeit für Alexander als
                         Deckname des Paris im <em>Trojanerkrieg</em>. Für Rolandslied und Trojanerkrieg
                         verlinken die Versangaben direkt in die Leseansicht. Die Daten sind mit
-                        sichtbarer Attribution und DOI eingebunden.
+                        sichtbarer Attribution und DOI eingebunden. Termini, Erhebung und Grenzen des
+                        Datensatzes beschreibt
+                        <a href="https://doi.org/10.58079/16qo7" target="_blank" rel="noopener" class="text-brand-600 hover:text-brand-700 font-medium">Beutel-Thurow 2026</a>.
                     </p>
                     <p class="text-sm text-slate-700 leading-relaxed mt-2">
                         Über <strong>Perspektive</strong> lässt sich die Blickrichtung umdrehen. In der
@@ -698,12 +746,12 @@
                         346 Belegstellen zu 13 Pferden aus Willehalm, Parzival, Erec, Iwein und Tristan, nach der
                         exemplarischen Auszeichnung von Luise Borek. Wählen Sie ein Pferd; die Tabelle zeigt jede
                         Stelle mit dem Wortlaut und dem, was dort ausgezeichnet ist: das Ereignis (Einführung,
-                        Kampf, Pflege, Verlust, Übergabe), Eigenschaften wie Farbe und Abzeichen, die Ausrüstung
-                        sowie Besitzer und Reiter. Über die Ereignis-Schaltflächen filtern Sie die Belege.
+                        Kampf, Pflege, Verlust, Übergabe), Eigenschaften wie Farbe und Abzeichen, die Ausrüstung,
+                        den Zustand des Pferds (etwa verwundet oder tot) sowie Besitzer und Reiter. Über die Ereignis-Schaltflächen filtern Sie die Belege.
                     </p>
                     <p class="text-sm text-slate-700 leading-relaxed mt-2">
                         <strong>Zu den Stellenangaben:</strong> Angegeben ist immer Boreks Zitation, denn sie ist die
-                        zitierfähige Referenz. Ihre Textgrundlage ist aber nicht dieselbe wie unsere, und bei neun
+                        zitierfähige Referenz. Ihre Textgrundlage ist aber nicht dieselbe wie unsere, und bei acht
                         der 346 Belege fällt die Verszahl deshalb auseinander. Diese Stellen sind über den
                         <em>Wortlaut</em> zugeordnet und mit einem Sternchen markiert; der Link führt trotzdem an die
                         richtige Stelle im Text.
@@ -723,13 +771,13 @@
             <h2 class="text-2xl font-bold text-slate-900 mb-4">8. Register und Indizes im Einsatz</h2>
 
             <p class="text-slate-700 leading-relaxed mb-4">
-                Sechs Authority-Ansichten öffnen je einen Einstiegspunkt in die kontrollierten
+                Die Authority-Ansichten öffnen je einen Einstiegspunkt in die kontrollierten
                 Vokabulare. Hier steht, wann welche Ansicht nützlich ist. Die technische
                 Beschreibung der Dateien (Größe, Struktur, Provenienz) steht unter
                 <a href="hilfe-daten.html#authority-files" class="text-brand-600 hover:text-brand-700 font-medium">Daten → Acht Authority Files</a>.
             </p>
             <p class="text-slate-700 leading-relaxed mb-4">
-                <strong>Wo Sie das finden:</strong> Die sechs Ansichten stehen unter "Register &amp; Indizes (Authority Files)". Der Block
+                <strong>Wo Sie das finden:</strong> Die Ansichten stehen unter "Register &amp; Indizes (Authority Files)". Der Block
                 steht in der Abfragespalte offen, weil er für die meisten Fragen der Einstieg
                 ist. Ein Klick auf die Überschrift klappt ihn zu, und Ihre Wahl bleibt für den
                 nächsten Besuch erhalten.
@@ -822,11 +870,17 @@
             </p>
             <ol class="space-y-2 text-sm text-slate-700 mb-4 ml-4 list-decimal list-inside">
                 <li>Im Playground eine Multi-Lemma-Suche starten.</li>
-                <li>Eine interessante Kookkurrenz in der Trefferliste auswählen.</li>
+                <li>Eine interessante Kookkurrenz in der Trefferliste auswählen, in der Dokument-Suche die Karte eines Textes aufklappen und eine Fundstelle wählen.</li>
                 <li>Klick auf das Ergebnis – die Korpussuche öffnet sich in einem neuen Tab.</li>
                 <li>Der Text ist geladen, alle Lemmata sind farblich hervorgehoben, die Ansicht scrollt automatisch zur Fundstelle.</li>
                 <li>Im Reading View weiterlesen, zwischen Belegen springen, Metadaten aufklappen.</li>
             </ol>
+            <p class="text-slate-700 leading-relaxed mb-4">
+                Wer einen Text als Ganzes lesen will statt einer einzelnen Stelle, nimmt in der
+                Dokument-Suche den Knopf <strong>Gesamten Text öffnen</strong> auf der Karte: der
+                Text öffnet sich beim ersten Beleg, alle Belege der gesuchten Lemmata sind
+                hervorgehoben, und mit den Pfeilen geht es von Beleg zu Beleg.
+            </p>
             <p class="text-slate-700 leading-relaxed">
                 So bleiben Analyse und Lektüre getrennt: der Playground liefert die
                 Korpusstatistik, die Korpussuche den Volltext im Kontext.
@@ -958,6 +1012,13 @@
             rel="noopener"
           >
             GitHub
+          </a>
+          <span>|</span>
+          <a
+            href="textreihen/index.html"
+            class="hover:text-brand-600 transition"
+          >
+            Textreihentypologie
           </a>
           <span>|</span>
           <a

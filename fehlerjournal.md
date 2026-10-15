@@ -1023,3 +1023,241 @@ Auto-Mode-Classifier abgelehnt, und die Blockade ging an Christian.
 **Was es getragen hat:** der Satz stand etwa eine halbe Stunde im veröffentlichten PR-Body und im Wortlaut, den die Koordination nach dem Merge von #469 in die Doku einträgt. Ein Leser hätte daraus gefolgert, sechs Worker je Lauf seien auf einer ruhigen Maschine parallel tragbar, und das ist nicht gemessen. Aufgefallen ist es beim Entwurf des Journaleintrags, nicht durch eine Vorrichtung. PR-Body und Inbox-Wortlaut sind richtiggestellt.
 
 **Kein neuer Mechanismus:** `agentenbefunde.md` ist seit dem 16.09.2026 ausdrücklich ausgesetzt, weil kein Muster sieht, ob ein Satz mehr behauptet als seine Quelle hergibt. Die Aussetzung ist nach `wiederholte-fehler.md` selbst der Mechanismus.
+
+### 96. Rot: eine Stellenangabe in einen Code-Kommentar geschrieben, die ich nirgends gemessen hatte.
+
+**Rot.** Im div-Zweig von `tei-text-reader.js` stand für #358 der Kommentar „Beginnt ein Buch am Anfang dieses div (Buch V bei 4,1)“. Die Stelle habe ich aus keiner Quelle genommen; sie klang nach einem Beispiel. Die einzigen Buchgrenzen im Repo stehen im Laufplan (II 58,27, III 116,5, IV 179,13, dort als ungeprüft) und sind nicht 4,1: Dreißiger 4 liegt mitten in Buch I.
+
+**Die Lehre steht in `mengen.md`: vor jeder Zahl und jeder Allaussage fragen, über welche Menge der Satz spricht und woher ich weiß, dass er gilt, und in der Projektanweisung: jede Zahl in einem Kommentar ist gemessen, was der Satz nicht braucht, wird gestrichen statt belegt.** Das Beispiel war für den Satz überflüssig, und ich habe es nicht gestrichen, sondern erfunden. Die letzte Zeile zu dieser Lehre ist Eintrag 65.
+
+**Was es getragen hat:** nichts im Verhalten; ein Leser des Kommentars hätte die Grenze im falschen Dreißiger gesucht. Gefunden hat es die Fable-Runde 2, nicht eine Vorrichtung. Der Kommentar nennt die Stelle nicht mehr.
+
+**Kein neuer Mechanismus:** kein Muster sieht, ob eine Zahl in einem Kommentar eine Quelle hat; die Aussetzung ist der Mechanismus.
+
+### 100. Rot: `cd` und zweimal ein Heredoc in Shell-Befehlen, die nicht der Gegenstand der Arbeit waren (Spur C, 02.10.2026).
+
+**Rot.** In der Spur `lauf-c-recherche` (#370, #358, #228) habe ich erstens mit `cd` in das Scratchpad gewechselt und danach per `cd` zurück, obwohl `shell-konventionen.md` das `cd` an jeder Trennstelle verbietet. Zweitens habe ich zweimal ein Heredoc abgesetzt, einmal mit Python-Inhalt und einmal als "kurzer Test", beide Male nach der Regel „keine großen Inhalte in einen Shell-Befehl inlinen, Dateien nur per Write". Der Hook `shell-konventionen.sh` hat beide Heredocs geblockt; das `cd` ist durchgegangen, weil es in ein fremdes Verzeichnis führte.
+
+**Die Lehre steht in `shell-konventionen.md`: kein `cd`, kein Heredoc, mehrzeilige Logik als Skript per Write.** Alle drei Fälle passierten in Befehlen, die nur schnell etwas erledigen sollten, genau wie in den Einträgen 30 und 34 beschrieben. Die letzte Zeile zu dieser Lehre ist Eintrag 34.
+
+**Was es getragen hat:** nichts. Die Heredocs hat der Hook abgewendet, bevor sie liefen; das `cd` blieb ohne Folge, weil danach absolute Pfade benutzt wurden. Gezählt wird es nach `wiederholte-fehler.md` trotzdem, weil das `cd` nicht von etwas abgewendet wurde und der Hook das Heredoc erst beim zweiten Mal in dieser Spur davon abgehalten hat, es erneut zu versuchen.
+
+**Kein neuer Mechanismus:** der Hook existiert und hat gegriffen. Die Lücke ist das `cd` in ein Verzeichnis außerhalb des Arbeitsverzeichnisses; sie steht als Beobachtung hier und nicht als eigener Hook.
+
+### 95. Rot: einen Reviewerbefund mit derselben fehlerhaften Messung bestätigt, mit der er entstanden war.
+
+**Rot.** Der `fable-reviewer` meldete in Runde 1 zu #228 B1, `flex-shrink-0` habe in `assets/css/tailwind-output.css` keine Regel. Ich habe nachgemessen und 0 Treffer bekommen, mit `grep -c "flex-shrink-0{"`, also mit der Form, die der Reviewer selbst benutzt hatte. Die Datei führt die Klasse aber als Gruppe: `.flex-shrink-0,.shrink-0{flex-shrink:0}`. Das `{` direkt hinter dem Namen trifft jede Gruppe nicht. Ich habe `flex-shrink-0` an zwei Stellen durch `shrink-0` ersetzt, in die Commit-Nachricht „hat in tailwind-output.css keine Regel“ geschrieben und dieselbe Aussage dem Reviewer von Runde 2 als gemessen mitgegeben. Runde 2 hat sie widerlegt.
+
+**Die Lehre steht in `dateisuche.md`: ein leerer Abruf ist kein Nullbefund, vor dem Schreiben einen Kontrollwert mitsuchen, der treffen muss, und er liegt außerhalb des Zuschnitts.** Der Kontrollwert wäre `shrink-0` gewesen, von dem feststeht, dass die Klasse in der Datei steht; ein Treffer auf ihn, daneben ein Treffer ohne `{` auf `flex-shrink-0`, hätte den Fehler in einer Sekunde gezeigt. Die letzte Zeile zu dieser Lehre ist Eintrag 71.
+
+**Was es getragen hat:** eine falsche Aussage in der Commit-Nachricht „#228: Review Runde 1: gerade Anführungszeichen, shrink-0, Inventarzeile“ und im Auftrag an den Reviewer. Die Codeänderung ist harmlos, beide Selektoren hängen an derselben Regel. Aufgefallen ist es durch die Gegenmessung des Reviewers in Runde 2, nicht durch eine Vorrichtung. Die Nachricht lässt sich vor dem Push nicht ändern, ohne die Historie umzuschreiben; der PR-Text stellt es richtig.
+
+**Kein neuer Mechanismus:** `hooks/suchergebnis.sh` sieht nur enge, leere Suchen im Werkzeug, nicht einen Zählbefehl über eine einzeilige Datei. Dort kann kein Muster greifen; die Aussetzung ist der Mechanismus.
+
+### 101. Rot: eine Buchgrenze am Erzählerton festgemacht, nicht am ersten Vers der Quelle (Spur C, 02.10.2026).
+
+**Rot.** Für #358 habe ich Buch VIII des Parzival bei 399,1 angesetzt („nû hoert von âventiuren sagen") und die Stelle der Koordination als gemessen gemeldet. Gelesen hatte ich dort einen Erzähleranruf, der wie ein Buchanfang klingt. Bartsch druckt als ersten Vers unter der Überschrift ACHTES BUCH „Swer was ze Bêârosche komen", Martins Kommentar unter VIII beginnt bei 398,4, und die TEI trägt die Initiale an 398,1. Ich hatte für die anderen Bücher den ersten Vers der Quelle gelesen und für dieses eines den Eindruck genommen.
+
+**Die Lehre steht in `agentenbefunde.md`: die gelesene Quelle muss die Aussage hergeben, die auf ihr steht.** Das Skript, das ich dafür baute, prüfte die Anfangswörter gegen das TEI, aus dem ich sie selbst genommen hatte, und konnte den Fehler deshalb nicht fangen. Die letzte Zeile zu dieser Lehre ist Eintrag 73.
+
+**Was es getragen hat:** nichts im Repo. Die falsche Stelle stand in einer Nachricht an die Koordination und in einem Commit; `fable-reviewer` hat sie in Runde 1 gefunden, bevor etwas daraus abgeleitet wurde (Spur A3 liest die Datei erst aus dem gemergten PR). Abgewendet hat es die Gegenprobe des Reviewers, nicht meine.
+
+**Kein neuer Mechanismus:** `agentenbefunde.md` ist ausgesetzt; die Aussetzung ist der Mechanismus. Die Quellenspalte der Datei sagt seitdem, welche Wörter aus dem TEI stammen und welche Stelle aus den Quellen gelesen ist.
+
+### 85. Rot: eine Testursache als belegt geschrieben, gestützt auf eine Probe, die etwas anderes gemessen hatte (Koordination, Cloud-Session, 04.10.2026).
+
+**Rot.** Auf #523 blieb im vollen Lauf ein Test rot, `lemma-page.spec.js` „Wörterbuchnetz entries via API“. Ich habe Chromium mit einer eigenen Probe gegen die API geschickt, `ERR_CERT_AUTHORITY_INVALID` bekommen und daraus geschrieben, der Test sei in der Cloud nicht lauffähig, weil der Browser dort keine externe API erreiche: in den Merge-Commit `d2f1f39` und in einen Kommentar an #358. Im Volllauf zu #519, am nächsten Morgen im selben Container, lief derselbe Test grün. Die Probe lief außerhalb der Spec mit einem eigenen Browserstart; ob sie dieselbe Bedingung traf wie der Test, habe ich nicht geprüft, und warum der Test später lief, ist ungeklärt.
+
+**Die Lehre steht in `CLAUDE.md` unter Self-Inflicted Overhead: vor der Probe prüfen, dass sie die Stelle trifft, um die es geht.** Hier traf sie eine benachbarte Stelle, und ich habe ihr Ergebnis als Ursache des Testfehlers ausgegeben. Die letzten Zeilen zu dieser Lehre sind die Einträge 52 und 54.
+
+**Was es getragen hat:** eine falsche Begründung in einem Merge-Commit, der nicht mehr zu ändern ist; der Merge selbst hing nicht daran, sondern an der Freigabe von Christian für 426 von 427. Im Kommentar an #358 ist die Aussage am selben Tag richtiggestellt, im Laufplan steht sie als nicht belegt.
+
+**Kein neuer Mechanismus:** kein Muster sieht, ob eine Probe die Stelle trifft, über die der Satz spricht; die Aussetzung ist der Mechanismus.
+
+### 102. Rot: einen Triage-Nachtrag an KZW aus den letzten Kommentaren der Vorgänge geschrieben, nicht aus den ganzen Threads (05.10.2026).
+
+**Rot.** Für den Nachtrag zu #406 vom 05.10. habe ich alle offenen Vorgänge samt Kommentaren abgerufen, gelesen aber mit einem eigenen Skript nur die letzten ein bis zwei Kommentare je Vorgang. Gepostet ging der Nachtrag mit zwei Lücken: bei #497 stand „Es fehlt nur dein Ja oder Nein“, obwohl derselbe Kommentar eine zweite Frage an KZW stellt (Gaperise, einheitliche Klassifikation von „von X“-Ortsnamen), und bei #358 fehlten die drei Fragen vom 09.08., die nie beantwortet wurden. Zwischendurch hatte ich Christian außerdem gemeldet, der Mur-Vorschlag in #228 sei nie gepostet worden; er stand drei Kommentare weiter oben.
+
+**Die Lehre steht in `CLAUDE.md` unter „Working an Issue“: die Kommentare lesen, nie nur den Body, immer.** Ich habe den Body durch die letzten Kommentare ersetzt und denselben Fehler gemacht, eine Ebene weiter unten. Die letzte Zeile zu dieser Lehre ist Eintrag 20.
+
+**Was es getragen hat:** einen Kommentar an KZW in genau dem Vorgang, in dem sie verlangt hat, dass offene und erledigte Fragen bei ihr richtig geführt werden. Christian hat es nach dem Posten gemerkt („bitte immer alle kommentare lesen“). Nach dem Nachlesen aller 21 genannten Vorgänge ist der Kommentar am selben Tag ergänzt, mit Vermerk im Text.
+
+**Kein neuer Mechanismus:** zweite Zeile zu dieser Lehre. Der Hook zu `entscheidungsfragen.md` sieht `gh issue view` ohne `--json comments`, nicht ein eigenes Skript, das die Kommentare holt und dann abschneidet; die Aussetzung ist der Mechanismus.
+
+### 103. Rot: `doc-count-audit.py` ohne `--check` laufen lassen und `main` mit einer Drift rot gemacht (05.10.2026).
+
+**Rot.** Beim Zahlen-Durchgang vom 05.10. habe ich in TEI-MODEL:1025 „in 666 files on 2026-04-15" geschrieben und direkt auf `main` gepusht. Lokal lief `doc-count-audit.py` ohne `--check`; ohne den Schalter endet es mit Exit 0, auch wenn der Drift-Scan anschlägt. Die CI ruft es mit `--check` auf (`no-cdn-check.yml`, `data-integrity.yml`), und dort war es rot. Aufgefallen erst, als #527 dieselben zwei Checks rot zeigte.
+
+**Die Lehre steht in Eintrag 9 und in `feedback_index_version_bump`: ein Gate lokal laufen lassen, bevor es die Pipeline tut.** Ich habe es laufen lassen, aber nicht so, wie die Pipeline es aufruft, und der Exit-Code hat genau das verschwiegen. Die letzte Zeile zu dieser Lehre ist Eintrag 9.
+
+**Was es getragen hat:** `no-cdn-check` auf `main` ist seit dem Push von `741b9e4b4` (der `aaca396f3` enthält) rot, zuletzt grün auf `621bcf749`; drei rote Läufe bis zum Merge von #527. Behoben in #527 (Satz ohne die Zahl).
+
+**Kein neuer Mechanismus:** zweite Zeile.
+
+### 104. Rot: Schema-Validierung und Drift-Scan aus dem Hauptbaum gestartet, gemeint war der Worktree, und „2/2 voll gültig" in den PR-Text geschrieben (05.10.2026).
+
+**Rot.** Für #527 habe ich `scripts/audit/validate-corpus.py` aus dem Worktree aufgerufen, mit dem Hauptbaum als Arbeitsverzeichnis. Das Skript löst `schema/` und `tei/` relativ zum Arbeitsverzeichnis auf, validiert hat es also die WZB **ohne** den neuen Block. Das Ergebnis „2/2 fully valid" stand im PR-Text als Beleg für die Änderung. Bemerkt erst, als `doc-count-audit.py` aus demselben Grund die alte Fassung von TEI-MODEL meldete. Mit dem Worktree als Arbeitsverzeichnis wiederholt: 2/2 gültig, also zufällig richtig.
+
+**Die Lehre steht in `CLAUDE.md` unter Self-Inflicted Overhead: vor der Probe prüfen, ob sie die Stelle trifft, um die es geht** (dort mit den Einträgen 52 und 54 belegt). Hier traf sie eine andere Kopie derselben Datei. Die letzte Zeile zu dieser Lehre ist Eintrag 54. Genauer noch stand der Fehlermodus selbst schon im JOURNAL vom 2026-10-01 („Audit-Skripte sind cwd-relativ“, dort zweimal an einem Tag vor dem Push gefangen, mit dem Ausweg `env -C <worktree>`); gefunden habe ich den Absatz erst nach diesem Eintrag.
+
+**Was es getragen hat:** eine Gültigkeitsaussage in einem PR-Text, die über die geänderte Datei nichts sagte. Richtiggestellt im Kommentar auf #527 vor dem Merge.
+
+**Dritte Zeile, also Mechanismuswechsel, gebaut in #528 (`df39f2a59`):** fünf CI-Skripte bestimmen ihre Repo-Pfade jetzt über `__file__` (`check-authority-cross-refs.py`, `sync_tei_headers.py`, `validate-corpus.py`, `doc-count-audit.py`, `build-issue-matrix.py`). Probe aus leerem Fremdverzeichnis über 22 lesende CI-Aufrufe: vorher 4 abweichend, nachher 0; Mutationsprobe mit cwd = Hauptbaum und Fehler im Worktree: alle vier geprobten Gates finden ihn. Damit prüft ein Gate die Kopie, in der es liegt, und der Ausweg `env -C` ist für sie nicht mehr nötig. Nicht verankert, weil keine Gates: `enhance_works_with_zotero.py`, `find-mentions.py` und archivierte Einmalskripte.
+
+### 105. Rot: KZW geschrieben, für GWTK und RVBR liege keine Linecode-Vorlage vor, ohne Kontrollwert und gegen das Manifest (Nachtlauf 23.09.2026, gefunden 06.10.2026).
+
+**Rot.** Im Kommentar an #252 vom 23.09., 14:05, steht zu den fünf Komma- und Doppelpunktfällen: „Eine Linecode-Vorlage liegt für GWTK und RVBR im Repositorium nicht vor (`sources/linecode/` führt keine der beiden Sigeln), an der Quelle ließ sich also nichts gegenprüfen.“ Beide Vorlagen lagen seit dem 30.07. im Repositorium (`42bbb01d6`) und waren am Stand jenes Tages vorhanden: `sources/linecode/erledigt/rvbr.txt`, und für GWTK `sources/linecode/neue-texte-klaus/gtk2.txt`, die `sources/linecode-manifest.csv` in der Spalte `sigle` ausdrücklich als `GWTK` führt. An allen fünf Stellen trägt die Vorlage den Auslassungsmarker `...,` bzw. `...:`. Wie damals gesucht wurde, sagt der Kommentar nicht; der Dateiname `gtk2.txt` trifft eine Suche nach `gwtk` nicht, `rvbr.txt` hätte jede getroffen.
+
+**Die Lehre steht in `dateisuche.md`: ein leerer Abruf ist kein Nullbefund, vor dem Schreiben einen Kontrollwert mitsuchen, der treffen muss, und er liegt außerhalb des Zuschnitts.** Das Manifest wäre der Kontrollwert gewesen: es ordnet jede Vorlage ihrer Sigle zu, unabhängig vom Dateinamen. Die letzte Zeile zu dieser Lehre ist Eintrag 95.
+
+**Was es getragen hat:** eine falsche Quellenaussage an KZW in dem Vorgang, in dem sie über die fünf Stellen entscheiden sollte. Ihre Antwort vom 02.10. verlangte die Prüfung der Editionsgrundlage; ob sie mit der Vorlage anders ausgefallen wäre, ist offen. Richtiggestellt im Kommentar an #252 vom 06.10., zusammen mit dem Editionsbefund (Bartsch, Koppitz).
+
+**Kein neuer Mechanismus:** `hooks/suchergebnis.sh` sieht enge, leere Suchen im Werkzeug; wie die Abwesenheit am 23.09. festgestellt wurde, ist nicht nachvollziehbar. Die Aussetzung ist der Mechanismus.
+
+### 106. Rot: die NEIM-Konkordanz als nirgends im Repositorium gesichert behauptet, obwohl sie seit April im Header von `NEIM` steht (#271 am 10.09., #453 am 21.09., wiederholt am 07.10.2026).
+
+**Rot.** Im Kommentar an #271 vom 10.09. steht, die Konkordanz zwischen der internen Liedzählung von `NEIM` und Hs. C stehe „bisher nur in einer gedruckten Fußnote"; der Body von #453 (angelegt 21.09.) übernimmt das als „bisher nirgends in diesem Repositorium gesichert" und begründet damit den Vorgang. Am 07.10. habe ich es Christian gegenüber ungeprüft wiederholt, und er hat auf dieser Grundlage über die Ablage entschieden. Die Konkordanz steht seit `ad7395472` (09.04.2026) vollständig in `tei/NEIM.tei.xml`, `encodingDesc/editorialDecl/normalization`, alle 39 Zeilen wortgleich mit dem Aufsatz; der `NEIR`-Hinweis zu den Nachtragsstrophen steht an derselben Stelle in `tei/NEIR.tei.xml`. Meine eigene Suche am 07.10. lief auf „Hs. C" und „Konkordanz" und traf nicht, weil der Header „C Str." schreibt; gefunden hat es erst das Lesen des Headers.
+
+**Die Lehre steht in `dateisuche.md`: ein leerer Abruf ist kein Nullbefund, vor dem Schreiben einen Kontrollwert mitsuchen, der treffen muss, und er liegt außerhalb des Zuschnitts.** Der Kontrollwert wäre eine Zeile der Konkordanz selbst gewesen (`Lied 39`, `288`), die die Quelle vorgab und die jede Ablage enthalten muss, gleich unter welchem Stichwort. Die letzte Zeile zu dieser Lehre ist Eintrag 105.
+
+**Was es getragen hat:** einen Vorgang mit falscher Begründung, eine Ablageentscheidung Christians (Variante a, eine zweite Kopie je Lied) und fast einen Daten-PR, der die Angabe doppelt geführt hätte. Abgewendet hat den PR nicht eine Vorrichtung, sondern das Lesen der Header-Struktur vor dem Schreiben. Richtiggestellt in #453 am 07.10.
+
+**Mechanismus:** Das ist mindestens die vierte Zeile zur selben Lehre. Die vorige hat die Aussetzung als Mechanismus gesetzt, weil der Suchweg nicht nachvollziehbar war; hier ist er es: eine Stichwortsuche nach dem Begriff statt nach einem Wert aus der Quelle. Die Form `abwesenheit-ohne-messung` in `hooks/mengenaussagen.sh` (claude-code-setup #73, Trockenlauf) ist der Mechanismus für genau diesen Satztyp; ob sie „nirgends … gesichert" erkannt hätte, ist nicht gemessen. Das gehört als Fall in #73, nicht hierher.
+
+### 107. Rot: 113 Commits mit `(#N)`-Endung als Squash-Merges gemeldet und so ins Reviewer-Memory committet (07.10.2026).
+
+**Rot.** Für die Frage, ob das Merge-Playbook auf Squash umgestellt wird, habe ich Christian „113 Squash-Commits seit 01.09." genannt und dieselbe Zahl als „113 Squash-Stil" in `.claude/agent-memory/fable-reviewer/querschnitt_review_fallen.md` geschrieben (`0b00f895c`). Gezählt hatte `git log --no-merges | grep -c '(#N)$'`, also Commits mit Issue-Bezug am Ende des Betreffs. Gegen `merge_commit_sha` der PRs gemessen sind es 113 = 80 Squash-Merges + 33 andere (Branch-Commits, die per Merge-Commit kamen, direkte `main`-Commits); dazu 6 Merge-Commits, alles seit 01.09. bis `8a664d217`. Nachgemessen am 07.10. mit einem Skript über alle 113; die Zählweise steht in `.claude/agent-memory/fable-reviewer/querschnitt_git.md`.
+
+**Die Lehre steht in `mengen.md`: eine Zahl am falschen Bezugswort macht den Satz falsch, auch wenn Zahl und Bezugswort einzeln stimmen.** 113 stimmte, Squash-Merges gibt es; die Zahl zählte nur etwas anderes. Die letzte Zeile zu dieser Lehre ist Eintrag 96.
+
+**Was es getragen hat:** eine Zahl in Christians Entscheidungsgrundlage und 17 Minuten lang eine falsche Messvorschrift im Memory, das jede Reviewer-Runde liest. Die Entscheidung selbst hing nicht daran, sie fiele mit 80 gegen 6 gleich aus. Richtiggestellt in `188326479`; ins Playbook (`73f87fb8f`) ist die Zahl nie gekommen. Wodurch es aufgefallen ist, steht in der Übergabe nicht.
+
+**Mechanismus: offen, als Vorgang `claude-code-setup` #80.** Der Mechanismuswechsel zu dieser Lehre ist in `claude-code-setup` #53 und #66 gelaufen; Mechanismus ist `hooks/mengenaussagen.sh`, eine Aussetzung in `mengen.md` hat #66 am 18.09.2026 bewusst nicht geschrieben. Der Fall gehört nach #66 in Klasse C („Die Zahl ist gemessen und richtig. Falsch ist, worauf sie sich bezieht“), für die der Abschluss von #66 nur zwei Zeilen und damit keinen Bedarf sah. Beide sind Zeilen von `claude-code-setup`; hier ist 107 die erste Zeile dieser Klasse, die Schwelle ist also nicht erreicht, und #80 fragt, ob ein Fall aus einem zweiten Projekt trotzdem reicht. Der Hook spricht auf den Satz nicht an (Probe des `fable-reviewer` am 07.10. mit beiden Formulierungen per stdin: `formen: []`). Eintrag 96 schreibt „die Aussetzung ist der Mechanismus“; das widerspricht #66.
+
+### 108. Rot: Julia um zwei Abnahmen gebeten, die KZW eine Stunde vorher selbst erledigt und geschlossen hatte (09.10.2026).
+
+**Rot.** Nach der neuen Abnahme-Regel aus #378 habe ich sieben UI-Abnahmen an @juliahin umgelenkt, je ein Kommentar und `wait:julia`. Die Liste stammte aus dem Abruf des Issue-Audits vom Morgen. #433 und #467 hatte @wachauer um 09:01 und 09:04 UTC abgenommen und geschlossen; meine Kommentare kamen um 11:25 UTC. Aufgefallen ist es, weil der nächste Matrix-Lauf zwei Issues weniger zählte als der vorige.
+
+**Die Lehre steht im Skill `issue-audit`, Abschnitt 7: ein Kommentar an einen Menschen, der einen Stand behauptet, stützt sich auf den ganzen Thread jedes genannten Issues, nicht auf die Audit-Tabelle.** Der Thread hätte heute frisch abgerufen werden müssen, nicht aus dem Snapshot vom Morgen gelesen. Letzte Zeile zu dieser Lehre: keine.
+
+**Was es getragen hat:** zwei Benachrichtigungen an Julia zu erledigten Vorgängen. Richtiggestellt in derselben Stunde: beide Kommentare als gegenstandslos überschrieben, `wait:julia` wieder entfernt; die übrigen neun angefassten Tickets waren noch offen.
+
+### 109. Rot: die Zeilenzahl einer Turtle-Datei (881) als Zahl der `skos:broader`-Aussagen an die Koordination gemeldet (09.10.2026).
+
+**Rot.** Im P1-Bericht der Spur 93 steht „881 skos:broader", gemessen mit `rg -c "skos:broader"` über die `.ttl` des SKOS-Repos. `rg -c` zählt Zeilen, und eine Zeile der Turtle-Datei trägt mehrere Objekte: gezählt als Aussagen sind es 894 (am `.rj` und mit rdflib am `.ttl` nachgemessen, vom `fable-reviewer` in Runde 1 unabhängig bestätigt). Der Kommentar vom 10.08. in #93 nennt ebenfalls 881; ich habe sie als „stimmt" gemeldet, weil meine Zeilenzahl dieselbe war. Aufgefallen ist es, als ich für den Browser die Aussagen einzeln lesen musste und rdflib 894 lieferte.
+
+**Die Lehre steht in `mengen.md`: eine Zahl am falschen Bezugswort macht den Satz falsch, auch wenn Zahl und Bezugswort einzeln stimmen.** Die 881 stimmt als Zeilenzahl; der Satz sprach von Aussagen. Die letzte Zeile zu dieser Lehre ist Eintrag 107.
+
+**Was es getragen hat:** eine Gegenprobe, die keine war (meine Messung „bestätigte" die Zahl, weil beide dieselbe Menge zählten), und einen Kommentar der Koordination an KZW in #93, der die 881 übernommen hatte; die Koordination zieht ihn nach. Auf den Seiten und in der Doku steht 894; die 881 kommt nur in `textreihen/README.md` vor, ausdrücklich als Zeilenzahl der Turtle-Datei.
+
+**Mechanismus:** offen, siehe Eintrag 107.
+
+### 114. Rot: Christian eine Entscheidung zu #225 vorgelegt, deren Prämisse („die Liste muss noch verschickt werden") seit zwei Monaten falsch war (09.10.2026).
+
+**Rot.** Der Kommentar an #225 vom 07.09. sagt, die aktualisierte Lemmaliste für Trier liege in Christians Downloads und müsse von ihm verschickt werden. Issue-Audit und `/entscheiden` vom 09.10. haben das übernommen, und Christian hat daraufhin „Liste neu erzeugen und Mailentwurf anlegen“ entschieden. Christian hatte die Datei aber am 07.08. um 15:14 UTC an Thomas Burch geschickt, mit genau dem Absatz über die 129 gestrichenen Verweise, den der Kommentar als fehlend führt. Aufgefallen ist es, als ich im Postfach Burchs Adresse für den Entwurf suchte: nicht als Gegenprobe, sondern weil der Entwurf einen Empfänger brauchte.
+
+**Die Lehre steht in `agentenbefunde.md`: ein Agentenbefund wird erst zur Aussage, wenn ich seine Quelle selbst geöffnet habe, und eine frühere eigene Sitzung ist ein Agentenbericht.** Der Kommentar vom 07.09. ist eine Selbstauskunft dieses Projekts über Christians Postfach, und das Postfach war mit einem Suchaufruf erreichbar. Die letzte Zeile zu dieser Lehre ist Eintrag 64.
+
+**Was es getragen hat:** eine Entscheidungsfrage an Christian und fast einen zweiten Versand derselben Datei an einen Externen. Abgewendet hat den Versand keine Vorrichtung, sondern ein Nebeneffekt des Entwurfs. Richtiggestellt in #225 am selben Tag; die neu erzeugte Liste war byte-identisch mit der verschickten.
+
+**Kein neuer Mechanismus:** `agentenbefunde.md` ist ausgesetzt; die Aussetzung ist der Mechanismus.
+
+### 115. Rot: vor dem Push die lokalen Gates aus einer Liste im Kopf gelaufen, `check-author-refs.py` fehlte, die CI war rot (Spur 452, 09.10.2026).
+
+**Rot.** Vor dem ersten Push auf `claude/452-zuschreibung` habe ich die Gates der Data-Change-Lifecycle lokal laufen lassen, aber aus einer Liste, die ich selbst zusammengestellt hatte, nicht aus `.github/workflows/data-integrity.yml`. `scripts/audit/check-author-refs.py` stand nicht darauf. Es meldete für CR die verworfene Zuschreibung (Bligger von Steinach) als Autor ohne `particDesc`-Spiegel und war in der CI rot.
+
+**Die Lehre steht in `docs/DATA-MODEL.md` (Data-Change-Lifecycle): die Gates einer Datenänderung sind die Schritte von `.github/workflows/data-integrity.yml`, nicht eine Liste aus dem Gedächtnis.** Letzte Zeile zu dieser Lehre: keine.
+
+**Was es getragen hat:** eine Runde CI und eine Ausnahme im eingefrorenen Skript, die die Koordination freigeben musste. Behoben in `0e5f1ab6e` (verworfene Zuschreibung braucht keinen Spiegel), mit Mutationsprobe und Messung danach.
+
+**Kein neuer Mechanismus:** eine Zeile. Die Gegenprobe ist, die Schritte aus der Workflow-Datei abzulesen.
+
+### 116. Rot: Fehlerklasse „Autor als Zeichenkette“ nach der Lehre aus Runde 2 in Runde 3 wieder getroffen (Spur 452, 09.10.2026).
+
+**Rot.** In Runde 2 fand der Reviewer, dass der Textfilter der Hauptseite (`assets/js/app.js`) nur `text.author` liest, sodass „konrad“ RHB nicht mehr findet. Ich habe die Stelle behoben und die Lehre ins Reviewer-Memory geschrieben, den Rest aber mit einer Suche nach `text.author` im Frontend gesucht. In Runde 3 kamen die Dateiliste des Playgrounds (`playground-main.js`) und der Textfilter im Reim-Wörterbuch (`rhyme-dictionary.js`) hinzu; beide hatte meine Suche nicht getroffen, weil dort der Name in ein Template-Literal gebaut wurde.
+
+**Die Lehre steht in `mengen.md`: Allaussagen und Mengenangaben ohne Zahl brauchen ihre Menge; „alle Leser dieses Feldes“ ist so eine Aussage.** Der Satz „alle Stellen sind behoben“ stand auf einer Suche, die nur einen Zuschnitt traf. Letzte Zeile zu dieser Lehre: keine.
+
+**Was es getragen hat:** zwei Review-Runden, keine Nutzerwirkung (vor dem Push gefangen). Behoben in `8028faeae`, mit einer Spec für Hauptseite und Playground.
+
+**Kein neuer Mechanismus:** noch keine dritte Zeile; 117 gehört zur selben Klasse.
+
+### 117. Rot: dieselbe Fehlerklasse in Runde 4 ein drittes Mal, im Tippfilter des Textvergleichs (Spur 452, 09.10.2026).
+
+**Rot.** `playground/js/ui/tei/text-comparison.js` baut die Optionsbeschriftung, in der der Tippfilter sucht, aus `t.author`. Nach Runde 3 hatte ich den Sweep als erledigt gemeldet, obwohl er nur Stellen mit `dataset.author` und Filter-Aufrufen traf; die Beschriftung lag im selben Verzeichnis (`playground/`), aber in einem Template-Literal ohne eines der Suchwörter.
+
+**Die Lehre steht in `mengen.md` (Allaussagen) und im Reviewer-Memory „Template-Strings als Leser eines Felds“.** Die letzte Zeile zu dieser Lehre ist Eintrag 116.
+
+**Was es getragen hat:** eine weitere Review-Runde. Behoben in `75e5caf10`. Die Runde 5 hat den Sweep umgekehrt (vom Eingabefeld rückwärts, jede Stelle mit Befund oder Ausschluss in einer Tabelle) und keine weitere Stelle gefunden.
+
+**Mechanismus: die Methode, nicht eine Vorrichtung.** Der Sweep von der Eingabe her ersetzt die Suche nach dem Feldnamen; im Reviewer-Memory (`header_spiegel.md`) steht das Vorgehen. Ein Hook ist dafür nicht gebaut, weil die Fälle in Template-Strings verschiedener Dateien liegen und keine feste Form haben.
+
+### 118. Rot: nach Eintrag 115 am selben Tag wieder ein CI-Gate nicht lokal gelaufen, `check-doc-inventories.py` (Spur 452, 09.10.2026).
+
+**Rot.** Nach 115 habe ich vor dem Push die Schritte nicht aus den Workflow-Dateien abgelesen. `no-cdn-check.yml` ruft `scripts/audit/check-doc-inventories.py` auf (Z. 165). Es meldete, dass die neue Spec `attribution-status.spec.js` in `docs/DEVELOPMENT.md` und das neue Modul `assets/js/lib/attributions.js` in `assets/js/lib/README.md` fehlten; der Check `check` auf PR #556 war rot, bevor irgendein Mensch den PR las. Lokal nach der Korrektur: Spec 50 von 50, Module 13 von 13.
+
+**Die Lehre steht in `docs/DATA-MODEL.md` (Data-Change-Lifecycle): die Gates einer Änderung sind die Schritte der Workflow-Dateien, nicht eine Liste aus dem Gedächtnis.** Die letzte Zeile zu dieser Lehre ist Eintrag 115.
+
+**Was es getragen hat:** eine weitere CI-Runde auf dem PR. Behoben im Commit nach `002f65a86`.
+
+**Mechanismus: zweite Zeile, noch keine dritte.** Bei der nächsten Zeile zu dieser Lehre wird gewechselt; Vorschlag: eine Schleife über alle `run:`-Schritte der drei Workflows als Skript in `scripts/audit/`, die ein Mensch oder eine Session vor dem Push einmal aufruft.
+
+### 119. Rot: `flex-shrink-0` als regellos in `tailwind-output.css` gemeldet, mit einem Kontrollwert, der den Fehlermodus nicht teilen konnte (13.10.2026, #584).
+
+**Rot.** Für den Layout-Fix in `korpus.html` habe ich geprüft, welche Tailwind-Klassen in der vorgebauten CSS Regeln haben, mit `grep -o "\.<klasse>{"`, und `flex-shrink-0` als regellos gemeldet: an Christian und im Prüfauftrag an den Reviewer. Die Regel steht als gruppierter Selektor `.flex-shrink-0,.shrink-0{flex-shrink:0}` in der Datei; mein Muster verlangte die geschweifte Klammer direkt hinter dem Namen und konnte sie nicht treffen. Das ist derselbe Fall wie Eintrag 95, dieselbe Klasse, dieselbe Datei, zehn Tage später.
+
+**Die Lehre steht in `dateisuche.md`: ein leerer Abruf ist kein Nullbefund, vor dem Schreiben einen Kontrollwert mitsuchen, der treffen muss, und er liegt außerhalb des Zuschnitts.** Ich hatte Kontrollwerte (`justify-between`, `gap-2`), und beide trafen. Sie standen aber als einzelne Selektoren in der Datei, teilten also den blinden Fleck des Musters nicht: ein Kontrollwert prüft eine Suche nur, wenn er dort liegt, wo die Suche versagen könnte. Hier wäre es `shrink-0` gewesen, dessen Regel ich zwei Zeilen weiter gefunden hatte, mit der Frage, warum zwei Namen derselben Eigenschaft verschieden antworten. Die letzte Zeile zu dieser Lehre ist Eintrag 106.
+
+**Was es getragen hat:** nichts im Diff, weil `shrink-0` auf dieselbe Regel geht. Die falsche Aussage stand in einer Nachricht an Christian und im Prüfauftrag; der Reviewer hat sie in Runde 1 gefunden und angemerkt, dass sie in keine Bereinigung der bestehenden `flex-shrink-0`-Verwendungen wandern darf, die nicht tot sind.
+
+**Mechanismus:** keiner neu. Das Reviewer-Memory führt den Fall seit #228 mit tragfähigem Muster (`[.,]klasse[,{]`), und es hat gegriffen; mir fehlte der Blick dorthin vor dem Senden.
+
+### 120. Rot: Christian einen Signal-Text an KZW entworfen, dessen dritte Bildfrage die schon übernommene Reinmar-Tabelle nannte statt der drei Screenshots der MHDBDB-Oberfläche (13.10.2026, #93).
+
+**Rot.** Christian wollte KZW die offenen Bildfragen aus #93 direkt schreiben. Ich habe den Text aus dem Kommentar vom 09.10. in #93 verdichtet und dabei dessen Klammer zu Punkt 3 übernommen ("Reinmar-Tabelle"). Die Tabelle lag aber schon im PR (`textreihen/img/tabelle-reinmar-e.jpg`), und die drei Screenshots zeigen Filter und Werkansicht der MHDBDB, wie `textreihen/README.md` im selben Zweig sagt. Aufgefallen ist es erst auf Christians Folgefrage "hast du alle bilder?", als ich die Dateinamen gegen die alte Seite hielt; korrigiert habe ich in der Antwort darauf.
+
+**Die Lehre steht in `agentenbefunde.md`: ein Agentenbefund wird erst zur Aussage, wenn ich seine Quelle selbst geöffnet habe; eine frühere eigene Sitzung ist ein Agentenbericht.** Der Kommentar in #93 ist so ein Bericht, und die Quelle (README und Platzhalterkommentare im PR-Zweig) war mit einem Aufruf erreichbar. Die letzte Zeile zu dieser Lehre ist Eintrag 114.
+
+**Was es getragen hat:** eine Frage an KZW, die womöglich mit der falschen Beschreibung verschickt wurde; ihre Antwort ("dürfen verwendet werden") deckt alle drei Gruppen ab, also keine falsche Übernahme. Richtiggestellt in #93 mit dem Kommentar zur Antwort.
+
+**Kein neuer Mechanismus:** `agentenbefunde.md` ist ausgesetzt; die Aussetzung ist der Mechanismus.
+
+### 121. Rot: im Kickoff einer Spur die Frauenlob-Korrektur aus #236 an FR1 (NCQNST4V) festgemacht, obwohl sie an FR3 (MVWV5QYG) hängt (Koordination, 14.10.2026, #486).
+
+**Rot.** Für den Kickoff von `lauf-486` habe ich aus dem Body von #486 und aus dem Kommentar vom 14.10. übernommen, die Handkorrektur `115c3a01f` betreffe FR1 und gehöre in Zotero nach NCQNST4V. Beide Texte stammen aus früheren Sitzungen dieses Projekts. `git show 115c3a01f -- authority-files/works.xml` zeigt, dass der Commit den Block `key="FR3"` ändert. Der Befehl wäre ein einziger Aufruf gewesen, und ich hatte den Commit vorher sogar auf Existenz geprüft (`git cat-file -t`), aber nicht darauf, was er ändert. Aufgefallen ist es der Spur beim Sync-Lauf, über die Widerspruchsklausel des Kickoffs.
+
+**Die Lehre steht in `agentenbefunde.md`: ein Agentenbefund wird erst zur Aussage, wenn ich seine Quelle selbst geöffnet habe; eine Verdichtung oder frühere eigene Sitzung ist ein Agentenbericht.** Ein Ticket-Body aus einer früheren Sitzung ist genau das. Die letzte Zeile zu dieser Lehre ist Eintrag 120.
+
+**Was es getragen hat:** eine Frage an KZW, die seit 14:18 UTC mit dem falschen Zotero-Eintrag im Ticket stand, gestellt von der Sitzung vor diesem Lauf, aus derselben ungeprüften Angabe. Die Daten hat es nicht erreicht: Die Spur hat vor dem Schreiben gemessen. Richtiggestellt in #486 (Body und Kommentar 6172453940).
+
+**Kein neuer Mechanismus:** `agentenbefunde.md` ist ausgesetzt; die Aussetzung ist der Mechanismus. Gehalten hat hier der Mechanismus aus dem Operator-Skill, die Widerspruchsklausel im Kickoff.
+
+### 130. Rot: ein `cd` in das Scratchpad, mitten in der Arbeit, und danach lief die Arbeit eine Weile im falschen Verzeichnis (Spur lauf-554, 14.10.2026, #554).
+
+**Rot.** Beim Suchen in den abgerufenen Rohseiten habe ich ein `cd` auf das Scratchpad abgesetzt, um mit relativen Dateinamen zu suchen. Der Befehl lief durch, das Arbeitsverzeichnis der Sitzung wechselte, und ein folgender Git-Aufruf wurde vom Worktree-Schutz abgelehnt. Zurückgekommen bin ich wieder mit `cd`.
+
+**Die Lehre steht in `shell-konventionen.md`: kein `cd`, an keiner Trennstelle; Ersatz sind absolute Pfade oder `git -C`.** Die letzte Zeile zu dieser Lehre ist Eintrag 100.
+
+**Was es getragen hat:** nichts im Ergebnis; ein Suchlauf scheiterte am Muster (`rg` mit Glob), nicht am Verzeichnis, und die Funde habe ich mit dem Grep-Werkzeug auf absolutem Pfad wiederholt. Der Hook sperrt nur das `cd` in das eigene Arbeitsverzeichnis, nicht das in ein fremdes (Beobachtung aus Eintrag 100, hier zum zweiten Mal getroffen).
+
+**Kein neuer Mechanismus:** gleicher Befund wie in Eintrag 100; die Lücke (kein Hook für ein `cd` in ein fremdes Verzeichnis) bleibt dokumentiert. Eintrag 100 und dieser sind zwei Zeilen zur Lehre; bei der dritten wechselt der Mechanismus.
+
+### 131. Rot: die schmale Reviewrunde ohne Modellangabe gestartet, obwohl der Betriebsvertrag in jeder Runde `model: fable` verlangt (Spur lauf-554, 14.10.2026, #554).
+
+**Rot.** Nach Runde 2 (Fable, ohne A-Befund) habe ich Runde 3 als "schmale Runde" gestartet und dabei die Regel der kuratierten Sitzungen angewendet (ohne Modellangabe, also Opus). Der Kickoff und Regel 11 des Betriebsvertrags sagen für Läufe unter dem Vertrag: jede Runde und jede Folgerunde auf Fable, die Grenze gilt trotzdem. Die Koordination hat es bemerkt; ich habe die Opus-Runde abgebrochen und auf Fable neu gestartet.
+
+**Die Lehre steht in Regel 11 des Betriebsvertrags und im Kickoff 10.3 (Ausnahme zur reviewer-Definition für autonome Läufe).** Mein eigenes Briefing hatte sie am Anfang der Sitzung festgehalten ("jede Runde und Folgerunde mit `model: fable`"). Die letzte Zeile zu dieser Lehre ist keine.
+
+**Was es getragen hat:** eine kurz laufende Opus-Runde (abgebrochen, ohne Befund und ohne Änderung am Baum) und eine Runde Verzug. Abgewendet hat es die Koordination, nicht ein Mechanismus vor dem Start; deshalb gezählt.
+
+**Kein neuer Mechanismus:** der Kickoff steht an der richtigen Stelle; mir fehlte der Blick dorthin beim Wechsel von der vollen zur schmalen Runde.
+
+### 132. Rot: in Docstring und README Aussagen über den eigenen Text gemacht, die die Stelle nicht hergab, mehrfach in einer Sitzung (Spur lauf-554, 14.10.2026, #554).
+
+**Rot.** Der Reviewer hat nacheinander gefunden: (1) "nach `<def>`" im Docstring des Einfügeskripts, während keine der 96 Bedeutungen ein `<def>` trug; (2) in `entfallenes-suchen.py` die Semantik von `einordnung.json` invertiert beschrieben ("ab" statt "c"); (3) im neuen README-Absatz "beides steht jetzt wörtlich im Text" (die Literaturangabe stand in Klammerform), "Entstehungszeit und Gebräuchlichkeit stehen im Text" bei sat (Gebräuchlichkeit fehlte) und Zahlen, die den Stand vor der Ergänzung maßen (61 statt 58 Stücke). In keinem Fall hatte ich die Stelle vor dem Satz noch einmal aufgeschlagen.
+
+**Die Lehre steht in `eigene-quellen.md` (vor einer Aussage über eine Stelle in Reichweite wird die Stelle geöffnet, gerade wenn sie von mir stammt) und in `mengen.md` (Zahlen und Allaussagen tragen ihre Menge).** Die letzte Zeile zu dieser Lehre ist Eintrag 117.
+
+**Was es getragen hat:** nichts, die Aussagen standen in Doku und Docstrings, und der Reviewer hat sie in den Runden 1 bis 3 gefunden, bevor ein Leser sie benutzt hat. Gezählt wird es trotzdem, weil jede Aussage an dem Schreibtisch geprüft werden konnte, an dem sie entstand.
+
+**Kein neuer Mechanismus:** beim Schreiben von Zahlen und "wörtlich"-Aussagen in ein README lasse ich künftig das Messskript die Zahl ausgeben und kopiere sie aus der Ausgabe, statt sie aus dem Kopf zu setzen.

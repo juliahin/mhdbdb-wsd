@@ -4,6 +4,8 @@
  */
 
 import { displayHinweis, displaySummaryResults } from '../core/ui-helpers.js';
+import { parseLemmaIdInput } from '../../../../assets/js/lib/lemma-id-input.js';
+import { ladeDokumentBelege, readerUrl } from './dokument-belege.js';
 
 export class TEIExplorer {
     // Kein Konstruktor: bis #325/#327 nahm er teiData und authorityData
@@ -15,9 +17,15 @@ export class TEIExplorer {
         const lemmaIds = [];
 
         searchTerms.forEach(term => {
-            // Check if it's already a lemma ID (numeric)
-            if (/^\d+$/.test(term)) {
-                lemmaIds.push(term);
+            // Lemma-Nummer, "4086" wie "lemma_4086" (#467, KZW 24.09.2026):
+            // eindeutige ID, keine Schreibform. Bis dahin ging nur die nackte
+            // Zahl, und die ungeprueft: eine unbekannte Nummer lief als leere
+            // Suche durch, statt als "kein Lemma gefunden" gemeldet zu werden.
+            const idInput = parseLemmaIdInput(term);
+            if (idInput) {
+                if (window.playground?.authorityManager?.findLemmaById(idInput)) {
+                    lemmaIds.push(idInput.replace('lemma_', ''));
+                }
                 return;
             }
 
@@ -80,7 +88,12 @@ export class TEIExplorer {
     // ganz weg: dort schrieb der map-Callback undefined-Einträge in die
     // Detailliste, weil er ohne return durchfiel, und übrig geblieben wäre
     // ein return [].
-    displayMultiLemmaResults(results, searchTerms) {
+    //
+    // lemmaIds sind die IDs, mit denen gesucht wurde (#58). Die Karten
+    // laden damit ihre Fundstellen nach und verlinken die Leseansicht; die
+    // Schreibformen in searchTerms werden dafuer nicht neu aufgeloest, sonst
+    // zeigte `arm` (lemma_286) beim Aufklappen die Belege von lemma_285.
+    displayMultiLemmaResults(results, searchTerms, lemmaIds = []) {
         if (results.length === 0) {
             displayHinweis(
                 `Multi-Lemma-Suche: ${searchTerms.join(' + ')} (0 Treffer)`,
@@ -91,19 +104,7 @@ export class TEIExplorer {
         }
 
         // Create summary data for the new display format
-        const summaryData = this.createMultiLemmaSummary(results);
-
-        // Die Dokumentsuche liefert keine matchingPositions (tei-manager.js
-        // pusht filename/title/author/context/matchCount), hier stand
-        // bis #327 ein Ternär, dessen erster Zweig nie griff.
-        //
-        // Die leere Liste wird trotzdem übergeben, aber nicht aus Not: das
-        // Argument hat in displaySummaryResults den Default null, und beide
-        // Lesestellen vertragen null (die eine normalisiert mit `|| []`, die
-        // andere kehrt per Guard früh zurück). Sie steht hier, damit der Aufruf
-        // dieselbe Gestalt hat wie der der Nähe-Suche darunter, die echte IDs
-        // übergibt.
-        const lemmaIds = [];
+        const summaryData = this.createMultiLemmaSummary(results, lemmaIds);
 
         displaySummaryResults(
             `Multi-Lemma-Suche: ${searchTerms.join(' + ')}`,
@@ -113,7 +114,7 @@ export class TEIExplorer {
         );
     }
 
-    createMultiLemmaSummary(results) {
+    createMultiLemmaSummary(results, lemmaIds = []) {
         // Group results by filename for better organization
         const fileGroups = {};
 
@@ -126,15 +127,22 @@ export class TEIExplorer {
 
         return Object.entries(fileGroups).map(([filename, fileResults]) => {
             const count = this.getResultCount(fileResults);
+            const textId = filename.replace(/\.tei\.xml$/, '');
 
             return {
                 title: `${filename}`,
                 count: count,
-                preview: this.createPreviewText(count),
-                // Die Dokumentsuche hat keine Detailzeilen. createSummaryCard in
-                // ui-helpers.js rendert bei leerer Liste die statische Karte
-                // ohne Aufklapp-Symbol, genau das ist hier gewollt.
-                details: []
+                preview: this.createPreviewText(count, lemmaIds.length > 1 ? fileResults[0].matchCounts : null),
+                details: [],
+                // #58 (KZW 2026-10-12, Variante a + c): die Karte klappt auf
+                // und zeigt die Fundstellen, das TEI wird erst dann geladen.
+                // Dazu der ganze Text mit allen gesuchten Lemmata hervorgehoben.
+                lazyDetails: () => ladeDokumentBelege(filename, lemmaIds),
+                headerLink: {
+                    href: readerUrl(textId, lemmaIds),
+                    label: 'Gesamten Text öffnen',
+                    title: 'Ganzen Text in der Leseansicht öffnen, alle gesuchten Lemmata hervorgehoben'
+                }
             };
         });
     }
@@ -154,9 +162,18 @@ export class TEIExplorer {
     }
 
     // Nimmt die fertige Zahl, nicht die Liste: der Aufrufer hat getResultCount
-    // zwei Zeilen vorher schon gerufen.
-    createPreviewText(count) {
-        return count === 1 ? '1 Beleg' : `${count} Belege`;
+    // zwei Zeilen vorher schon gerufen. Bei mehreren Lemmata (#58) folgt die
+    // Zahl je Lemma, damit die Summe nicht als Belegzahl eines Lemmas gelesen
+    // wird.
+    createPreviewText(count, countsByLemma = null) {
+        const gesamt = count === 1 ? '1 Beleg' : `${count} Belege`;
+        if (!countsByLemma) return gesamt;
+        const am = window.playground?.authorityManager;
+        const teile = Object.entries(countsByLemma).map(([id, n]) => {
+            const name = am?.findLemmaById(id)?.lemma || id;
+            return `${escapeHtml(name)} ${n}`;
+        });
+        return `${gesamt}: ${teile.join(' · ')}`;
     }
 
     // findCooccurringLemmas() method removed - now handled by MultiLemmaSearchUI modal
@@ -237,4 +254,11 @@ export class TEIExplorer {
         );
     }
 
+}
+
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
 }

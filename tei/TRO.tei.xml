@@ -95,7 +95,7 @@
       <editorialDecl>
         <p xml:lang="de">Lokale Dateireferenzen (z.B. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) verweisen auf kontrollierte Vokabulare im authority-files Verzeichnis dieses Repositorys. Diese internen Querverweise ermöglichen die Verknüpfung mit Personen-, Werk-, Lemma-, Konzept-, Genre- und Namensautoritätsdateien.</p>
         <p xml:lang="en">Local file references (e.g. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) point to controlled vocabularies in the authority-files directory of this repository. These internal cross-references enable linking to person, work, lemma, concept, genre, and name authority files.</p>
-      <normalization><p>Noch nicht lemmatisiert und disambiguiert.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
+      <normalization><p>Teilweise lemmatisiert, teilweise semantisch disambiguiert.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
       <classDecl>
         <taxonomy xml:id="genres">
           <bibl>Genreklassifikation gemäß der Textreihentypologie <ptr target="https://www.mhdbdb.sbg.ac.at/textreihen"/></bibl>
@@ -133,6 +133,8 @@
       <change when="2026-08-24" who="#editor">#216 Serie 1 (minne): 315 homographie-ambige Tokens der Form minne kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu minne NOM bzw. minnen VRB; LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/216-minne/). 30 weitere Tokens der Form minne blieben bewusst unannotiert (Review).</change>
       <change when="2026-08-24" who="#editor">#369 Serie 2 (stat): 266 homographie-ambige Tokens der Form stat kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu stat NOM bzw. stan/sten VRB; LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/369-stat/). 1 weitere Tokens der Form stat blieben bewusst unannotiert (Review).</change>
       <change when="2026-08-31" who="#editor">#367 (wâren als Adjektiv): 1 Token der Fügung „der/die wâren minne“ von lemma_7505 wesen (VRB) auf lemma_7338 wâr (ADJ) umannotiert (lemmaRef, pos und corresp; philologische Einzelentscheidung von K. Zeppezauer-Wachauer vom 2026-08-25, kein LLM-Batch; Provenienz-Log: ingest/pos-disambig/367-waeren/).</change>
+      <change when="2026-09-30" who="#editor">#493: Angabe zur semantischen Disambiguierung in encodingDesc/normalization an den Stand der Annotation angeglichen (159901 von 213245 lemmatisierten Tokens tragen einen Begriff in @ana). Vorher: &#34;Noch nicht lemmatisiert und disambiguiert.&#34;</change>
+      <change when="2026-10-10" who="#editor">#460 jagen: 5 Tokens als Verbform gelesen, von lemma_3103 jagât (NOM) auf lemma_3102 jagen (VRB) umgehängt, @ana entfällt; neu geprägte Variantentypen nach der Regel aus #367.</change>
     </revisionDesc>
   </teiHeader>
   <text>
@@ -119496,7 +119498,7 @@
           <w xml:id="TRO_15256_1" lemmaRef="lexicon.xml#lemma_714" pos="VRB" ana="lexicon.xml#lemma_714_sense_1168" corresp="variants.xml#type_52073">birset</w>
           <w xml:id="TRO_15256_2" lemmaRef="lexicon.xml#lemma_3691" pos="NOM ADJ ADV" corresp="variants.xml#type_12841">leider</w>
           <w xml:id="TRO_15256_3" lemmaRef="lexicon.xml#lemma_6467" pos="CNJ" ana="lexicon.xml#lemma_6467_sense_10233" corresp="variants.xml#type_22826">unde</w>
-          <w xml:id="TRO_15256_4" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+          <w xml:id="TRO_15256_4" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
         </l>
         <l n="15257">
           <w xml:id="TRO_15257_0" lemmaRef="lexicon.xml#lemma_7075" pos="ADJ ADV" ana="lexicon.xml#lemma_7075_sense_11459" corresp="variants.xml#type_25008">vil</w>
@@ -163670,7 +163672,7 @@
           <w xml:id="TRO_20945_2">sin</w>
           <w xml:id="TRO_20945_3" lemmaRef="lexicon.xml#lemma_3022" pos="NOM ADJ" ana="lexicon.xml#lemma_3022_sense_4827" corresp="variants.xml#type_10356">iht</w>
           <w xml:id="TRO_20945_4" lemmaRef="lexicon.xml#lemma_207" pos="ADV" ana="lexicon.xml#lemma_207_sense_259" corresp="variants.xml#type_556">anders</w>
-          <w xml:id="TRO_20945_5" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+          <w xml:id="TRO_20945_5" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
           <pc xml:id="TRO_20945_6" join="left">,</pc>
         </l>
         <l n="20946">
@@ -244302,7 +244304,7 @@
           <w xml:id="TRO_31427_1" lemmaRef="lexicon.xml#lemma_1517" pos="PRO" ana="lexicon.xml#lemma_1517_sense_2355" corresp="variants.xml#type_32780">im</w>
           <w xml:id="TRO_31427_2" lemmaRef="lexicon.xml#lemma_6194" pos="VRB" corresp="variants.xml#type_21866">trîbet</w>
           <w xml:id="TRO_31427_3" lemmaRef="lexicon.xml#lemma_6467" pos="CNJ" ana="lexicon.xml#lemma_6467_sense_10233" corresp="variants.xml#type_22826">unde</w>
-          <w xml:id="TRO_31427_4" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+          <w xml:id="TRO_31427_4" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
           <pc xml:id="TRO_31427_5" join="left">.</pc>
         </l>
         <l n="31428">
@@ -255349,7 +255351,7 @@
           <w xml:id="TRO_32877_0">in</w>
           <w xml:id="TRO_32877_1" lemmaRef="lexicon.xml#lemma_1517" pos="POS" ana="lexicon.xml#lemma_1517_sense_2355" corresp="variants.xml#type_5014">sîner</w>
           <w xml:id="TRO_32877_2" lemmaRef="lexicon.xml#lemma_6124" pos="NOM" ana="lexicon.xml#lemma_6124_sense_9656" corresp="variants.xml#type_21590">tobeheite</w>
-          <w xml:id="TRO_32877_3" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+          <w xml:id="TRO_32877_3" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
           <pc xml:id="TRO_32877_4" join="left">.</pc>
         </l>
         <l n="32878">
@@ -288349,7 +288351,7 @@
           <w xml:id="TRO_37155_0" lemmaRef="lexicon.xml#lemma_7193" pos="PRP" ana="lexicon.xml#lemma_7193_sense_11656" corresp="variants.xml#type_25544">von</w>
           <w xml:id="TRO_37155_1" lemmaRef="lexicon.xml#lemma_9204" pos="ADV" ana="lexicon.xml#lemma_9204_sense_13738" corresp="variants.xml#type_31022">hinnen</w>
           <w xml:id="TRO_37155_2" lemmaRef="lexicon.xml#lemma_126" pos="ADJ ADV" ana="lexicon.xml#lemma_126_sense_160" corresp="variants.xml#type_315">algemeine</w>
-          <w xml:id="TRO_37155_3" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+          <w xml:id="TRO_37155_3" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
           <pc xml:id="TRO_37155_4" join="left">?</pc>
         </l>
         <l n="37156">

@@ -15,7 +15,9 @@ Search for Middle High German words across the corpus with automatic normalizati
 - System normalizes MHG characters (â→a, ô→o, ü→ue)
 - Resolves orthographic variants (e.g., "brot", "brott" → "brôt")
 - Searches across selected texts
+- **Lemma number as input (#467):** `4086` or `lemma_4086` means exactly that lemma, bypassing the variant resolution; the lemma appears in the info box even without hits in the selection, an unknown number finds nothing (CONTRACTS §C.1.2)
 - **Multi-lemma disambiguation:** When search resolves to multiple lemmata, results are deduplicated by text with all matched lemmata displayed
+- **Ambiguous written forms (#378, ADR-021):** A form that several lemmata attest (`hab`: *haben* and *habe*) resolves to all of them, and the info box says so: „Diese Schreibform kann zu mehreren Lemmata gehören. Die Lemmata stehen in der Reihenfolge, wie häufig diese Schreibform im Korpus beim jeweiligen Lemma belegt ist." Nothing is decided for the reader by a tie-break (CONTRACTS §C)
 - Returns results with match counts aggregated across lemmata
 
 **Visual design:**
@@ -80,6 +82,7 @@ Full-text immersive reader with multi-lemma highlighting and rich metadata.
 - **TEI structural rendering:** Full support for structural elements (headings, divisions, stanzas, page/column breaks, caesuras, editor insertions)
 - **Wikidata integration:** Automatic image fetching with attribution
 - **Dual identifiers:** Separate GND/Wikidata for work vs author
+- **Attribution status (#452):** the author line shows every attribution that counts with its status, e.g. „Anonym; Konrad von Würzburg (umstritten)" (RHB). A *Bearbeiter* (BAX) and a rejected attribution (Bligger von Steinach at CR) stand in the metadata panel under „Bearbeiter" and „Frühere Zuschreibungen", the evidence as tooltip; neither counts as author. The result table and its CSV carry the same line. Rules: [CONTRACTS.md F.6](CONTRACTS.md#f6-attribution-status-which-author-a-reader-sees-452)
 - **Context navigation:** Prev/next buttons to jump between occurrences
 - **Back to the start of the text (#138):** a round jump button at the bottom right, as soon as the panel header has scrolled out of the viewport; it jumps back to title and metadata, not to the top of the page
 - **Verse numbering per counting range (#138):** the visible margin numbering restarts at 1 in every `<div>` that begins its own **continuous** count at `n="1"`. Two conditions make the criterion: the first numeric `<l>` carries `n="1"`, and the 1 occurs exactly once inside the `<div>`. Lines of an embedded parallel witness (`div[@type="parallel"]` inside another `<div>`) do not count towards this: every witness is measured on its own lines only (#250, see below). Of 7,256 `<div>`s in the corpus 3,128 meet the first condition, of which **1,959 in 138 texts** qualify (1,364 `chapter`, 252 `song`, 159 without `@type`, 156 `section`, 21 `parallel`, 7 `number`). This makes **1,818 additional margin numbers in 50 texts** visible. The largest case is PZ (Parzival) with +826, followed by WH (+466, which entered this statistic only with the Willehalm rebuild in #358), FR3 (+136), CHH (+53), TKR (+40) and HUG (+39, Julia's original case). Measured 2026-09-08. The basis is `python scripts/audit/count-verse-numbering-resets.py`, which rebuilds the render order and compares „with reset" against „without reset"; since #302 it carries the witness separation, so every number in this paragraph is reproducible.
@@ -88,8 +91,10 @@ Full-text immersive reader with multi-lemma highlighting and rich metadata.
 
   The second condition is the actual protection: texts with **stanza-local** counting inside a `<div>` deliberately get no anchor. It discards 1,169 `<div>`s in 84 texts corpus-wide and thereby prevents 1,007 unmotivated margin ones. NLA (Nibelungenlied ms. A) is the textbook case: 38 untyped `<div>`s in which every stanza starts at 1 again and which render no heading at all for lack of `@type`/`@n`; without the condition the text would get exactly 38 additional margin ones, that is the #127 regression through `<div>` instead of through `<lg>`. NBB is structurally untouched by the change, because the text contains no `<div>` elements
 - **URL parameters:** `?textId=ABG&lemmaIds=879,7532&position=310`
+- **URL state of the corpus search (#434):** what the search page itself writes into the address is the search term and the open text, nothing else: `?search=minne` after a search, `?search=minne&textId=ABG` once a text is open, with `&position=310` when it was opened from a KWIC hit. A search replaces the current history entry; opening a text adds one, so the browser's back button closes the reading panel and leaves the hit list as it was, and forward reopens the text. Reload, bookmark and a copied address restore search and text (search first, then the text, highlighted from the hits). Text selection, filters, page and sort order are not in the address. An incoming deep link (`?textId=ABG&lemmaIds=879,7532&position=310`) keeps its address as handed over, including `lemmaIds`, `verse` and `verseId`, until the next search rewrites it. A text opened from a sigle link inside the reading panel is not a history step yet
 - **Excerpt context (#134):** texts with `biblScope unit="verse"` in the header (excerpts of a larger work, e.g. AK from the Steirische Reimchronik) show a visible banner above the text plus an „Ausschnitt" metadata section (excerpt, whole work, verse range, context); see TEI-MODEL.md §2.1
-- **Editorial interventions (#250):** an expandable metadata section with the statements from the `<editorialDecl>` of the text, in document order. It carries the note that where the MHDBDB intervened in the text, the printed edition is authoritative for quotation. The clearest case is FR3: there the two appendices of the edition are swapped (appendix I counted as XV) and an error in the editors' verse numbering is corrected. Not shown is the repository boilerplate about resolving local file references, which 666 headers carry word for word in German and English; after that filter 664 texts keep between 1 and 42 paragraphs, while CEFB, GWTK and KVO keep none and the section is omitted there. Numbers reproducible via `python scripts/audit/count-editorial-notes-and-div-heads.py`
+- **Editorial interventions (#250):** an expandable metadata section with the statements from the `<editorialDecl>` of the text, in document order. It carries the note that where the MHDBDB intervened in the text, the printed edition is authoritative for quotation. The clearest case is FR3: there the two appendices of the edition are swapped (appendix I counted as XV) and an error in the editors' verse numbering is corrected. Not shown is the repository boilerplate about resolving local file references, which 666 headers carry word for word in German and English; after that filter every text keeps at least one paragraph (1 to 43, as of 2026-10-08). A text without any would show no section; CEFB, GWTK and KVO were such texts until #493 added the statement on semantic disambiguation to their headers. Numbers reproducible via `python scripts/audit/count-editorial-notes-and-div-heads.py`
+- **Thirty-verse sections and books (#358):** a `<div type="chapter" subtype="dreissiger">` (PZ, WH) is labelled „Strophe N" instead of „Kapitel N" (KZW, 2026-09-11, after Alan's check against Leitzmann); `type` stays `chapter`, so the numbering restart and the `verseId` deep links are untouched, and `div type="chapter"` without that subtype keeps „Kapitel N". `<milestone unit="book" n="II"/>` renders as a heading „Buch II" at its position (Books II, III and IV of the Parzival begin inside a thirty-verse section, which is why they are milestones and not enclosing divs). A book that begins at the start of a section is shown above that section's „Strophe N" label, not below it
 - **Section label above an own heading (#250):** if a typed `<div>` carries a `<head>` of its own, the synthetic label („Lied 5", „Rezept 1") becomes the superordinate line of that heading instead of a second heading of equal rank next to it. This affects 1,097 of the 5,143 typed `<div>`s in 35 texts (403 `song`, 320 `chapter`, 301 `recipe`, 72 `number`, 1 `section`), led by NEI and NEIC (124 each), WZB (97) and KBL4/SUB1 (66 each). Measured 2026-09-08; the denominator stood at 4,676 until then, which was the state before #358 gave the Willehalm its 467 typed `<div>`s. The numerator is untouched by that, because WH carries no `<head>` at all. The label stays visible because in none of these cases does the `<head>` carry the number from `@n` (AC1: `n="1"` and „das i capitel", ABS: `n="1"` and „basteten .") and 932 of the divs have an `@n`; suppressing it would remove the only visible count of the section
 
 **TEI elements rendered:**
@@ -108,7 +113,7 @@ Full-text immersive reader with multi-lemma highlighting and rich metadata.
 
 ### Dictionary, the A–Z register (#117)
 
-A conventional dictionary entry page (`woerterbuch.html`) for all 43,713 lemma pages.
+A conventional dictionary entry page (`woerterbuch.html`) for all 43,710 lemma pages.
 
 **How it works:**
 - An A–Z index bar (plus `#` for numeric lemmata) with the entry count per letter as a tooltip
@@ -117,6 +122,7 @@ A conventional dictionary entry page (`woerterbuch.html`) for all 43,713 lemma p
 - Every entry (lemma plus POS badge) links to the persistent lemma page `lemma/?id=N`
 - Deep links through URL state: `woerterbuch.html?buchstabe=s&seite=3`
 - Reachable from the header menu item „Wörterbuch" on every page
+- Pure word components (#228): an entry without any corpus attestation that another entry names in its etymology (`seg type="component"`) carries the short tag „nur als Wortbestandteil" (full sentence as tooltip). The status is derived, never stored: `noCorpus: true` on the lemma in the authority index (set by the build only for lemmata without a corpus attestation, since 1.9.18) plus the `etymology[].lemmaRef` of all other lemmata, one shared rule in `assets/js/lib/component-only.js`. The tag describes the state of coverage and does not confirm that the recorded decomposition is correct (KZW, 2026-10-01)
 
 **Naming decision:** „Wörterbuch" instead of „Lemmata" (the playground's technical term) or „Wortindex" (old MHDBDB; mentioned in the page subtitle as a bridge), reasoned in issue #117.
 
@@ -135,17 +141,18 @@ The playground provides advanced research tools for medievalists and digital hum
 
 ### Authority File Exploration
 
-Browse and search six controlled vocabularies with consistent interface patterns.
+Browse and search the controlled vocabularies with consistent interface patterns.
+
+**IDs as input (#545):** every search field below also takes the entry's id, in the forms `concept_12040000`, `12040000`, `#concept_12040000` or `concepts.xml#concept_12040000`, so the suggestions of the Begriffshilfe (which names concepts by id) can be looked up directly. The id hit is added on top of the text hits rather than replacing them, and an id with another register's prefix finds nothing. Shared helper: `assets/js/lib/authority-id-input.js`. The concept distribution takes the same forms.
 
 **Person Explorer:**
 - Search by author name
-- Display: Name, GND/Wikidata links, work count
-- Action: View all works by author
+- Display: Name, GND/Wikidata links, work count, and where they exist the counts of works as *Bearbeiter* and of earlier attributions (#452)
+- Action: View all works by author, a disputed attribution marked „(umstritten)"; adaptations and earlier attributions are listed apart, never among the works the person wrote
 
 **Work Explorer:**
-- Search by title, sigle, or author
-- Display: Title, sigle, author, genres, GND/Wikidata (work-specific), bibliographic references
-- Note: v1.1.0 added separate work identifiers (distinct from author)
+- Search by title, sigle, or author (every author that counts finds the work, #452)
+- Display: Title, sigle, authors with attribution status, adapter, earlier attributions, genres, GND/Wikidata (work-specific), bibliographic references
 
 **Lemma Explorer:** two named modes, switchable in the header, routed as `#lemmata` and `#lemmata&mode=component`
 
@@ -169,7 +176,7 @@ Browse and search six controlled vocabularies with consistent interface patterns
 - Search by concept term (German or English)
 - Display: Term, hierarchy (broader/narrower), associated lemmata
 - Action: Navigate hierarchy, view all lemmata for concept
-- Note: v1.1.0 replaced inline truncation with full searchable interface
+- Below the search field and in the zero-hit message, a link to the help page „Passende Begriffe finden" (Begriffshilfe, #498; see below)
 
 **Genre Explorer:**
 - Resting state is the typology as an expandable tree, from its two roots
@@ -189,7 +196,6 @@ Browse and search six controlled vocabularies with consistent interface patterns
   (`Epik, Lyrik und Dramatik › Kurzdichtung › Märe`) instead of the unordered
   " UND " chain of all ancestors that stood there until #361
 - Action: view all works in a genre, or all authors
-- Note: v1.1.0 fixed hierarchy extraction
 
 **Name Explorer:**
 - Search by proper name
@@ -198,21 +204,25 @@ Browse and search six controlled vocabularies with consistent interface patterns
 
 ### TEI Text Analysis
 
-Corpus-wide text analysis using pre-built indexes. Eleven analysis tools in eleven playground entries (multi-lemma offers document, proximity and verse mode in one entry), all of them in place in the results panel as form plus body (except multi-lemma, which is a modal). The two curated external datasets described at the end of this section, character naming (#59) and arthurian horses (#193), are counted separately: with #194 they moved into a group of their own, "Experimentelle Forschungsdaten".
+Corpus-wide text analysis using pre-built indexes. The analysis tools have playground entries of their own (multi-lemma offers document, proximity and verse mode in one entry), all of them in place in the results panel as form plus body (except multi-lemma, which is a modal). The curated external datasets described at the end of this section, character naming (#59) and arthurian horses (#193), are listed separately: with #194 they moved into a group of their own, "Experimentelle Forschungsdaten".
 
-**Which tools the corpus selection governs (#204).** The text selection in the Corpus Browser (Step 1) is the analysis basis for eight of the eleven tools: multi-lemma search plus co-occurrence ranking, verse-position search, concept distribution, lemma distribution, word frequency, text statistics, verse-ending profile. Three tools stand apart, each for a stated reason, and each says so in its own header:
+**Which tools the corpus selection governs (#204).** The text selection in the Corpus Browser (Step 1) is the analysis basis for these tools: multi-lemma search plus co-occurrence ranking, verse-position search, concept distribution, lemma distribution, word frequency, text statistics, verse-ending profile. Some tools stand apart, each for a stated reason, and each says so in its own header:
 
 - **Hapax legomena** stays corpus-wide. Whether a lemma occurs exactly once can only be established against the whole corpus, so a selection would change the definition rather than the scope. "Beitrag pro Text" shows which text contributes which rarities.
 - **Text comparison** picks its two texts itself; the Step 1 selection does not narrow its dropdowns.
 - **Rhyme dictionary** has its own text filter field and stays corpus-wide through the thunk. Filtering twice, once visibly and once not, is the very confusion #204 is about. Instead, when Step 1 holds exactly one text, its sigle is written into that visible field, where it can be read and deleted. An exact sigle there beats title and author substrings, so `CR` means Moriz von Craûn and not additionally Diu Crone.
 
-Until 2026-09 only the multi-lemma search read the selection at all; the other ten always received all texts while the counter next to them read "1 / 667 Texte aktiv". The split now runs through two thunks in `playground-main.js` (`selectedTextsThunk` and `corpusTextsThunk`), and an empty selection is reported as such instead of as a loading state (`ui/tei/corpus-scope.js`).
+**Selection changes while a tool is open (#442).** The selection-dependent tools show a warning above their panel when the selected text IDs change. The existing result stays visible until the user chooses "Neu berechnen"; changing checkboxes does not launch an analysis. Recalculation preserves the tool's search parameters. Restoring the original selection removes the warning, as does navigating to another tool. A selection change during an asynchronous calculation also leaves the warning visible. A tool holding no result shows no warning: the panel tools with a search field (lemma distribution, verse position, concept distribution, cooccurrence ranking) display an empty form until a search has run, and a warning over an empty form would claim a result that was never computed; the same holds after a search that found no lemma or concept. The null finding counts as a result and is stamped, because "no occurrences in the selected texts" is a statement about that selection. So is "Kein Text ausgewählt": checking a text again brings back the warning and "Neu berechnen".
+
+Until 2026-09 only the multi-lemma search read the selection at all; the other tools always received all texts while the counter next to them read "1 / 667 Texte aktiv". The split now runs through two thunks in `playground-main.js` (`selectedTextsThunk` and `corpusTextsThunk`), and an empty selection is reported as such instead of as a loading state (`ui/tei/corpus-scope.js`).
 
 **Multi-Lemma Document Search:**
 - Input multiple lemmata (space-separated or one per line)
 - Find texts containing ALL lemmata (anywhere in document)
 - Automatic variant resolution
-- Results: List of matching texts
+- A lemma number (`879`, `lemma_879`) is taken as that id in all three modes; its chip shows the lemma it resolves to (`lemma_879 = brôt`) or „unbekannte Lemma-Nummer" (#467)
+- Results: one card per matching text with the attestation count, per lemma when several are searched
+- A card expands into its attestations (#58): verse or line, a few words of context, the searched word highlighted, grouped per lemma in its colour, at most 50 per lemma with a note giving the total; each row opens the reading view at that position. „Gesamten Text öffnen“ on every card opens the whole text with all searched lemmata highlighted. The TEI is loaded only when the card is expanded
 
 **Multi-Lemma Proximity Search:**
 - Input multiple lemmata
@@ -274,6 +284,7 @@ Until 2026-09 only the multi-lemma search read the selection at all; the other t
 - An expandable „zugeordnete Lemmata" section for validating the concept selection
 - Clicking a hit opens the reading view
 - A **live autocomplete dropdown** in the concept input (max. 8 suggestions, arrow navigation, Enter selects and searches, Escape closes), the same pattern as DWDS or Google search
+- Below the intro and in the „Kein Begriff gefunden" box, a link to the Begriffshilfe (#498)
 
 **Text comparison (#108):**
 - Choose two texts through dropdown menus (all 667 sigles with title and author)
@@ -320,23 +331,26 @@ Until 2026-09 only the multi-lemma search read the selection at all; the other t
 - **Counting rule of the lemma perspective, and it is Linda's:** one row of the source is **one** naming. It counts once for the character named even when the lemma stands in several columns of that row. The two group columns count how many of those namings had the lemma in that group, so their sum can exceed the number of namings; in the Trojanerkrieg `got` names Jupiter 17 times, 17 as a naming variant and 1 of those additionally as an epithet. That overlap is rare: in the whole index exactly **three** records carry the same lemma in both groups (IW `der`, ROL `der`, TRO `got`; ENE none). Not to be confused with the 23 to 90 lemmata per work that stand in both groups across *different* records, where the two columns simply add up to the namings. The share column refers to the namings currently displayed, not to all of the lemma in the work; the reference is in the column header. That is the one deviation from Linda's spec, and it only concerns the speaker sub-filter, which her spec does not have: for the category tabs her `total_mentions` is the scope's total as well. The column does **not** reliably add up to 100, because the rounding happens per row: `helt` in the Rolandslied sums to 98 and `hêrre` to 95, and Linda's own reference file does the same for `helt`. Of 433 lemmata with at least two characters, 244 hit exactly 100; the range is 91 to 121 (measured 2026-09-23 with the module's `Math.round`; the earlier 247 and 89 to 109 came from Python's `round()`, which rounds halves to even)
 - **Parity with Linda's reference implementation is measured, not assumed.** Her published dataset `figures_by_lemma_helt_naming_variants.json` (Naming-analysis v0.3.0-beta) gives Ruolant 34 mentions, 31 by the narrator, 3 in character speech, 0 self-namings, 34 as naming variant, 0 as epithet, 44 percent share. Our view computes the same seven values from the index pinned at v0.3.0-beta (and did so already at v0.2.2-beta), and the spec pins them (`naming-explorer.spec.js`). Her scopes `naming_variants` and `epithets` are our category groups: naming variant is proper name plus cover name plus antonomasia (her columns „Bezeichnung 1-4"), epithet is „Epitheta 1-5". Our categories are the finer cut, so the four category tabs can do her three scopes and more
 - The source notation stays visible, and since 2026-08-11 it is a typology of eight instance types with six markers rather than the two interchangeable signs it used to be: square brackets for a collective (`[haiden]`), angle brackets for a role figure or a member of a collective (`<hirte>`), braces for an instance that is not a person (`{Inschrift}`), ` & ` for a group (`Pallas & Juno`), a degree sign for a disembodied instance (`°diu stimme`), and a leading `#` for a person merely quoted (`#David`). No marker means an individual figure or the narrator. Role figure and collective member share their marker and are not distinguishable by pattern, which the module states instead of assigning one of them. The normative source is `data/instance_types.json` in Linda's repository, and the build fails if a type or marker appears there that the module does not carry. No distribution figures here: the weekly auto-update moves the source state without reading this file, and the module derives the legend from the loaded index at runtime, naming only the classes the selected work actually carries. The grouping key that used to cut the notation off is gone; cutting would be wrong, since `#David` and an acting David would become the same namer
-- The lemma filter is MHG-normalized („tore" finds `tôre`)
+- The lemma filter is MHG-normalized („tore" finds `tôre`) and diacritic-folded („neve" finds `nëve`, „kunic" finds `künic`, #525)
 - Reader deep links for ROL and TRO: verse numbers link into the reading view via `korpus.html?textId=<SIG>&verse=<n>` (jumping to the verse line with a highlight pulse). The verse counting of these two works coincides with the MHDBDB TEI counting (Linda Beutel-Thurow, #59 comment of 2026-06-11; TRO spot check verified 4 of 4). ENE and IW follow different edition counts and deliberately stay without links
 - Attribution visible in the module, rendered from `source` in the index rather than written out a second time, so a version bump moves it: as of 2026-09-23 Beutel-Thurow, L. (2026). Naming-analysis (v0.3.0-beta), DOI 10.5281/zenodo.21914259, CC BY-NC-SA 4.0 (the DOI as Linda's `CITATION.cff` gives it for this release). A build guard (`pruefe_zitation`) compares version and DOI against the `CITATION.cff` of the source state and fails on a mismatch, since the weekly rebuild would otherwise ship new data under an old citation
 - Data basis: `data/naming-index.json.gz` (~110 KB), built via `scripts/ingest/naming/01-fetch-and-build-index.py`, lazily loaded without an IndexedDB cache. One work-specific alias addition sits on our side in `scripts/ingest/naming/alias-overrides.json`: „Alexander" is the name Paris goes under in the Trojanerkrieg, so the naming names him rather than describing him, and it counts as a cover name there. Linda's `lemma_normalization.json` normalizes across all works and would carry the alias into places where it is wrong (approved by Linda, #59 comments of 2026-07-28 for the alias and 2026-08-10 for the category; affects exactly one record, TRO V. 20665)
 
 **Arthurian horses (#193, beta):**
 - Curated encoding of the horses in five works (WH, PZ, ER, IW, TR) from Luise Borek's exemplary study: 13 horses (10 named, 3 unnamed), 346 attestations
-- Choose a horse; the table gives every attestation with Borek's wording and what she marked there: the event (intro, combat, care, loss, transfer, communication, recognition, gift), traits (colour, marking, quality), gear, and owner or rider. The event buttons filter the attestations
+- Choose a horse; the table gives every attestation with Borek's wording and what she marked there: the event (intro, combat, care, loss, transfer, communication, recognition, gift), traits (colour, marking, quality), gear, the horse's condition (`state`, since 2026-10-02: wounded, dead, cut in half), and owner or rider. The event buttons filter the attestations
 - The summary names the works, the traits and gear attested, the characters involved, and the horse's spelling variants (Gringuljete alone has six)
-- **Both citations are shown, and Borek's is the visible one.** Her verse reference is the citable one and stays verbatim; our resolved verse only drives the link. For nine of the 346 attestations the two diverge, because our Parzival follows Leitzmann (ATB 12) while Borek names no edition at all. Those attestations carry an asterisk with the reason; the link still lands on the right verse, since every citation was matched on wording
+- **Both citations are shown, and Borek's is the visible one.** Her verse reference is the citable one and stays verbatim; our resolved verse only drives the link. For eight of the 346 attestations the two diverge (the view counts them from the index), because our Parzival follows Leitzmann (ATB 12) while Borek names no edition at all. Those attestations carry an asterisk with the reason; the link still lands on the right verse, since every citation was matched on wording
 - Reader deep links via `korpus.html?textId=<SIG>&verseId=<wordId>`, the word-id route added for this feature (#193). `?verse=<l n>` would not do: in PZ the `@n` counts only inside the thirty-line section, in WH the section number did not exist in the TEI at all when this was built (it became `<div type="chapter">` in #358, and the `@n` there now counts inside the section just as in PZ), and the Ambraser insert in ER sits as one `<l n="4629">` covering the cores 462900 to 462957, that is 57 verses in a single element. The reading view therefore renders every `<l>` with `data-core`, the numeric part of its first word id, plus `data-core-max` wherever an `<l>` spans more than one verse; the jump falls back to that range, so the ten Ambraser attestations land on the passage even though their line does not exist as its own element
-- Attribution visible in the module: Borek, L. (2023). Exemplarische Auszeichnung arthurischer Pferde, hdl:tudatalib/3695, CC0 1.0
+- Attribution visible in the module, year and handle rendered from `source` in the index: as of 2026-10-02 Borek, L. (2026). Exemplarische Auszeichnung arthurischer Pferde, hdl:tudatalib/3695.2, CC0 1.0
+- The route `playground/#horses` is a stable, citable address (CONTRACTS.md §D.6), promised so that Borek can name it in her TUdatalib record
 - Data basis: `data/horses-index.json.gz` (11 KB), built via `scripts/ingest/horses/03-build-index.py`, lazily loaded without an IndexedDB cache
 
 Both of the above sit in the playground's third group, **Experimentelle Forschungsdaten** (#194), which collects curated datasets from external research projects. Every entry there carries a beta badge, its own prebuilt index, and visible attribution naming author, origin and work coverage.
 
-**CSV export (#448).** Every tool whose result is a table has a "CSV-Export" button: word frequency, verse-ending profile, text statistics, co-occurrence ranking, rhyme dictionary, text comparison, verse-position search, character naming (both table forms) and arthurian horses. The file carries the whole set behind the table, with the current filters: where the table stops at top-N or a display limit, the file does not, and the button's tooltip says what is in it. Format as on the main site (comma, RFC 4180 quoting only where needed, CRLF, UTF-8 with BOM), from the shared helper `assets/js/lib/csv-export.js`. Hapax legomena keeps its older export with semicolons. No export for the tools whose result is a chart (concept distribution, lemma distribution) or a list of cards with lazily loaded context (multi-lemma search); the naming export leaves out the expandable attestations and keeps one row per table row.
+**CSV export (#448).** Every tool whose result is a table has a "CSV-Export" button: word frequency, verse-ending profile, text statistics, co-occurrence ranking, rhyme dictionary, text comparison, verse-position search, character naming (both table forms) and arthurian horses. The file carries the whole set behind the table, with the current filters: where the table stops at top-N or a display limit, the file does not, and the button's tooltip says what is in it. Format as on the main site (comma, RFC 4180 quoting only where needed, CRLF, UTF-8 with BOM), from the shared helper `assets/js/lib/csv-export.js`. Hapax legomena keeps its older export with semicolons. No export for the tools whose result is a chart (concept distribution, lemma distribution); the naming export leaves out the expandable attestations and keeps one row per table row.
+
+**Multi-lemma export (#448).** The multi-lemma search has a "CSV-Export" and an "XLSX-Export" button above its results, in all three modes. One row per attestation, all hits of the search and not the up to 50 shown per text: in the proximity and verse modes a row is one hit window (sigle, title, author, verse or line, the `xml:id`s and surface forms of the matched words, the context, and in proximity mode the distance), in document mode a row is every single attestation of every searched lemma in the matching texts, with ten words of context on each side. The `xml:id` column is there because the verse number alone is not a unique locus in strophic texts (BUH counts per section, so `<l n="12">` occurs three times there). Every row repeats the search (mode, window, lemmata with their ids) and the text selection as it stood when the search ran. Wording and loci live only in the TEI, so the export loads every affected file (four in parallel, with a "Lade Texte … n / m" counter) and reads it through `collectPositionTokens` in `assets/js/search/kwic-service.js`, which counts positions by CONTRACTS §B like the index; if a position in the TEI carries a different lemma than the index says, the export stops with an error instead of writing a wrong row. The XLSX file has a second sheet "Suche" with the parameters, the index version and the licence, and comes from `assets/js/lib/xlsx-export.js`, written in-house because a CDN library is not allowed here.
 
 **Cross-platform workflow:**
 1. Perform analysis in playground
@@ -359,7 +373,7 @@ All playground views are bookmarkable and shareable via hash-based URLs.
 
 ### Search Normalization
 
-Consistent search behavior across all 19 entry points via Middle High German character normalization (measured 2026-09-02: 6 authority explorers, 11 analysis tools, 2 curated datasets).
+Consistent search behavior across the authority explorers, the analysis tools and the curated datasets via Middle High German character normalization.
 
 **Normalization rules:**
 - Long vowels: â→a, ê→e, î→i, ô→o, û→u
@@ -383,14 +397,18 @@ A section „Wörterbücher" with deep links into five Middle High German dictio
 
 ### Curated statements and their author (#270)
 
-Where a lemma carries curated prose from `lexicon.xml` (origin, a stated meaning, a philological comment), the lemma page shows it above the concept chips of the sense. Since authority index 1.9.10 a comment names its author: the label reads „Kommentar von Katharina Zeppezauer-Wachauer" instead of „Kommentar", resolved at build time from the comment's `@resp` (ADR-018). The playground's Lemma Explorer shows the same label. „von" names the authorship, not a separate review (KZW, 2026-09-23). Stated meanings and origins are shown without a name for now; whether they get one is open in #270. As of 2026-09-23 one lemma carries a comment (`lemma_37818` Abba).
+Where a lemma carries curated prose from `lexicon.xml` (origin, a stated meaning, a philological comment), the lemma page shows it above the concept chips of the sense. Since authority index 1.9.10 a comment names its author: the label reads „Kommentar von Katharina Zeppezauer-Wachauer" instead of „Kommentar", resolved at build time from the comment's `@resp` (ADR-018). The playground's Lemma Explorer shows the same label. „von" names the authorship, not a separate review (KZW, 2026-09-23). Since 1.9.15 a stated meaning and an origin explanation name their author the same way, „Definition von …" and „Herkunftserklärung von …" (KZW, 2026-09-25); where no author is stored, no label appears. As of 2026-09-30 one lemma carries all three (`lemma_37818` Abba).
+
+### Pure word components (#228)
+
+Under the title block, a lemma page shows „Als Wortbestandteil erfasst; kein eigenständiger Beleg im aktuellen Korpus." for exactly those entries the dictionary tags as „nur als Wortbestandteil" (same rule, see Dictionary above). The Belegstellen section stays hidden for them, as for any lemma without attestations.
 
 ### Similar Lemmata
 
 Concept-based similarity section on each lemma page.
 
 **How it works:**
-- Scans all 43,713 lemmata for shared concept references (pre-built `sense.conceptIds` in the authority index, extracted at build time from `<sense>`/`<ptr target="concepts.xml#...">`)
+- Scans all 43,710 lemmata for shared concept references (pre-built `sense.conceptIds` in the authority index, extracted at build time from `<sense>`/`<ptr target="concepts.xml#...">`)
 - Ranks by concept overlap with the current lemma
 - Displays top 50 as clickable chip links
 - Performance: client-side full scan over all lemmata (sub-100 ms in practice)
@@ -406,12 +424,34 @@ Static JSON API under `/api/`, served directly by GitHub Pages – stable, citab
 **What it offers:**
 - Root manifest at [`api/index.json`](https://dhcraft.org/mhdbdb-tei-only/api/index.json) listing all collections with counts
 - Individual records (`api/persons/person_445.json`, `api/works/work_WZB.json`, ...) plus a summary `index.json` per collection (persons, works, concepts, genres, names, texts)
-- Lemmata as a single bundle (`api/lemmata/index.json`, 43,713 full records) instead of 43k individual files
+- Lemmata as a single bundle (`api/lemmata/index.json`, 43,710 full records) instead of 43k individual files
 - Every file carries its license (`CC BY-NC-SA 4.0`)
 
 **Documentation:** human-readable docs page at [`api/index.html`](https://dhcraft.org/mhdbdb-tei-only/api/index.html) (German), linked from `hilfe-daten.html`.
 
 **Target audience:** external projects that already reference MHDBDB lemma pages (MWB, Wörterbuchnetz, Wikidata P9351) and researchers who want machine-readable access without cloning the repo or parsing the gzipped indexes.
+
+## Begriffshilfe: From One's Own Topic to Existing Concepts (#498)
+
+A researcher arrives with a topic of their own (the test case was „Wachsamkeit") that is not a concept in the MHDBDB concept system. The help page [`hilfe-begriffe-finden.html`](../hilfe-begriffe-finden.html) offers a Markdown file to download and upload into any AI chat, together with the sentence „Bitte bearbeite den Arbeitsauftrag in der Datei. Mein Thema: …".
+
+**What the file contains:** a fixed task for the AI (suggest existing concepts with their ids, mark context-dependent search paths, invent nothing, ask back when no topic is given) and the complete concept table: per concept its hierarchy, the number of senses and lemmata, the most frequent lemmata under it, and for larger concepts the most frequent co-occurring concepts. The co-concept column is what made the difference in the test of 2026-09-29: only this variant led the models from „Wachsamkeit" to Aufmerksamkeit plus Kriegswesen.
+
+**What it is not:** a search. The AI returns suggestions, which the user looks up in the Concept Explorer and checks against the attestations; there is no AND query over two concepts.
+
+**How it stays current:** `scripts/build-begriffshilfe.py` writes `assets/downloads/mhdbdb-begriffshilfe.md` deterministically from `concepts.xml`, `lexicon.xml` and `w/@ana`, it is part of `npm run build:data`, and a CI freshness check turns red when the committed file no longer matches the data (see [DATA-MODEL.md → Data-Change-Lifecycle](DATA-MODEL.md#data-change-lifecycle)).
+
+Linked from the help hub, the playground guide, the Concept Explorer and the concept distribution.
+
+## Text-series typology subsite (#93)
+
+The former website of the MHDBDB text-series typology, a controlled SKOS vocabulary by Katharina Zeppezauer-Wachauer and Marco Heiles, lives under [`textreihen/`](../textreihen/index.html). Reached from the site footer and from a tile on the help hub; there is no menu entry.
+
+- **Contents of the old site:** About, How To, Use cases, Outreach, the two posts (call for collaboration, poster), the bibliography with its literature search, and the download of the data, each on a page of its own, with authorship, publication references and funding notice kept.
+- **SKOS browser (`textreihen/browser.html`):** collapsible hierarchy with search over labels in all languages, alternative labels and ids, and a detail panel per category (labels, editorial note, parents, children, all paths from the root, id, dates). A category with several direct parents stands under every one of them (193 of 618; "Beschwörung" has 12). A category can be called directly: `browser.html#c_624b0297`. Historical URIs are shown as identifiers only.
+- **Data state:** the SKOS data of the original repository, commit `86c233f08`, licence CC BY 4.0. It is **not** reconciled with `genres.xml`, which the MHDBDB keeps as its own TEI data state; the page "Gattungs-Explorer in MHDBDB Next" says so and links to the [Genre Explorer](#authority-file-exploration).
+- **Bibliography:** 190 entries from the public Zotero group, filterable by text and by text-series tag; static, rebuilt with `scripts/build-textreihen-bibliography.py`.
+- **Images:** all images of the content pages, the start image and the seven logos of the partners and funders are carried over (reuse confirmed by KZW on 2026-10-13). The logos, which stood in the footer of every page of the old site, appear once on the start page next to the funding notice.
 
 ---
 

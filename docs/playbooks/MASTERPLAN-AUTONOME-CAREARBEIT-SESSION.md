@@ -14,12 +14,13 @@ NICHT Teil dieses Playbooks: Feature-Arbeit, Ingest (eigene Verfahren in DATA-MO
 
 ## 2. Betriebsvertrag (gilt nur nach explizitem User-Kickoff)
 
-Dieser Plan autorisiert NICHTS. Eine Carearbeit-Session startet erst mit einem Kickoff-Prompt. Der Kickoff regelt vier Weichen (Defaults = Session 1):
+Dieser Plan autorisiert NICHTS. Eine Carearbeit-Session startet erst mit einem Kickoff-Prompt. Der Kickoff regelt drei Weichen (Defaults = Session 1):
 
 - **Branch-/PR-Modus:** ein Branch `chore/carearbeit-YYYY-MM`, thematische Commits (ein Commit pro Arbeitspaket), ein PR; Squash-Merge nach User-Prüfung.
 - **Lösch-Policy:** klar Totes löschen (Git-History = Archiv), nur erledigte Einmal-Migrationen mit Doku-Wert nach `scripts/_archived/`.
-- **npm test:** einmalige Freigabe für die volle Suite (Konvention: Tests nie ungefragt).
 - **Health-Check:** als eigenes Arbeitspaket integriert ja/nein.
+
+`npm test` ist keine Weiche mehr: Tests brauchen seit dem 24.08.2026 keine Freigabe (CLAUDE.md → Git Rules).
 
 **Der gemeinsame Teil des Vertrags steht in [`BETRIEBSVERTRAG.md`](BETRIEBSVERTRAG.md)** und wird beim Kickoff in den Prompt kopiert ([`KICKOFF-VORLAGE.md`](KICKOFF-VORLAGE.md)). Dazu kommen zwei Regeln, die nur für die Pflegearbeit gelten und genau das Gegenteil dessen sagen, was ein Aufräum-Reflex nahelegt:
 
@@ -66,7 +67,7 @@ Parallel: `gh issue list` für den Bestand nach Betriebsvertrag Regel 17 (geship
 
 **Session 1 (2026-07-13, PR #220):**
 
-1. Drift-Klasse Nr. 1 sind **code-abgeleitete Counts** (Werkzeug-/Entry-Point-Zahlen in Hilfe, README, Docs), genau die prüft `doc-count-audit.py` nicht. Erweiterungskandidat: Playground-Sidebar-Buttons zählen.
+1. Drift-Klasse Nr. 1 sind **code-abgeleitete Counts** (Werkzeug-/Entry-Point-Zahlen in Hilfe, README, Docs), genau die prüft `doc-count-audit.py` nicht. Erweiterungskandidat: Playground-Sidebar-Buttons zählen (verworfen mit #451, 10.10.2026).
 2. Mechanische Gates zuerst laufen lassen: billig, objektiv, fanden den Footer-Drift und die variants-Zahl sofort.
 3. Audit-Reports altern: zwei geplante Löschungen waren bereits erledigt. Ist-Stand vor jeder Löschung neu verifizieren, nie dem Report vertrauen.
 4. Der Code selbst war nach #171-Audit + Dead-Code-Sweep schon sauber (keine einzige verwaiste JS-Datei); der Ertrag lag überwiegend in Doku/Hilfe. Erwartung für Folge-Sessions entsprechend setzen.
@@ -79,5 +80,5 @@ Vor der nächsten Session hier befüllen: Scope-Besonderheiten, seit der letzten
 
 **Stand nach Session 1 (2026-07-13):**
 - ~~#219 Wenzelsbibel-Entscheidung~~: entschieden und umgesetzt 2026-07-14 (Ausdünnen + Umzug nach `ingest/wzb/`, siehe dortiges README).
-- ~~`doc-count-audit.py` um code-abgeleitete Counts erweitern (Lehre 1)~~: umgesetzt 2026-07-14 (Zahlwort-Scan für Werkzeug-/Explorer-/Entry-Point-Claims, Chronik-Zeilen ausgenommen).
+- ~~`doc-count-audit.py` um code-abgeleitete Counts erweitern (Lehre 1)~~: umgesetzt 2026-07-14 (Zahlwort-Scan für Werkzeug-/Explorer-/Entry-Point-Claims, Chronik-Zeilen ausgenommen), zurückgenommen mit #451 (10.10.2026).
 - `playground/css/style.css`-Voll-Sweep nur bei konkretem Anlass (Lehre 6).

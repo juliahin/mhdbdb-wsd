@@ -64,7 +64,7 @@
                   <author>
                     <name>Heinrich von dem Türlin</name>
                   </author>
-                  <title>Die Krone: (verse 1/12281): Nach der Handschrift 2779 der Österreichischen Nationalbibliothek</title>
+                  <title>Die Krone: (Verse 1/12281): Nach der Handschrift 2779 der Österreichischen Nationalbibliothek</title>
                   <editor>
                     <forename>Fritz Peter</forename>
                     <surname>Knapp</surname>
@@ -96,7 +96,7 @@
       <editorialDecl>
         <p xml:lang="de">Lokale Dateireferenzen (z.B. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) verweisen auf kontrollierte Vokabulare im authority-files Verzeichnis dieses Repositorys. Diese internen Querverweise ermöglichen die Verknüpfung mit Personen-, Werk-, Lemma-, Konzept-, Genre- und Namensautoritätsdateien.</p>
         <p xml:lang="en">Local file references (e.g. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) point to controlled vocabularies in the authority-files directory of this repository. These internal cross-references enable linking to person, work, lemma, concept, genre, and name authority files.</p>
-      <normalization><p>Die beiden Bände wurden zusammengelegt und die zehn Verse,am Anfang von Bd. 2, die mit dem Ende des ersten Bandes übereinstimmen gelöscht. Der Text enthält Einschübe. Manche Sonderzeichen konnten nicht übernommen werden. Hochgestellte o und e wurden als uo und ae, etc. umgesetzt. Die Ligatur von oe wurde aufgelöst.</p><p>Lemmatisiert, aber noch nicht disambiguiert.</p><p>Die Edition weist an zwei Stellen Unregelmäßigkeiten in der Verszählung auf, was dazu führt, dass die Zählung der MHDBDB zwischen V.7475 und V.7534 um 1 voraus ist.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
+      <normalization><p>Die beiden Bände wurden zusammengelegt und die zehn Verse,am Anfang von Bd. 2, die mit dem Ende des ersten Bandes übereinstimmen gelöscht. Der Text enthält Einschübe. Manche Sonderzeichen konnten nicht übernommen werden. Hochgestellte o und e wurden als uo und ae, etc. umgesetzt. Die Ligatur von oe wurde aufgelöst.</p><p>Lemmatisiert, teilweise semantisch disambiguiert.</p><p>Die Edition weist an zwei Stellen Unregelmäßigkeiten in der Verszählung auf, was dazu führt, dass die Zählung der MHDBDB zwischen V.7475 und V.7534 um 1 voraus ist.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
       <classDecl>
         <taxonomy xml:id="genres">
           <bibl>Genreklassifikation gemäß der Textreihentypologie <ptr target="https://www.mhdbdb.sbg.ac.at/textreihen"/></bibl>
@@ -136,6 +136,7 @@
       <change when="2026-08-24" who="#editor">#369 Serie 2 (stat): 184 homographie-ambige Tokens der Form stat kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu stat NOM bzw. stan/sten VRB; LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/369-stat/). 1 weitere Tokens der Form stat blieben bewusst unannotiert (Review).</change>
       <change when="2026-09-06" who="#editor">#387 (fro): 38 homographie-ambige Tokens der Form fro kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu vrouwe NOM (lemma_7260) bzw. vrô ADJ/ADV (lemma_7250); LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/387-fro/).</change>
       <change when="2026-09-21" who="#editor">#371 stat, drittes Lemma: 1 bislang unlemmatisierte Tokens der Form stat/stât annotiert (lemmaRef/pos/corresp nach dem actions-Array in KZWs Review vom 15.09.2026; drei neu gepraegte Variantentypen; kein @ana, weil die Sense-Zuordnung kuratorisch ist; die 17 Faelle mit option OFFEN und die 2 mit NEU_STAND bleiben unangetastet; Provenienz-Log: ingest/pos-disambig/371-stat/).</change>
+      <change when="2026-09-30" who="#editor">#493: Angabe zur semantischen Disambiguierung in encodingDesc/normalization an den Stand der Annotation angeglichen (81567 von 108827 lemmatisierten Tokens tragen einen Begriff in @ana). Vorher: &#34;Lemmatisiert, aber noch nicht disambiguiert.&#34;</change>
     </revisionDesc>
   </teiHeader>
   <text>

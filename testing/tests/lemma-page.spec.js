@@ -3,7 +3,12 @@
  * Verifies persistent lemma pages load and display correctly
  */
 
-import { test, expect } from '@playwright/test';
+// Warmer Context pro Worker (#488, #564): der Korpus-Index kommt ab dem
+// zweiten Test aus IndexedDB statt aus dem Netz. Der Stub fuer die
+// Woerterbuchnetz-API (page.route) bleibt wirksam: sie wird nicht
+// zwischengespeichert, und der Test prueft die Stub-Werte, ein
+// umgangener Stub wuerde ihn rot machen.
+import { test, expect } from '../warm-page.js';
 
 test.describe('Persistent Lemma Pages', () => {
 
@@ -272,9 +277,11 @@ test.describe('Persistent Lemma Pages', () => {
 
     // Kuratierte Angaben (Authority Index v1.7.0): Herkunftssprache aus
     // <etym type="borrowing">, Bedeutung aus <def>, Kommentar aus
-    // <note type="comment">. Alle drei sind optional und stehen heute nur an
-    // lemma_37818 (Abba) — genau deshalb prüft der zweite Test, dass ein
-    // Lemma ohne Kuratierung die Sektion nicht zeigt.
+    // <note type="comment">. Alle drei sind optional. Herkunft und Bedeutung
+    // stehen heute nur an lemma_37818 (Abba), Kommentare seit dem Glossar
+    // Kochbuchforschung (#554) auch an vielen weiteren Lemmata — genau deshalb
+    // prüft der zweite Test, dass ein Lemma ohne kuratierte Herkunft die
+    // Sektion nicht zeigt.
     test('kuratierte Herkunft und Bedeutung erscheinen für Abba (37818)', async ({ page }) => {
         await page.goto('/lemma/?id=37818');
         await page.waitForSelector('#lemmaContent:not(.hidden)', { timeout: 30000 });

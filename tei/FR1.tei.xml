@@ -101,7 +101,7 @@
       <p xml:lang="de">Band 1 der Göttinger Frauenlob-Ausgabe (Stackmann/Bertau 1981) besteht aus 14 Teilen (I–XIV): I–III sind Leichs (Marienleich, Kreuzleich, Minneleich), IV–XIII Sangspruchtöne, XIV die Lieder. In der MHDBDB sind die Teile I–XIII als FR1 aufgenommen und Teil XIV als FR2. Die frühere Angabe, FR1 enthalte nur die Leichs, war unzutreffend: auf 973 Leich-Verse kommen dort 5.654 Sangspruch-Verse.</p>
         <p xml:lang="de">Eingriffe der MHDBDB in die Textgestalt (Juli 2026): Die römischen Ordnungszahlen der Töne standen als gewöhnliche, teils lemmatisierte Wörter im Textfluss. Sie sind jetzt Überschriften, die die Nummer der Göttinger Ausgabe und den Tonnamen nennen.</p>
         <p xml:lang="de">Der E-Text der MHDBDB ist daher an den hier genannten Stellen nicht mit der Druckedition identisch. Für Zitate ist die gedruckte Ausgabe maßgeblich.</p>
-        <normalization><p>Die Ligatur von oe wurde aufgelöst.</p><p>Lemmatisiert, aber noch nicht disambiguiert.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
+        <normalization><p>Die Ligatur von oe wurde aufgelöst.</p><p>Lemmatisiert, teilweise semantisch disambiguiert.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
       <classDecl>
         <taxonomy xml:id="genres">
           <bibl>Genreklassifikation gemäß der Textreihentypologie <ptr target="https://www.mhdbdb.sbg.ac.at/textreihen"/></bibl>
@@ -159,6 +159,8 @@
       <change when="2026-09-21" who="#editor">#371 stat, drittes Lemma: 2 bislang unlemmatisierte Tokens der Form stat/stât annotiert (lemmaRef/pos/corresp nach dem actions-Array in KZWs Review vom 15.09.2026; drei neu gepraegte Variantentypen; kein @ana, weil die Sense-Zuordnung kuratorisch ist; die 17 Faelle mit option OFFEN und die 2 mit NEU_STAND bleiben unangetastet; Provenienz-Log: ingest/pos-disambig/371-stat/).</change>
       <change when="2026-09-23" who="#editor">#387 vrouwe/vrô, Resttokens: 2 Tokens annotiert nach den Einzelentscheidungen von KZW vom 17.09.2026 (lemmaRef/pos/corresp; kein @ana, weil die Sense-Zuordnung kuratorisch ist). Im ganzen Lauf: zwei Doppeltags ADJ NOM mit erklärendem @reason, wo KZW die Lesart für unentscheidbar erklärt hat, und drei neu geprägte Variantentypen nach der Regel aus #367.</change>
       <change when="2026-09-23" who="#editor">#252 zweiter Durchgang: 520 Stellen des Auslassungsmusters ( caesura ) innerhalb einer Zeile mit Wortlaut auf &lt;gap reason="lost"/&gt; migriert, nach der Freigabe von KZW vom 22.09.2026. Nur das Muster ersetzt, umliegender Text sowie Satz- und Redezeichen unverändert.</change>
+      <change when="2026-09-30" who="#editor">#493: Angabe zur semantischen Disambiguierung in encodingDesc/normalization an den Stand der Annotation angeglichen (19595 von 26983 lemmatisierten Tokens tragen einen Begriff in @ana). Vorher: &#34;Lemmatisiert, aber noch nicht disambiguiert.&#34;</change>
+      <change when="2026-10-10" who="#editor">#460 jagen: 8 Tokens als Verbform gelesen, von lemma_3103 jagât (NOM) auf lemma_3102 jagen (VRB) umgehängt, @ana entfällt; neu geprägte Variantentypen nach der Regel aus #367.</change>
     </revisionDesc>
   </teiHeader>
   <text>
@@ -20681,7 +20683,7 @@
             </l>
             <l n="2">
               <w xml:id="FR1_5037020_0" lemmaRef="lexicon.xml#lemma_5601" pos="ADV" ana="lexicon.xml#lemma_5601_sense_8764" corresp="variants.xml#type_19596">so</w>
-              <w xml:id="FR1_5037020_1" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+              <w xml:id="FR1_5037020_1" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
               <w xml:id="FR1_5037020_2">man</w>
               <w xml:id="FR1_5037020_3">na</w>
             </l>
@@ -24943,7 +24945,7 @@
             </l>
             <l n="19">
               <w xml:id="FR1_5057190_0" lemmaRef="lexicon.xml#lemma_1097" pos="ART CNJ" ana="lexicon.xml#lemma_1097_sense_1741" corresp="variants.xml#type_3398">daz</w>
-              <w xml:id="FR1_5057190_1" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+              <w xml:id="FR1_5057190_1" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
               <w xml:id="FR1_5057190_2" lemmaRef="lexicon.xml#lemma_4172" pos="PRP" ana="lexicon.xml#lemma_4172_sense_6544" corresp="variants.xml#type_14531">mit</w>
               <w xml:id="FR1_5057190_3" lemmaRef="lexicon.xml#lemma_7226" pos="NOM ADJ GRA" corresp="variants.xml#type_70545">frier</w>
               <w xml:id="FR1_5057190_4" lemmaRef="lexicon.xml#lemma_24186" pos="NOM" ana="lexicon.xml#lemma_24186_sense_38968" corresp="variants.xml#type_204452">willekür</w>
@@ -25932,7 +25934,7 @@
             </l>
             <l n="17">
               <w xml:id="FR1_5062170_0" lemmaRef="lexicon.xml#lemma_1762" pos="PRO" ana="lexicon.xml#lemma_1762_sense_2752" corresp="variants.xml#type_6021">ez</w>
-              <w xml:id="FR1_5062170_1" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+              <w xml:id="FR1_5062170_1" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
               <gap reason="lost"/>
               <w xml:id="FR1_5062170_5" lemmaRef="lexicon.xml#lemma_1205" pos="ADV" ana="lexicon.xml#lemma_1205_sense_1899" corresp="variants.xml#type_3811">dort</w>
               <pc xml:id="FR1_5062170_6" join="left">,</pc>
@@ -26272,7 +26274,7 @@
             </l>
             <l n="8">
               <w xml:id="FR1_5064080_0" lemmaRef="lexicon.xml#lemma_1055" pos="ADV CNJ" ana="lexicon.xml#lemma_1055_sense_1689" corresp="variants.xml#type_3255">da</w>
-              <w xml:id="FR1_5064080_1" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+              <w xml:id="FR1_5064080_1" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
               <w xml:id="FR1_5064080_2" lemmaRef="lexicon.xml#lemma_3962" pos="ADJ" ana="lexicon.xml#lemma_3962_sense_6245" corresp="variants.xml#type_13830">manig</w>
               <w xml:id="FR1_5064080_3" lemmaRef="lexicon.xml#lemma_2957" pos="NOM" ana="lexicon.xml#lemma_2957_sense_4749" corresp="variants.xml#type_10068">hunt</w>
               <pc xml:id="FR1_5064080_4" join="left">,</pc>
@@ -50783,7 +50785,7 @@
             <l n="4">
               <w xml:id="FR1_8015040_0" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3504">dem</w>
               <w xml:id="FR1_8015040_1">blicke</w>
-              <w xml:id="FR1_8015040_2" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+              <w xml:id="FR1_8015040_2" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
               <w xml:id="FR1_8015040_3" lemmaRef="lexicon.xml#lemma_1139" pos="ART" ana="lexicon.xml#lemma_1139_sense_1797" corresp="variants.xml#type_3568">die</w>
               <w xml:id="FR1_8015040_4">liebe</w>
               <w xml:id="FR1_8015040_5">nach</w>
@@ -52343,7 +52345,7 @@
             <l n="4">
               <w xml:id="FR1_8023040_0" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3506">den</w>
               <w xml:id="FR1_8023040_1" lemmaRef="lexicon.xml#lemma_7154" pos="NOM" ana="lexicon.xml#lemma_7154_sense_11604" corresp="variants.xml#type_25385">vogel</w>
-              <w xml:id="FR1_8023040_2" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+              <w xml:id="FR1_8023040_2" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
               <w xml:id="FR1_8023040_3" lemmaRef="lexicon.xml#lemma_1258" pos="PRP" ana="lexicon.xml#lemma_1258_sense_1977" corresp="variants.xml#type_4044">durch</w>
               <w xml:id="FR1_8023040_4" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3506">den</w>
               <w xml:id="FR1_8023040_5" lemmaRef="lexicon.xml#lemma_3889" pos="NOM" corresp="variants.xml#type_13591">luft</w>
@@ -54987,7 +54989,7 @@
               <w xml:id="FR1_9010140_1" lemmaRef="lexicon.xml#lemma_1097" pos="ART CNJ" ana="lexicon.xml#lemma_1097_sense_1741" corresp="variants.xml#type_3398">daz</w>
               <w xml:id="FR1_9010140_2">sie</w>
               <w xml:id="FR1_9010140_3" lemmaRef="lexicon.xml#lemma_4222" pos="NOM" ana="lexicon.xml#lemma_4222_sense_6607" corresp="variants.xml#type_97226">miuse</w>
-              <w xml:id="FR1_9010140_4" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+              <w xml:id="FR1_9010140_4" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
               <pc xml:id="FR1_9010140_5" join="left">.</pc>
             </l>
             <l n="15">
@@ -55505,7 +55507,7 @@
             </l>
             <l n="22">
               <w xml:id="FR1_9012220_0">man</w>
-              <w xml:id="FR1_9012220_1" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+              <w xml:id="FR1_9012220_1" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
               <w xml:id="FR1_9012220_2" lemmaRef="lexicon.xml#lemma_1242" pos="PRO" ana="lexicon.xml#lemma_1242_sense_1958" corresp="variants.xml#type_3956">dich</w>
               <w xml:id="FR1_9012220_3" lemmaRef="lexicon.xml#lemma_4172" pos="PRP" ana="lexicon.xml#lemma_4172_sense_6544" corresp="variants.xml#type_14531">mit</w>
               <w xml:id="FR1_9012220_4" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3504">dem</w>

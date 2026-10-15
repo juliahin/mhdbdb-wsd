@@ -101,11 +101,12 @@ Allows users to include/exclude specific texts from search:
 - Rich metadata panel (work/author info, Wikidata images)
 - Context navigation (prev/next occurrence)
 - URL parameter support (`?textId=ABG&lemmaIds=879,7532&position=310`)
+- `closeReadingView()` (#434): resets the reader and discards a load still in flight (the load generation `_loadSeq` is bumped, so a late `await` renders nothing); `app.js` calls it from its `popstate` handler
 
 **Layout Architecture:**
 - Browser-level scrolling (no container scrollbars)
 - Equal-height columns using CSS Grid with `align-items: start`
-- Responsive: 3 columns on desktop (≥1280px), stacked on mobile
+- 3 columns from 1280px (`xl:`), one column below; this is a fallback for narrow windows, not a mobile layout (the interface is desktop-only, ADR-008)
 - Dynamic column management (2-column initial state, 3-column after search)
 
 **Key features:**
@@ -166,7 +167,7 @@ The reading view converts TEI XML elements to HTML. Source: `extractAndFormatBod
 - Drop the legacy `MHDBDB_Playground` database (`dropLegacyPlaygroundDatabase()`, #314). The playground's only contact with IndexedDB is this deletion, never an initialization: the indexes live in the shared `CorpusLoader`
 - Load authority index (~3 MB)
 - Initialize data managers (authority, TEI)
-- Set up modular UI components (25 modules; 24 until #204 added the helper `corpus-scope.js`, 25 before #314 removed `file-display.js` and `progress.js`, 23 until #193 added `horses-explorer.js`)
+- Set up modular UI components (the tree is under Module Organization below)
 
 ### Data Layer
 
@@ -178,6 +179,7 @@ The reading view converts TEI XML elements to HTML. Source: `extractAndFormatBod
   3. Prefix-match fallback, both directions, shared with the main site via `assets/js/lib/lemma-resolve.js` (#224; before that an unbounded substring test, one-directional here and bidirectional on the main site)
 - Direct array access (no XML DOM queries)
 - Performance maps for fast lookups
+- Lookup tables over the lemma array (`getLemmaTables`, #564): lower-case and normalized form per lemma, id → row, built once per loaded array instead of per resolution. Before that, every playground resolution normalized all lemmata again (stages 1 and 3), every resolution that reached stage 2 scanned all variant keys for an emptiness check, and the whole cost a multiple of the main site's. The autocomplete narrows its scan to the hits of the previous keystroke and selects the top 8 instead of sorting all hits. Runtime is held to a budget by `scripts/audit/benchmark-search.mjs` (see DEVELOPMENT.md)
 
 **TEIFilesManager** (`playground/js/data/tei-manager.js`)
 - Multi-lemma search over the pre-built corpus index (the file-upload path was removed in #314). `searchMultipleLemmasUsingIndex()` dispatches on `contextType` into the three modes below; there is no single-lemma entry point here, the main site has its own
@@ -194,7 +196,7 @@ playground/js/ui/
 ├── core/              # Core UI utilities
 │   ├── ui-helpers.js
 │   └── router.js      # Hash-based URL routing (#48)
-├── authority/         # Authority file exploration (7 modules)
+├── authority/         # Authority file exploration
 │   ├── authority-ui.js
 │   ├── person-explorer.js
 │   ├── work-explorer.js
@@ -202,10 +204,11 @@ playground/js/ui/
 │   ├── concept-explorer.js
 │   ├── genre-explorer.js
 │   └── name-explorer.js
-├── tei/               # TEI text analysis (15 files: router + helper + modal + 12 analysis modules)
+├── tei/               # TEI text analysis (router, helpers, modal and the analysis modules)
 │   ├── tei-ui.js                  # Router/entry point, not an analysis tool
 │   ├── corpus-scope.js            # Shared helper for the corpus selection (#204), not an analysis tool
 │   ├── multi-lemma-search.js      # Modal outlier (DESIGN.md §Multi-Lemma, documented as such)
+│   ├── multi-lemma-export.js      # CSV/XLSX export of the multi-lemma search (#448), not an analysis tool
 │   ├── word-frequency.js          # Word frequency analysis (#88, R1)
 │   ├── text-statistics.js         # Text statistics (#89, R1)
 │   ├── lemma-distribution.js      # Lemma distribution (#90, R1)
@@ -228,7 +231,7 @@ playground/js/ui/
 - Easier testing and maintenance
 - Net reduction: 5,536 lines removed
 
-**Playground TEI module convention:** `playground/js/ui/tei/` holds fifteen files. The twelve analysis modules share one constructor/`show()`/`render()` pattern, with thunks instead of direct data references, a state-driven `renderBody()`, per-module escape helpers, and a MessageChannel yield for large aggregations. Three files are exempt: `tei-ui.js` is the router, `corpus-scope.js` is a shared helper for the corpus selection (#204), and `multi-lemma-search.js` is a documented modal outlier. Two are a special case of their own: `naming-explorer.js` (#59) and `horses-explorer.js` (#193) do not read the corpus index but lazily fetch their own small index (`data/naming-index.json.gz`, `data/horses-index.json.gz`) via fetch plus pako, without an IndexedDB cache. Both belong to the playground's third group, "Experimentelle Forschungsdaten" (#194), which collects curated datasets from external research projects; the entry convention is in that issue. The pattern is documented as a template in [DESIGN.md §Playground TEI-Analysis Module Pattern](DESIGN.md#playground-tei-analysis-module-pattern).
+**Playground TEI module convention:** `playground/js/ui/tei/` holds the router, the shared helpers, the modal and the analysis modules. The analysis modules share one constructor/`show()`/`render()` pattern, with thunks instead of direct data references, a state-driven `renderBody()`, per-module escape helpers, and a MessageChannel yield for large aggregations. Some files are exempt from the pattern: `tei-ui.js` is the router, `corpus-scope.js` is a shared helper for the corpus selection (#204), `multi-lemma-search.js` is a documented modal outlier, and `multi-lemma-export.js` is its export helper (#448). `naming-explorer.js` (#59) and `horses-explorer.js` (#193) are a special case of their own: they do not read the corpus index but lazily fetch their own small index (`data/naming-index.json.gz`, `data/horses-index.json.gz`) via fetch plus pako, without an IndexedDB cache. Both belong to the playground's third group, "Experimentelle Forschungsdaten" (#194), which collects curated datasets from external research projects; the entry convention is in that issue. The pattern is documented as a template in [DESIGN.md §Playground TEI-Analysis Module Pattern](DESIGN.md#playground-tei-analysis-module-pattern).
 
 **Authority Explorers:**
 Each explorer follows consistent pattern:
@@ -239,7 +242,7 @@ Each explorer follows consistent pattern:
 
 **Multi-Lemma Search UI:**
 - Modal interface for multi-lemma input
-- Search mode selection (document vs proximity)
+- Search mode selection (proximity by default, verse since #106, document)
 - Variant resolution (automatic)
 - Color-coded results
 - Clickable navigation to main site reading view
@@ -282,7 +285,7 @@ Each explorer follows consistent pattern:
 | Erweiterte Figurenbezeichnungen | `#naming` | Curated proper names, antonomasias and epithets per character in 4 works (#59, beta) |
 | Arthurische Pferde | `#horses` | Curated horse attestations in 5 works, with event filter and `?verseId=` reader deep link (#193, beta) |
 
-**Corpus scope of these views (#204).** Eight of the eleven analysis tools read the text selection from the Corpus Browser; hapax legomena, text comparison and the rhyme dictionary stay corpus-wide, each for a reason stated in its own UI header. Which tool does what, and why, is in [FEATURES.md → TEI Text Analysis](FEATURES.md#tei-text-analysis) rather than repeated per row here. Mechanically the split is two thunks in `playground-main.js`, `selectedTextsThunk` and `corpusTextsThunk`; a tool whose stored scope (`state.scope`, table checkboxes) points outside the current selection resets it on the next `show()`.
+**Corpus scope of these views (#204).** Most analysis tools read the text selection from the Corpus Browser; hapax legomena, text comparison and the rhyme dictionary stay corpus-wide, each for a reason stated in its own UI header. Which tool does what, and why, is in [FEATURES.md → TEI Text Analysis](FEATURES.md#tei-text-analysis) rather than repeated per row here. Mechanically the split is two thunks in `playground-main.js`, `selectedTextsThunk` and `corpusTextsThunk`; a tool whose stored scope (`state.scope`, table checkboxes) points outside the current selection resets it on the next `show()`.
 
 **Parameters:**
 
@@ -306,9 +309,11 @@ Each explorer follows consistent pattern:
 |----------|-------------|
 | `parseHash()` | Extracts `{view, params}` from `location.hash` |
 | `buildHash(view, params)` | Constructs hash string with URL-encoded values |
-| `dispatch(view, params)` | Looks up view handler, calls it, then defers `q`/`show` to next tick |
+| `dispatch(view, params)` | Looks up view handler, calls it, then defers `q`/`show` to next tick. A view in `CORPUS_ROUTES` waits for `window.playground.corpusReady` if the corpus index is still loading, and runs only if no other navigation came in meanwhile (#535) |
 | `navigate(view, params)` | Updates hash and dispatches (suppresses listener to prevent double-fire) |
-| `initRouter()` | Wires `hashchange` listener, called once after data loads |
+| `initRouter()` | Wires `hashchange` listener, called once after the authority index loads; the corpus index keeps loading in the background (#535) |
+
+**Which routes wait for the corpus index** (`CORPUS_ROUTES`, #535): the multi-lemma search and the TEI analysis tools that read the corpus. The authority registers read only the authority index, and `naming` and `horses` load their own files, so they render while the corpus index is still on its way. A new route whose module reads the corpus belongs in that set, or it renders against an empty text list.
 
 **Known limitation:** `triggerExpand(itemId)` only works for items in the currently visible result set (typically top 50).
 
@@ -380,7 +385,7 @@ resolveConceptLabels(conceptIds):
 
 **Component:** `woerterbuch.html` + `assets/js/woerterbuch.js` (`WoerterbuchPage`)
 
-A–Z entry page to the lemma pages. It loads the authority index only (via `CorpusLoader('data')`), buckets the 43,713 `lemmata` entries client-side by the first letter of `normalized` (NFD strip as a fallback for `ë` and `ú`, numeric lemmata go into the `#` bucket), and renders a paginated register per letter (200 entries per page, sorted with `Intl.Collator('de')`). URL state `?buchstabe=&seite=` via `history.replaceState`. Deliberately no build artifact of its own: the existing index is enough.
+A–Z entry page to the lemma pages. It loads the authority index only (via `CorpusLoader('data')`), buckets the 43,710 `lemmata` entries client-side by the first letter of `normalized` (NFD strip as a fallback for `ë` and `ú`, numeric lemmata go into the `#` bucket), and renders a paginated register per letter (200 entries per page, sorted with `Intl.Collator('de')`). URL state `?buchstabe=&seite=` via `history.replaceState`. Deliberately no build artifact of its own: the existing index is enough.
 
 ---
 
@@ -416,13 +421,27 @@ Corpus and authority data were never stored here. The playground reads them thro
 
 ## Static JSON API (`api/`)
 
-**Generator:** `scripts/build-api.py` (#45) – reads the two pre-built indexes (`data/*.json.gz`), emits 2,742 plain JSON files (~14 MB) into `api/`.
+**Generator:** `scripts/build-api.py` (#45) – reads the two pre-built indexes (`data/*.json.gz`), emits plain JSON files into `api/`, one per record except the lemmata; the record count per collection is in the root manifest `api/index.json`.
 
 **Served by:** GitHub Pages, like every other file in the repo – no backend, no runtime component, CORS open (Pages sends `Access-Control-Allow-Origin: *`). The main site and playground do **not** consume the API (they load the gzipped indexes); it exists purely for external programmatic access, so it adds zero runtime cost to the site.
 
-**Structure:** root manifest `api/index.json` (counts + source index versions), lemmata as a single bundle (`api/lemmata/index.json`, 43,713 records), individual `{id}.json` + summary `index.json` per collection (persons, works, concepts, genres, names, texts). Every file carries a `license` field. Human documentation: `api/index.html` (German, standalone page).
+**Structure:** root manifest `api/index.json` (counts + source index versions), lemmata as a single bundle (`api/lemmata/index.json`, 43,710 records), individual `{id}.json` + summary `index.json` per collection (persons, works, concepts, genres, names, texts). Every file carries a `license` field. Human documentation: `api/index.html` (German, standalone page).
 
 **Freshness:** deterministic build + CI gate ("Freshness API" in `data-integrity.yml`) keep `api/` byte-identical to what the committed indexes produce. Contracts (URL schema stability, field schemas): [CONTRACTS.md §G](CONTRACTS.md#g-static-json-api-contract-45).
+
+## Begriffshilfe download (`assets/downloads/`)
+
+**Generator:** `scripts/build-begriffshilfe.py` (#498) – reads `authority-files/concepts.xml`, `authority-files/lexicon.xml` and the `w/@ana` of every TEI file (not the indexes), emits one Markdown file, `assets/downloads/mhdbdb-begriffshilfe.md`: a fixed task for an external AI plus the full concept table. Offered on `hilfe-begriffe-finden.html`; no site code reads it.
+
+**Freshness:** same pattern as the API. The build is deterministic (no date, no commit hash, LF, the only provenance is the SHA-256 of `concepts.xml`), `npm run build:data` runs it last, and the CI step "Freshness Begriffshilfe" in `data-integrity.yml` rebuilds it and fails on any difference under `assets/downloads/`.
+
+## Textreihentypologie subsite (`textreihen/`)
+
+**What it is:** the moved website of the MHDBDB text-series typology (#93, formerly `marketext.at/Textreihentypologie`): 11 static pages in the shared site chrome (registered in `build-pages.py`, reached through the footer link and a tile on `hilfe.html`, no menu entry), its own `textreihen.css` with `tr-` classes so that the compiled Tailwind stylesheet stays untouched, and two small scripts: `textreihen.js` (the SKOS browser) and `bibliografie.js` (the bibliography filter).
+
+**Data, and why it is not `genres.xml`:** the vocabulary is the SKOS data set of Middle-High-German-Conceptual-Database/textseries, commit `86c233f08` (2023-06-12), kept unchanged in `textreihen/data/skos/` (`.ttl`, `.rdf`, `.rj` plus the repository README, which names the licence CC BY 4.0). The texts and publications refer to exactly this state, so there is deliberately **no comparison** with `authority-files/genres.xml`, which the MHDBDB maintains separately as TEI; nothing under `tei/`, `authority-files/`, `data/` or `api/` is read or written. `scripts/build-textreihen.py` reads the `.rj` with the standard library and writes `textreihen/data/textreihen.json` (618 concepts, 894 `skos:broader` statements, three roots). It keeps every `broader` statement, including the 65 that another parent of the same concept already covers transitively: a concept with several direct parents appears under each of them.
+
+**No runtime dependency:** the browser loads only `data/textreihen.json`. The historical concept URIs (`https://dhplus.sbg.ac.at/mhdbdb/instance/c_...`, a domain that no longer resolves) appear as text identifiers and are never links. The bibliography (190 entries of the Zotero group 4876216) is built statically by `scripts/build-textreihen-bibliography.py` into `bibliography.html` between `BIB:START` and `BIB:END` markers, from the snapshot `data/zotero-schnappschuss.json`; rerunning the script without `--offline` pulls the current group state. `--check` on both scripts is the drift gate.
 
 ## External Services
 
@@ -488,7 +507,7 @@ npm run test:headed   # Visible browser
 
 **Problem:** 50MB XML files caused 30-second browser load times
 **Solution:** Pre-build JSON indexes at build time
-**Result:** 19× smaller download, no parsing overhead
+**Result:** ~15× smaller authority download (47.3 MB → ~3.1 MB, ADR-001), no parsing overhead
 
 ### 3-Stage Lemma Resolution
 
@@ -496,10 +515,10 @@ npm run test:headed   # Visible browser
 **Solution:** Three-stage lookup (exact → variants → prefix match in both directions)
 **Result:** Attested orthographic variants resolve via stage 2; stage 3 catches stems and inflected forms without drowning them in short-lemma noise (#224)
 
-### IndexedDB Dual Expiration
+### IndexedDB Expiration
 
 **Problem:** Balance freshness vs performance
-**Solution:** 30-day expiration for reference data, no expiration for user content
+**Solution:** The index cache (`assets/js/lib/corpus-loader.js`) is dropped on a version mismatch with `INDEX_VERSION`/`AUTHORITY_INDEX_VERSION` or after 30 days. The TEI cache of the reading view (`assets/js/storage/tei-cache-manager.js`) also expires after 30 days, but there that is storage hygiene: the reader revalidates against the server on every load (#151). The former second rule, no expiration for uploaded user files, went with the upload path (#314).
 **Result:** Fresh data without excessive refetching
 
 ### Document-Level Indexing (v4.0.0)

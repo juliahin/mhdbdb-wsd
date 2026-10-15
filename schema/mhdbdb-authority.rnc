@@ -200,6 +200,7 @@ variants.entry = element entry {
     attribute corresp { text },            # lexicon.xml#lemma_N
     element form {
         attribute xml:id { xsd:NCName },   # type_N
+        attribute n { xsd:nonNegativeInteger },  # corpus tokens of this type under the entry's lemma (ADR-021, #378)
         text                               # orthographic variant
     }+
 }
@@ -240,7 +241,7 @@ works.bibl = element bibl {
         attribute type { text }?,
         attribute ana { text }?,
         text
-    }+,                                 # required: 584/584 works have title
+    }+,                                 # required: 585/585 works have title (work_WLK dazu, 24.09.2026)
     # Hier stand 583/583, also eins zu wenig. Wodurch genau, ist nicht mehr
     # belegbar; die Zaehlweise steht in keiner Commit-Message. works.xml hat
     # 584 bibl mit 669 Sigle-Eintraegen auf 668 verschiedenen Siglen, TRO
@@ -254,12 +255,25 @@ works.bibl = element bibl {
     }*,
     element author {
         attribute ref { text }?,       # persons.xml#person_N
+        attribute xml:id { xsd:NCName }?,   # nur wo eine attribution-Note zielt (#452)
+        works.attribution.status?,     # fehlt = allgemein anerkannt
+        attribute role { "adapter" }?, # Bearbeiter, zaehlt nicht als Autor (#452)
+        text
+    }*,
+    element note {                     # Beleg einer Zuschreibung (#452)
+        attribute type { "attribution" },
+        attribute target { text },     # #work_N_aK, der <author> mit dem Status
+        attribute resp { text },       # contributors.xml#contrib_N
+        element date { attribute when { text } },
         text
     }*,
     element relatedItem {
         works.biblStruct
     }*
 }
+
+# Zuschreibungsstatus auf <author> (#452): umstritten | unsicher zugeschrieben | verworfen
+works.attribution.status = attribute ana { "disputed" | "uncertain" | "rejected" }
 
 works.biblStruct = element biblStruct {
     attribute type { text }?,          # journalArticle, bookSection, book

@@ -17,6 +17,14 @@ import {
   SearchPatterns,
 } from "../search/SearchHelpers.js";
 import { TextNormalizer } from "../../../../assets/js/lib/text-normalizer.js";
+import { findByIdInput, withIdHit } from "../../../../assets/js/lib/authority-id-input.js";
+
+// Verweis auf die Begriffshilfe (#498): wer mit einem eigenen Begriff kommt, der im
+// Begriffssystem nicht steht, findet dort den Weg zu vorhandenen Begriffen.
+const BEGRIFFSHILFE_LINK =
+  'Kein passender Begriff zum eigenen Thema? ' +
+  '<a href="../hilfe-begriffe-finden.html" target="_blank" rel="noopener" ' +
+  'class="font-medium text-brand-700 underline">Anleitung: Passende Begriffe finden</a>';
 
 import { displayResults } from "../core/ui-helpers.js";
 
@@ -45,10 +53,11 @@ export class ConceptExplorer {
   showConceptsWithSearch() {
     const searchHTML = createSearchInterface({
       title: "Begriffe-Explorer",
-      placeholder: "Begriff suchen (z.B. Freundschaft, Liebe, Ehre)",
+      placeholder: "Begriff oder ID suchen (z.B. Freundschaft, Liebe, concept_12040000)",
       searchInputId: "conceptSearch",
       resultsId: "conceptResults",
       totalCount: this.authorityData.concepts.length,
+      extraControlsHTML: `<p class="text-xs text-slate-600" data-begriffshilfe-link>${BEGRIFFSHILFE_LINK}</p>`,
     });
 
     renderToContainer("resultsContainer", searchHTML);
@@ -61,20 +70,24 @@ export class ConceptExplorer {
       return;
     }
 
-    const matches = SearchPatterns.multiFieldNormalized(
-      this.authorityData.concepts,
-      searchTerm,
-      [
-        (concept) => concept.termDE || "",
-        (concept) => concept.termEN || "",
-        (concept) => (concept.altDE || []).join(" "),
-        (concept) => (concept.altEN || []).join(" "),
-      ]
+    // #545: die Begriffshilfe nennt Begriffe mit ihrer ID
+    const matches = withIdHit(
+      findByIdInput(this.authorityData.concepts, "concept", searchTerm),
+      SearchPatterns.multiFieldNormalized(
+        this.authorityData.concepts,
+        searchTerm,
+        [
+          (concept) => concept.termDE || "",
+          (concept) => concept.termEN || "",
+          (concept) => (concept.altDE || []).join(" "),
+          (concept) => (concept.altEN || []).join(" "),
+        ]
+      )
     );
 
     const result = handleSearchResults(searchTerm, matches, {
       maxResults: 50,
-      emptyMessage: 'Keine Begriffe gefunden für "{term}"',
+      emptyMessage: `Keine Begriffe gefunden für "{term}". <span data-begriffshilfe-link>${BEGRIFFSHILFE_LINK}</span>`,
     });
 
     if (typeof result === "string") {
@@ -175,7 +188,7 @@ export class ConceptExplorer {
         ${displayMatches.map(lemma => `
           <div style="padding: 8px; background: white; border-radius: 4px; border: 1px solid #e5e7eb;">
             <a href="javascript:void(0)"
-               onclick="window.playground.ui.authorityExplorers.lemmaExplorer.showLemmaDetails('${lemma.id}', '${escapeForJS(lemma.lemma)}')"
+               onclick="window.playground.ui.authorityExplorers.lemmaExplorer.showLemmaDetails('${lemma.id}')"
                style="color: #1f2937; text-decoration: none; cursor: pointer; font-size: 1rem; display: flex; align-items: center; gap: 6px;"
                title="Details im Lemma-Explorer anzeigen">
               <span>${lemma.lemma}</span>

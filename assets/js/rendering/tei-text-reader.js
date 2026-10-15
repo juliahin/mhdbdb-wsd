@@ -7,6 +7,7 @@
  */
 
 import { lemmaRefMatchesId } from '../lib/lemma-match.js';
+import { ADAPTER_LABEL, STATUS_LABEL, formatAttributionList, isCountingAuthor, personIdOf } from '../lib/attributions.js';
 
 /**
  * Repository-Boilerplate im <editorialDecl>, das NICHT in die Leseansicht gehört (#250).
@@ -314,6 +315,12 @@ class TEITextReader {
                         metadata.author = work.author || metadata.author;
                     }
 
+                    // Alle Zuschreibungen (#452): Autor*innen mit Status, Bearbeiter, frühere
+                    if (Array.isArray(work.attributions)) {
+                        metadata.attributions = work.attributions;
+                        metadata.authorLine = formatAttributionList(work);
+                    }
+
                     // Editions (biblStructs)
                     if (work.biblStructs && Array.isArray(work.biblStructs)) {
                         metadata.editions = work.biblStructs.map(bibl => ({
@@ -481,9 +488,12 @@ class TEITextReader {
      *
      * Dieselben Zahlen stehen in drei weiteren Blöcken (oben bei
      * divRestartsNumbering, unten beim Zählungs-Anker, dazu docs/FEATURES.md
-     * beim Stichwort „Verse numbering per counting range"). Kein Gate deckt
-     * Zahlen in .js-Kommentaren ab, und doc-count-audit.py hat auf diese
-     * Markdown-Stelle keinen Anker; wer sie neu misst, zieht alle vier nach.
+     * beim Stichwort „Verse numbering per counting range"). Sie stehen in
+     * scripts/audit/check-measured-counts.py (#414), das wöchentlich und bei
+     * Änderungen unter tei/ läuft und die Sätze wörtlich gegen die Messung
+     * hält. Wer sie neu misst, zieht alle vier nach; wer einen Satz
+     * umformuliert, zieht dort den Eintrag nach, sonst meldet das Gate den
+     * Anker als nicht gefunden. doc-count-audit.py kennt diese Zahlen nicht.
      *
      * Und nicht nur die vier: an #358 hängt jede korpusweite div-Zahl im
      * Repository. Der Nenner „5.143 typisierte divs" bei hasOwnHeading und
@@ -544,6 +554,12 @@ class TEITextReader {
         return false;
     }
 
+    /** #358: Überschrift "Buch N" für <milestone unit="book" n="N"/>. */
+    bookHeadingHtml(el) {
+        const n = this.escapeHtml(el.getAttribute('n'));
+        return `<h2 class="section-head book-heading" data-book="${n}">Buch ${n}</h2>`;
+    }
+
     /**
      * Extract and format body text with TEI structure preservation
      * Handles: <head>, <p>, <div>, <lg>, <l>, <lb>, <pb>, <hi rend="...">, <pc>, <seg>
@@ -556,7 +572,8 @@ class TEITextReader {
         }
 
         const highlights = [];
-        const state = { wordPosition: 0, firstNumericLineShown: false }; // Use object to pass by reference
+        // hoisted: book-milestones, die das div-Rendering schon vor sein Label gezogen hat (#358)
+        const state = { wordPosition: 0, firstNumericLineShown: false, hoisted: new Set() }; // Use object to pass by reference
 
         // Create lemma-to-color mapping for multi-lemma mode
         const lemmaColorMap = {};
@@ -615,7 +632,15 @@ class TEITextReader {
                         'number': 'Nr.', 'section': 'Abschnitt',
                         'colophon': 'Kolophon', 'parallel': 'Parallelüberlieferung'
                     };
-                    const label = divLabels[divType];
+                    // #358: Ein Dreißiger (PZ, WH) trägt subtype="dreissiger" am
+                    // chapter-div und heißt "Strophe", nicht "Kapitel" (KZW
+                    // 11.09.2026, Vorschlag Alan). Nur die Beschriftung ändert
+                    // sich: type bleibt chapter, damit divRestartsNumbering,
+                    // die Deep-Links über verseId und alles andere an chapter
+                    // unverändert greifen.
+                    const label = divType === 'chapter' && el.getAttribute('subtype') === 'dreissiger'
+                        ? 'Strophe'
+                        : divLabels[divType];
                     // Trägt das div eine eigene Überschrift, wird das synthetische
                     // Label ihr übergeordnet (kleiner, direkt darüber) statt als
                     // gleichrangige zweite Überschrift daneben (#250, #236).
@@ -636,7 +661,19 @@ class TEITextReader {
                     } else if (label) {
                         header = `<div class="${headerClasses}">${this.escapeHtml(label)}</div>`;
                     }
-                    return `<div class="tei-div tei-div-${this.escapeHtml(divType)}" data-type="${this.escapeHtml(divType)}" data-n="${this.escapeHtml(divN)}">${header}${children()}</div>`;
+                    // #358: Beginnt ein Buch am Anfang dieses div,
+                    // steht sein milestone als erstes Kind und rendert sonst UNTER
+                    // der Strophen-Überschrift ("Strophe 5" über "Buch III"). Er
+                    // wird deshalb vor das Label gezogen; im milestone-Zweig
+                    // überspringt ihn `state.hoisted`, damit er nicht doppelt steht.
+                    let lead = '';
+                    const first = el.firstElementChild;
+                    if (first && first.localName === 'milestone' &&
+                        first.getAttribute('unit') === 'book' && first.getAttribute('n')) {
+                        lead = this.bookHeadingHtml(first);
+                        state.hoisted.add(first);
+                    }
+                    return `<div class="tei-div tei-div-${this.escapeHtml(divType)}" data-type="${this.escapeHtml(divType)}" data-n="${this.escapeHtml(divN)}">${lead}${header}${children()}</div>`;
                 }
                 case 'lg': {
                     const lgN = el.getAttribute('n') || '';
@@ -758,6 +795,12 @@ class TEITextReader {
                     const msN = el.getAttribute('n') || '';
                     if (unit === 'verse' && msN) {
                         return `<span class="verse-marker" title="Vers ${this.escapeHtml(msN)}">${this.escapeHtml(msN)}</span>`;
+                    }
+                    // #358: Buchgrenze (Parzival), "Buch II" an der Stelle des
+                    // milestone. Block-Überschrift; der milestone steht als Kind
+                    // eines div, nie in einem p (dort würde das h2 das p schließen).
+                    if (unit === 'book' && msN) {
+                        return state.hoisted.has(el) ? '' : this.bookHeadingHtml(el);
                     }
                     return '';
                 }
@@ -884,12 +927,56 @@ class TEITextReader {
     }
 
     /**
+     * Eine Zuschreibung als Zeile des Metadaten-Panels (#452): Name, Statustext
+     * (umstritten / unsicher zugeschrieben / verworfen), der Beleg als Tooltip
+     * und die Normdaten-Links der Person. Bearbeiter tragen den Statustext
+     * nicht, der Abschnittstitel sagt die Rolle.
+     */
+    attributionRowHTML(attribution, { adapter = false } = {}) {
+        const person = (this.authorityIndex && this.authorityIndex.persons || [])
+            .find(p => p.id === personIdOf(attribution.ref));
+        const statusLabel = !adapter && STATUS_LABEL[attribution.status];
+        const title = attribution.note ? ` title="${this.escapeHtml(attribution.note)}"` : '';
+        let html = `<div class="metadata-row"${title}><strong>${this.escapeHtml(attribution.name)}</strong>`;
+        if (statusLabel) {
+            html += ` <span>(${this.escapeHtml(statusLabel)})</span>`;
+        }
+        html += '</div>';
+        // Keine Normdaten-Links bei einer verworfenen Zuschreibung: KZW hat am
+        // 23.09.2026 in #444 bestätigt, dass der Wikidata-Link zu Bligger bei CR
+        // entfällt; er soll bei der früheren Zuschreibung nicht wiederkehren.
+        if (person && attribution.status !== 'rejected') {
+            html += this.personLinksHTML(person.id, person.gnd, person.wikidata);
+        }
+        return html;
+    }
+
+    /**
+     * GND- und Wikidata-Links einer Person; Wikidata bei Anonym unterdrückt
+     * (Issue #96 KZW-Comment). Leer, wenn die Person keine Normdaten trägt.
+     */
+    personLinksHTML(personId, gnd, wikidata) {
+        const icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>';
+        const showWikidata = wikidata && personId !== 'person_anonym';
+        if (!gnd && !showWikidata) return '';
+        let html = '<div class="external-links">';
+        if (gnd) {
+            html += `<a href="https://d-nb.info/gnd/${gnd}" target="_blank" rel="noopener" class="external-link" title="Autor*in GND: ${gnd}">${icon} GND</a>`;
+        }
+        if (showWikidata) {
+            html += `<a href="https://www.wikidata.org/wiki/${wikidata}" target="_blank" rel="noopener" class="external-link" title="Autor*in Wikidata: ${wikidata}">${icon} Wikidata</a>`;
+        }
+        return html + '</div>';
+    }
+
+    /**
      * Populate modal with comprehensive metadata and text
      */
     populateModal(textId, metadata, bodyResult) {
         // Set title and author in header
         this.elements.readingTitle.textContent = metadata.title;
-        this.elements.readingAuthor.textContent = metadata.author;
+        // Alle zählenden Zuschreibungen mit Statustext, z. B. "Anonym; Konrad von Würzburg (umstritten)" (#452)
+        this.elements.readingAuthor.textContent = metadata.authorLine || metadata.author;
 
         // Excerpt banner (#134): sichtbar über dem Text, bewusst NICHT im
         // eingeklappten Metadaten-Bereich — die Ausschnittsbeziehung muss
@@ -1000,10 +1087,20 @@ class TEITextReader {
         // Section 5: Author with external links
         metadataHTML += '<div class="metadata-section">';
         metadataHTML += '<h4 class="metadata-section-title">Autor*in</h4>';
-        metadataHTML += `<div class="metadata-row"><strong>${this.escapeHtml(metadata.author)}</strong></div>`;
+        const countingAuthors = (metadata.attributions || []).filter(isCountingAuthor);
+        if (countingAuthors.length > 0) {
+            // Alle Zuschreibungen in Dokumentreihenfolge, "umstritten" und
+            // "unsicher zugeschrieben" mit Statustext und Beleg als Tooltip (#452)
+            countingAuthors.forEach(attribution => {
+                metadataHTML += this.attributionRowHTML(attribution);
+            });
+        } else {
+            metadataHTML += `<div class="metadata-row"><strong>${this.escapeHtml(metadata.author)}</strong></div>`;
+        }
 
         // Author GND and Wikidata links (Heroicon: arrow-top-right-on-square)
-        if (metadata.authorGnd || metadata.authorWikidata) {
+        // Nur im Rückfall ohne attributions; sonst trägt attributionRowHTML sie je Person.
+        if (countingAuthors.length === 0 && (metadata.authorGnd || metadata.authorWikidata)) {
             metadataHTML += '<div class="external-links">';
             if (metadata.authorGnd) {
                 metadataHTML += `<a href="https://d-nb.info/gnd/${metadata.authorGnd}" target="_blank" rel="noopener" class="external-link" title="Autor*in GND: ${metadata.authorGnd}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg> GND</a>`;
@@ -1015,6 +1112,22 @@ class TEITextReader {
             metadataHTML += '</div>';
         }
         metadataHTML += '</div>';
+
+        // Bearbeiter und frühere Zuschreibungen (#452): getrennt vom Autor, nie als Autor gezählt
+        const adapterList = (metadata.attributions || []).filter(a => a.role === 'adapter');
+        const formerList = (metadata.attributions || []).filter(a => !a.role && a.status === 'rejected');
+        if (adapterList.length > 0) {
+            metadataHTML += '<div class="metadata-section">';
+            metadataHTML += `<h4 class="metadata-section-title">${ADAPTER_LABEL}</h4>`;
+            adapterList.forEach(a => { metadataHTML += this.attributionRowHTML(a, { adapter: true }); });
+            metadataHTML += '</div>';
+        }
+        if (formerList.length > 0) {
+            metadataHTML += '<div class="metadata-section">';
+            metadataHTML += '<h4 class="metadata-section-title">Frühere Zuschreibungen</h4>';
+            formerList.forEach(a => { metadataHTML += this.attributionRowHTML(a); });
+            metadataHTML += '</div>';
+        }
 
         // Section 6: Editions (Zotero links with current edition highlighted)
         if (metadata.editions && metadata.editions.length > 0) {
@@ -1049,8 +1162,8 @@ class TEITextReader {
         }
 
         // Section 7b: Editorische Eingriffe (#250, KZW-Entscheidung 29.07.2026)
-        // Ohne Eingriffe kein Abschnitt: 3 Texte (CEFB, GWTK, KVO) haben nach dem
-        // Boilerplate-Filter keinen einzigen Absatz mehr.
+        // Ohne Eingriffe kein Abschnitt. Bis #493 (08.10.2026) traf das CEFB, GWTK
+        // und KVO; seither hat jeder Text nach dem Boilerplate-Filter einen Absatz.
         if (metadata.editorialNotes && metadata.editorialNotes.length > 0) {
             metadataHTML += '<div class="metadata-section metadata-editorial">';
             metadataHTML += '<h4 class="metadata-section-title">Editorische Eingriffe</h4>';
@@ -1471,6 +1584,37 @@ class TEITextReader {
 
         // Highlight active text in text list
         this.highlightTextInList(this.currentTextId);
+    }
+
+    /**
+     * Schliesst die Leseansicht (#434, Browser-Zurueck aus einem geoeffneten
+     * Text). Ein laufender Ladevorgang wird verworfen: openReadingView prueft
+     * nach seinem await die Generation und rendert dann nichts mehr, das
+     * Schliessen waehrend des Ladens oeffnet das Panel also nicht nachtraeglich.
+     * Den Platzhalter im Lesebereich setzt der Aufrufer (app.js showEmptyState).
+     */
+    closeReadingView() {
+        this._loadSeq = (this._loadSeq || 0) + 1;
+        this.currentTextId = null;
+        this.currentLemmaId = null;
+        this.currentLemmaIds = [];
+        this.currentHighlights = [];
+        this.currentHighlightIndex = 0;
+        // Vor dem ersten openReadingView kennt der Reader seine Elemente noch nicht
+        if (this.elements) {
+            this.showNavigation(false);
+            this.showLoading(false);
+            // Kopf, den populateModal gesetzt hat: Titel setzt der Aufrufer
+            // (showEmptyState), der Autor und die Metadaten bleiben sonst stehen
+            if (this.elements.readingAuthor) {
+                this.elements.readingAuthor.textContent = '';
+            }
+            if (this.elements.readingMetadata) {
+                this.elements.readingMetadata.innerHTML = '';
+                this.elements.readingMetadata.classList.add('hidden');
+            }
+        }
+        this.highlightTextInList(null);
     }
 
     /**

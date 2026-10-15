@@ -57,7 +57,7 @@
             <listBibl>
               <biblStruct type="bookSection" xml:id="MRA_MRA" corresp="http://zotero.org/groups/5043625/items/UA3CKKN5" key="MRA">
                 <analytic>
-                  <title level="a">[lieder]</title>
+                  <title level="a">[Lieder]</title>
                   <author>
                     <name>Reinmar der Alte</name>
                   </author>
@@ -97,7 +97,7 @@
       <editorialDecl>
         <p xml:lang="de">Lokale Dateireferenzen (z.B. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) verweisen auf kontrollierte Vokabulare im authority-files Verzeichnis dieses Repositorys. Diese internen Querverweise ermöglichen die Verknüpfung mit Personen-, Werk-, Lemma-, Konzept-, Genre- und Namensautoritätsdateien.</p>
         <p xml:lang="en">Local file references (e.g. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) point to controlled vocabularies in the authority-files directory of this repository. These internal cross-references enable linking to person, work, lemma, concept, genre, and name authority files.</p>
-      <normalization><p>Ab Lied LXI sind die Lieder als "Pseudo-Reinmar" ausgewiesen.</p><p>Lemmatisiert, aber noch nicht disambiguiert</p><p>Auszug aus MF nach einzelnen Abschnitten/ Autoren.</p><p>Verschiedene Überlieferungen sind als große fortlaufende Kapitelnummer vor dem jeweils ersten Lied gekennzeichnet. Beispiel: Die AC-Überlieferung bei Spervogel ist als Kapitel 1, die J-Überlieferung als Kapitel 2 gekennzeichnet.</p><p>Soll der gesamte MF durchsucht werden, müssen alle dazugehörenden Abschnitte (MNL=MF Namenlose Lieder; MAD= MF Engelhart von Adelnburg) angeleuchtet werden.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
+      <normalization><p>Ab Lied LXI sind die Lieder als "Pseudo-Reinmar" ausgewiesen.</p><p>Lemmatisiert, teilweise semantisch disambiguiert</p><p>Auszug aus MF nach einzelnen Abschnitten/ Autoren.</p><p>Verschiedene Überlieferungen sind als große fortlaufende Kapitelnummer vor dem jeweils ersten Lied gekennzeichnet. Beispiel: Die AC-Überlieferung bei Spervogel ist als Kapitel 1, die J-Überlieferung als Kapitel 2 gekennzeichnet.</p><p>Soll der gesamte MF durchsucht werden, müssen alle dazugehörenden Abschnitte (MNL=MF Namenlose Lieder; MAD= MF Engelhart von Adelnburg) angeleuchtet werden.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
       <classDecl>
         <taxonomy xml:id="genres">
           <bibl>Genreklassifikation gemäß der Textreihentypologie <ptr target="https://www.mhdbdb.sbg.ac.at/textreihen"/></bibl>
@@ -134,6 +134,8 @@
       <change when="2025-07-11" who="#editor">Version 1.0 (11.07.2025): Ergänzt um Editionsangaben, Ontologieverweise, Rollenkennzeichnung der Editor:innen, Klassifikationen, URI sowie GND- und Wikidata-Verlinkung des Autors.</change>
       <change when="2026-08-24" who="#editor">#216 Serie 1 (minne): 11 homographie-ambige Tokens der Form minne kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu minne NOM bzw. minnen VRB; LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/216-minne/). 4 weitere Tokens der Form minne blieben bewusst unannotiert (Review).</change>
       <change when="2026-08-24" who="#editor">#369 Serie 2 (stat): 7 homographie-ambige Tokens der Form stat kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu stat NOM bzw. stan/sten VRB; LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/369-stat/).</change>
+      <change when="2026-09-30" who="#editor">#493: Angabe zur semantischen Disambiguierung in encodingDesc/normalization an den Stand der Annotation angeglichen (10067 von 12959 lemmatisierten Tokens tragen einen Begriff in @ana). Vorher: &#34;Lemmatisiert, aber noch nicht disambiguiert&#34;</change>
+      <change when="2026-10-10" who="#editor">#460 jagen: 2 Tokens als Verbform gelesen, von lemma_3103 jagât (NOM) auf lemma_3102 jagen (VRB) umgehängt, @ana entfällt; neu geprägte Variantentypen nach der Regel aus #367.</change>
     </revisionDesc>
   </teiHeader>
   <text>
@@ -4834,7 +4836,7 @@
                 <w xml:id="MRA_1110405_1" lemmaRef="lexicon.xml#lemma_3001" pos="PRO" ana="lexicon.xml#lemma_3001_sense_4805" corresp="variants.xml#type_10226">mich</w>
                 <w xml:id="MRA_1110405_2" lemmaRef="lexicon.xml#lemma_3001" pos="POS" ana="lexicon.xml#lemma_3001_sense_4805" corresp="variants.xml#type_10218">mîn</w>
                 <w xml:id="MRA_1110405_3" lemmaRef="lexicon.xml#lemma_2795" pos="NOM" corresp="variants.xml#type_9454">herze</w>
-                <w xml:id="MRA_1110405_4" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+                <w xml:id="MRA_1110405_4" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
                 <pc xml:id="MRA_1110405_5" join="left">,</pc>
               </l>
               <l n="6">
@@ -22529,7 +22531,7 @@
               </l>
               <l n="3">
                 <w xml:id="MRA_1630103_0" lemmaRef="lexicon.xml#lemma_5601" pos="ADV" ana="lexicon.xml#lemma_5601_sense_8764" corresp="variants.xml#type_19597">sô</w>
-                <w xml:id="MRA_1630103_1" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+                <w xml:id="MRA_1630103_1" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
                 <w xml:id="MRA_1630103_2" lemmaRef="lexicon.xml#lemma_6464" pos="NOM NEG" corresp="variants.xml#type_22815">unbilde</w>
                 <w xml:id="MRA_1630103_3" lemmaRef="lexicon.xml#lemma_4172" pos="PRP" ana="lexicon.xml#lemma_4172_sense_6544" corresp="variants.xml#type_14531">mit</w>
                 <w xml:id="MRA_1630103_4" lemmaRef="lexicon.xml#lemma_2670" pos="NOM" ana="lexicon.xml#lemma_2670_sense_4300" corresp="variants.xml#type_8972">hasen</w>

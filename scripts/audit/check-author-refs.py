@@ -9,7 +9,9 @@ schema-valide (mhdbdb.rnc verlangt keinen Textinhalt).
 
 Geprueft wird das Feld, aus dem der Korpus-Index text.author speist
 (build-corpus-index.py, //tei:titleStmt/tei:author; der Index nimmt bei
-mehreren Autoren nur den ersten, das Audit prueft alle). Sechs Klassen, die sich ueberschneiden koennen:
+mehreren Autoren den ersten ohne @role und ohne ana="rejected", #452; das
+Audit prueft alle, verlangt aber fuer eine verworfene Zuschreibung keinen
+Spiegel im particDesc). Sechs Klassen, die sich ueberschneiden koennen:
 
   leer        <author ref="..."/> ohne Textinhalt: Text erscheint autorlos
   toter-ref   @ref zeigt auf eine ID, die es in persons.xml nicht gibt
@@ -35,7 +37,7 @@ immer ein veralteter Spiegel:
   spiegel        preferred-Form im particDesc != preferred-Form in persons.xml
   spiegel-tot    @corresp zeigt auf eine ID, die es in persons.xml nicht gibt
   ohne-preferred person-Eintrag ganz ohne persName[@type="preferred"]. Heute
-                 0 von 671, aber ohne eigene Klasse waere er ein stilles Loch:
+                 keiner, aber ohne eigene Klasse waere er ein stilles Loch:
                  wer die preferred-Zeile loescht, faellt sonst nur aus der
                  Grundmenge und loest keine Meldung aus
   spiegel-fehlt  eine Autoren-ID aus dem titleStmt hat keinen Eintrag im
@@ -76,7 +78,7 @@ from lxml import etree
 
 # Gemeinsame Korpusauswahl (#287).
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from corpus_files import corpus_files  # noqa: E402
+from corpus_files import corpus_files, tei_header  # noqa: E402
 
 NS = {'tei': 'http://www.tei-c.org/ns/1.0'}
 
@@ -117,9 +119,11 @@ def main():
     spiegel_fehlt, ausnahme_ueberfluessig = [], []
     for path in corpus_files():
         sigle = path.name.replace('.tei.xml', '')
-        tree = etree.parse(str(path))
+        # Beide gepruefte Stellen liegen im teiHeader; der Textteil wird nicht
+        # gelesen (Messung im Docstring von corpus_files.tei_header).
+        tree = tei_header(path)
         corresp_ids, autor_ids = set(), set()
-        for person in tree.xpath('//tei:particDesc/tei:listPerson/tei:person',
+        for person in tree.xpath('.//tei:particDesc/tei:listPerson/tei:person',
                                  namespaces=NS):
             # Adressiert wird ueber @corresp, nicht ueber die lokale xml:id:
             # LUU fuehrt dort eine UUID (person_05154796-...), korpusweit der
@@ -143,7 +147,7 @@ def main():
             spiegel_geprueft += 1
             if form != pref[pid]:
                 spiegel.append((sigle, pid, form, pref[pid]))
-        for author in tree.xpath('//tei:titleStmt/tei:author', namespaces=NS):
+        for author in tree.xpath('.//tei:titleStmt/tei:author', namespaces=NS):
             raw_text = ''.join(author.itertext()).strip()
             text = ' '.join(raw_text.split())
             if text != raw_text:
@@ -161,7 +165,11 @@ def main():
                 # eine stille Abweichung von der Konvention der uebrigen Texte.
                 praefix.append((sigle, raw))
             pid = raw.split('#')[-1]
-            autor_ids.add(pid)
+            # Eine verworfene Zuschreibung (@ana="rejected", #452) ist kein
+            # Beteiligter des Textes und hat keinen Spiegel im particDesc;
+            # Bearbeiter (@role) sind Beteiligte und bleiben pflichtig.
+            if author.get('ana') != 'rejected':
+                autor_ids.add(pid)
             if pid not in pref:
                 tot.append((sigle, raw))
                 continue

@@ -65,6 +65,58 @@ isStage3Match('minneclich', 'minnecl'); // true (Lemma beginnt mit der Eingabe)
 isStage3Match('mi', 'minnecl');         // false (zu kurz für die Rückrichtung)
 ```
 
+### `lemma-id-input.js`
+Erkennt eine Lemma-Nummer als Sucheingabe (#467, CONTRACTS §C.1.2). Eine Nummer ist eine eindeutige ID und geht nicht durch die drei Stufen. Geteilt von Korpussuche (`search-engine.js`), Lemma-Seite (Links in die Korpussuche) und Playground (`tei-ui.js`, `multi-lemma-search.js`). Das Wörterbuch hat eine eigene Regel, weil es die nackte Zahl zusätzlich per Präfix sucht (#481).
+
+**Exports:**
+- `parseLemmaIdInput(term)` → `"lemma_N"` oder `null`
+
+**Usage:**
+```javascript
+import { parseLemmaIdInput } from '../lib/lemma-id-input.js';
+
+parseLemmaIdInput('4086');                   // 'lemma_4086'
+parseLemmaIdInput('lemma_4086');             // 'lemma_4086'
+parseLemmaIdInput('lexicon.xml#lemma_4086'); // 'lemma_4086' (Schreibung aus @lemmaRef)
+parseLemmaIdInput('04086');                  // 'lemma_4086' (führende Nullen fallen weg)
+parseLemmaIdInput('minne');                  // null (Schreibform)
+```
+
+### `authority-id-input.js`
+Findet einen Registereintrag über seine ID (#545), damit sich die Vorschläge der Begriffshilfe im Playground nachschlagen lassen. Angenommen werden dieselben Schreibweisen wie bei `lemma-id-input.js`, mit beliebigem Präfix. Anders als dort ergänzt ein ID-Treffer die Textsuche, statt sie zu ersetzen. Geteilt von den sechs Authority-Explorern (`playground/js/ui/authority/`) und der Begriffs-Verteilung.
+
+**Exports:**
+- `findByIdInput(items, prefix, term)` → Eintrag oder `null`
+- `withIdHit(idHit, matches)` → Trefferliste mit dem ID-Treffer vorn, ohne Dublette
+
+**Usage:**
+```javascript
+import { findByIdInput, withIdHit } from '../lib/authority-id-input.js';
+
+findByIdInput(concepts, 'concept', '12040000');          // concept_12040000
+findByIdInput(concepts, 'concept', 'concept_12040000');  // concept_12040000
+findByIdInput(concepts, 'concept', '#concept_12040000'); // concept_12040000
+findByIdInput(genres, 'genre', '06677194');              // genre_06677194 (führende Null bleibt erhalten, wo die ID sie trägt)
+findByIdInput(concepts, 'concept', 'person_1768');       // null (fremdes Präfix)
+withIdHit(hit, textMatches);                             // [hit, ...textMatches ohne hit]
+```
+
+### `component-only.js`
+Regel für reine Wortbestandteile (#228): ein Lemma ohne Korpusbeleg (`noCorpus: true` im Authority-Index), das eine andere Etymologie als Bestandteil nennt. Geteilt von Wörterbuch (Kurzmarke) und Lemma-Seite (voller Hinweis), damit beide dieselbe Menge zeigen. Der Status wird abgeleitet, nicht gespeichert.
+
+**Exports:**
+- `COMPONENT_ONLY_NOTE`, `COMPONENT_ONLY_SHORT`: voller Hinweissatz und Kurzmarke
+- `buildComponentRefSet(lemmata)` → `Set` der Lemma-IDs, die irgendeine Etymologie nennt (Selbstverweis zählt nicht)
+- `isComponentOnly(lemma, refSet)` → `boolean`
+
+**Usage:**
+```javascript
+import { buildComponentRefSet, isComponentOnly } from '../lib/component-only.js';
+
+const refs = buildComponentRefSet(authorityIndex.lemmata);
+isComponentOnly(lemma, refs);   // true nur bei lemma.noCorpus === true und Nennung in einer Etymologie
+```
+
 ### `escape.js`
 HTML- und Attribut-Escaping für Hauptseite und Lemma-Seiten. Escaped auch Anführungszeichen, weil die Werte in Attribut-Kontexte interpoliert werden (`href="..."`) und der frühere textContent-Trick dort einen Attribute-Breakout offenließ (Review zu PR #157). Die Playground-TEI-Module halten nach dokumentierter Konvention eigene Kopien (DESIGN.md, Playground TEI-Analysis Module Pattern).
 
@@ -125,6 +177,40 @@ import { toCsv, downloadCsv, csvDateStamp } from '../../lib/csv-export.js';
 
 const csv = toCsv(['Lemma', 'Absolut'], [['minne', 1234], ['êre, guot', 56]]);
 downloadCsv(`mhdbdb-wortfrequenz-${csvDateStamp()}.csv`, csv);
+```
+
+### `xlsx-export.js`
+XLSX-Export ohne Fremdbibliothek (#448): ZIP ohne Kompression mit selbst gerechnetem CRC-32, je Blatt ein Worksheet mit Inline-Strings, eine fette und eingefrorene Kopfzeile. Zahlen werden als Zahl geschrieben, alles andere als Text; in XML 1.0 verbotene Steuerzeichen fallen weg. Eine CDN-Bibliothek ist hier nicht erlaubt (`no-cdn-check.yml`). Genutzt vom Export der Multi-Lemma-Suche im Playground.
+
+**Exports:**
+- `toXlsx(sheets)` → `Uint8Array` (`sheets`: `[{name, header, rows}]`, Blattnamen eindeutig, höchstens 31 Zeichen)
+- `downloadXlsx(filename, bytes)` → startet den Download
+
+**Usage:**
+```javascript
+import { toXlsx, downloadXlsx } from '../../lib/xlsx-export.js';
+
+downloadXlsx('mhdbdb-beispiel.xlsx', toXlsx([
+    { name: 'Fundstellen', header: ['Sigle', 'Stelle'], rows: [['PZ', 'V. 1']] }
+]));
+```
+
+### `attributions.js`
+Zuschreibungsstatus der Werkautoren (#452): welche Autoren zählen (weder Bearbeiter noch verworfen), wie Status und Rolle angezeigt werden, und eine Autorzeile für Listen und Filter. Eine Stelle, die einen Autor durchsucht oder anzeigt, liest hier und nicht `text.author`, das nur den ersten zählenden Autor trägt.
+
+**Exports:**
+- `STATUS_LABEL`, `ADAPTER_LABEL`: Anzeigetexte ("umstritten", "unsicher zugeschrieben", "verworfen", "Bearbeiter")
+- `personIdOf(ref)`, `isCountingAuthor(attribution)`
+- `countingAttributions(work)`, `adapters(work)`, `formerAttributions(work)`: die drei Gruppen eines Werks
+- `formatAttribution(attribution)`, `formatAttributionList(work)`: Namen mit Statuszusatz
+- `authorLineOfText(text, works)`: Autorzeile eines Textes ohne SearchEngine
+- `attributionNames(work)`: alle Namen eines Werks für Suchfelder
+
+**Usage:**
+```javascript
+import { authorLineOfText } from '../../lib/attributions.js';
+
+authorLineOfText(text, authorityData.works); // 'Anonym; Konrad von Würzburg (umstritten)'
 ```
 
 ## Design Principles

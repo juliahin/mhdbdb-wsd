@@ -1,9 +1,12 @@
+import { trackScope } from './corpus-scope.js';
 /**
  * MHDBDB Playground - Multi-Lemma Search UI Controller
  * Handles the modal interface for advanced multi-lemma search
  */
 
 import { getNavigationEpoch } from '../core/router.js';
+import { parseLemmaIdInput } from '../../../../assets/js/lib/lemma-id-input.js';
+import { exportKontext, exportCsv, exportXlsx } from './multi-lemma-export.js';
 
 export class MultiLemmaSearchUI {
     constructor(teiExplorer, authorityManager) {
@@ -14,11 +17,12 @@ export class MultiLemmaSearchUI {
 
         // Schreibform -> feste Lemma-ID (#58). Wer aus dem Lemmata-Explorer
         // kommt, hat ein bestimmtes Lemma angeklickt; die Auflösung über die
-        // Schreibform nimmt dagegen matches[0]. Gemessen am 2026-08-07 über
+        // Schreibform nimmt dagegen matches[0]. Gemessen am 2026-09-24 über
         // authority-files/lexicon.xml, gruppiert mit normalize_mhg() aus
-        // scripts/mhg_normalizer.py: 477 normalisierte Formen tragen mehr
-        // als einen Eintrag, zusammen 993 der 43.879 Lemmata (2,26 Prozent),
-        // darunter sin, wal, mal und de. Für die stünde hier sonst still ein
+        // scripts/mhg_normalizer.py: 476 normalisierte Formen tragen mehr
+        // als einen Eintrag, zusammen 991 Lemmata, darunter sin,
+        // wal, mal und de. Zählweise und Verlauf in CONTRACTS.md, dort wird
+        // die Zahl gepflegt, hier nicht. Für die stünde hier sonst still ein
         // anderes Lemma. Gefüllt wird die Map nur vom Router, nie von einer
         // Handeingabe: siehe addLemmaFromInput.
         this.lemmaIdHints = new Map();
@@ -150,8 +154,20 @@ export class MultiLemmaSearchUI {
         chip.className = 'lemma-chip';
         chip.dataset.lemma = lemma;
 
+        // Eine Lemma-Nummer zeigt im Chip, worauf sie aufloest, damit man die
+        // Eingabe pruefen kann (#467, KZW 24.09.2026).
+        let aufloesung = '';
+        const idInput = parseLemmaIdInput(lemma);
+        if (idInput) {
+            const treffer = (window.playground?.authorityManager || this.authorityManager)
+                ?.findLemmaById(idInput);
+            aufloesung = treffer
+                ? ` <span class="lemma-chip-resolved">= ${this.escapeHtml(treffer.lemma)}</span>`
+                : ' <span class="lemma-chip-resolved">(unbekannte Lemma-Nummer)</span>';
+        }
+
         chip.innerHTML = `
-            <span>${this.escapeHtml(lemma)}</span>
+            <span>${this.escapeHtml(lemma)}${aufloesung}</span>
             <button type="button" aria-label="Remove ${this.escapeHtml(lemma)}">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -241,6 +257,14 @@ export class MultiLemmaSearchUI {
         // 2026-08-07: dist=3, dist=10 und dist=25 lieferten denselben Kopf
         // („max. 10 Wörter") und dieselben zwei Treffer.
         const distanz = parseInt(this.proximityDistance.value) || 10;
+        trackScope(() => {
+            this.lemmas = [...searchTerms];
+            this.lemmaIdHints = new Map(zeiger);
+            this.searchModeRadios.forEach(radio => { radio.checked = radio.value === searchMode; });
+            this.proximityDistance.value = String(distanz);
+            return this.executeSearch();
+        });
+
 
         // Close modal first
         this.close();
@@ -335,6 +359,10 @@ export class MultiLemmaSearchUI {
                 return;
             }
 
+            // #448: Parameter und Korpusauswahl fuer den Export, vor der
+            // Suche kopiert (die Auswahl kann sich danach aendern)
+            const exportCtx = exportKontext({ mode: searchMode, distance: distanz, searchTerms, lemmaIds });
+
             // Execute search based on mode (now async)
             // Alle drei Modi lesen den vorgebauten Korpus-Index. Den XML-Fallback
             // gab es bis #314; faellt der Index aus, wirft die Suche jetzt und
@@ -353,8 +381,10 @@ export class MultiLemmaSearchUI {
                 // Dokumentweite Suche über den Index
                 results = await teiManager.searchMultipleLemmasUsingIndex(lemmaIds, searchMode);
                 if (getNavigationEpoch() !== myEpoch) return;
-                this.teiExplorer.displayMultiLemmaResults(results, searchTerms);
+                this.teiExplorer.displayMultiLemmaResults(results, searchTerms, lemmaIds);
             }
+            exportCtx.results = results;
+            this.renderExportLeiste(exportCtx);
 
         } catch (error) {
             console.error('Search error:', error);
@@ -370,6 +400,56 @@ export class MultiLemmaSearchUI {
                 `;
             }
         }
+    }
+
+    /**
+     * Exportleiste unter dem Ergebniskopf (#448). Nur bei Treffern; bei null
+     * Treffern gibt es nichts zu exportieren. Die Leiste sitzt hier und nicht
+     * in displaySummaryResults, weil jene Funktion alle Werkzeuge mit
+     * Kartenansicht bedient.
+     */
+    renderExportLeiste(ctx) {
+        const container = document.getElementById('resultsContainer');
+        if (!container || ctx.results.length === 0) return;
+        const anzahl = ctx.mode === 'document'
+            ? ctx.results.reduce((s, r) => s + (r.matchCount || 0), 0)
+            : ctx.results.length;
+        const knopf = (id, text, titel) => `<button type="button" id="${id}" title="${this.escapeHtml(titel)}" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-brand-400 hover:text-brand-700 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"></path></svg>
+            ${text}
+        </button>`;
+        const leiste = document.createElement('div');
+        leiste.id = 'mlExportLeiste';
+        leiste.className = 'mb-4 flex flex-wrap items-center gap-3 text-sm text-slate-600';
+        leiste.innerHTML = `
+            <span>Alle ${anzahl.toLocaleString('de-DE')} Fundstellen exportieren, mit Stelle und Kontext:</span>
+            ${knopf('mlExportCsv', 'CSV-Export', 'Eine Zeile je Fundstelle, für die Weiterverarbeitung')}
+            ${knopf('mlExportXlsx', 'XLSX-Export', 'Dieselben Zeilen für Excel, dazu ein Blatt mit den Suchparametern')}
+            <span id="mlExportStatus" class="text-slate-500" aria-live="polite"></span>
+        `;
+        const kopfzeile = container.firstElementChild;
+        if (kopfzeile) kopfzeile.after(leiste); else container.prepend(leiste);
+
+        const status = leiste.querySelector('#mlExportStatus');
+        const knoepfe = leiste.querySelectorAll('button');
+        const starte = async (fn, format) => {
+            knoepfe.forEach(b => { b.disabled = true; });
+            status.className = 'text-slate-500';
+            try {
+                const n = await fn(ctx, (fertig, gesamt) => {
+                    status.textContent = `Lade Texte … ${fertig} / ${gesamt}`;
+                });
+                status.textContent = `${n.toLocaleString('de-DE')} Fundstellen als ${format} exportiert`;
+            } catch (error) {
+                console.error('[#448] Export fehlgeschlagen:', error);
+                status.className = 'text-red-700';
+                status.textContent = `Export fehlgeschlagen: ${error.message}`;
+            } finally {
+                knoepfe.forEach(b => { b.disabled = false; });
+            }
+        };
+        leiste.querySelector('#mlExportCsv').addEventListener('click', () => starte(exportCsv, 'CSV'));
+        leiste.querySelector('#mlExportXlsx').addEventListener('click', () => starte(exportXlsx, 'XLSX'));
     }
 
     // Regex-based instead of the textContent/innerHTML trick: the value is

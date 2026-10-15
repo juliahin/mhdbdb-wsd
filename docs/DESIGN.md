@@ -158,7 +158,7 @@ Checkbox accent: `accent-color: #3b75d8`.
 
 ## Playground TEI-Analysis Module Pattern
 
-Twelve analysis modules under `playground/js/ui/tei/` share a consistent structure (the router `tei-ui.js`, the modal controller `multi-lemma-search.js` and the shared corpus-selection helper `corpus-scope.js` do not follow the pattern). Anyone adding a new analysis tool should follow it: modules that deviate for no visible reason make the playground feel inconsistent and break conventions the router and the sidebar buttons build on.
+The analysis modules under `playground/js/ui/tei/` share a consistent structure (the router `tei-ui.js`, the modal controller `multi-lemma-search.js` with its export helper `multi-lemma-export.js`, and the shared corpus-selection helper `corpus-scope.js` do not follow the pattern). Anyone adding a new analysis tool should follow it: modules that deviate for no visible reason make the playground feel inconsistent and break conventions the router and the sidebar buttons build on.
 
 **Canonical examples:** `lemma-distribution.js` (#90), `verse-position-search.js` (#47.3), `concept-distribution.js` (#47 R2 + #113 autocomplete), `text-comparison.js` (#108), `cooccurrence-ranking.js` (#107), `rhyme-dictionary.js` (#106), `naming-explorer.js` (#59, deviation: its own lazily fetched index `data/naming-index.json.gz` instead of a corpus thunk).
 
@@ -314,13 +314,13 @@ Do not hash-route: `korpus.html` is a separate site. Plain anchor tags with `tar
 
 ### Performance map against O(N) lookups (text-comparison lesson)
 
-`AuthorityFilesManager.findLemmaById()` is an `Array.find()` over 43,713 lexicon entries (`authorityData.lemmata` from the authority index), so O(N) per call. As long as a module needs the lookup only dozens of times (concept-distribution, lemma-distribution: 30-50 hits for the top-N display) that does not matter. As soon as an `enrichment` iterates over *thousands* of lemmata, the iterations multiply:
+`AuthorityFilesManager.findLemmaById()` is an `Array.find()` over 43,710 lexicon entries (`authorityData.lemmata` from the authority index), so O(N) per call. As long as a module needs the lookup only dozens of times (concept-distribution, lemma-distribution: 30-50 hits for the top-N display) that does not matter. As soon as an `enrichment` iterates over *thousands* of lemmata, the iterations multiply:
 
 ```
 text-comparison PZ vs JT, „Beide": 3,058 lookups × 43,754 ≈ 134 million iterations ≈ 5962ms
                                   ↓ (local map built once per show())
                                        1 lookup × 43,754 (build) + 3,058 × O(1) ≈ 53ms (112× faster)
-        (43,754 = lexicon size at the time of this measurement; the lexicon grows, the order of magnitude stays)
+        (43,754 = lexicon size at the time of this measurement; the size moves with every data change, the order of magnitude stays)
 ```
 
 Pattern:
@@ -435,7 +435,7 @@ input.addEventListener('blur', () => setTimeout(() => this.closeAutocomplete(), 
 
 ARIA: `role="combobox" + aria-controls + aria-expanded` on the input, `role="listbox"` on the dropdown, `role="option" + aria-selected` on the buttons. Scroll the active item into view on arrow navigation (`activeEl.scrollIntoView({block: 'nearest'})`). Reuse `resolveQuery()` as the suggestion source: no second resolver path.
 
-The pattern is implemented (as of 2026-05-16) in four modules: `concept-distribution.js` (#113, the original), `lemma-distribution.js`, `verse-position-search.js`, `cooccurrence-ranking.js` (all three ported on 2026-05-16; since #106 also `rhyme-dictionary.js`). If further modules gain a lemma or concept input: copy it and adjust the ids (`xxQuery`/`xxAutocomplete`/`data-xx-ac-idx`).
+The pattern is implemented in `concept-distribution.js` (#113, the original), `lemma-distribution.js`, `verse-position-search.js`, `cooccurrence-ranking.js` (all three ported on 2026-05-16) and, since #106, `rhyme-dictionary.js`. If further modules gain a lemma or concept input: copy it and adjust the ids (`xxQuery`/`xxAutocomplete`/`data-xx-ac-idx`).
 
 **Passing the selection through (#163):** the dropdown selection must not only set `input.value` (a string): with homographs (three lemmata „rôt") `resolveQuery()` would resolve that string back to the wrong lemma. Rule: a selection (Enter on an active item, mousedown) additionally sets `this.state.selectedLemma = c` (or `selectedConcept`); the `input` handler resets it to `null` on manual typing; `runSearch()` prefers `selectedLemma` as long as the query text still matches the chosen form. Default resolution without an explicit selection: `searchLemmaByOrthography()` returns stage-1 homographs sorted by frequency (corpus frequency descending), so `matches[0]` is the most plausible lemma.
 
@@ -451,7 +451,8 @@ The pattern is implemented (as of 2026-05-16) in four modules: `concept-distribu
 |--------|---------|---------|
 | 2-column | `grid xl:grid-cols-[1fr_2fr]` | Korpus default |
 | 3-column | `grid xl:grid-cols-[1fr_1fr_2fr]` | Playground, korpus post-search |
-| Columns collapse at `max-width: 1279px` to single column.
+
+Columns collapse at `max-width: 1279px` to single column.
 
 ### Section Rhythm (Landing Page)
 
@@ -534,8 +535,9 @@ Source: `assets/css/korpus.css` (post-#17 reader-view styling). Element-to-class
 |-------|------------|-------------|
 | `.reading-body` | `Georgia, serif; 1.125rem; line-height: 1.8` | Container |
 | `.section-head` | `sans-serif; 1.25rem; font-weight: 600; color: accent` | `<head>` |
+| `.section-head.book-heading` | larger than `.section-head`, 2px rule (values in `korpus.css`) | `<milestone unit="book" n="…"/>`, rendered as „Buch N" (#358) |
 | `.tei-div`, `.tei-div-{type}` | `margin: space-4 0`; per-type variants for song / chapter / recipe / number / section / colophon / parallel | `<div>` |
-| `.tei-div-header`, `.tei-div-header.tei-div-{type}` | German label + counter (e.g. „Lied 3", „Kapitel 12") | first child of `<div>` |
+| `.tei-div-header`, `.tei-div-header.tei-div-{type}` | German label + counter (e.g. „Lied 3", „Kapitel 12", „Strophe 58" for `subtype="dreissiger"`) | first child of `<div>`, below a book heading that opens the same `<div>` |
 | `.verse-group` | `margin: space-4 0` | `<lg>` |
 | `.stanza-label` | inline „Strophe N" prefix | first child of `<lg>` |
 | `.verse-line` | `display: block; margin-left: space-4; line-height: 1.6`; verse number in margin via `data-n` (1, 5, 10, …) | `<l>` |

@@ -1,6 +1,6 @@
 # Kickoff-Vorlage für autonome Sessions
 
-Eine autonome Session startet nur mit einem Kickoff-Prompt von chsteiner. Kein Playbook autorisiert sich selbst. Diese Vorlage sagt, was in den Prompt gehört, damit die Session nicht auf halbem Weg nachfragen muss; das Nachfragen ist ihr ja gerade untersagt.
+Eine autonome Session startet nur mit einem Kickoff-Prompt von chsteiner. Kein Playbook autorisiert sich selbst. Diese Vorlage sagt, was in den Prompt gehört, damit die Session nicht auf halbem Weg nachfragen muss; das Nachfragen ist ihr ja gerade untersagt. Ein Lauf, bei dem ein Mensch am Terminal sitzt, braucht diese Vorlage nicht: er läuft ohne Betriebsvertrag, darf fragen, und für ihn gelten `CLAUDE.md` und für den Review die Auslöserliste in der `description` von `.claude/agents/reviewer.md` (chsteiner, 2026-10-13).
 
 **Die wichtigste Regel dieser Vorlage:** der Betriebsvertrag wird **in den Prompt kopiert**, nicht verlinkt. `BETRIEBSVERTRAG.md` ist die eine Quelle, aus der kopiert wird, und ein Verweis darauf wäre ein Ladevorgang, der ausfallen kann, ohne dass jemand es merkt. Redundanz zur Laufzeit ist hier ein Sicherheitsmerkmal; Redundanz im Repo war die Driftquelle, die diese Trennung überhaupt nötig gemacht hat.
 
@@ -10,7 +10,7 @@ Eine autonome Session startet nur mit einem Kickoff-Prompt von chsteiner. Kein P
 
 ### 1. Autorisierung (immer, wörtlich)
 
-Was diese Session darf, und was auch sie nicht darf. Die Freigabe übersteuert die CLAUDE.md-Regel „never commit/push without user approval" für den genannten Umfang und nur für ihn.
+Was diese Session darf, und was auch sie nicht darf. Die Freigabe gilt für den genannten Umfang und nur für ihn. Die allgemeine Freigabe in CLAUDE.md (Git Rules, erster Punkt, seit 2026-10-07) reicht in dieser Session nicht weiter als der Kickoff.
 
 - **Issue-Session:** Commits und Pushes auf `claude/*`-Branches, PRs erstellen. `main` bleibt tabu.
 - **Merge-Session:** Merges der benannten PRs nach `main`. Keine direkten Pushes auf `main`.
@@ -30,7 +30,7 @@ Für die Issue-Session gilt zusätzlich: die Auswahl kommt aus den `auto:*`-Labe
 
 Fragen, die die Session sonst stellen müsste, was ihr untersagt ist:
 
-- **`npm test`:** ausdrückliche Freigabe für die volle Suite, oder Beschränkung auf gezielte Läufe. Ohne diesen Satz gilt die stehende Konvention „Tests nie ungefragt", und die Session hat keinen Weg, sie aufzulösen.
+- **`npm test`:** Tests brauchen seit dem 24.08.2026 keine Freigabe mehr (CLAUDE.md → Git Rules). Der Kickoff sagt nur, ob ein Lauf mit mehreren Spuren die volle Suite über die Koordination vergibt, und auf welchem Port.
 - **Lösch-Policy** (Carearbeit): was gelöscht werden darf und was nach `scripts/_archived/` wandert.
 - **Live-Smoke-Checks** (Merge): ob sie Teil der Session sind. Empfehlung: ja.
 - **Health-Check** (Carearbeit): als eigenes Arbeitspaket ja oder nein.

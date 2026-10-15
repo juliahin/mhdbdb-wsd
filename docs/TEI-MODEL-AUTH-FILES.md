@@ -16,10 +16,10 @@ Counterpart to `docs/TEI-MODEL.md` (corpus files).
 
 | File | Content | Entries | Size |
 |-------|--------|-----------|---------|
-| `lexicon.xml` | Lemmata with senses, POS, etymology | 43,713 | 33 MB |
-| `variants.xml` | Orthographic variants per lemma | 42,460 variant entries, 256,512 forms | 16 MB |
+| `lexicon.xml` | Lemmata with senses, POS, etymology | 43,710 lemmata | 33 MB |
+| `variants.xml` | Orthographic variants per lemma | 42,459 variant entries, 256,961 forms | 16 MB |
 | `persons.xml` | Authors/persons with authority data | 211 | 74 KB |
-| `works.xml` | Works with bibliography and genre | 584 | 1.4 MB |
+| `works.xml` | Works with bibliography and genre | 585 | 1.4 MB |
 | `contributors.xml` | MHDBDB contributors (founders, coordination, editors) | 52 persons + 2 orgs | 15 KB |
 | `concepts.xml` | Semantic concept ontology | 567 categories | 207 KB |
 | `genres.xml` | Genre taxonomy | 615 categories | 405 KB |
@@ -52,7 +52,7 @@ Important for day-to-day operation (see [INDEX.md → Current Phase](INDEX.md#cu
 | `names.xml` | RDF→CSV→TEI snapshot | maintained by hand in-repo, decoupled from the corpus | low (0 corpus coupling) |
 | `contributors.xml` | born-digital (2026-04) | **maintained by hand** (no generator) | none |
 
-**Overall pattern:** all files are RDF-derived migration snapshots (2025-07-22), maintained **in-repo** since the migration: there is no external master left and no re-export source. Only `variants.xml` is corpus-derived and regenerable. `lexicon.xml` is repo master AND index of the corpus annotation: if a corpus `<w>` carries a `@lemmaRef`/`@ana` that is missing from lexicon.xml, the corpus leads and lexicon.xml has to be brought in line (see [CONTRACTS.md → Authority Source Rules](CONTRACTS.md#f-authority-source-rules)). New **sense meanings** are curatorial (the team assigns the concept), not automatically reconstructible from the corpus. `lexicon.xml` and `variants.xml` were stale until 2026-05; `variants.xml` has been regenerated (most recently 256,512 forms, 2026-09-24 with #228), `lexicon.xml` still has 396 ingest-caused dangling refs after the category A stub backfill (2026-07-02) (109 IDs, curatorial remainder B/C open, #115; cause in §6.1). The `_archived` generators write pre-#32 attributes (`@wordRef`/`@meaningRef`) on the corpus side and must never be run against the current corpus unchecked.
+**Overall pattern:** all files are RDF-derived migration snapshots (2025-07-22), maintained **in-repo** since the migration: there is no external master left and no re-export source. Only `variants.xml` is corpus-derived and regenerable. `lexicon.xml` is repo master AND index of the corpus annotation: if a corpus `<w>` carries a `@lemmaRef`/`@ana` that is missing from lexicon.xml, the corpus leads and lexicon.xml has to be brought in line (see [CONTRACTS.md → Authority Source Rules](CONTRACTS.md#f-authority-source-rules)). New **sense meanings** are curatorial (the team assigns the concept), not automatically reconstructible from the corpus. `lexicon.xml` and `variants.xml` were stale until 2026-05; `variants.xml` has been regenerated (most recently 256,961 forms, 2026-10-10 with #460), `lexicon.xml` still has 396 ingest-caused dangling refs after the category A stub backfill (2026-07-02) (109 IDs, curatorial remainder B/C open, #115; cause in §6.1). The `_archived` generators write pre-#32 attributes (`@wordRef`/`@meaningRef`) on the corpus side and must never be run against the current corpus unchecked.
 
 ---
 
@@ -208,7 +208,7 @@ The RDF migration brought classification only (POS, concept pointers, compound c
 | `<def>` inside `<sense>` | the meaning stated in prose | the concept system classifies, it does not formulate. Dictionary content, not argument. |
 | `<note type="comment">` inside `<sense>` | philological comment (attestation context, related passages) | deliberately separate from `<def>`: the reasoning goes here, the meaning there. |
 
-**`@resp`** points at `contributors.xml#contrib_N` and is required on both `<note>` types: a comment without an author is not citable. On `<def>` it is optional (a meaning statement can be editorial consensus). The value is typed as a pattern (`contrib_` plus three digits), so that a typo in the form already shows up in stage-2 validation. That the ID also **exists** is checked only by `scripts/audit/audit-authority-files.py`, and that does not run in CI: a well-formed but unbacked `contrib_N` validates green. So run the audit by hand after every round of curation. For comments the attribution is visible: since authority index 1.9.10 (#270) the build resolves the `@resp` of `<note type="comment">` through `contributors.xml`, and the lemma page and the playground label the comment „Kommentar von <name>" (KZW, 2026-09-23). An id the build cannot resolve stops it, so for comments the existence check no longer depends on the manual audit. `<def>` and `<etym type="borrowing">` are still shown without a name; whether they get one is open in #270, and for origins #28 layer B asks a second question that `@resp` does not answer. See [DECISIONS.md ADR-018](DECISIONS.md#adr-018-attribution-of-curated-lemma-statements-stops-at-the-data-layer-for-now) and its revision.
+**`@resp`** points at `contributors.xml#contrib_N` and is required on both `<note>` types: a comment without an author is not citable. On `<def>` it is optional (a meaning statement can be editorial consensus). The value is typed as a pattern (`contrib_` plus three digits), so that a typo in the form already shows up in stage-2 validation. That the ID also **exists** is checked only by `scripts/audit/audit-authority-files.py`, and that does not run in CI: a well-formed but unbacked `contrib_N` validates green. So run the audit by hand after every round of curation. For comments the attribution is visible: since authority index 1.9.10 (#270) the build resolves the `@resp` of `<note type="comment">` through `contributors.xml`, and the lemma page and the playground label the comment „Kommentar von <name>" (KZW, 2026-09-23). Since authority index 1.9.15 the same holds for `<def>` and for the attribution note in `<etym type="borrowing">`: „Definition von <name>" and „Herkunftserklärung von <name>" (KZW, 2026-09-25), and without a stored `@resp` no name is shown. An id the build cannot resolve stops it, so for all three the existence check no longer depends on the manual audit. For origins #28 layer B still asks a second question that `@resp` does not answer (which source vouches for the origin). See [DECISIONS.md ADR-018](DECISIONS.md#adr-018-attribution-of-curated-lemma-statements-stops-at-the-data-layer-for-now) and its two revisions.
 
 **Language concepts vs. `<etym type="borrowing">`:** the concept subtree `concept_23123000` (individual languages) is already used as an origin marker in the existing data (`mirre` carries Arabic, Hebrew, Aramaic; `Golgota` and `Barjona` Aramaic). Both stay side by side: the concept pointers make the origin searchable and analysable inside the concept system, `<etym type="borrowing">` makes it explicit together with its source.
 
@@ -216,7 +216,7 @@ The RDF migration brought classification only (POS, concept pointers, compound c
 
 **Order (RELAX NG, sequence without interleave):** inside `<entry>`, `<etym type="morphological">` comes before `<etym type="borrowing">`; inside `<sense>`, `<def>` comes before `<note type="comment">` before the `<ptr>` elements. Appending generation (`SubElement`, as in `scripts/ingest/wzb/wzb-add-lemma.py`) gets this right by itself; inserting by hand otherwise yields a stage-2 error whose message does not name the cause.
 
-**Index mapping:** `lemma.origin = {languages[{name, code}], attribution?, resp?}` plus `sense.definition` / `sense.comment` (and `definitionResp` / `commentResp`, plus `commentRespName`, the name resolved from contributors.xml, from v1.9.10 on), each only where present in the lexicon: empty fields on every lemma would inflate index and API for no gain. Authority index from v1.7.0 on.
+**Index mapping:** `lemma.origin = {languages[{name, code}], attribution?, resp?, respName?}` plus `sense.definition` / `sense.comment` (and `definitionResp` / `commentResp`, plus the names resolved from contributors.xml: `commentRespName` from v1.9.10 on, `definitionRespName` and `origin.respName` from v1.9.15 on), each only where present in the lexicon: empty fields on every lemma would inflate index and API for no gain. Authority index from v1.7.0 on.
 
 **Current state:** 1 entry (`lemma_37818` Abba, 2026-07-30). The rest follows via #28 phase 2/3.
 
@@ -228,13 +228,15 @@ TEI Ch. 9 (Dictionaries). Each entry corresponds to one lemma and lists all atte
 <body>
   <div type="orthographicVariants">
     <entry corresp="lexicon.xml#lemma_879">
-      <form xml:id="type_2783">brôt</form>
-      <form xml:id="type_2784">brôte</form>
-      <form xml:id="type_2785">brôtes</form>
+      <form xml:id="type_2783" n="306">brôt</form>
+      <form xml:id="type_2784" n="24">brôte</form>
+      <form xml:id="type_2785" n="32">brôtes</form>
     </entry>
   </div>
 </body>
 ```
+
+`@n` is required (authority schema 1.2.0, #378): the number of corpus tokens of this type under the lemma, written by `extract-variants.py`. It ranks the candidates of an ambiguous written form (ADR-021).
 
 **Design decision:** variants in a separate file instead of in lexicon.xml (256k forms would inflate the 33 MB lexicon past 60 MB). Linked via `@corresp`.
 
@@ -335,6 +337,28 @@ Target (normalized, 1 element):
 Label and parent hierarchy are resolved from genres.xml at runtime. The build script already does this.
 
 **Author name in `<author>`:** the text content (`Heinrich von Rang`) stays, because TEI expects readable text in `<author>`. The source of truth for the author name is `persons.xml`; the text in `<author>` is a convenience for human readers. This is not denormalization in the same sense as the genre labels, because `<author>` without text would be semantically incomplete.
+
+**Attribution status and role (#452, #444).** A work may carry several `<author>` elements, and the relation between work and person says what each one means. The status lives on the `<author>` itself, not on the person and not on the work (KZW, #444, 16.09.2026):
+
+| `@ana` | Display text | Counts as author in search, filter, reading view, person view, API |
+|---|---|---|
+| (none) | Autor*in | yes, generally accepted |
+| `disputed` | „umstritten" | yes, with the note |
+| `uncertain` | „unsicher zugeschrieben" | yes, with the note (no work carries it yet) |
+| `rejected` | „verworfen" | no, only under „Frühere Zuschreibungen" |
+
+`@role="adapter"` marks the *Bearbeiter* of a work whose original has another author. An adapter never counts as author. The two attributes are independent: `@ana` says how certain the attribution is, `@role` says what the person did. Anonymous remains an author of its own where it is one (`person_anonym`, KZW 08.10.2026), whatever the status of a named person next to it.
+
+The evidence sits only in `works.xml`, in a `<note type="attribution" target="#work_N_aK" resp="contributors.xml#contrib_N"><date when="…"/>…</note>` after the authors; the `<author>` it points at carries the matching `@xml:id`. The TEI headers carry `@ana` and `@role` on `titleStmt/author` and no note (TEI has no `<note>` in `titleStmt`, and the evidence belongs to the relation, not to its copy in a header). Example, `work_5` (Moriz von Craûn):
+
+```xml
+<author ref="persons.xml#person_anonym">Anonym</author>
+<author xml:id="work_5_a2" ref="persons.xml#person_227" ana="rejected">Bligger von Steinach</author>
+<note type="attribution" target="#work_5_a2" resp="contributors.xml#contrib_003">
+  <date when="2026-09-16"/>Ältere Zuschreibung, …</note>
+```
+
+The four cases of #452 as they stand: `work_5` (CR) Anonym, Bligger von Steinach rejected; `work_462` (BAX) Lamprecht, Anonym as adapter; `work_408` (HOF, VDH) Stricker alone; `work_325` (RHB) Anonym first, Konrad von Würzburg disputed. What the build derives from it: [CONTRACTS.md → F.6 Attribution Status](CONTRACTS.md#f6-attribution-status-which-author-a-reader-sees-452).
 
 ### 3.5 concepts.xml: concept ontology
 
@@ -504,7 +528,7 @@ works.xml ──author @ref──> persons.xml
 | lexicon → concepts | `<ptr target="concepts.xml#..."/>` | a sense has 0-N concept pointers |
 | lexicon → lexicon | `<seg corresp="lexicon.xml#...">` | etymology components |
 | variants → lexicon | `@corresp="lexicon.xml#..."` | 1:1 (one entry per lemma) |
-| works → persons | `<author ref="persons.xml#...">` | 1:N (4 works have 2 authors) |
+| works → persons | `<author ref="persons.xml#...">` | 1:N, with attribution status and role on the relation itself (see "Attribution status" in §3.4); 3 works carry two `<author>` elements since #452 (`work_5`, `work_325`, `work_462`), `work_408` carries one |
 | works → genres | `<ptr target="genres.xml#..."/>` | 1:N (one work, several genres) |
 | names → concepts | `<ptr type="exactMatch\|closeMatch" target="concepts.xml#..."/>` | 0-N |
 | taxonomy-internal | `<ptr type="broader" target="#..."/>` | 0-N (polyhierarchy) |
@@ -550,7 +574,7 @@ All migration steps were implemented in phases F-K. After #32 was closed, the sc
 
 Active ingest began after the #32 migration. The Wenzelsbibel pipeline (WZB, 2026-04 to 2026-05) exposed the drift pattern that #115 uncovered:
 
-- **Phase 1b** (commit `5cdc98831`, 2026-04) recognized new word forms and assigned new lemma IDs ≥78000. Only 4 of them made it into `lexicon.xml` (senseless at first). In total **98 lemma IDs ≥78000** are missing from `lexicon.xml` today (#115): `wzb-apply-lemmarefs.py` wrote them into the corpus as `@lemmaRef`, but **no script carried `lexicon.xml` along**.
+- **Phase 1b** (commit `5cdc98831`, 2026-04) recognized new word forms and assigned new lemma IDs ≥78000. Only 4 of them made it into `lexicon.xml` (senseless at first). On 2026-10-05, **35 lemma IDs ≥78000** used as `@lemmaRef` in the corpus still have no entry in `lexicon.xml` (#115; all 35 are classified as typo or homograph suspects, category C): `wzb-apply-lemmarefs.py` wrote them into the corpus as `@lemmaRef`, but **no script carried `lexicon.xml` along**.
 - **Phase 3** (sense resolution) mostly picked existing senses (<78000); the missing sense IDs ≥78000 are largely structural artefacts of the lemma creation, not new meanings.
 - **Emergency repair** (commits `8caa09627`/`649c0fe55`, 2026-05): the 4 senseless lemmata each got a `<sense>` by hand; `scripts/audit/check-lexicon-senses.py` was written as regression protection.
 

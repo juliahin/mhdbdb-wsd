@@ -9,7 +9,8 @@
  * Issue #43 — Priority 2: reading view coverage
  */
 
-import { test, expect } from '@playwright/test';
+// Warmer Context pro Worker (#488): kein Storage-Zustand, keine Routes.
+import { test, expect } from '../warm-page.js';
 
 test.describe('Reading View', () => {
 
@@ -385,16 +386,15 @@ test.describe('Reading View', () => {
         await page.goto('/korpus.html?textId=NONEXISTENT_TEXT&lemmaIds=lemma_879');
         await page.waitForSelector('#loadingScreen', { state: 'hidden', timeout: 30000 });
 
-        // Wait for error to appear in reading body
-        await page.waitForTimeout(3000);
-
-        // Reading body or error display should show an error message
-        const bodyText = await page.locator('#readingBody').textContent();
-        const hasError = bodyText.toLowerCase().includes('error') ||
-                         bodyText.toLowerCase().includes('nicht gefunden') ||
-                         bodyText.toLowerCase().includes('not found') ||
-                         bodyText.includes('Text not found');
-        expect(hasError).toBeTruthy();
+        // Reading body or error display should show an error message. Statt
+        // fester 3 s wird dieselbe Aussage abgefragt, bis sie zutrifft (#564).
+        await expect.poll(async () => {
+            const bodyText = (await page.locator('#readingBody').textContent()) || '';
+            return bodyText.toLowerCase().includes('error') ||
+                   bodyText.toLowerCase().includes('nicht gefunden') ||
+                   bodyText.toLowerCase().includes('not found') ||
+                   bodyText.includes('Text not found');
+        }, { timeout: 15000 }).toBeTruthy();
     });
 
 });
@@ -464,7 +464,8 @@ test.describe('Issue #250: Editorische Eingriffe im Metadatenpanel', () => {
         await expect(editorial).toBeVisible();
         await expect(editorial).toContainText('Editorische Eingriffe');
         await expect(editorial).toContainText('Der Text besteht aus 57 Rezepten');
-        await expect(editorial).toContainText('nicht disambiguiert');
+        // Seit #493 nach dem @ana-Stand: 2723 von 3364 lemmatisierten Tokens
+        await expect(editorial).toContainText('teilweise semantisch disambiguiert');
         await expect(page.locator('.metadata-editorial-note')).toHaveCount(3);
 
         // Das Boilerplate über lokale Dateireferenzen steht in 666 Headern und
@@ -495,16 +496,21 @@ test.describe('Issue #250: Editorische Eingriffe im Metadatenpanel', () => {
         await expect(notes.filter({ hasText: 'Anhang II' })).toHaveCount(1);
     });
 
-    test('KVO ohne inhaltliche Angaben zeigt den Abschnitt gar nicht', async ({ page }) => {
-        // Gegenprobe: 3 Texte (CEFB, GWTK, KVO) tragen im editorialDecl nur das
-        // Boilerplate. Ein leerer Abschnitt waere schlimmer als keiner.
+    test('KVO zeigt die ergaenzte Angabe zur Disambiguierung, ohne Boilerplate', async ({ page }) => {
+        // Bis #493 (2026-10-08) trugen CEFB, GWTK und KVO im editorialDecl nur
+        // das Boilerplate, und hier stand die Gegenprobe "kein leerer
+        // Abschnitt". Seither hat jeder der 667 Header eine inhaltliche Angabe;
+        // der Zweig ohne Abschnitt hat im Korpus keinen Fall mehr und ist hier
+        // nicht mehr getestet.
         await page.goto('/korpus.html?textId=KVO');
         await page.waitForSelector('#loadingScreen', { state: 'hidden', timeout: 30000 });
         await expect(page.locator('#readingTitle')).not.toBeEmpty({ timeout: 90000 });
 
         await page.click('.metadata-toggle-btn');
         await expect(page.locator('.metadata-sections')).toBeVisible();
-        await expect(page.locator('.metadata-editorial')).toHaveCount(0);
+        const editorial = page.locator('.metadata-editorial');
+        await expect(editorial).toContainText('Teilweise semantisch disambiguiert.');
+        await expect(editorial).not.toContainText('Lokale Dateireferenzen');
     });
 
 });
@@ -574,13 +580,60 @@ test.describe('Issue #250: Label ueber einer eigenen head-Ueberschrift', () => {
         await expect(page.locator('#readingBody .page-break')).toHaveCount(0);
 
         // Der Deep-Link aus #193 traegt weiter, und die Stelle ist jetzt
-        // ohne Nachrechnen zitierfaehig: Wh. 77,14 steht unter "Kapitel 77".
+        // ohne Nachrechnen zitierfaehig: Wh. 77,14 steht unter "Strophe 77".
         const ziel = page.locator('.verse-line[data-core="7714"]');
         await expect(ziel).toHaveCount(1);
         await expect(ziel).toHaveAttribute('data-n', '14');
         const kapitel = page.locator('#readingBody .tei-div[data-n="77"]');
-        await expect(kapitel.locator('> h3.section-head')).toHaveText('Kapitel 77');
+        // Seit #358 traegt jeder WH-Dreissiger subtype="dreissiger" und heisst
+        // "Strophe" (KZW 11.09.2026). Fest erwartet, damit eine Rueck-Umkodierung
+        // von WH hier rot wird.
+        await expect(kapitel.locator('> h3.section-head')).toHaveText('Strophe 77');
         await expect(kapitel.locator('.verse-line[data-core="7714"]')).toHaveCount(1);
+    });
+
+});
+
+test.describe('Issue #390: WZB-Wortgrenzen ueber dem Kolumnentitel', () => {
+
+    test.setTimeout(180000);
+
+    test('WZB: ueber den Kolumnentitel zerrissene Woerter stehen ganz (#390)', async ({ page }) => {
+        // Bis 2026-10-12 stand zwischen den Haelften dieser 16 Woerter ein
+        // laufender Kolumnentitel als <w>, gelesen wurde "tŏch EXO ter".
+        // Zusammengefuehrt nach Klaus M. Schmidts Durchsicht; das Wort steht
+        // vor Umbruch und Kolumnentitel, ein folgendes Satzzeichen wandert mit.
+        // Die WZB hat 27 MB.
+        test.setTimeout(180000);
+        await page.goto('/korpus.html?textId=WZB');
+        await page.waitForSelector('#loadingScreen', { state: 'hidden', timeout: 30000 });
+        await expect(page.locator('#readingTitle')).not.toBeEmpty({ timeout: 90000 });
+
+        const text = (await page.locator('#readingBody').textContent())
+            .normalize('NFC').replace(/\s+/g, ' ');
+        const paare = [
+            ['geschep', 'fet'], ['zukunf', 'tig'], ['tŏch', 'tern'], ['tŏch', 'ter'],
+            ['czou', 'berei'], ['wis', 'sen'], ['erwer', 'fen'], ['ei', 'nes'],
+            ['op', 'ferten'], ['ma', 'chte'], ['veisti', 'keit'], ['isra', 'hel'],
+            ['Wen', 'ne'], ['vorkou', 'fen'], ['besa', 'gunge'], ['ho', 'rende'],
+        ];
+        const titel = '(?:ESIS|SIS|GENE|EXO|DUS|LEUITICUS|ERI|NOMIUS|DEUTRO)';
+        for (const [vorn, hinten] of paare) {
+            const wort = vorn + hinten;
+            expect(text, wort).toMatch(new RegExp(`(?<!\\p{L})${wort}(?!\\p{L})`, 'u'));
+            // die zerrissene Lesart; dazwischen standen hoechstens Umbruchnummern,
+            // Kapitelzahl und Trennstrich, daher die Grenze von acht Tokens
+            const zerrissen = new RegExp(
+                `(?<!\\p{L})${vorn}-? (?:\\S+ ){0,8}?${titel} (?:\\S+ ){0,2}?${hinten}(?!\\p{L})`, 'u');
+            expect(text, `${vorn}|${hinten}`).not.toMatch(zerrissen);
+        }
+        // Ein Satzzeichen nach dem Wort (Komma, Punkt, |) wandert mit. Bliebe es stehen, hinge
+        // es (join="left") am Kolumnentitel ("DUS 2,").
+        for (const [wort, punkt, kopf] of [['tŏchtern', ',', 'GENE'], ['tŏchter', ',|', 'EXO'],
+            ['wissen', ',|', 'DUS'], ['erwerfen', '.', 'DUS']]) {
+            const p = punkt.replace(/[|.]/g, '\\$&');
+            expect(text, wort).toMatch(new RegExp(`${wort}${p} (?:\\S+ ){0,8}?${kopf} 2 (?![,.|])`, 'u'));
+        }
     });
 
 });

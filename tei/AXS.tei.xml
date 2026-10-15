@@ -103,7 +103,7 @@
       <editorialDecl>
         <p xml:lang="de">Lokale Dateireferenzen (z.B. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) verweisen auf kontrollierte Vokabulare im authority-files Verzeichnis dieses Repositorys. Diese internen Querverweise ermöglichen die Verknüpfung mit Personen-, Werk-, Lemma-, Konzept-, Genre- und Namensautoritätsdateien.</p>
         <p xml:lang="en">Local file references (e.g. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) point to controlled vocabularies in the authority-files directory of this repository. These internal cross-references enable linking to person, work, lemma, concept, genre, and name authority files.</p>
-      <normalization><p>Der Text besteht aus insgesamt 7097 Versen beginnend mit Vers 1 und endend mit Vers 7302. Nach Vers 508 folgt der Einschub aus Alberic von Besançon bestehend aus 245 Versen. Danach folgt eine Lücke. Es geht dann weiter mit Vers 959 bis zum Ende.</p><p>Voll lemmatisiert, aber noch nicht disambiguiert.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
+      <normalization><p>Der Text besteht aus insgesamt 7097 Versen beginnend mit Vers 1 und endend mit Vers 7302. Nach Vers 508 folgt der Einschub aus Alberic von Besançon bestehend aus 245 Versen. Danach folgt eine Lücke. Es geht dann weiter mit Vers 959 bis zum Ende.</p><p>Voll lemmatisiert, teilweise semantisch disambiguiert.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
       <classDecl>
         <taxonomy xml:id="genres">
           <bibl>Genreklassifikation gemäß der Textreihentypologie <ptr target="https://www.mhdbdb.sbg.ac.at/textreihen"/></bibl>
@@ -140,6 +140,8 @@
       <change when="2025-07-11" who="#editor">Version 1.0 (11.07.2025): Ergänzt um Editionsangaben, Ontologieverweise, Rollenkennzeichnung der Editor:innen, Klassifikationen, URI sowie GND- und Wikidata-Verlinkung des Autors.</change>
       <change when="2026-08-24" who="#editor">#216 Serie 1 (minne): 5 homographie-ambige Tokens der Form minne kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu minne NOM bzw. minnen VRB; LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/216-minne/).</change>
       <change when="2026-08-24" who="#editor">#369 Serie 2 (stat): 37 homographie-ambige Tokens der Form stat kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu stat NOM bzw. stan/sten VRB; LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/369-stat/).</change>
+      <change when="2026-09-30" who="#editor">#493: Angabe zur semantischen Disambiguierung in encodingDesc/normalization an den Stand der Annotation angeglichen (18232 von 24112 lemmatisierten Tokens tragen einen Begriff in @ana). Vorher: &#34;Voll lemmatisiert, aber noch nicht disambiguiert.&#34;</change>
+      <change when="2026-10-10" who="#editor">#461 gebeine: 2 Tokens mit Säugetierknochen auf den neuen Sense lemma_1958_sense_119196 (concept_14011100) gesetzt.</change>
     </revisionDesc>
   </teiHeader>
   <text>
@@ -33735,7 +33737,7 @@
           <w xml:id="AXS_4330000_2" lemmaRef="lexicon.xml#lemma_2598" pos="VRB VEX" corresp="variants.xml#type_8718">hânt</w>
           <w xml:id="AXS_4330000_3">in</w>
           <w xml:id="AXS_4330000_4">ir</w>
-          <w xml:id="AXS_4330000_5" lemmaRef="lexicon.xml#lemma_1958" pos="NOM" corresp="variants.xml#type_6602">gebeine</w>
+          <w xml:id="AXS_4330000_5" lemmaRef="lexicon.xml#lemma_1958" pos="NOM" ana="lexicon.xml#lemma_1958_sense_119196" corresp="variants.xml#type_6602">gebeine</w>
           <pc xml:id="AXS_4330000_6" join="left">,</pc>
         </l>
         <l n="4331">
@@ -34049,7 +34051,7 @@
           <w xml:id="AXS_4368000_1" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3506">den</w>
           <w xml:id="AXS_4368000_2" lemmaRef="lexicon.xml#lemma_5207" pos="NOM" ana="lexicon.xml#lemma_5207_sense_8104" corresp="variants.xml#type_35786">schenkelen</w>
           <w xml:id="AXS_4368000_3">sîn</w>
-          <w xml:id="AXS_4368000_4" lemmaRef="lexicon.xml#lemma_1958" pos="NOM" corresp="variants.xml#type_6602">gebeine</w>
+          <w xml:id="AXS_4368000_4" lemmaRef="lexicon.xml#lemma_1958" pos="NOM" ana="lexicon.xml#lemma_1958_sense_119196" corresp="variants.xml#type_6602">gebeine</w>
           <pc xml:id="AXS_4368000_5" join="left">.</pc>
         </l>
         <l n="4369">

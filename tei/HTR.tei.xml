@@ -93,7 +93,7 @@
       <editorialDecl>
         <p xml:lang="de">Lokale Dateireferenzen (z.B. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) verweisen auf kontrollierte Vokabulare im authority-files Verzeichnis dieses Repositorys. Diese internen Querverweise ermöglichen die Verknüpfung mit Personen-, Werk-, Lemma-, Konzept-, Genre- und Namensautoritätsdateien.</p>
         <p xml:lang="en">Local file references (e.g. persons.xml#person_445, lexicon.xml#lemma_879, genres.xml#genre_XXX) point to controlled vocabularies in the authority-files directory of this repository. These internal cross-references enable linking to person, work, lemma, concept, genre, and name authority files.</p>
-      <normalization><p>Der Text besteht aus 24611 Verszeilen beginnend mit V. 1. Er enthält zahlreiche Überschriften.</p><p>Teilweise lemmatisiert, nicht disambiguiert.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
+      <normalization><p>Der Text besteht aus 24611 Verszeilen beginnend mit V. 1. Er enthält zahlreiche Überschriften.</p><p>Teilweise lemmatisiert, teilweise semantisch disambiguiert.</p><p>Die Groß-/Kleinschreibung entspricht aus technischen Gründen nur teilweise der Edition.</p></normalization></editorialDecl>
       <classDecl>
         <taxonomy xml:id="genres">
           <bibl>Genreklassifikation gemäß der Textreihentypologie <ptr target="https://www.mhdbdb.sbg.ac.at/textreihen"/></bibl>
@@ -128,6 +128,9 @@
       <change when="2026-08-24" who="#editor">#216 Serie 1 (minne): 82 homographie-ambige Tokens der Form minne kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu minne NOM bzw. minnen VRB; LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/216-minne/). 1 weitere Tokens der Form minne blieben bewusst unannotiert (Review).</change>
       <change when="2026-08-24" who="#editor">#369 Serie 2 (stat): 104 homographie-ambige Tokens der Form stat kontext-disambiguiert und neu annotiert (lemmaRef/pos/corresp zu stat NOM bzw. stan/sten VRB; LLM-Batch nach POS-TAGSET §6.3; Provenienz-Log: ingest/pos-disambig/369-stat/).</change>
       <change when="2026-08-31" who="#editor">#367 (wâren als Adjektiv): 5 Tokens der Fügung „der/die wâren minne“ von lemma_7505 wesen (VRB) auf lemma_7338 wâr (ADJ) umannotiert (lemmaRef, pos und corresp; philologische Einzelentscheidung von K. Zeppezauer-Wachauer vom 2026-08-25, kein LLM-Batch; Provenienz-Log: ingest/pos-disambig/367-waeren/).</change>
+      <change when="2026-09-30" who="#editor">#493: Angabe zur semantischen Disambiguierung in encodingDesc/normalization an den Stand der Annotation angeglichen (84731 von 113350 lemmatisierten Tokens tragen einen Begriff in @ana). Vorher: &#34;Teilweise lemmatisiert, nicht disambiguiert.&#34;</change>
+      <change when="2026-10-10" who="#editor">#460 jagen: 4 Tokens als Verbform gelesen, von lemma_3103 jagât (NOM) auf lemma_3102 jagen (VRB) umgehängt, @ana entfällt; neu geprägte Variantentypen nach der Regel aus #367.</change>
+      <change when="2026-10-10" who="#editor">#461 gebeine: 2 Tokens mit Säugetierknochen auf den neuen Sense lemma_1958_sense_119196 (concept_14011100) gesetzt.</change>
     </revisionDesc>
   </teiHeader>
   <text>
@@ -126016,7 +126019,7 @@
             </hi>
             <w xml:id="HTR_114730_1" lemmaRef="lexicon.xml#lemma_1169" pos="DET" ana="lexicon.xml#lemma_1169_sense_1850" corresp="variants.xml#type_3689">disem</w>
             <w xml:id="HTR_114730_2" lemmaRef="lexicon.xml#lemma_2670" pos="NOM" ana="lexicon.xml#lemma_2670_sense_4300" corresp="variants.xml#type_8972">hasen</w>
-            <w xml:id="HTR_114730_3" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+            <w xml:id="HTR_114730_3" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
             <w xml:id="HTR_114730_4" lemmaRef="lexicon.xml#lemma_4281" pos="ADJ ADV" corresp="variants.xml#type_14882">nâch</w>
             <pc xml:id="HTR_114730_5" join="left">,</pc>
           </l>
@@ -129414,7 +129417,7 @@
             </hi>
             <w xml:id="HTR_117800_1" lemmaRef="lexicon.xml#lemma_35" pos="ADV CNJ" ana="lexicon.xml#lemma_35_sense_48" corresp="variants.xml#type_98">aber</w>
             <w xml:id="HTR_117800_2">si</w>
-            <w xml:id="HTR_117800_3" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+            <w xml:id="HTR_117800_3" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
             <pc xml:id="HTR_117800_4" join="left">,</pc>
             <w xml:id="HTR_117800_5" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3504">dem</w>
             <w xml:id="HTR_117800_6" lemmaRef="lexicon.xml#lemma_7695" pos="VRB" ana="lexicon.xml#lemma_7695_sense_12610" corresp="variants.xml#type_27851">wont</w>
@@ -210881,7 +210884,7 @@
               <w xml:id="HTR_193190_0" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3510">des</w>
             </hi>
             <w xml:id="HTR_193190_1" lemmaRef="lexicon.xml#lemma_3726" pos="NOM" ana="lexicon.xml#lemma_3726_sense_5901" corresp="variants.xml#type_12946">lewen</w>
-            <w xml:id="HTR_193190_2" lemmaRef="lexicon.xml#lemma_1958" pos="NOM" corresp="variants.xml#type_6602">gebeine</w>
+            <w xml:id="HTR_193190_2" lemmaRef="lexicon.xml#lemma_1958" pos="NOM" ana="lexicon.xml#lemma_1958_sense_119196" corresp="variants.xml#type_6602">gebeine</w>
             <w xml:id="HTR_193190_3" lemmaRef="lexicon.xml#lemma_5432" pos="VRB VEX" ana="lexicon.xml#lemma_5432_sense_8479" corresp="variants.xml#type_18956">ist</w>
             <w xml:id="HTR_193190_4" lemmaRef="lexicon.xml#lemma_13" pos="ADV NEG" ana="lexicon.xml#lemma_13_sense_18" corresp="variants.xml#type_41">âne</w>
             <w xml:id="HTR_193190_5" lemmaRef="lexicon.xml#lemma_3990" pos="NOM" corresp="variants.xml#type_13961">marc</w>
@@ -212373,7 +212376,7 @@
             <w xml:id="HTR_194520_3" lemmaRef="lexicon.xml#lemma_7121" pos="NOM" corresp="variants.xml#type_25183">fleisch</w>
             <w xml:id="HTR_194520_4" lemmaRef="lexicon.xml#lemma_6467" pos="CNJ" ana="lexicon.xml#lemma_6467_sense_10233" corresp="variants.xml#type_22825">und</w>
             <w xml:id="HTR_194520_5">ir</w>
-            <w xml:id="HTR_194520_6" lemmaRef="lexicon.xml#lemma_1958" pos="NOM" corresp="variants.xml#type_6602">gebeine</w>
+            <w xml:id="HTR_194520_6" lemmaRef="lexicon.xml#lemma_1958" pos="NOM" ana="lexicon.xml#lemma_1958_sense_119196" corresp="variants.xml#type_6602">gebeine</w>
           </l>
           <l n="19453">
             <hi rend="initial">
@@ -213232,7 +213235,7 @@
             <w xml:id="HTR_195290_1">man</w>
             <w xml:id="HTR_195290_2" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3506">den</w>
             <w xml:id="HTR_195290_3" lemmaRef="lexicon.xml#lemma_693" pos="NOM" ana="lexicon.xml#lemma_693_sense_1116" corresp="variants.xml#type_2104">biber</w>
-            <w xml:id="HTR_195290_4" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+            <w xml:id="HTR_195290_4" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
             <w xml:id="HTR_195290_5" lemmaRef="lexicon.xml#lemma_5601" pos="ADV" ana="lexicon.xml#lemma_5601_sense_8764" corresp="variants.xml#type_19597">sô</w>
             <w xml:id="HTR_195290_6">sêre</w>
           </l>
@@ -256982,7 +256985,7 @@
             <hi rend="initial">
               <w xml:id="HTR_235690_0" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3507">der</w>
             </hi>
-            <w xml:id="HTR_235690_1" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_10674">jaget</w>
+            <w xml:id="HTR_235690_1" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372855">jaget</w>
             <w xml:id="HTR_235690_2" lemmaRef="lexicon.xml#lemma_7643" pos="PRO" ana="lexicon.xml#lemma_7643_sense_12530" corresp="variants.xml#type_27633">uns</w>
             <w xml:id="HTR_235690_3" lemmaRef="lexicon.xml#lemma_6330" pos="ADV PRP" ana="lexicon.xml#lemma_6330_sense_9973" corresp="variants.xml#type_22474">ûf</w>
             <w xml:id="HTR_235690_4" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3507">der</w>

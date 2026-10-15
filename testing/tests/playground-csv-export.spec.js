@@ -143,18 +143,30 @@ test.describe('CSV-Export im Playground (#448)', () => {
   test('Arthurische Pferde: eine Zeile je angezeigtem Beleg', async ({ page }) => {
     await page.goto('/playground/#horses');
     await page.waitForSelector('#hxHorseSelect', { state: 'visible', timeout: 60000 });
+    // Erst nach dem Korpus handeln: ungzip, JSON.parse und das IndexedDB-
+    // Schreiben des Korpus-Index blockieren den Hauptthread sekundenlang am
+    // Stueck; faellt eine Aktion hinein, reisst die 5-s-Frist danach (bis 7 s
+    // gemessen, obwohl das Element schon im DOM stand; 13.10.2026).
+    await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
     await page.selectOption('#hxHorseSelect', 'Gringuljete');
     await page.waitForSelector('#hxHorseCsvExport', { state: 'visible', timeout: 5000 });
     const tabelle = await page.locator('#resultsContainer table tbody tr').count();
 
     const csv = await ladeCsv(page, 'hxHorseCsvExport');
-    const zeilen = pruefeFormat(csv, 'Pferd,Werk,Stelle (Borek),Vers im Korpus,Zuordnung,Wortlaut,Ereignisse,Eigenschaften,Ausrüstung,Figuren,Bezeichnungen');
+    const zeilen = pruefeFormat(csv, 'Pferd,Werk,Stelle (Borek),Vers im Korpus,Zuordnung,Wortlaut,Ereignisse,Eigenschaften,Ausrüstung,Zustand,Figuren,Bezeichnungen');
     expect(zeilen.length).toBe(tabelle);
+    // Quelle und Lizenz stehen im Dateinamen, nicht in der Datei (#420).
+    expect(csv.name).toMatch(new RegExp(`^mhdbdb-pferd-Gringuljete-alle-borek-pferde-cc0-1\\.0-${DATUM}\\.csv$`));
   });
 
   test('Bezeichnungen: Figur- und Lemma-Perspektive exportieren ihre Tabelle', async ({ page }) => {
     await page.goto('/playground/#naming');
     await page.waitForSelector('#neWorkSelect', { state: 'visible', timeout: 60000 });
+    // Erst nach dem Korpus handeln: ungzip, JSON.parse und das IndexedDB-
+    // Schreiben des Korpus-Index blockieren den Hauptthread sekundenlang am
+    // Stueck; faellt eine Aktion hinein, reisst die 5-s-Frist danach (bis 7 s
+    // gemessen, obwohl das Element schon im DOM stand; 13.10.2026).
+    await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
 
     await page.selectOption('#neWorkSelect', 'IW');
     await page.selectOption('#neFigureSelect', 'Iwein');
@@ -173,5 +185,10 @@ test.describe('CSV-Export im Playground (#448)', () => {
     const lemmaZeilen = pruefeFormat(lemmaCsv, 'Werk,Lemma,Benannte Figur,Nennungen,Anteil (%),Erzähler,Figurenrede,Selbst,als Bezeichnung,als Epitheton');
     expect(lemmaZeilen.length).toBe(figuren);
     expect(lemmaZeilen.every(z => z.startsWith('ROL,helt,'))).toBe(true);
+    // Quelle, Version und Lizenz im Dateinamen, wie mit Linda Beutel-Thurow
+    // in #420 abgestimmt. Die Version kommt aus dem Index und darf wandern.
+    const quelle = '-beutel-naming-analysis-v[0-9][^-]*(?:-[a-z]+)?-cc-by-nc-sa-4\\.0-';
+    expect(figurCsv.name).toMatch(new RegExp(`^mhdbdb-bezeichnungen-IW-.+${quelle}${DATUM}\\.csv$`));
+    expect(lemmaCsv.name).toMatch(new RegExp(`^mhdbdb-bezeichnungen-ROL-lemma-helt${quelle}${DATUM}\\.csv$`));
   });
 });

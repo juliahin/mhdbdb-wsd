@@ -52,6 +52,7 @@ Usage:
     python scripts/audit/validate-corpus.py --corpus-only        # skip authority
     python scripts/audit/validate-corpus.py --authority-only     # skip corpus
     python scripts/audit/validate-corpus.py --fail-fast          # stop on first fail
+    python scripts/audit/validate-corpus.py --jobs 1             # serial (default: min(8, cores))
 
 Exit code: 0 if no Stage-2 failures, 1 otherwise. Stage-1 failures
 count against the known #30-baseline (docs/TEI-MODEL.md §10) and do
@@ -59,6 +60,7 @@ NOT fail the run by themselves — that baseline is documented and
 represents deliberate GAP patterns the custom schema accepts.
 """
 import argparse
+import concurrent.futures
 import glob
 import io
 import sys
@@ -70,9 +72,17 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() not in ('utf-8', 'utf8'):
 
 from lxml import etree
 
-SCHEMA_TEI_ALL = 'schema/tei_all.rng'
-SCHEMA_MHDBDB = 'schema/mhdbdb.rng'
-SCHEMA_MHDBDB_AUTH = 'schema/mhdbdb-authority.rng'
+# Gemeinsame Vorgabe fuer --jobs (#284), wie in build-corpus-index.py und extract-variants.py.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from corpus_files import default_jobs  # noqa: E402
+
+# Alle Pfade an der Repo-Wurzel dieses Skripts verankert, nicht am cwd: aus
+# einer anderen Kopie (Worktree) aufgerufen, validierte es sonst still die
+# Dateien dieser anderen Kopie (fehlerjournal.md 104).
+REPO = Path(__file__).resolve().parents[2]
+SCHEMA_TEI_ALL = str(REPO / 'schema' / 'tei_all.rng')
+SCHEMA_MHDBDB = str(REPO / 'schema' / 'mhdbdb.rng')
+SCHEMA_MHDBDB_AUTH = str(REPO / 'schema' / 'mhdbdb-authority.rng')
 
 # Known #30-baseline: 34 corpus files that are intentionally not
 # strict-tei_all-valid because they contain patterns documented as
@@ -120,27 +130,68 @@ def validate_one(path, tei_all, stage2_schema, stage2_name):
     return ok1, ok2, err
 
 
+# Parallel: jeder Worker kompiliert die drei Schemata einmal im Initializer.
+# Kompilierte RelaxNG-Objekte ueberleben keine Prozessgrenze, deshalb gehen
+# nur Pfad und Schema-Name hinueber und nur drei Werte zurueck.
+_SCHEMAS = None
+
+
+def _worker_init():
+    global _SCHEMAS
+    tei_all, mhdbdb, auth = load_schemas()
+    _SCHEMAS = {'tei_all': tei_all, 'mhdbdb': mhdbdb, 'mhdbdb-authority': auth}
+
+
+def _validate_job(job):
+    path, s2_name = job
+    return validate_one(Path(path), _SCHEMAS['tei_all'], _SCHEMAS[s2_name], s2_name)
+
+
+def iter_results(files, jobs):
+    """Ergebnisse IN EINGABEREIHENFOLGE, damit Fortschritt, --fail-fast und
+    Fehlerliste dieselben bleiben wie seriell (executor.map, nicht
+    as_completed). chunksize=1 aus demselben Grund wie in
+    build-corpus-index.py: die Dateigroessen streuen ueber Groessenordnungen.
+    Bricht der Aufrufer ab (--fail-fast), canceled der map-Generator die
+    offenen Futures in seinem finally."""
+    if jobs <= 1:
+        for path, s2_schema, s2_name in files:
+            yield validate_one(path, _SCHEMAS['tei_all'], s2_schema, s2_name)
+        return
+    with concurrent.futures.ProcessPoolExecutor(max_workers=jobs,
+                                                initializer=_worker_init) as pool:
+        yield from pool.map(_validate_job, [(str(p), n) for p, _, n in files], chunksize=1)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--sample', nargs='+', help='limit to specific sigles')
     ap.add_argument('--corpus-only', action='store_true', help='skip authority-files/')
     ap.add_argument('--authority-only', action='store_true', help='skip tei/')
     ap.add_argument('--fail-fast', action='store_true', help='stop on first stage-2 fail')
+    ap.add_argument('--jobs', type=int, default=default_jobs(),
+                    help='Worker-Prozesse (Vorgabe min(8, Kerne); 1 = seriell)')
     args = ap.parse_args()
+    if args.jobs < 1:
+        ap.error('--jobs muss mindestens 1 sein')
 
+    # Auch bei --jobs > 1 einmal im Elternprozess: ein kaputtes Schema soll
+    # mit Exit 2 und eigener Meldung enden, nicht als Fehler im Worker-Pool.
+    global _SCHEMAS
     print('Loading schemas...')
     try:
         tei_all, mhdbdb, auth = load_schemas()
     except Exception as e:
         print(f'ERROR loading schemas: {e}', file=sys.stderr)
         sys.exit(2)
+    _SCHEMAS = {'tei_all': tei_all, 'mhdbdb': mhdbdb, 'mhdbdb-authority': auth}
 
     # Build the work list
     files = []  # list of (path, stage2_schema, stage2_label)
     if args.sample:
         for s in args.sample:
-            p_corpus = Path(f'tei/{s}.tei.xml')
-            p_auth = Path(f'authority-files/{s}.xml')
+            p_corpus = REPO / 'tei' / f'{s}.tei.xml'
+            p_auth = REPO / 'authority-files' / f'{s}.xml'
             if p_corpus.exists():
                 files.append((p_corpus, mhdbdb, 'mhdbdb'))
             elif p_auth.exists():
@@ -154,17 +205,18 @@ def main():
             # XML-Datei in diesen beiden Verzeichnissen schema-valide". Ein
             # versehentlich in tei/ liegender .disamb.-Zwischenstand soll hier
             # geprueft und nicht stillschweigend uebersprungen werden.
-            for f in sorted(glob.glob('tei/*.tei.xml')):
+            for f in sorted(glob.glob(str(REPO / 'tei' / '*.tei.xml'))):
                 files.append((Path(f), mhdbdb, 'mhdbdb'))
         if not args.corpus_only:
-            for f in sorted(glob.glob('authority-files/*.xml')):
+            for f in sorted(glob.glob(str(REPO / 'authority-files' / '*.xml'))):
                 files.append((Path(f), auth, 'mhdbdb-authority'))
 
     if not files:
         print('Nothing to validate.', file=sys.stderr)
         sys.exit(2)
 
-    print(f'Validating {len(files)} file(s)...')
+    jobs = min(args.jobs, len(files))
+    print(f'Validating {len(files)} file(s) with {jobs} worker process(es)...')
 
     n_ok = 0
     n_s1_fail = 0
@@ -173,10 +225,10 @@ def main():
     s1_fail_files = []
     t0 = time.time()
 
-    for i, (path, s2_schema, s2_name) in enumerate(files, 1):
+    ergebnisse = iter_results(files, jobs)
+    for i, ((path, s2_schema, s2_name), (ok1, ok2, err)) in enumerate(zip(files, ergebnisse), 1):
         if i % 100 == 0:
             print(f'  {i}/{len(files)} (elapsed {time.time() - t0:.0f}s)')
-        ok1, ok2, err = validate_one(path, tei_all, s2_schema, s2_name)
         if ok1 and ok2:
             n_ok += 1
         if not ok1:
@@ -187,6 +239,7 @@ def main():
             s2_fails.append((path.name, s2_name, err))
             if args.fail_fast:
                 break
+    ergebnisse.close()
 
     elapsed = time.time() - t0
     print()

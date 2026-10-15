@@ -8,8 +8,12 @@ Build, validation, and data transformation scripts for MHDBDB TEI corpus.
 scripts/
 ├── build-api.py                 # Statische JSON-API unter api/ generieren (#45)
 ├── build-authority-index.py     # Authority-Index generieren
+├── build-begriffshilfe.py       # Begriffshilfe-Download (assets/downloads/mhdbdb-begriffshilfe.md) aus concepts.xml, lexicon.xml und w/@ana; deterministisch, CI-Freshness-Gate (#498)
 ├── build-corpus-index.py        # Korpus-Index generieren
+├── build-lemma-pos.py           # Wortart-Zählung je Lemma aus tei/ (data/lemma-pos.json.gz), Quelle für lemma.pos und lemma.posAll im Authority-Index; deterministisch, CI-Freshness-Gate (#462)
 ├── build-pages.py               # Nav/Footer/Matomo aus includes/ in alle Seiten injizieren (--check Drift-Gate)
+├── build-textreihen.py          # Textreihentypologie: SKOS (RDF/JSON, unverändert aus textseries 86c233f08) -> textreihen/data/textreihen.json für den SKOS-Browser (--check Drift-Gate, #93)
+├── build-textreihen-bibliography.py # Textreihentypologie: Zotero-Gruppe 4876216 -> statische Bibliografie in textreihen/bibliography.html samt Schnappschuss (--offline, --check, #93)
 ├── build-vendor.js              # Vendored JS-Dependencies bündeln
 ├── python-bin.js                # Python-Interpreter auflösen statt raten (#318)
 ├── run-python.js                # Wrapper, über den die npm-Skripte Python starten (#318)
@@ -28,13 +32,16 @@ scripts/
 ├── apply-308-375-432.py         # Die drei entschiedenen Korrekturen einer Nacht: Namensansetzung, waeren als ADJ, WH_6214_3 (#308/#375/#432)
 ├── update-variant-count-372376.py # Dokumentierte Formenzahl von variants.xml nachziehen, wenn ein Typ dazukommt (#375)
 ├── update-variant-count-372386.py # Dasselbe fuer zehn Typen auf einmal, und zusaetzlich die Mappingzahl: die steigt diesmal mit (#366/#375/#371)
+├── update-disambig-status-493.py # Header-Satz zur semantischen Disambiguierung an den @ana-Stand angleichen, fehlenden ergänzen (#493)
 │
 ├── ingest/                      # Korpus-Ingest je Vorhaben
 │   ├── ari/                     # ARITHMETIC, 6 Rechenbuch-Handschriften (#92)
 │   ├── frauenlob/               # Frauenlob-Revision (#236)
+│   ├── glossar-554/             # WordPress-Export des Glossars Kochbuchforschung: bereinigen, nachmessen, Lemmata zuordnen (#554)
 │   ├── horses/                  # Arthurische Pferde (Borek), horses-index bauen (#193)
 │   ├── legacy-sources/          # Linecode-Quellen ins Repo spiegeln (#248)
 │   ├── naming/                  # Figurenbezeichnungen, naming-index bauen (#59)
+│   ├── parzival-358/            # Dreißiger-subtype und Buchgrenzen-milestone in PZ und WH (#358)
 │   ├── pos-disambig/            # PoS-/Lemma-Disambiguierung in Batches (#189/#198)
 │   └── wzb/                     # Wenzelsbibel (#224 und Vorläufer)
 │
@@ -51,10 +58,14 @@ scripts/
 │   ├── check-author-refs.py     # Personennamen im Header gegen persons.xml: titleStmt/author (#228) und particDesc/listPerson (#308)
 │   ├── check-doc-inventories.py  # Specs und Audit-Skripte stehen in DEVELOPMENT.md, Skripte auch in diesem Baum (#329)
 │   ├── check-file-sizes.py      # Einzeldateien vor GitHubs harter 100-MiB-Wand stoppen (#350)
+│   ├── check-header-genres.py   # Gattungen im TEI-Kopf (classDecl) gegen die Gattungen des Werks in works.xml (#495)
+│   ├── check-runtime-budget.py  # Laufzeitbudget der CI-Schritte, letzter Schritt je Job (#564)
 │   ├── check-index-budget.py    # Index-Größenbudget gz und roh, warnt nur (#111, ADR-019)
 │   ├── check-index-version-bump.py # Inhalt geändert => Version gebumpt (#154)
+│   ├── check-variants-flips.py # keine still umgeklappte variants-Zuordnung (#378)
 │   ├── check-index-versions.py  # Index-Versions-Konstanten konsistent
 │   ├── check-lexicon-senses.py  # jeder <entry> in lexicon.xml hat mindestens einen <sense>
+│   ├── check-measured-counts.py # gemessene Verszählungs- und div-Zahlen gegen ihre Fundstellen, auch in .js-Kommentaren; seltenes Gate (#414)
 │   ├── check-naming-index.py    # naming-index: Provenienz + Sigle-Existenz (#152)
 │   ├── check-no-cdn.py          # keine externen <script src> und <link href> in committeten Seiten
 │   ├── check-no-em-dash.py      # keine Em-Dashes in HTML/JS/CSS und in jeder .md; Markdown nur im Diff (#292)
@@ -66,6 +77,7 @@ scripts/
 │   ├── doc-count-audit.py       # Zählungen aus den Daten gegen die Doku prüfen
 │   ├── drop-negative-variant-corresp.py # tote @corresp aus <w> entfernen (#115)
 │   ├── measure-216-vrouwe-minne.py # Groesse der vrouwe-Luecke vor minne messen (#216/#387)
+│   ├── measure-498-concept-cross-sections.py # Querschnitte über das Begriffssystem messen, Testfall Wachsamkeit (#498)
 │   ├── measure-stage3-resolution.py # Wirkung von Stufe 3 der Lemma-Auflösung (#224)
 │   ├── parallel-witness-bias.py # Verzerrung je Werkzeug durch Parallelüberlieferung (#255)
 │   ├── quantify-unannotated-tokens.py # unannotierte Wortformen korpusweit zählen (#189)
@@ -120,7 +132,10 @@ Skripte im Archiv sind Referenz. Der Grund, sie nicht zu starten, ist nicht tech
 Die Build-Scripts werden über `npm run` aufgerufen und dürfen nicht verschoben werden.
 
 ### `build-authority-index.py`
-Verarbeitet die 7 inhaltstragenden Authority Files und generiert `data/authority-index.json.gz` (~3 MB). Enthält Lemmata, Personen, Werke, Konzepte, Gattungen, Namen und Varianten. `contributors.xml` (8. Authority-File seit 2026-04-14) wird bewusst **nicht** indiziert: es ist Projekt-interne Editor-Attribution, kein Suchinhalt. Seit #270 liest der Build die Datei trotzdem, um den Urheber eines kuratierten Kommentars als `commentRespName` neben dessen `@resp` zu schreiben.
+Verarbeitet die 7 inhaltstragenden Authority Files und generiert `data/authority-index.json.gz` (~3 MB). Enthält Lemmata, Personen, Werke, Konzepte, Gattungen, Namen und Varianten. `contributors.xml` (8. Authority-File seit 2026-04-14) wird bewusst **nicht** indiziert: es ist Projekt-interne Editor-Attribution, kein Suchinhalt. Seit #270 liest der Build die Datei trotzdem, um den Urheber einer kuratierten Angabe neben deren `@resp` zu schreiben: `commentRespName` (Kommentar), `definitionRespName` (Definition), `origin.respName` (Herkunftserklärung).
+
+### `build-lemma-pos.py`
+Zählt je Lemma, wie viele Tokens jeden Teil-Tag von `@pos` tragen (Kompositum-Tags zerlegt), und schreibt `data/lemma-pos.json.gz` (~0,2 MB, rund 12 s). Der Authority-Build liest tei/ nicht und holt sich die Häufigkeiten aus dieser Datei; fehlt sie, bricht er ab. `--check` baut im Speicher und vergleicht mit der committeten Datei (CI, #462). Vor `build-authority-index.py` laufen lassen.
 
 ### `build-corpus-index.py`
 Parst alle TEI-Dateien in `tei/` und generiert `data/corpus-index.json.gz` (~42 MB). Extrahiert Lemma-Positionen, Wortzählung und Metadaten. Die aktuelle Index-Version steht im `'version'`-Literal des Skripts und in `docs/TEI-MODEL.md` §11, nicht hier: zwei Stellen halten sich in Sync, drei driften.
@@ -148,10 +163,13 @@ Struktur-, Querverweis- und Datenqualitäts-Audit für alle 8 Authority Files. P
 Korpus→Authority Cross-Reference-Integrität (#44/#115): scannt alle `tei/*.tei.xml` nach `@lemmaRef`/`@ana`/`@corresp`/`@ref`/`@target`, die auf nicht-existente Authority-`xml:id`s zeigen. `--check` macht daraus ein CI-Gate (scheitert bei unresolved refs außerhalb `lexicon.xml`; `lexicon.xml` wird als ID-Set-Ratsche gegen die committete `lexicon-baseline.json` gegated — neue dangling IDs = rot, tolerierter Backfill-Altbestand = grün, #152). `--update-baseline` zieht die Ratsche nach gelandetem Backfill nach. Läuft in `data-integrity.yml`.
 
 ### `check-author-refs.py`
-Personennamen im TEI-Header gegen `persons.xml` (#228/#308), an zwei Stellen. Im `titleStmt`: leere `<author ref="..."/>` (Text erscheint autorlos), tote `@ref`, Abweichungen von der Referenzform `#person_N`, Textinhalte mit Zeilenumbruch (die so in Index und API landen) und Textinhalte, die vom `preferred`-Namen abweichen. Im `particDesc/listPerson` (seit #308): die `preferred`-Form der 671 Einträge in 666 Dateien, adressiert über `@corresp`. Dort ist eine Abweichung nie eine bibliographische Variante, sondern immer ein veralteter Spiegel, deshalb setzt sie den Exit-Code, die `titleStmt`-Namensabweichung dagegen nicht. Ein Eintrag ganz ohne `preferred`-Zeile bekommt eine eigene Klasse, statt aus der Grundmenge zu fallen: eine still schrumpfende Bezugsmenge ist genau der Fehler, den ein zählendes Gate sonst nicht melden kann. Die Untergrenze der Grundmenge kommt dabei nicht aus einer committeten Zahl, sondern aus den Daten: jede Autoren-ID des `titleStmt` muss im `particDesc` derselben Datei stehen. Ohne das fällt ein ganz gelöschtes `<person>`-Element durch alle Klassen, weil die sich sämtlich auf vorhandene Einträge beziehen. Die eine Sigle mit leerem `<listPerson/>` (VOR) steht namentlich im Skript, mit Grund, und wird gemeldet, sobald die Ausnahme überflüssig wird. **Läuft seit 14.09.2026 in `data-integrity.yml`** (Step 7b, nach der Cross-Ref-Prüfung): bis dahin blieb es draußen, solange der tote `@ref` in VOR offen war und unbeteiligte PRs rot gefärbt hätte, und genau den hat #308 behoben. Späte Position, weil es jede der 667 Dateien ganz parst: lokal auf Windows 1 min 47 s und 1 min 44 s, im ersten Lauf auf `main` 32 s (run 34910635460, Schritt 21). Zwei Maschinen, zwei Zahlen; was die Position begründet, ist das Verhältnis zum Nachbarschritt, der in derselben CI unter einer Sekunde bleibt. Ungeprüft bleiben die `alternative`-Formen und die `idno`-Zeilen desselben Blocks sowie die lokale `xml:id` gegen `@corresp`.
+Personennamen im TEI-Header gegen `persons.xml` (#228/#308), an zwei Stellen. Im `titleStmt`: leere `<author ref="..."/>` (Text erscheint autorlos), tote `@ref`, Abweichungen von der Referenzform `#person_N`, Textinhalte mit Zeilenumbruch (die so in Index und API landen) und Textinhalte, die vom `preferred`-Namen abweichen. Im `particDesc/listPerson` (seit #308): die `preferred`-Form der Einträge in jeder Datei außer VOR, adressiert über `@corresp`. Dort ist eine Abweichung nie eine bibliographische Variante, sondern immer ein veralteter Spiegel, deshalb setzt sie den Exit-Code, die `titleStmt`-Namensabweichung dagegen nicht. Ein Eintrag ganz ohne `preferred`-Zeile bekommt eine eigene Klasse, statt aus der Grundmenge zu fallen: eine still schrumpfende Bezugsmenge ist genau der Fehler, den ein zählendes Gate sonst nicht melden kann. Die Untergrenze der Grundmenge kommt dabei nicht aus einer committeten Zahl, sondern aus den Daten: jede Autoren-ID des `titleStmt` muss im `particDesc` derselben Datei stehen. Ohne das fällt ein ganz gelöschtes `<person>`-Element durch alle Klassen, weil die sich sämtlich auf vorhandene Einträge beziehen. Die eine Sigle mit leerem `<listPerson/>` (VOR) steht namentlich im Skript, mit Grund, und wird gemeldet, sobald die Ausnahme überflüssig wird. **Läuft seit 14.09.2026 in `data-integrity.yml`** (Step 7b, nach der Cross-Ref-Prüfung): bis dahin blieb es draußen, solange der tote `@ref` in VOR offen war und unbeteiligte PRs rot gefärbt hätte, und genau den hat #308 behoben. Die späte Position stammt aus der Zeit, als es jede der 667 Dateien ganz parste (lokal 1 min 47 s, im ersten Lauf auf `main` 32 s, run 34910635460). Seit 01.10.2026 liest es per `corpus_files.tei_header` nur den `teiHeader`, lokal unter einer Sekunde; ein Syntaxfehler im Textteil fällt hier deshalb nicht mehr auf, den fangen `validate-corpus.py` und die Index-Builds. Ungeprüft bleiben die `alternative`-Formen und die `idno`-Zeilen desselben Blocks sowie die lokale `xml:id` gegen `@corresp`.
 
 ### `check-index-version-bump.py`
 Versions-Bump-Gate (#154): hat sich der dekomprimierte Inhalt von corpus-/authority-index gegenüber `--base <rev>` geändert, muss der `version`-String mitgeändert sein: sonst invalidiert der Dexie-Cache nicht. Läuft in `data-integrity.yml` (Diff-Base = erster Elternteil des Merge-Refs bzw. `event.before` beim Push).
+
+### `check-variants-flips.py`
+Gate gegen still umgeklappte `variants`-Zuordnungen (#378, ADR-021): jede Form, die gegenüber `--base <rev>` auf ein anderes Lemma zeigt, macht den Lauf rot, außer `variants-flips-ack.json` nennt genau dieses Versionspaar mit genau dieser Anzahl; prüft außerdem `variants[form] == variantCandidates[form][0]`. Läuft in `data-integrity.yml` vor dem Index-Rebuild.
 
 ### `check-naming-index.py`
 Naming-Index-Konsistenz (#152): `source.commit`-Provenienz vorhanden + alle `works[].sigle` existieren als `tei/<SIG>.tei.xml`. `--print-source-commit` liefert den Quell-Pin für die Workflows. Läuft in `data-integrity.yml` und `naming-index-update.yml`.
@@ -185,11 +203,11 @@ Sucht Publikationen, die die MHDBDB erwähnen, und legt die noch unbekannten in 
 - **Kein Autor ist besser als ein erfundener.** Manche Quellen liefern die ganze Verfasserzeile als einen Namen; bei OpenAlex geschah das mit `10.58079/16jkg`, und weil am letzten Leerzeichen getrennt wurde, stand in Zotero danach der Autor „Alan van Beek und Julia Hintersteiner Katharina Zeppezauer-Wachauer" (Eintrag `2VJQBB2M`). `split_name()` verweigert die Zerlegung deshalb bei „und", bei gemischter Komma-Semikolon-Zeichensetzung und ab fünf Wörtern; die Rohangabe wandert unzerlegt nach `extra` und wird kuratorisch aufgelöst.
 
 ### `sync_tei_headers.py`
-Spiegelt die Werk-Identifier aus `works.xml` in den `msIdentifier` der TEI-Header (667 Dateien). Gespiegelt werden `handschriftencensus`, `GND` und `wikidata`; `sigle` und `mwb-sigle` bleiben header-eigen (CONTRACTS.md F.4). Aufgelöst wird über das `@corresp` des Headers, nicht über die Sigle: TRO trägt zwei `works.xml`-Einträge, und die Sigle ist dort mehrdeutig (#395).
+Spiegelt aus `works.xml` in die TEI-Header (667 Dateien): die Werk-Identifier im `msIdentifier` und seit #486 den Editionsnachweis im `biblStruct` der `listBibl` (Kette Zotero → `works.xml` → Header, CONTRACTS.md F.4a). Gespiegelt werden `handschriftencensus`, `GND` und `wikidata`; `sigle` und `mwb-sigle` bleiben header-eigen (CONTRACTS.md F.4). Aufgelöst wird über das `@corresp` des Headers, nicht über die Sigle: TRO trägt zwei `works.xml`-Einträge, und die Sigle ist dort mehrdeutig (#395).
 
-- `--works` schreibt **chirurgisch**, also per Textersetzung nur im `msIdentifier`-Block, und lässt alles andere byteweise stehen, Zeilenenden eingeschlossen.
-- `--works --check` ist das CI-Gate (#399, `data-integrity.yml`): vergleicht Inhalte statt Formatierung, schreibt nichts, Exit 1 bei Abweichung, rund eine Sekunde über alle 667 Dateien (gemessen 08.09.2026). Rot wird es auch, wenn eine Datei gar keinen lesbaren `msIdentifier` mehr hat (fehlender Block oder nicht parsebares XML). Das war bis zur Bot-Runde vom 07.09. nur eine Warnung, und damit konnte der ganze Block verschwinden, ohne dass das Gate anschlug.
-- `--works --bibl-struct` ist der alte Weg über lxml, der zusätzlich die `listBibl` zieht. **Er verliert dabei Daten und wird deshalb nur bewusst benutzt:** er löscht alle Nicht-Sigle-`idno` und damit die 19 `mwb-sigle`, die `works.xml` gar nicht kennt (gemessen 07.09.2026 auf einer Korpuskopie: 19 Dateien vorher, 0 nachher), er ändert bei AK, FR3, HZ, LUU und WZB die Bibliographie inhaltlich, und er serialisiert nebenbei alle 667 Dateien neu (Korpus 1.432,5 auf 1.430,6 MB). `--check` bemerkt den Verlust nicht, weil es `mwb-sigle` bewusst nicht prüft.
+- `--works` schreibt **chirurgisch**, also per Textersetzung im `msIdentifier`-Block und innerhalb des `biblStruct` je `@corresp`, und lässt alles andere byteweise stehen, Zeilenenden eingeschlossen. Beim `biblStruct` ersetzt es geänderte Blattelemente und setzt fehlende Elemente ein; Zusatzelemente im Header (AK, #134) und die Kindreihenfolge bleiben stehen. Ein aus `works.xml` verschwundenes Element bleibt im Header stehen.
+- `--works --check` ist das CI-Gate (#399, #486, `data-integrity.yml`): prüft die Identifier im `msIdentifier` auf Gleichheit und den Editionsnachweis auf Enthaltensein (jedes Element des `works.xml`-`biblStruct` steht im Header; Zusatzelemente sind erlaubt und werden gezählt). Es vergleicht Inhalte statt Formatierung, schreibt nichts, Exit 1 bei Abweichung, rund eine Sekunde über alle 667 Dateien (gemessen 08.09.2026). Rot wird es auch, wenn eine Datei gar keinen lesbaren `msIdentifier` mehr hat (fehlender Block oder nicht parsebares XML). Das war bis zur Bot-Runde vom 07.09. nur eine Warnung, und damit konnte der ganze Block verschwinden, ohne dass das Gate anschlug.
+- `--works --bibl-struct` ist der alte Weg über lxml, der die `listBibl` als ganzen Block zieht (`--works` gleicht sie seit #486 chirurgisch an). **Er verliert dabei Daten und wird deshalb nur bewusst benutzt:** er löscht alle Nicht-Sigle-`idno` und damit die 19 `mwb-sigle`, die `works.xml` gar nicht kennt (gemessen 07.09.2026 auf einer Korpuskopie: 19 Dateien vorher, 0 nachher), er ändert bei AK, FR3, HZ, LUU und WZB die Bibliographie inhaltlich, und er serialisiert nebenbei alle 667 Dateien neu (Korpus 1.432,5 auf 1.430,6 MB). `--check` bemerkt den Verlust nicht, weil es `mwb-sigle` bewusst nicht prüft.
 - `--all` läuft für `works` über denselben chirurgischen Pfad wie `--works`. Das ist kein Detail: bis zur Reviewrunde vom 07.09. fiel `--all` still in den alten lxml-Weg und hätte die 19 `mwb-sigle` gelöscht, ohne dass ein Gate angeschlagen hätte.
 - `--persons`, `--genres`, `--concepts` sind deklarierte Stubs. `main()` weist sie ab, bevor eine Klasse instanziiert wird: Fehlermeldung, Exit 1, kein Traceback. Unter `--all` werden sie mit einer Warnung übersprungen. Das `NotImplementedError` in den Klassen ist nur beim direkten Aufruf erreichbar.
 
@@ -242,14 +260,17 @@ Originales Transformationsscript aus dem `initial-data-wrangling`-Branch (~2000 
 python scripts/audit/check-index-versions.py
 python scripts/build-corpus-index.py
 python scripts/sync/extract-variants.py --apply     # nur bei neuen Formen
-python scripts/build-authority-index.py             # nur nach --apply
+python scripts/build-lemma-pos.py                  # nach Aenderung von @lemmaRef oder @pos, vor dem Authority-Index
+python scripts/build-authority-index.py             # nur nach --apply oder geaenderter lemma-pos
 python scripts/build-api.py
+python scripts/build-begriffshilfe.py               # nur bei geaendertem w/@ana
 python scripts/audit/check-authority-cross-refs.py --check
 
 # Nach Aenderung in authority-files/
-# 1. Version bumpen, dann:
+# 1. Version bumpen, dann (data/lemma-pos.json.gz muss zum Korpus passen: python scripts/build-lemma-pos.py --check):
 python scripts/build-authority-index.py
 python scripts/build-api.py
+python scripts/build-begriffshilfe.py               # bei lexicon.xml oder concepts.xml
 
 # Indexe validieren, Korpus gegen Schema validieren
 python scripts/validate-indices.py

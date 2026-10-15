@@ -14,7 +14,8 @@
 
 import { getNavigationEpoch } from '../core/router.js';
 import { TextNormalizer } from '../../../../assets/js/lib/text-normalizer.js';
-import { emptyScopeMessage, scopeSignature } from './corpus-scope.js';
+import { findByIdInput } from '../../../../assets/js/lib/authority-id-input.js';
+import { trackScope, clearScopeNotice, emptyScopeMessage, scopeSignature } from './corpus-scope.js';
 
 const DEFAULT_STATE = Object.freeze({
   query: '',
@@ -39,6 +40,15 @@ const DEFAULT_STATE = Object.freeze({
 const AUTOCOMPLETE_LIMIT = 8;
 
 const TOP_N_OPTIONS = [15, 30, 50, 100];
+
+// Verweis auf die Begriffshilfe (#498): wer mit einem eigenen Begriff kommt, der im
+// Begriffssystem nicht steht, findet dort den Weg zu vorhandenen Begriffen.
+const BEGRIFFSHILFE_LINK = `
+        <p class="text-xs text-slate-600" data-begriffshilfe-link>
+          Kein passender Begriff zum eigenen Thema?
+          <a href="../hilfe-begriffe-finden.html" target="_blank" rel="noopener"
+             class="font-medium text-brand-700 underline">Anleitung: Passende Begriffe finden</a>
+        </p>`;
 // Worst-case (concept_21072000: 8718 Lemmata) erzeugt ohne Chunking ~2.7s Long-
 // Task. Mit time-based Yield bei 30ms pro Chunk bleiben Long-Tasks unter dem
 // 50ms-Schwellwert, an dem der Browser sie als "blocking" wertet (UI bleibt
@@ -69,12 +79,26 @@ export class ConceptDistribution {
   }
 
   show() {
+    this._searchGen = (this._searchGen || 0) + 1;
+    this.state.computing = false;
     const texts = this.getCorpusTexts();
     if (!texts || texts.length === 0) {
+      // "Kein Text ausgewaehlt" ist eine Aussage ueber die Auswahl wie der
+      // Nullbefund: gestempelt, damit ein neues Haekchen den Rueckweg zeigt
+      // (Review an #539), wie bei den drei Werkzeugen ohne Suchfeld.
+      trackScope(() => this.show());
       this.renderError(emptyScopeMessage());
       return;
     }
     this.discardDistributionIfScopeChanged(texts);
+    // Erst stempeln, wenn eine Verteilung dasteht. Sonst meldet der Hinweis
+    // ein veraltetes Ergebnis ueber dem leeren Formular (#442): das Werkzeug
+    // ist offen, gesucht wurde nie, und ein Haekchen in Schritt 1 genuegte.
+    if (this.state.distribution) {
+      trackScope(() => { this.show(); document.getElementById('cdSearchBtn')?.click(); });
+    } else {
+      clearScopeNotice();
+    }
     this.render();
   }
 
@@ -114,11 +138,10 @@ export class ConceptDistribution {
     if (concepts.length === 0) return { resolved: null, candidates: [] };
 
     const needle = trimmed.toLowerCase();
-    // Direct ID match (e.g. "concept_21104000")
-    if (/^concept_\d+$/.test(trimmed)) {
-      const direct = concepts.find(c => c.id === trimmed);
-      if (direct) return { resolved: direct, candidates: [direct] };
-    }
+    // Direkter ID-Treffer: "concept_21104000", seit #545 auch "21104000" und
+    // "#concept_21104000", wie im Begriffe-Explorer
+    const direct = findByIdInput(concepts, 'concept', trimmed);
+    if (direct) return { resolved: direct, candidates: [direct] };
 
     // #419 (Alan van Beek): "tree" fand „Bäume" ueber termEN „Trees",
     // „baum" fand nichts, weil die deutsche Pluralform den Umlaut traegt
@@ -193,7 +216,7 @@ export class ConceptDistribution {
   /**
    * Find all lemmata whose senses reference the given concept.
    *
-   * Synchron: pro Suche ein einzelner Pass ueber 43.754 Lemmata. Worst-Case
+   * Synchron: pro Suche ein einzelner Pass ueber rund 44.000 Lemmata. Worst-Case
    * ~80-100ms Long-Task; akzeptabel, weil danach der async-chunked
    * computeDistribution-Pfad anlaeuft und die UI sofort wieder frei wird.
    * Async machen brachte ueberraschend mehr 100-200ms-Tasks (zusaetzliche
@@ -306,6 +329,7 @@ export class ConceptDistribution {
           <code class="rounded bg-white px-1.5 py-0.5 font-mono">concept_21104000</code>).
           Aggregiert alle Lemmata, die diesem Begriff zugeordnet sind, und zeigt deren gemeinsame Häufigkeit pro Text.
         </p>
+        ${BEGRIFFSHILFE_LINK}
         <div class="grid gap-3 sm:grid-cols-4">
           <div class="sm:col-span-2">
             <label class="block">
@@ -353,6 +377,7 @@ export class ConceptDistribution {
         <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           Kein Begriff gefunden für <code class="font-mono">${escapeHtml(this.state.query)}</code>.
           Versuchen Sie eine andere Schreibweise oder einen englischen Term.
+          ${BEGRIFFSHILFE_LINK}
         </div>
       `;
     }
@@ -613,6 +638,8 @@ export class ConceptDistribution {
       if (!concept || this.state.matchingLemmata.length === 0) {
         this.state.computing = false;
         this.state.computeProgress = 0;
+        // Kein Ergebnis: auch der Stempel einer frueheren Suche gilt nicht mehr (#442)
+        clearScopeNotice();
         this.render();
         this.refocusInput();
         return;
@@ -638,6 +665,7 @@ export class ConceptDistribution {
 
       // Die Textmenge VOR dem await festhalten: danach kann sie eine andere
       // sein, und gerechnet wurde ueber diese hier (#204).
+      trackScope(() => { this.show(); document.getElementById('cdSearchBtn')?.click(); });
       const gerechnetUeber = scopeSignature(this.getCorpusTexts());
       const dist = await this.computeDistribution(this.state.matchingLemmata, (frac) => {
         if (this._searchGen !== myGen) return;

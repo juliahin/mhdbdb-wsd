@@ -21,6 +21,7 @@ CRITICAL: Uses mhg_normalizer.py for text normalization.
 import argparse
 import json
 import gzip
+import re
 import subprocess
 import sys
 import os
@@ -44,6 +45,9 @@ PROJECT_ROOT = Path(__file__).parent.parent
 AUTHORITY_DIR = PROJECT_ROOT / 'authority-files'
 DATA_DIR = PROJECT_ROOT / 'data'
 OUTPUT_FILE = DATA_DIR / 'authority-index.json.gz'
+CORPUS_INDEX_FILE = DATA_DIR / 'corpus-index.json.gz'
+CORPUS_BUILD_SCRIPT = PROJECT_ROOT / 'scripts' / 'build-corpus-index.py'
+LEMMA_POS_FILE = DATA_DIR / 'lemma-pos.json.gz'
 
 # TEI namespace
 TEI_NS = {'tei': 'http://www.tei-c.org/ns/1.0'}
@@ -65,7 +69,7 @@ def load_contributor_names():
 
     contributors.xml wird NICHT als achte Sammlung indexiert. Der Build liest
     die Datei nur, um den Namen neben ein @resp zu schreiben
-    (commentRespName). Eine Aenderung an contributors.xml verlangt damit
+    (commentRespName, definitionRespName, origin.respName). Eine Aenderung an contributors.xml verlangt damit
     einen Rebuild, sobald ein aufgeloester Name betroffen ist.
     """
     pfad = AUTHORITY_DIR / 'contributors.xml'
@@ -88,8 +92,9 @@ def load_contributor_names():
 def resp_name(resp, namen, wo):
     """Loest 'contributors.xml#contrib_N' zum Anzeigenamen auf.
 
-    Unbekannte Form oder unbekannte ID ist ein harter Fehler: ein Kommentar,
-    dessen Urheber sich nicht aufloesen laesst, soll den Build anhalten und
+    Unbekannte Form oder unbekannte ID ist ein harter Fehler: eine kuratierte
+    Angabe (Kommentar, Definition, Herkunftserklaerung), deren Urheber sich
+    nicht aufloesen laesst, soll den Build anhalten und
     nicht still ohne Namen erscheinen.
     """
     praefix = 'contributors.xml#'
@@ -180,6 +185,9 @@ def parse_lexicon(namen):
                         origin['attribution'] = attribution
                         if attribution_el[0].get('resp'):
                             origin['resp'] = attribution_el[0].get('resp')
+                            # #270 (KZW 25.09.2026): "Herkunftserklaerung von <Name>"
+                            origin['respName'] = resp_name(
+                                origin['resp'], namen, lemma_id)
 
         # Extract all senses with details
         sense_els = entry.xpath('.//tei:sense', namespaces=ns)
@@ -212,6 +220,9 @@ def parse_lexicon(namen):
                     sense_data['definition'] = definition
                     if def_el[0].get('resp'):
                         sense_data['definitionResp'] = def_el[0].get('resp')
+                        # #270 (KZW 25.09.2026): "Definition von <Name>"
+                        sense_data['definitionRespName'] = resp_name(
+                            sense_data['definitionResp'], namen, sense_id)
 
             comment_el = sense_el.xpath('./tei:note[@type="comment"]', namespaces=ns)
             if comment_el:
@@ -248,26 +259,48 @@ def parse_lexicon(namen):
     return lemmata
 
 
-# Module-level person→works lookup, populated by _build_person_works_map()
-_person_works = {}
+def is_counting_author(attribution):
+    """Zaehlt als Autor (#452): weder Bearbeiter noch verworfene Zuschreibung.
+    "umstritten" und "unsicher zugeschrieben" zaehlen, mit Hinweis."""
+    return not attribution.get('role') and attribution.get('status') != 'rejected'
+
+
+# Module-level person→works lookups, populated by _build_person_works_map()
+_person_works = {}          # Autor, auch umstritten/unsicher
+_person_former_works = {}   # verworfene Zuschreibung (#452)
+_person_adapted_works = {}  # Bearbeiter (#452)
 
 
 def _build_person_works_map(works):
-    """Build person_id → comma-separated work_ids from parsed works data."""
-    global _person_works
+    """Build person_id → comma-separated work_ids from parsed works data.
+
+    Liest alle Zuschreibungen eines Werks, nicht nur die erste (#452): wer
+    umstritten oder unsicher zugeschrieben ist, behaelt das Werk; Bearbeiter
+    und verworfene Zuschreibungen landen in eigenen Karten."""
+    global _person_works, _person_former_works, _person_adapted_works
     for work in works:
-        author_ref = work.get('authorRef')
-        if not author_ref:
-            continue
-        # "persons.xml#person_5" → "person_5"
-        person_id = author_ref.split('#')[-1] if '#' in author_ref else author_ref
-        if person_id not in _person_works:
-            _person_works[person_id] = []
-        _person_works[person_id].append(work['id'])
+        for attribution in work.get('attributions', []):
+            author_ref = attribution.get('ref')
+            if not author_ref:
+                continue
+            # "persons.xml#person_5" → "person_5"
+            person_id = author_ref.split('#')[-1] if '#' in author_ref else author_ref
+            if attribution.get('role'):
+                target = _person_adapted_works
+            elif attribution.get('status') == 'rejected':
+                target = _person_former_works
+            else:
+                target = _person_works
+            ids = target.setdefault(person_id, [])
+            if work['id'] not in ids:
+                ids.append(work['id'])
     # Convert lists to comma-separated strings
-    for pid in _person_works:
-        _person_works[pid] = ','.join(_person_works[pid])
-    print(f"   Built person→works map: {len(_person_works)} persons with works")
+    for target in (_person_works, _person_former_works, _person_adapted_works):
+        for pid in target:
+            target[pid] = ','.join(target[pid])
+    print(f"   Built person→works map: {len(_person_works)} persons with works, "
+          f"{len(_person_former_works)} with former attributions, "
+          f"{len(_person_adapted_works)} with adaptations")
 
 
 def parse_persons():
@@ -341,6 +374,11 @@ def parse_persons():
             'works': works,
             'normalized': normalize_mhg(preferred_name)
         }
+        # Nur wo vorhanden (#452): die uebrigen Personen bleiben byte-identisch
+        if person_id in _person_former_works:
+            person_entry['formerWorks'] = _person_former_works[person_id]
+        if person_id in _person_adapted_works:
+            person_entry['adaptedWorks'] = _person_adapted_works[person_id]
         if alt_names:
             # Index-parallel by contract: altNormalized[i] is the normalized form of
             # altNames[i]. The person explorer matches on the normalized list and
@@ -435,24 +473,60 @@ def parse_works():
         sigle = ', '.join(sigles) if sigles else None
 
         # Get author - prefer text content over ref.
-        # Nur direktes Kind (#293): jedes <bibl> traegt seit dem Zotero-Sync ein
-        # <biblStruct> mit den <author> der EDITION. Eine Descendant-Suche traege
-        # bei einem Werk ohne eigenen <author> still den Editionsautor als
-        # Werksautor ein. Heute betrifft das 0 von 584 Eintraegen, alle haben ein
+        # Nur direktes Kind (#293): seit dem Zotero-Sync traegt jedes <bibl> ausser
+        # work_WLK (#237, Nachweis folgt per Sync) ein <biblStruct> mit den
+        # <author> der EDITION. Eine Descendant-Suche traege bei einem Werk ohne
+        # eigenen <author> still den Editionsautor als Werksautor ein. Gemessen
+        # 28.09.2026: betrifft 0 von 585 Eintraegen, alle haben ein
         # direktes Kind; die Enge kostet also nichts. Analog zu ./tei:title oben.
         author_el = work_el.xpath('./tei:author', namespaces=ns)
         if not author_el:
             author_el = work_el.xpath('./author', namespaces=ns)
 
-        author_ref = author_el[0].get('ref') if author_el else None
-        # itertext() plus Whitespace-Kollaps (#228), dieselbe Lesart wie in
-        # build-corpus-index.py. works.xml traegt bei work_563 den Autornamen
-        # ueber zwei eingerueckte Zeilen; .text liess den Umbruch samt
-        # Einrueckung bis in api/works/work_563.json durch. XML-Einrueckung ist
-        # beliebig, die Normalisierung gehoert deshalb zum Leser.
-        author_text = (' '.join(''.join(author_el[0].itertext()).split())
-                       if author_el else '') or None
-        author = author_text or author_ref or "Unbekannt"
+        # Zuschreibungen (#452): alle direkten <author> in Dokumentreihenfolge,
+        # mit Status (@ana) und Rolle (@role). Der Beleg steht in einer
+        # <note type="attribution" target="#xml:id"> neben den Autoren.
+        notes_by_target = {}
+        for note_el in work_el.xpath('./tei:note[@type="attribution"]', namespaces=ns):
+            target = (note_el.get('target') or '').lstrip('#')
+            # Defensiv parsen: eine Note, die auf keinen <author> dieses Werks
+            # zeigt, oder zwei Noten auf dasselbe Ziel wuerden still ihren
+            # Beleg verlieren (das Schema verlangt fuer target nur text)
+            author_ids = {a.get('{http://www.w3.org/XML/1998/namespace}id') for a in author_el}
+            if target not in author_ids:
+                raise ValueError(
+                    f"{work_id}: <note type=\"attribution\" target=\"{note_el.get('target')}\"> "
+                    f"zeigt auf keinen <author> mit diesem xml:id")
+            if target in notes_by_target:
+                raise ValueError(
+                    f"{work_id}: zwei <note type=\"attribution\"> mit dem Ziel {target}")
+            notes_by_target[target] = ' '.join(''.join(note_el.itertext()).split())
+        attributions = []
+        for a_el in author_el:
+            # itertext() plus Whitespace-Kollaps (#228), dieselbe Lesart wie in
+            # build-corpus-index.py. works.xml traegt bei work_563 den
+            # Autornamen ueber zwei eingerueckte Zeilen; .text liess den
+            # Umbruch samt Einrueckung bis in api/works/work_563.json durch.
+            # XML-Einrueckung ist beliebig, die Normalisierung gehoert deshalb
+            # zum Leser.
+            a_text = ' '.join(''.join(a_el.itertext()).split()) or None
+            a_ref = a_el.get('ref')
+            attribution = {'ref': a_ref, 'name': a_text or a_ref or "Unbekannt"}
+            if a_el.get('ana'):
+                attribution['status'] = a_el.get('ana')
+            if a_el.get('role'):
+                attribution['role'] = a_el.get('role')
+            note_text = notes_by_target.get(a_el.get('{http://www.w3.org/XML/1998/namespace}id') or '')
+            if note_text:
+                attribution['note'] = note_text
+            attributions.append(attribution)
+
+        # author/authorRef: der erste Autor ohne Rolle und ohne verworfenen
+        # Status (Kompatibilitaetsfeld; wer alle Zuschreibungen braucht, liest
+        # attributions).
+        first = next((a for a in attributions if is_counting_author(a)), None)
+        author_ref = first['ref'] if first else None
+        author = (first['name'] if first else None) or author_ref or "Unbekannt"
 
         # Extract genre references (<ptr target="genres.xml#genre_ID"/>)
         # Genre label text is resolved from genres.xml via _genre_names lookup
@@ -519,6 +593,7 @@ def parse_works():
             'sigles': sigles,
             'author': author,
             'authorRef': author_ref,
+            'attributions': attributions,
             'genres': genres,
             'biblStructs': bibl_structs,
             'handschriftencensus': handschriftencensus,
@@ -807,20 +882,25 @@ def parse_names():
     return names
 
 
-def parse_variants():
-    """Parse variants.xml to extract orthographic variants."""
+def parse_variants(known_lemma_ids):
+    """Parse variants.xml to extract orthographic variants.
+
+    known_lemma_ids: IDs der Lemmata aus lexicon.xml (siehe Kandidatenauswahl unten).
+    """
     print("🔤 Parsing variants.xml...")
     variants_file = AUTHORITY_DIR / 'variants.xml'
 
     if not variants_file.exists():
         print(f"⚠️  Warning: {variants_file} not found, skipping")
-        return {}
+        return {}, {}
 
     tree = etree.parse(str(variants_file))
     ns = get_namespaces(tree)
     TEI = '{http://www.tei-c.org/ns/1.0}'
 
-    variants = {}  # normalized_variant -> lemma_id
+    # normalized_variant -> {lemma_id: Tokens}. Die Einfuegereihenfolge beider
+    # dicts ist die Dokumentordnung von variants.xml und bricht Gleichstaende.
+    counts = {}
     entry_els = tree.findall(f'.//{TEI}entry')
 
     for entry in entry_els:
@@ -848,12 +928,124 @@ def parse_variants():
             variant = variant.strip()
             normalized_variant = normalize_mhg(variant)
 
-            # Map normalized variant to lemma ID
-            if normalized_variant not in variants:
-                variants[normalized_variant] = lemma_id
+            # n = Korpus-Tokens dieses Typs unter dem Lemma (extract-variants.py).
+            # Ein fehlendes oder kaputtes n ist ein harter Fehler: ohne es
+            # liesse sich die Reihenfolge der Kandidaten nicht bilden und der
+            # Build fiele still auf die Dokumentordnung zurueck.
+            n_raw = form_el.get('n')
+            if n_raw is None or not n_raw.isdigit():
+                sys.exit(f"❌ ERROR: variants.xml: <form> {form_el.get('{http://www.w3.org/XML/1998/namespace}id')} "
+                         f"unter {lemma_id} hat kein gueltiges @n ({n_raw!r}); "
+                         f"python scripts/sync/extract-variants.py --apply ausfuehren")
 
-    print(f"   Found {len(variants)} variant mappings")
-    return variants
+            per_lemma = counts.setdefault(normalized_variant, {})
+            per_lemma[lemma_id] = per_lemma.get(lemma_id, 0) + int(n_raw)
+
+    # ADR-021 / Vorschrift B: je normalisierter Form alle Kandidaten, geordnet
+    # nach den Korpus-Tokens DIESER Form unter dem Lemma, nicht nach der
+    # Gesamthaeufigkeit des Lemmas. sorted() ist stabil: bei Gleichstand
+    # gewinnt die Dokumentordnung (die kleinere Lemmanummer).
+    #
+    # Kandidaten ohne Eintrag in lexicon.xml (hängende Verweise, #115) scheiden
+    # aus, solange die Form ein bekanntes Lemma hat: ein solcher Kandidat liesse
+    # sich weder anzeigen noch verlinken und wuerde sonst, mit vielen Tokens,
+    # vor das echte Lemma rutschen (halap, chana). Hat die Form nur unbekannte
+    # Lemmata, bleibt es bei der Rangfolge unter ihnen.
+    variants = {}      # normalized_variant -> erster Kandidat (Abwaertskompatibilitaet)
+    candidates = {}    # normalized_variant -> [lemma_id, ...], nur bei mehr als einem
+    for normalized_variant, per_lemma in counts.items():
+        pool = [lid for lid in per_lemma if lid in known_lemma_ids] or list(per_lemma)
+        ranked = sorted(pool, key=lambda lid: -per_lemma[lid])
+        variants[normalized_variant] = ranked[0]
+        if len(ranked) > 1:
+            candidates[normalized_variant] = ranked
+
+    print(f"   Found {len(variants)} variant mappings, {len(candidates)} with more than one candidate")
+    return variants, candidates
+
+
+def load_corpus_lemma_ids():
+    """Lemma-IDs mit mindestens einem Korpusbeleg, aus data/corpus-index.json.gz.
+
+    Quelle fuer lemma.noCorpus (#228, KZW 01.10.2026: abgeleitet, nicht in
+    lexicon.xml gespeichert). Der Authority-Build haengt damit vom Korpus-Index
+    ab, deshalb scheitert er hart statt still 0 oder alles zu liefern: Datei
+    fehlt, keine lemmaIndex, oder ihre Version passt nicht zum Versionsliteral
+    in build-corpus-index.py (also ein veralteter Stand).
+    """
+    if not CORPUS_INDEX_FILE.exists():
+        sys.exit(f"❌ ERROR: {CORPUS_INDEX_FILE} fehlt. Zuerst python scripts/build-corpus-index.py "
+                 f"(Lifecycle: Korpus-Index vor Authority-Index).")
+    expected = re.search(r"'version'\s*:\s*'([0-9]+\.[0-9]+\.[0-9]+)'",
+                         CORPUS_BUILD_SCRIPT.read_text(encoding='utf-8'))
+    if not expected:
+        sys.exit(f"❌ ERROR: kein Versionsliteral in {CORPUS_BUILD_SCRIPT} gefunden")
+    with gzip.open(CORPUS_INDEX_FILE, 'rt', encoding='utf-8') as f:
+        corpus = json.load(f)
+    if corpus.get('version') != expected.group(1):
+        sys.exit(f"❌ ERROR: {CORPUS_INDEX_FILE} traegt Version {corpus.get('version')}, "
+                 f"build-corpus-index.py erwartet {expected.group(1)}: veralteter Korpus-Index, "
+                 f"zuerst python scripts/build-corpus-index.py")
+    lemma_index = corpus.get('lemmaIndex')
+    if not isinstance(lemma_index, dict) or len(lemma_index) < 10000:
+        sys.exit(f"❌ ERROR: {CORPUS_INDEX_FILE}: lemmaIndex fehlt oder ist unplausibel klein "
+                 f"({len(lemma_index) if isinstance(lemma_index, dict) else type(lemma_index).__name__})")
+    return set(lemma_index)
+
+
+def load_lemma_pos():
+    """Teil-Tag-Zaehlung je Lemma aus data/lemma-pos.json.gz (#462).
+
+    Quelle fuer lemma.pos und lemma.posAll. Die Datei kommt aus
+    scripts/build-lemma-pos.py, das tei/ liest; dieser Build liest tei/ nicht
+    (G3, 10.10.2026). Fehlt sie, scheitert der Build hart: ein stilles Weglassen
+    lieferte wieder die Lexikonreihenfolge und sah aus wie ein Ergebnis.
+    Ob sie zum Korpus passt, prueft der Freshness-Schritt in data-integrity.yml
+    (build-lemma-pos.py --check), nicht dieser Build.
+    """
+    if not LEMMA_POS_FILE.exists():
+        sys.exit(f"❌ ERROR: {LEMMA_POS_FILE} fehlt. Zuerst python scripts/build-lemma-pos.py "
+                 f"(Lifecycle: lemma-pos vor Authority-Index).")
+    with gzip.open(LEMMA_POS_FILE, 'rt', encoding='utf-8') as f:
+        counts = json.load(f)
+    if not isinstance(counts, dict) or len(counts) < 10000:
+        sys.exit(f"❌ ERROR: {LEMMA_POS_FILE}: unplausibel klein oder kein Objekt "
+                 f"({len(counts) if isinstance(counts, dict) else type(counts).__name__})")
+    if not all(k.startswith('lemma_') and isinstance(v, dict) and v for k, v in counts.items()):
+        sys.exit(f"❌ ERROR: {LEMMA_POS_FILE}: Eintrag ohne lemma_-Schluessel oder ohne Zaehlung")
+    return counts
+
+
+def apply_corpus_pos(lemmata, lemma_pos):
+    """Ordnet posAll nach Korpushaeufigkeit und leitet pos daraus ab (#462).
+
+    - Nur Lemmata mit mehr als einer Lexikonwortart werden angefasst: bei einer
+      einzigen steht nichts zu ordnen, und pos bleibt die Lexikonangabe.
+    - posAll behaelt genau die Lexikonwerte. Sortiert wird absteigend nach der
+      Zahl der Tokens, die den Teil-Tag tragen, Gleichstand und fehlender
+      Korpusbeleg nach Lexikonreihenfolge. Ein Korpus-Tag, den das Lexikon nicht
+      fuehrt, kommt nicht hinzu und zaehlt nicht.
+    - pos ist das erste Element von posAll: der haeufigste Korpusteil, bei
+      Gleichstand oder ohne Beleg die frueheste Lexikonangabe unter den
+      Gleichstaendigen.
+    Rueckgabe: (Lemmata mit geaendertem pos, Lemmata mit geaenderter posAll-Reihenfolge).
+    """
+    pos_changed = order_changed = 0
+    for lemma in lemmata:
+        pos_all = lemma['posAll']
+        if len(pos_all) < 2:
+            continue
+        counts = lemma_pos.get(lemma['id'])
+        if not counts:
+            continue
+        ranked = sorted(pos_all, key=lambda tag: (-counts.get(tag, 0), pos_all.index(tag)))
+        if ranked != pos_all:
+            order_changed += 1
+        if ranked[0] != lemma['pos']:
+            pos_changed += 1
+        lemma['posAll'] = ranked
+        lemma['pos'] = ranked[0]
+    return pos_changed, order_changed
 
 
 def build_performance_maps(lemmata, works, concepts, genres):
@@ -931,20 +1123,32 @@ def build_index():
     # works before persons: person→works map is derived from works.xml <author @ref>
     contrib_namen = load_contributor_names()
     lemmata = parse_lexicon(contrib_namen)
+    n_pos, n_order = apply_corpus_pos(lemmata, load_lemma_pos())
+    print(f"   pos aus dem Korpus: {n_pos:,} Lemmata mit geaendertem pos, "
+          f"{n_order:,} mit geaenderter posAll-Reihenfolge")
     works = parse_works()
     _build_person_works_map(works)
     persons = parse_persons()
     concepts = parse_concepts()
     genres = parse_genres()
     names = parse_names()
-    variants = parse_variants()
+    variants, variant_candidates = parse_variants({lemma['id'] for lemma in lemmata})
+
+    # noCorpus nur dort, wo es zutrifft; sonst fehlt das Feld (Indexgroesse)
+    corpus_lemma_ids = load_corpus_lemma_ids()
+    n_no_corpus = 0
+    for lemma in lemmata:
+        if lemma['id'] not in corpus_lemma_ids:
+            lemma['noCorpus'] = True
+            n_no_corpus += 1
+    print(f"   Lemmata ohne Korpusbeleg (noCorpus): {n_no_corpus:,}")
 
     # Build performance Maps for fast lookups
     performance_maps = build_performance_maps(lemmata, works, concepts, genres)
 
     # Build index structure
     index = {
-        'version': '1.9.13',  # 1.2.0: Authority migration (genre ptrs, person-works derivation, Frauendienst split). 1.2.1: WZB-Lemmata + Varianten + Werk-Eintrag. 1.2.2: #104 FLG/FLG1-Werk-Titel + work_571 biblStruct auf Vollmann-Profe/Neumann 1990. 1.3.0: #113-Followup — alternative-Terms in concepts.xml getrennt von Primär-Term (altDE/altEN/altNormalized) statt last-wins-Overwrite. 1.4.0: #44/#115 variants.xml aus Korpus regeneriert via scripts/sync/extract-variants.py (+64.287 Formen, 192.472→256.759). 1.4.1: #125 deterministischer Build (generatedAt entfernt, gzip mtime=0). 1.4.2: #143 HH-Genre-Korrektur (Marienleben → Geistliche Rede, work_137). 1.4.3: #143 APO-Gattungs-Metadaten nach Terrahe (work_568: Prosaroman/Antikenroman/Liebes-Abenteuerroman/Exempel/Fürstenspiegel). 1.4.4: #115 Kategorie-A-Stub-Backfill (+125 Lemma-Stubs in lexicon.xml). 1.5.0: Audit #5 — parse_genres last-wins-Fix: alternative-Terms überschreiben den Primär-Term nicht mehr (250 Kategorien korrigiert), altDE/altEN/altNormalized analog concepts. 1.6.0: #161 posAll[] — alle <pos>-Werte eines Lemmas (Multi-POS wie lemma_79188 salve NOM+VRB), pos bleibt Erstwert. 1.6.1: #189 GWTK-Pilot — variants.xml +2 Typen (rotte/rotten unter lemma_4954) + GWTK-Formen-Zuwachs aus der Neu-Annotation. 1.6.2: #224 NFC-Unicode-Komposition im Normalizer — zerlegte Umlaute (o + U+0308) werden jetzt komponiert, bevor die Umlaut-Regeln greifen; korrigiert 'hugo von mühldorf' zu 'hugo von muehldorf' in persons.xml (die Quelldatei traegt dort ein zerlegtes ue). 1.6.3: #235 kaputte Tilden in URLs (kombinierendes U+0303 hinter einem Leerzeichen statt ASCII-Tilde) in 24 works.xml-Notizen repariert; die gleichen Notizen stehen im TEI-Header, dort ohne Indexwirkung. 1.6.4: #138 814 Strophenziffern aus dem HUG-Verstext entfernt (706 davon pos=DIG, 108 unannotiert); variants.xml verliert dadurch den Typ type_195524 'cxlvix', der nur in HUG vorkam. 1.6.5: #236 FR3-Metadaten auf den Supplementband 2000 umgestellt (ISBN 3-525-82504-8, Hrsg. Haustein/Stackmann, Reihenband 232) und Zotero-Title-Case 'Teil Ii'/'Teil Iii' repariert; variants.xml unveraendert. 1.7.0: kuratierte Lemma-Angaben im Index: lemma.origin (Herkunftssprache aus <etym type="borrowing">, Schicht B von #28) sowie sense.definition und sense.comment (Prosa aus <def> bzw. <note type="comment">), jeweils nur wenn im Lexikon vorhanden. Erster Eintrag: lemma_37818 Abba (aramaeische Gottesanrede, KZW 30.07.2026). 1.7.1: #228 works.xml-Autornamen werden wie im Korpus-Index mit itertext() und Whitespace-Kollaps gelesen; work_563 trug den Umbruch der XML-Einrueckung bis in api/works/work_563.json. 1.8.0: #307 altNames/altNormalized je Person aus persons.xml persName[@type="alternative"] (134 Formen bei 80 Personen, nach exaktem Text auf 100 dedupliziert); die beiden Listen sind index-parallel, xml:lang wird nicht indexiert. 1.8.1: #193 Baustein 1 — lemma_3036 Ingliart von Personenname auf Pferdename umklassifiziert (concept_21012000 Maennlich/Mann + concept_23112500 Personennamen raus, concept_14012100 Haustiere/Namen + concept_23221000 Pferd und Reiten/Namen rein, wie bei den neun anderen arthurischen Pferden). Belegt durch Pz. 389,26 'mit den kurzen oeren ingliart' und 398,14; Quelle Borek 2023. Der dritte Korpus-Token REN_242090_0 'ingligar von jelezie' steht in einem Ritter-Katalog und haengt vermutlich falsch an diesem Lemma; das ist ein aelterer Befund, liegt bei KZW und beruehrt die Klassifikation des Lemmas nicht. 1.9.0: #361 genre.parents[] — direkte Eltern als IDs, aus der transitiven Reduktion der in genres.xml gespeicherten vollen Hülle (3.175 Kanten → 615 Kategorien mit 0 bis 4 direkten Eltern, zwei Wurzeln, Baumtiefe 9). Ersetzt maps.genreHierarchy, das Eltern-*Namen* und die volle Hülle trug und dessen einziger Konsument die „UND“-Kette im Gattungs-Explorer war. 1.9.1: #369 Nachlauf — variants.xml verliert den Typ type_218598 'stât' unter lemma_5732. Er hing an einem einzigen Korpus-Token (SKT_502140_4), und das war ein Fehltag: 'mîn gedanc an ir vil hôhe stât' ist das Verb. Nach der Korrektur auf lemma_5710 ist der Typ unbelegt. Gleiche Mechanik wie 1.6.4 (type_195524 'cxlvix'). 1.9.2: #367 — variants.xml gewinnt zwei Typen unter lemma_7338 (waer): type_372363 fuer die Schreibung waeren (CHH) und type_372364 fuer woren (FR3). Neu gepraegt statt umgehaengt, weil eine bestehende Nummer sonst an zwei Lemmata haenge und extract-variants.py sie der haeufigeren Seite zuschlaege, also weiter dem Verb (KZW, #367). Kein Typ wird unbelegt: type_273621 faellt von 5.641 auf 5.603, type_273624 von 471 auf 470, type_273713 von 111 auf 110. 1.9.3: #216 Punkt 3, Nachtrag - variants.xml gewinnt type_372365 fuer die Schreibung frô unter lemma_7260 (RVBR). Dieselbe Mechanik und dieselbe Begruendung wie 1.9.2: neu gepraegt statt umgehaengt, denn frô ist bereits als type_25866 unter lemma_7250 (vrô 'froh') gefuehrt, und eine Nummer an zwei Lemmata schluege extract-variants.py der haeufigeren Seite zu. Kein Typ wird unbelegt. 1.9.4: #363 Hausenblase - variants.xml gewinnt 10 neu gepraegte Typen (type_372366 bis type_372375) und haengt 5 bestehende um. Neu gepraegt wird ueberall dort, wo die Schreibung auch nach der Korrektur noch das alte Lemma belegt: type_106683 'pleter' traegt 45 Tokens, 43 davon bleiben bei lemma_737 blat, ein Umhaengen risse sie mit. Umgehaengt wird nur, wo korpusweit ausschliesslich Tokens dieser Menge den Typ tragen (type_131170, type_131175, type_272472, type_272473, type_274810); dort wandert die Form zu Recht als Ganzes und das Quell-Lemma verliert sie. Ausserdem faellt lemma_27031 hasenblase aus lexicon.xml weg: der Eintrag hatte korpusweit genau einen Beleg, und der war das falsch gelesene KDO-Kompositum (KZW, #363). 1.9.5: #198 Schritt 2. <pos>NOM</pos> aus lemma_2598 haben entfernt: das Verb trug eine Nomen-Auszeichnung, und die 183 NOM-Tokens, die sie gestuetzt hatten, sind seit PR #205 und den drei jetzt entschiedenen Restfaellen restlos aufgeloest (Gegenprobe: null NOM-Tokens unter lemma_2598). Kein Sense wandert nach lemma_2593 habe: gemessen sind alle acht Senses von lemma_2598 im Korpus ausschliesslich verbal belegt, die Konzeptueberschneidung von sense_4170 mit lemma_2593_sense_4159 (Besitz) ist erwartbar, weil das Verb den Besitz ausdrueckt, den das Nomen benennt. variants.xml unveraendert. 1.9.6: #375 praegt type_372376 fuer die Schreibung waeren unter lemma_7338 (Regel aus #367: neue Nummer, nie eine bestehende umhaengen). #308 ergaenzt zwei persName type=alternative in persons.xml und dreht bei person_1249 die Hauptform: preferred ist jetzt 'Jakob von Warte' (Ansetzungsform von GND und Deutscher Biographie), 'Jakob von Wart' bleibt als belegte Alternative. person_1050 bekommt 'Heinrich von Breslau' als Alternative neben der preferred-Form 'Heinrich von Pressela'. 1.9.7: #444 work_5 Moriz von Craun verliert in works.xml den Autor Bligger von Steinach und fuehrt nur noch person_anonym. Damit faellt work_5 aus den Werken von person_227 (bleibt: work_313) und kommt zu person_anonym. Bliggers Lyrik bleibt ihm zugeordnet; variants.xml unveraendert. 1.9.8: #366, #375 und #371 in einem Lauf. variants.xml gewinnt zehn neu gepraegte Typen und haengt keinen bestehenden um (Regel aus #367): type_372377 bersige unter lemma_26988, type_372378 gehornn unter lemma_2039, type_372379 gewuertz unter lemma_7736, type_372380 hawsen unter lemma_42619, type_372381 wuerczenn und type_372382 wuertzenn unter lemma_7736, type_372383 zimendtrinttenn unter lemma_26776, type_372384 stat unter lemma_5712, type_372385 stat unter lemma_5713, type_372386 stat mit Zirkumflex unter lemma_5732. Der Fall hawsen ist der lehrreiche: die Form wird bereits als type_372368 unter lemma_49714 huesenblater gefuehrt (aus #363), ein Umhaengen haette jene Tokens mitgerissen. Formen 256.773 auf 256.783, Eintraege unveraendert 42.626, keine zusaetzliche Mehrdeutigkeit (Typen mit mehr als einem Lemma bleiben bei 1). 1.9.9: Welle A1 vom 23.09.2026 (#387, #418, #464). Fuenf neu gepraegte Variantentypen nach der Regel aus #367: type_372387 vrowe mit Breve unter lemma_7260, type_372388 vroewe unter lemma_7256, type_372389 froewen unter lemma_7250, type_372390 hawe unter lemma_2923, type_372391 hawe unter lemma_9644. type_117159 hawe unter lemma_2598 haben entfaellt, weil keines seiner 13 Tokens bei haben bleibt; ihn fuer houwe weiterzufuehren waere Umhaengen gewesen. Damit faellt die einzige Typ-ID mit mehr als einem Lemma weg (1 auf 0). Neuer Sense lemma_9644_sense_119194 (houwe als Schlag, die drei Konzepte aus lemma_2923_sense_4697). Formen 256.783 auf 256.787, Eintraege unveraendert 42.626. Laufzeit-Woerterbuch (first-wins, 234.250 Mappings beiderseits): 0 neu, 0 entfallen, 2 umgeklappt, froewen von lemma_7256 auf lemma_7250 (Korpus: 35 unter lemma_7260, 21 unter lemma_7256, 1 unter lemma_7250, also gegen Vorschrift B aus ADR-021) und hawe von lemma_2598 auf lemma_2923 (7 unter lemma_2923, 6 unter lemma_9644, B-konform). 1.9.10: #270 sense.commentRespName, der Anzeigename zu sense.commentResp, beim Build aus contributors.xml aufgeloest (ADR-018 Weg 2). contributors.xml wird dadurch gelesen, aber nicht als Sammlung indexiert; Lemma-Seite und Playground zeigen 'Kommentar von <Name>' (KZW 23.09.2026). Heute ein Kommentar, lemma_37818_sense_59052 Abba. 1.9.11: #357 lemma_3036 Ingliart bekommt einen zweiten Sense lemma_3036_sense_119195 fuer den Menschennamen (concept_21012000 Maennlich/Mann + concept_23112500 Personennamen, wie die Nachbarn Wimiligar, Rufter und Echerabant im Rennewart-Katalog). REN_242090_0 'ingligar von jelezie' zeigt mit @ana darauf, der Pferde-Sense behaelt die beiden Parzival-Belege. Entscheidung KZW 14.09.2026: kein eigenes Lemma, ein Name bezeichnet mehrere Entitaeten. Der Befund stand seit 1.8.1 offen. 1.9.12: #228 165 Lemmata geloescht, die mit der Entannotierung von Apparat und GWTK-Inhaltsangaben jeden Korpusbeleg verloren haben (neuhochdeutsche Woerter aus den Inhaltsangaben, Apparatsigel, das Ziffern-Lemma 46). lemma_66692 Mur bleibt trotz fehlender Belege, weil lemma_33528 Murouwe und lemma_66691 Murstat per etym auf ihn verweisen. variants.xml regeneriert: 275 Typen und 166 Eintraege entfallen, keiner kommt dazu, keiner wird umgehaengt. 1.9.13: #237 VTC-Editionsnachweis aus Zotero: Josef Jirecek als Mitherausgeber von FRB III, 'IV' statt 'Iv'. Nur dieses Werk; die uebrigen Aenderungen eines Online-Syncs sind bewusst nicht uebernommen.
+        'version': '1.9.26',  # 1.2.0: Authority migration (genre ptrs, person-works derivation, Frauendienst split). 1.2.1: WZB-Lemmata + Varianten + Werk-Eintrag. 1.2.2: #104 FLG/FLG1-Werk-Titel + work_571 biblStruct auf Vollmann-Profe/Neumann 1990. 1.3.0: #113-Followup — alternative-Terms in concepts.xml getrennt von Primär-Term (altDE/altEN/altNormalized) statt last-wins-Overwrite. 1.4.0: #44/#115 variants.xml aus Korpus regeneriert via scripts/sync/extract-variants.py (+64.287 Formen, 192.472→256.759). 1.4.1: #125 deterministischer Build (generatedAt entfernt, gzip mtime=0). 1.4.2: #143 HH-Genre-Korrektur (Marienleben → Geistliche Rede, work_137). 1.4.3: #143 APO-Gattungs-Metadaten nach Terrahe (work_568: Prosaroman/Antikenroman/Liebes-Abenteuerroman/Exempel/Fürstenspiegel). 1.4.4: #115 Kategorie-A-Stub-Backfill (+125 Lemma-Stubs in lexicon.xml). 1.5.0: Audit #5 — parse_genres last-wins-Fix: alternative-Terms überschreiben den Primär-Term nicht mehr (250 Kategorien korrigiert), altDE/altEN/altNormalized analog concepts. 1.6.0: #161 posAll[] — alle <pos>-Werte eines Lemmas (Multi-POS wie lemma_79188 salve NOM+VRB), pos bleibt Erstwert. 1.6.1: #189 GWTK-Pilot — variants.xml +2 Typen (rotte/rotten unter lemma_4954) + GWTK-Formen-Zuwachs aus der Neu-Annotation. 1.6.2: #224 NFC-Unicode-Komposition im Normalizer — zerlegte Umlaute (o + U+0308) werden jetzt komponiert, bevor die Umlaut-Regeln greifen; korrigiert 'hugo von mühldorf' zu 'hugo von muehldorf' in persons.xml (die Quelldatei traegt dort ein zerlegtes ue). 1.6.3: #235 kaputte Tilden in URLs (kombinierendes U+0303 hinter einem Leerzeichen statt ASCII-Tilde) in 24 works.xml-Notizen repariert; die gleichen Notizen stehen im TEI-Header, dort ohne Indexwirkung. 1.6.4: #138 814 Strophenziffern aus dem HUG-Verstext entfernt (706 davon pos=DIG, 108 unannotiert); variants.xml verliert dadurch den Typ type_195524 'cxlvix', der nur in HUG vorkam. 1.6.5: #236 FR3-Metadaten auf den Supplementband 2000 umgestellt (ISBN 3-525-82504-8, Hrsg. Haustein/Stackmann, Reihenband 232) und Zotero-Title-Case 'Teil Ii'/'Teil Iii' repariert; variants.xml unveraendert. 1.7.0: kuratierte Lemma-Angaben im Index: lemma.origin (Herkunftssprache aus <etym type="borrowing">, Schicht B von #28) sowie sense.definition und sense.comment (Prosa aus <def> bzw. <note type="comment">), jeweils nur wenn im Lexikon vorhanden. Erster Eintrag: lemma_37818 Abba (aramaeische Gottesanrede, KZW 30.07.2026). 1.7.1: #228 works.xml-Autornamen werden wie im Korpus-Index mit itertext() und Whitespace-Kollaps gelesen; work_563 trug den Umbruch der XML-Einrueckung bis in api/works/work_563.json. 1.8.0: #307 altNames/altNormalized je Person aus persons.xml persName[@type="alternative"] (134 Formen bei 80 Personen, nach exaktem Text auf 100 dedupliziert); die beiden Listen sind index-parallel, xml:lang wird nicht indexiert. 1.8.1: #193 Baustein 1 — lemma_3036 Ingliart von Personenname auf Pferdename umklassifiziert (concept_21012000 Maennlich/Mann + concept_23112500 Personennamen raus, concept_14012100 Haustiere/Namen + concept_23221000 Pferd und Reiten/Namen rein, wie bei den neun anderen arthurischen Pferden). Belegt durch Pz. 389,26 'mit den kurzen oeren ingliart' und 398,14; Quelle Borek 2023. Der dritte Korpus-Token REN_242090_0 'ingligar von jelezie' steht in einem Ritter-Katalog und haengt vermutlich falsch an diesem Lemma; das ist ein aelterer Befund, liegt bei KZW und beruehrt die Klassifikation des Lemmas nicht. 1.9.0: #361 genre.parents[] — direkte Eltern als IDs, aus der transitiven Reduktion der in genres.xml gespeicherten vollen Hülle (3.175 Kanten → 615 Kategorien mit 0 bis 4 direkten Eltern, zwei Wurzeln, Baumtiefe 9). Ersetzt maps.genreHierarchy, das Eltern-*Namen* und die volle Hülle trug und dessen einziger Konsument die „UND“-Kette im Gattungs-Explorer war. 1.9.1: #369 Nachlauf — variants.xml verliert den Typ type_218598 'stât' unter lemma_5732. Er hing an einem einzigen Korpus-Token (SKT_502140_4), und das war ein Fehltag: 'mîn gedanc an ir vil hôhe stât' ist das Verb. Nach der Korrektur auf lemma_5710 ist der Typ unbelegt. Gleiche Mechanik wie 1.6.4 (type_195524 'cxlvix'). 1.9.2: #367 — variants.xml gewinnt zwei Typen unter lemma_7338 (waer): type_372363 fuer die Schreibung waeren (CHH) und type_372364 fuer woren (FR3). Neu gepraegt statt umgehaengt, weil eine bestehende Nummer sonst an zwei Lemmata haenge und extract-variants.py sie der haeufigeren Seite zuschlaege, also weiter dem Verb (KZW, #367). Kein Typ wird unbelegt: type_273621 faellt von 5.641 auf 5.603, type_273624 von 471 auf 470, type_273713 von 111 auf 110. 1.9.3: #216 Punkt 3, Nachtrag - variants.xml gewinnt type_372365 fuer die Schreibung frô unter lemma_7260 (RVBR). Dieselbe Mechanik und dieselbe Begruendung wie 1.9.2: neu gepraegt statt umgehaengt, denn frô ist bereits als type_25866 unter lemma_7250 (vrô 'froh') gefuehrt, und eine Nummer an zwei Lemmata schluege extract-variants.py der haeufigeren Seite zu. Kein Typ wird unbelegt. 1.9.4: #363 Hausenblase - variants.xml gewinnt 10 neu gepraegte Typen (type_372366 bis type_372375) und haengt 5 bestehende um. Neu gepraegt wird ueberall dort, wo die Schreibung auch nach der Korrektur noch das alte Lemma belegt: type_106683 'pleter' traegt 45 Tokens, 43 davon bleiben bei lemma_737 blat, ein Umhaengen risse sie mit. Umgehaengt wird nur, wo korpusweit ausschliesslich Tokens dieser Menge den Typ tragen (type_131170, type_131175, type_272472, type_272473, type_274810); dort wandert die Form zu Recht als Ganzes und das Quell-Lemma verliert sie. Ausserdem faellt lemma_27031 hasenblase aus lexicon.xml weg: der Eintrag hatte korpusweit genau einen Beleg, und der war das falsch gelesene KDO-Kompositum (KZW, #363). 1.9.5: #198 Schritt 2. <pos>NOM</pos> aus lemma_2598 haben entfernt: das Verb trug eine Nomen-Auszeichnung, und die 183 NOM-Tokens, die sie gestuetzt hatten, sind seit PR #205 und den drei jetzt entschiedenen Restfaellen restlos aufgeloest (Gegenprobe: null NOM-Tokens unter lemma_2598). Kein Sense wandert nach lemma_2593 habe: gemessen sind alle acht Senses von lemma_2598 im Korpus ausschliesslich verbal belegt, die Konzeptueberschneidung von sense_4170 mit lemma_2593_sense_4159 (Besitz) ist erwartbar, weil das Verb den Besitz ausdrueckt, den das Nomen benennt. variants.xml unveraendert. 1.9.6: #375 praegt type_372376 fuer die Schreibung waeren unter lemma_7338 (Regel aus #367: neue Nummer, nie eine bestehende umhaengen). #308 ergaenzt zwei persName type=alternative in persons.xml und dreht bei person_1249 die Hauptform: preferred ist jetzt 'Jakob von Warte' (Ansetzungsform von GND und Deutscher Biographie), 'Jakob von Wart' bleibt als belegte Alternative. person_1050 bekommt 'Heinrich von Breslau' als Alternative neben der preferred-Form 'Heinrich von Pressela'. 1.9.7: #444 work_5 Moriz von Craun verliert in works.xml den Autor Bligger von Steinach und fuehrt nur noch person_anonym. Damit faellt work_5 aus den Werken von person_227 (bleibt: work_313) und kommt zu person_anonym. Bliggers Lyrik bleibt ihm zugeordnet; variants.xml unveraendert. 1.9.8: #366, #375 und #371 in einem Lauf. variants.xml gewinnt zehn neu gepraegte Typen und haengt keinen bestehenden um (Regel aus #367): type_372377 bersige unter lemma_26988, type_372378 gehornn unter lemma_2039, type_372379 gewuertz unter lemma_7736, type_372380 hawsen unter lemma_42619, type_372381 wuerczenn und type_372382 wuertzenn unter lemma_7736, type_372383 zimendtrinttenn unter lemma_26776, type_372384 stat unter lemma_5712, type_372385 stat unter lemma_5713, type_372386 stat mit Zirkumflex unter lemma_5732. Der Fall hawsen ist der lehrreiche: die Form wird bereits als type_372368 unter lemma_49714 huesenblater gefuehrt (aus #363), ein Umhaengen haette jene Tokens mitgerissen. Formen 256.773 auf 256.783, Eintraege unveraendert 42.626, keine zusaetzliche Mehrdeutigkeit (Typen mit mehr als einem Lemma bleiben bei 1). 1.9.9: Welle A1 vom 23.09.2026 (#387, #418, #464). Fuenf neu gepraegte Variantentypen nach der Regel aus #367: type_372387 vrowe mit Breve unter lemma_7260, type_372388 vroewe unter lemma_7256, type_372389 froewen unter lemma_7250, type_372390 hawe unter lemma_2923, type_372391 hawe unter lemma_9644. type_117159 hawe unter lemma_2598 haben entfaellt, weil keines seiner 13 Tokens bei haben bleibt; ihn fuer houwe weiterzufuehren waere Umhaengen gewesen. Damit faellt die einzige Typ-ID mit mehr als einem Lemma weg (1 auf 0). Neuer Sense lemma_9644_sense_119194 (houwe als Schlag, die drei Konzepte aus lemma_2923_sense_4697). Formen 256.783 auf 256.787, Eintraege unveraendert 42.626. Laufzeit-Woerterbuch (first-wins, 234.250 Mappings beiderseits): 0 neu, 0 entfallen, 2 umgeklappt, froewen von lemma_7256 auf lemma_7250 (Korpus: 35 unter lemma_7260, 21 unter lemma_7256, 1 unter lemma_7250, also gegen Vorschrift B aus ADR-021) und hawe von lemma_2598 auf lemma_2923 (7 unter lemma_2923, 6 unter lemma_9644, B-konform). 1.9.10: #270 sense.commentRespName, der Anzeigename zu sense.commentResp, beim Build aus contributors.xml aufgeloest (ADR-018 Weg 2). contributors.xml wird dadurch gelesen, aber nicht als Sammlung indexiert; Lemma-Seite und Playground zeigen 'Kommentar von <Name>' (KZW 23.09.2026). Heute ein Kommentar, lemma_37818_sense_59052 Abba. 1.9.11: #357 lemma_3036 Ingliart bekommt einen zweiten Sense lemma_3036_sense_119195 fuer den Menschennamen (concept_21012000 Maennlich/Mann + concept_23112500 Personennamen, wie die Nachbarn Wimiligar, Rufter und Echerabant im Rennewart-Katalog). REN_242090_0 'ingligar von jelezie' zeigt mit @ana darauf, der Pferde-Sense behaelt die beiden Parzival-Belege. Entscheidung KZW 14.09.2026: kein eigenes Lemma, ein Name bezeichnet mehrere Entitaeten. Der Befund stand seit 1.8.1 offen. 1.9.12: #228 165 Lemmata geloescht, die mit der Entannotierung von Apparat und GWTK-Inhaltsangaben jeden Korpusbeleg verloren haben (neuhochdeutsche Woerter aus den Inhaltsangaben, Apparatsigel, das Ziffern-Lemma 46). lemma_66692 Mur bleibt trotz fehlender Belege, weil lemma_33528 Murouwe und lemma_66691 Murstat per etym auf ihn verweisen. variants.xml regeneriert: 275 Typen und 166 Eintraege entfallen, keiner kommt dazu, keiner wird umgehaengt. 1.9.13: #237 VTC-Editionsnachweis aus Zotero: Josef Jirecek als Mitherausgeber von FRB III, 'IV' statt 'Iv'. Nur dieses Werk; die uebrigen Aenderungen eines Online-Syncs sind bewusst nicht uebernommen. 1.9.14: #237 AA-3, Werkeintrag work_WLK (Wenzelslegende Karls IV., ostmitteldeutsche Fassung) ohne Gattung und ohne Editionsnachweis; der Nachweis kommt per Zotero-Sync (Signatur WLK), die Gattung nach KZW. 1.9.15: #270 definitionRespName und origin.respName, die Anzeigenamen zu definitionResp und origin.resp, wie 1.9.10 beim Build aus contributors.xml aufgeloest; Lemma-Seite und Playground zeigen 'Definition von <Name>' und 'Herkunftserklaerung von <Name>' (KZW 25.09.2026). Heute je eine Angabe, beide bei lemma_37818 Abba. 1.9.16: #228 Ziffern: lemma_69748 '36', lemma_69749 '42' und lemma_69750 '49' geloescht, ihr einziger Beleg war je eine Ziffer in WVV. lemma_53328 '1' bleibt mit 63 Belegen in NEIM (#453). variants.xml regeneriert: 16 Typen entfallen, keiner kommt dazu, keiner wird umgehaengt; der Sense von lemma_53328 verliert 13 verwaiste Typen in @ana. 1.9.17: #459 variants.xml regeneriert, ein Typ kommt dazu (type_372392 lenden unter lemma_3701), keiner entfaellt, keiner wird umgehaengt. 1.9.18: #378 ADR-021: variants[form] ist der erste Kandidat nach Vorschrift B (Tokens dieser Form unter dem Lemma, aus variants.xml @n) statt first-wins, und neu variantCandidates[form] = alle Kandidaten in dieser Reihenfolge, nur bei mehr als einem. #228: lemma.noCorpus (true, sonst fehlt das Feld) fuer Lemmata ohne Korpusbeleg, aus corpus-index.lemmaIndex. 1.9.19: #370 Punkt 2 variants.xml regeneriert, 461 Typen kommen dazu (type_372393 bis type_372853), keiner entfaellt, keiner wird umgehaengt; 25 Typen heben n an, 10 Formen schlagen nach Vorschrift B um. 1.9.20: #533 variants.xml regeneriert. type_273842 airt wandert von lemma_1324 ei zu lemma_4510 ort: das ist sanktioniertes Umhaengen nach 1.9.4, nicht der Fall aus #367, denn der Typ trug korpusweit genau zwei Tokens (n=2) und beide verlassen das Lemma, lemma_1324 verliert die Form airt also zu Recht ganz. Genau das war der Befund von #533. Fuer den zweiten Token (MR2, art) neu gepraegt type_372854 airt unter lemma_305, weil eine Nummer sonst an zwei Lemmata haenge und extract-variants.py sie bei 1:1 der kleineren Lemmanummer zuschlaege. 1.9.21: #28 die unbelegten Sense-Kopien lemma_38870_sense_60681 (engebrechen) und lemma_45182_sense_70456 (gebrechenhaft) mit dem Sprachkonzept concept_23123000 entfernt, der belegte JT-Sense lemma_1979_sense_31536 an gebrechen bleibt (Entscheidung KZW 10.09.2026). #228 Mur (lemma_66692) aus der etym von lemma_66691 Murstetten gestrichen, kein Ersatzziel (KZW 09.10.2026); Mur bleibt wegen lemma_33528. #216 variants.xml regeneriert (Tokenzahlen von type_64601 und type_154404). 1.9.22: #452 Zuschreibungsstatus fuer Werkautoren. works[].attributions fuehrt alle Zuschreibungen in Dokumentreihenfolge mit status (disputed, uncertain, rejected), role (adapter) und Beleg (note); works[].author/authorRef bleiben der erste Autor ohne Rolle und ohne verworfenen Status. persons[].works zaehlt alle Zuschreibungen ausser Bearbeiter und verworfenen, neu persons[].formerWorks und persons[].adaptedWorks nur wo vorhanden. Daten: BAX Anonym als Bearbeiter, CR Bligger von Steinach verworfen, RHB Anonym zuerst und Konrad umstritten, HOF/VDH ohne Anonym (KZW 08.10.2026). 1.9.23: #460 drei neue Variantentypen unter lemma_3102 (type_372855 bis type_372857), type_115155 entfaellt, n bei type_10674 und type_10676 kleiner. #461 neuer Sense lemma_1958_sense_119196 (concept_14011100). 1.9.24: #462 pos und posAll kommen aus dem Korpus (data/lemma-pos.json.gz): posAll nach absteigender Korpushaeufigkeit der Lexikonwortarten, Gleichstand und fehlender Beleg nach Lexikonreihenfolge, pos ist das erste Element (KZW 12.10.2026); Lemmata mit nur einer Lexikonwortart bleiben unveraendert. 1.9.25: #486 Editionsnachweis-Kette. Zotero-Online-Sync nach dem Wechsel auf die Title-Case-Funktion von #171 F37: 187 Titelelemente in 171 Werken bekommen ihre Grossschreibung zurueck ([lieder] zu [Lieder] 123 mal, Ii zu II, N.f. zu N.F.), kein Grossbuchstabe faellt weg. FLG wird ueber den Zotero-Schluessel ATWPNQPS zugeordnet (KZW 12.10.2026), FR3 bleibt bis zur Korrektur von MVWV5QYG auf dem Stand von 115c3a01f. 1.9.26: #554 93 Kommentare (type="comment", resp contrib_003) aus dem Glossar Kochbuchforschung in lexicon.xml.
         'lemmata': lemmata,
         'persons': persons,
         'works': works,
@@ -952,6 +1156,7 @@ def build_index():
         'genres': genres,
         'names': names,
         'variants': variants,
+        'variantCandidates': variant_candidates,
         'maps': performance_maps  # NEW: Pre-built performance Maps
     }
 

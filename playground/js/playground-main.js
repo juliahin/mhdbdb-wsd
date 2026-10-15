@@ -3,6 +3,7 @@
  * Now using modular UI components instead of monolithic ui-helpers.js
  */
 
+import { updateScopeNotice } from './ui/tei/corpus-scope.js';
 import { AuthorityFilesManager } from './data/authority-manager.js';
 import { TEIFilesManager } from './data/tei-manager.js';
 
@@ -28,6 +29,7 @@ import { HorsesExplorer } from './ui/tei/horses-explorer.js';
 // Import utilities for global exposure (needed for testing)
 import { TextNormalizer } from '../../assets/js/lib/text-normalizer.js';
 import { SearchPatterns } from './ui/search/SearchHelpers.js';
+import { authorLineOfText } from '../../assets/js/lib/attributions.js';
 
 class MHDBDBPlayground {
     constructor() {
@@ -41,7 +43,8 @@ class MHDBDBPlayground {
             concepts: [],
             genres: [],
             names: [],
-            variants: []
+            variants: [],
+            variantCandidates: {}
         };
         
         // Hier stand bis #325 ein this.teiData mit fünf Feldern (files,
@@ -145,16 +148,17 @@ class MHDBDBPlayground {
 
         // Load authority files from pre-built index (UPDATED)
         await this.loadAuthorityIndex();
-
-        // NEW: Auto-load corpus on startup
-        await this.autoLoadCorpus();
-
         this.updateUI();
 
-        // NEW: Wire up hash router and dispatch any initial hash from the URL.
-        // Done after data loading so that handlers can rely on populated state.
+        // #535: Der Router startet nach dem Authority-Index, nicht erst nach
+        // dem Korpus-Index (rund 40 MB gz). Register, naming und horses
+        // rendern damit sofort; Routen, die den Korpus brauchen, warten im
+        // Router auf corpusReady (CORPUS_ROUTES in router.js).
+        this.corpusLoaded = false;
+        this.corpusReady = this.autoLoadCorpus().then(() => { this.corpusLoaded = true; });
         initRouter();
         dispatchFromHash();
+        await this.corpusReady;
     }
 
     async loadAuthorityIndex() {
@@ -179,6 +183,7 @@ class MHDBDBPlayground {
             this.authorityData.genres = authorityIndex.genres || [];
             this.authorityData.names = authorityIndex.names || [];
             this.authorityData.variants = authorityIndex.variants || {};
+            this.authorityData.variantCandidates = authorityIndex.variantCandidates || {};
 
             // Load pre-built performance Maps (if available)
             if (authorityIndex.maps) {
@@ -299,7 +304,9 @@ class MHDBDBPlayground {
             label.className = 'file-item';
             label.dataset.textId = text.id;
             label.dataset.title = text.title.toLowerCase();
-            label.dataset.author = (text.author || '').toLowerCase();
+            // Alle Zuschreibungen des Werks (#452), damit "konrad" auch RHB findet
+            const authorLine = authorLineOfText(text, this.authorityData.works);
+            label.dataset.author = authorLine.toLowerCase();
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -316,7 +323,7 @@ class MHDBDBPlayground {
 
             const meta = document.createElement('span');
             meta.className = 'file-meta';
-            const author = text.author || 'Unbekannt';
+            const author = authorLine || 'Unbekannt';
             const wordCount = text.wordCount ? text.wordCount.toLocaleString() : '0';
             meta.textContent = `${text.id} • ${author} • ${wordCount} Wörter`;
 
@@ -374,6 +381,7 @@ class MHDBDBPlayground {
         // (#204). Diese Methode ist der gemeinsame Durchgang aller vier Wege:
         // Einzel-Haekchen, Alle, Keine, Nur diese.
         this.updateFilterMismatchNote();
+        updateScopeNotice();
     }
 
     /**
@@ -495,6 +503,7 @@ class MHDBDBPlayground {
 
             // #204: Der Hinweis haengt am Filter, nicht am Ergebnis
             this.updateFilterMismatchNote();
+            updateScopeNotice();
         });
 
         // Clear filter button
@@ -569,13 +578,13 @@ class MHDBDBPlayground {
      * Erste Runde (KZW am 2026-09-08): „Es steht sonst zu viel auf einmal da.
      * Zumal die experimentellen Forschungsdaten ja erweitert werden auch
      * noch." Damals wurden genau die beiden Abschnitte aus ihren Screenshots
-     * zuklappbar, die elf Analysewerkzeuge blieben als ein Block stehen.
+     * zuklappbar, die Analysewerkzeuge blieben als ein Block stehen.
      *
      * Zweite Runde (KZW am 2026-09-11, nach der Bewertung vom 10.09.): die
-     * elf Werkzeuge sind auf zwei Bloecke aufgeteilt, und die Grenze ist nicht
-     * Wichtigkeit, sondern der Ausgangspunkt der Frage. Sechs Werkzeuge
-     * beginnen mit einem Wort oder Begriff („Korpusanalysen"), fuenf mit einem
-     * Text oder einer Autor*in („Weitere Korpusanalysen"). Die Register heissen
+     * Werkzeuge sind auf zwei Bloecke aufgeteilt, und die Grenze ist nicht
+     * Wichtigkeit, sondern der Ausgangspunkt der Frage. Die einen
+     * beginnen mit einem Wort oder Begriff („Korpusanalysen"), die anderen mit
+     * einem Text oder einer Autor*in („Weitere Korpusanalysen"). Die Register heissen
      * jetzt „Register & Indizes (Authority Files)" und stehen offen, weil sie
      * fuer die fachwissenschaftliche Nutzung der vertraute Einstieg sind.
      *

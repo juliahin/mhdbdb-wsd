@@ -15,8 +15,15 @@ import {
   formatMetadata,
 } from "../search/SearchHelpers.js";
 import { TextNormalizer } from "../../../../assets/js/lib/text-normalizer.js";
+import { findByIdInput, withIdHit } from "../../../../assets/js/lib/authority-id-input.js";
 
 import { displayResults } from "../core/ui-helpers.js";
+import { ADAPTER_LABEL, STATUS_LABEL, personIdOf } from "../../../../assets/js/lib/attributions.js";
+
+/** Komma-String der Werk-IDs einer Person (works, formerWorks, adaptedWorks) als Liste. */
+function splitWorkIds(value) {
+  return value ? value.split(",").map((id) => id.trim()).filter(Boolean) : [];
+}
 
 // Self-contained per module (DESIGN.md §Escaping-Konvention). generateResultItem
 // inserts the subtitle raw, because meta/title carry markup (GND links).
@@ -146,10 +153,13 @@ export class PersonExplorer {
     // #307: alternative name forms search alongside the preferred one. Each form
     // is tested on its own instead of joining them into one haystack, so a term
     // cannot match across the boundary between two forms.
-    const matches = this.authorityData.persons.filter(
-      (person) =>
-        personNameMatches(person.preferredName, searchTerm) ||
-        findAlternativeMatch(person, searchTerm) !== null
+    const matches = withIdHit(
+      findByIdInput(this.authorityData.persons, "person", searchTerm), // #545
+      this.authorityData.persons.filter(
+        (person) =>
+          personNameMatches(person.preferredName, searchTerm) ||
+          findAlternativeMatch(person, searchTerm) !== null
+      )
     );
 
     const result = handleSearchResults(searchTerm, matches, {
@@ -164,7 +174,9 @@ export class PersonExplorer {
 
     const resultHTML = result.matches
       .map((author) => {
-        const workCount = author.works ? author.works.split(",").length : 0;
+        const workCount = splitWorkIds(author.works).length;
+        const adaptedCount = splitWorkIds(author.adaptedWorks).length;
+        const formerCount = splitWorkIds(author.formerWorks).length;
         const altHint = findAlternativeMatch(author, searchTerm);
 
         return generateResultItem({
@@ -179,11 +191,13 @@ export class PersonExplorer {
               ? `Wikidata: <a href="https://www.wikidata.org/wiki/${author.wikidata}" target="_blank" rel="noopener" class="underline hover:text-brand-900">${author.wikidata}</a>`
               : null,
             workCount > 0 ? `${workCount} Werke` : null,
+            adaptedCount > 0 ? `${adaptedCount} als ${ADAPTER_LABEL}` : null,
+            formerCount > 0 ? `${formerCount} frühere Zuschreibung${formerCount > 1 ? "en" : ""}` : null,
           ]),
           title: author.preferredName,
           subtitle: altHint ? `auch: ${escapeHtml(altHint)}` : "",
           buttons:
-            workCount > 0
+            workCount + adaptedCount + formerCount > 0
               ? [
                   {
                     text: "Werke anzeigen",
@@ -204,16 +218,30 @@ export class PersonExplorer {
   showWorksByAuthor(authorId, authorName) {
     toggleDetails(`works-${authorId}`, () => {
       const author = this.authorityData.persons.find((p) => p.id === authorId);
-      if (!author || !author.works) return null;
+      if (!author) return null;
 
-      const workIds = author.works.split(",").map((id) => id.trim());
-      const authorWorks = workIds
-        .map((workId) => this.authorityData.works.find((w) => w.id === workId))
-        .filter(Boolean);
+      const worksOf = (idList) =>
+        splitWorkIds(idList)
+          .map((workId) => this.authorityData.works.find((w) => w.id === workId))
+          .filter(Boolean);
+      const authorWorks = worksOf(author.works);
+      // #452: Bearbeitungen und verworfene Zuschreibungen stehen getrennt, nie
+      // unter den Werken, die die Person verfasst hat.
+      const adaptedWorks = worksOf(author.adaptedWorks);
+      const formerWorks = worksOf(author.formerWorks);
 
-      if (authorWorks.length === 0) return null;
+      if (authorWorks.length + adaptedWorks.length + formerWorks.length === 0) return null;
 
-      const worksHTML = authorWorks
+      // Status dieser Person im Werk ("umstritten"), falls sie einen trägt
+      const statusSuffix = (work) => {
+        const mine = (work.attributions || []).find(
+          (a) => personIdOf(a.ref) === authorId && !a.role
+        );
+        const label = mine && STATUS_LABEL[mine.status];
+        return label ? ` (${label})` : "";
+      };
+
+      const renderWorks = (works, suffixOf = () => "") => works
         .slice(0, 20)
         .map((work) => {
           // #135: Werk-Titel als Deep-Link in die Lesesuche, sofern eine Sigle
@@ -229,20 +257,33 @@ export class PersonExplorer {
             : `<strong>${work.title}</strong>`;
           return `
                 <div style="margin-bottom: 3px; font-size: 0.85rem;">
-                    • ${titleHTML}${sigle ? ` (${sigle})` : ""}
+                    • ${titleHTML}${sigle ? ` (${sigle})` : ""}${suffixOf(work)}
                 </div>
             `;
         })
         .join("");
 
-      return `
-                <div style="font-weight: 500; margin-bottom: 8px; color: #667eea;">
-                    ${authorWorks.length} Werke von "${authorName}"${
-        authorWorks.length > 20 ? " (erste 20)" : ""
-      }:
-                </div>
-                ${worksHTML}
-            `;
+      const heading = (text) => `
+                <div style="font-weight: 500; margin: 8px 0; color: #667eea;">${text}</div>`;
+
+      let html = "";
+      if (authorWorks.length > 0) {
+        html += heading(
+          `${authorWorks.length} Werke von "${authorName}"${
+            authorWorks.length > 20 ? " (erste 20)" : ""
+          }:`
+        );
+        html += renderWorks(authorWorks, statusSuffix);
+      }
+      if (adaptedWorks.length > 0) {
+        html += heading(`Als ${ADAPTER_LABEL} (${adaptedWorks.length}):`);
+        html += renderWorks(adaptedWorks);
+      }
+      if (formerWorks.length > 0) {
+        html += heading(`Frühere Zuschreibungen (${formerWorks.length}):`);
+        html += renderWorks(formerWorks, () => ` (${STATUS_LABEL.rejected})`);
+      }
+      return html;
     });
   }
 }

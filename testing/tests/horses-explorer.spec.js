@@ -5,7 +5,7 @@
  * Ereignisfilter, Pflicht-Attribution und der Deep-Link in die Leseansicht.
  *
  * Datengrundlage ist data/horses-index.json.gz aus Luise Boreks CC0-Datensatz
- * (hdl:tudatalib/3695). Die Quelle ist statisch und per sha256 im Index
+ * (hdl:tudatalib/3695.2). Die Quelle ist statisch und per sha256 im Index
  * festgehalten, anders als beim Naming-Index gibt es keinen woechentlichen
  * Rebuild. Exakte Zahlen sind hier deshalb ein legitimer Lock: 13 Pferde,
  * 346 Belege, davon 120 zu Gringuljete.
@@ -20,9 +20,15 @@ import { test, expect } from '@playwright/test';
 test.describe('Arthurische Pferde (#193)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`/playground/#horses`);
-    // dispatchFromHash() laeuft erst nach Corpus-Load; danach laedt das Modul
-    // seinen eigenen Index lazy (fetch+pako, 11 KB)
+    // dispatchFromHash() laeuft seit #535 nach dem Authority-Index, nicht
+    // erst nach dem Korpus-Index; danach laedt das Modul seinen eigenen Index
+    // lazy (fetch+pako, 11 KB)
     await page.waitForSelector('#hxHorseSelect', { state: 'visible', timeout: 60000 });
+    // Erst nach dem Korpus handeln: ungzip, JSON.parse und das IndexedDB-
+    // Schreiben des Korpus-Index blockieren den Hauptthread sekundenlang am
+    // Stueck; faellt eine Aktion hinein, reisst die 5-s-Frist danach (bis 7 s
+    // gemessen, obwohl das Element schon im DOM stand; 13.10.2026).
+    await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
   });
 
   async function selectGringuljete(page) {
@@ -91,6 +97,17 @@ test.describe('Arthurische Pferde (#193)', () => {
     // und traegt den Hinweis, dass die Zaehlung abweicht
     const zelle = page.locator('#resultsContainer tbody tr', { hasText: 'Pz. 339,24' }).first();
     await expect(zelle.locator('[title*="abweichend"]')).toBeVisible();
+  });
+
+  test('Boreks <state> erscheint als Zustand am Beleg', async ({ page }) => {
+    // Bis 02.10.2026 stand <state> im Index, aber nirgends in der Ansicht;
+    // Luise Borek hat es in #193 bemerkt. Puzzat traegt drei: Wh. 82,9
+    // 'sere wunt', 84,21 'wunden', 88,22 'tot'.
+    await page.selectOption('#hxHorseSelect', 'Puzzat');
+    await page.waitForSelector('#resultsContainer table', { state: 'visible', timeout: 5000 });
+    const zeile = page.locator('#resultsContainer tbody tr', { hasText: 'Wh. 82,9' });
+    await expect(zeile).toContainText('Zustand: sere wunt');
+    await expect(page.locator('#resultsContainer tbody tr', { hasText: 'Zustand:' })).toHaveCount(3);
   });
 
   test('verseId springt im Reader auf den richtigen Vers', async ({ page }) => {

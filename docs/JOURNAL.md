@@ -4,6 +4,304 @@ Chronological log of development decisions, dead ends, and savepoints. Not a cha
 
 ---
 
+## 2026-10-13: #93, Bilder der Textreihentypologie nachgezogen, PR #555 rebased
+
+KZW hat die drei offenen Bildfragen aus #93 über Christian beantwortet: Logos, Startbild und Screenshots dürfen übernommen werden. Alle elf Dateien liegen jetzt unter `textreihen/img/` (Startbild als JPEG in der 1024-px-Fassung, die Logos einmal auf der Startseite statt im Fuß jeder Seite). PR #555 stand vier Tage offen, ohne dass jemand etwas sagte, und war inzwischen `CONFLICTING`; nach dem Rebase lagen die Konflikte im umbenannten Reviewer-Memory (`fable-reviewer/` zu `reviewer/`, #593) und in den beiden Journalen.
+
+**Was über den Einzelfall hinausgilt:** Die Frage in #93 nannte zu Punkt 3 die "Reinmar-Tabelle", die schon übernommen war; die drei Screenshots zeigen die MHDBDB-Oberfläche. Ein Fehler in einer Frage an einen Menschen wandert in jede Nachricht, die aus ihr abgeschrieben wird (hier in den Entwurf einer Signal-Nachricht an KZW).
+
+**Rote Zeilen:** Eine, Nr. 120 (Punkt 3 aus dem Kommentar abgeschrieben statt an README und Zweig geprüft).
+
+---
+
+## 2026-10-10 (Spur D, #564 D3): langsamste Tests schneller, ohne Abdeckung zu verlieren
+
+**Was:** `main-site`, `lemma-page` und `results-table` laufen im warmen Context (#488), zwei Tests in `main-site` bleiben kalt. In `multi-lemma-export` gibt es die große Suche (minne + herze, 66 Dateien im Versmodus) nur noch einmal auf einer gemeinsamen Seite (Fehlerfall, CSV, XLSX aus dem Zwischenspeicher der Suche); Nähe- und Dokumentfall laufen auf kleinen Suchen. Feste Wartezeiten in `main-site` und `reading-view` sind Ereignissen gewichen.
+
+**Messung** (voller `npm test`, Port 8087, `--workers=2`, 492 Tests, beide Läufe grün): Summe der Testdauern 2347 s auf 2062 s, Wanduhr 1205 s auf 1058 s. Je Spec (Summe der Dauern, vorher/nachher): multi-lemma-export 170,4/58,5 s, results-table 124,5/56,5 s, main-site 99,1/47,6 s, lemma-page 99,2/36,3 s, reading-view 95,8/94,1 s. Die Zeit eines `beforeAll` steckt in keinem `duration`; bei multi-lemma-export kommen rund 6 s (Schätzung, nicht gemessen) hinzu.
+
+**Was über den Einzelfall hinausgeht:**
+- `waitForLoadState('networkidle')` kehrt sofort zurück, wenn die Seite den Zustand einmal erreicht hatte (gemessen 1 ms bei vier offenen Anfragen). Als Ersatz für eine feste Frist taugt es nicht; der Test zählt jetzt offene `/tei/`-Anfragen. Mutationsprobe (Guard `abgebrochen` entfernt) macht ihn rot an der Endprüfung.
+- Im warmen Context bleiben Tabs, die ein Test öffnet, bis zum Workerende offen; `warm-page.js` schließt übrige Seiten jetzt im Teardown.
+- Ein Hook läuft mit dem Projekt-Timeout, nicht mit dem des Testblocks.
+- Nicht angefasst, aber die nächsten Kandidaten: `attribution-status` (104,8 s), `proximity-and-resolution` (83,7 s), `search-with-corpus`, `korpus-url-zustand`, `position-parity`.
+
+**Review:** Opus, zwei Runden. Runde 1: networkidle wirkungslos, Tab-Leck, Regeltexte zu weit, Zahlen im Kommentar; alles behoben. Runde 2: kein A-Befund, ein überholter Kommentar (behoben), eine Zahl im Auftrag aus einem anderen Lauf (korrigiert). Reviewer-Memory dafür destilliert (eigener Commit).
+
+**Rote Zeilen:** Keine. Nummern 150 bis 154 weiter unverbraucht.
+
+---
+
+## 2026-10-10 (Spur D, #564 D2): `run-tests.js` druckt die Dauer je Spec-Datei
+
+**Was:** Vor der VERDICT-Zeile stehen jetzt Summe der Testdauern (alle Versuche), Wanduhr, tatsächliche Workerzahl und die zehn langsamsten Spec-Dateien. Kein Gate; Verdikt und Exit-Code sind unverändert, die VERDICT-Zeile bleibt die letzte Zeile (Abweichung vom Kickoff-Wortlaut „nach der VERDICT-Zeile“, G1 des Laufplans).
+
+**Was über den Einzelfall hinausgeht:** `config.workers` im Playwright-Report ist das konfigurierte Maximum (hier 6), die tatsächliche Zahl steht in `config.metadata.actualWorkers`; bei einer Datei und `fullyParallel: false` läuft ein Worker. Mein Teillauf mit zwei Dateien und `--workers=2` hat den Unterschied zufällig verdeckt, der Review fand ihn. Wer vorher und nachher je Spec „bei gleicher Workerzahl“ vergleicht, braucht die tatsächliche.
+
+**Verifikation:** Gegengerechnet mit einer unabhängigen Zählung über `report.json`: Teillauf (2 Dateien, 109 s Summe) und der Volllauf-Report von D1 (492 Tests, 51 Dateien, Summe 2.346 s, Wanduhr 1.213 s mit 2 Workern) ergeben dieselben Summen und dieselbe Top-10. Zwei Teilläufe auf Port 8087 (2 Dateien mit `--workers=2`, eine Datei ohne), beide grün. Kein voller `npm test` für dieses Paket: geändert ist nur die Ausgabe vor dem Verdikt, den Volllauf-Zweig lässt der Diff unberührt; D3 fährt ohnehin Volllauf. Review auf Opus, eine Runde (2 B-Befunde, 1 C-Befund, behoben).
+
+**Rote Zeilen:** Keine. Nummern 150 bis 154 weiter unverbraucht.
+
+---
+
+## 2026-10-10 (Spur D, #564 D1): Playground-Suche beschleunigt, Such-Benchmark mit Budget aus dem Runner
+
+**Was:** `authority-manager.js` rechnet Kleinform, normalisierte Form und ID-Zeile einmal je Lemma-Array vor (`getLemmaTables`), prüft die Varianten einmal je Objekt auf Leere (`hasVariants`) und verengt den Autocomplete-Scan auf die Treffer des vorigen Tastendrucks. Dazu `scripts/audit/benchmark-search.mjs` mit `search-budget.json` und eigenem Workflow `search-benchmark.yml`; PR #570. Messwerte vorher und nachher stehen im PR-Body (Node gegen die echten Indexe, 24 Fälle).
+
+### Was über den Einzelfall hinausgeht
+
+**(a) Ein Zeitgate muss die Reihenfolge seiner Fälle kennen.** Dieselbe Playground-Auflösung (`schwertkampf`) brauchte allein 1,0 ms und im selben Prozess nach den Hauptseitenfällen 2,8 bis 3,6 ms, in jedem Block. Der Review fand es, weil das Gate auf seinem eigenen Commit viermal von vier Läufen rot war. Das Minimum mehrerer Blockmediane filtert Last von außen, nicht diesen Zustand; geholfen hat nur ein eigener Prozess je Oberfläche. Die Ursache ist nicht geklärt (Müllsammlung und frische Instanz sind es laut Review nicht).
+
+**(b) Ein Budget gehört dem Ort, an dem es gilt.** Auf dem Entwicklungsrechner schwankten dieselben unveränderten Hauptseitenfälle zwischen 0,6 und 1,8 ms, je nach Last der Nachbarsessions. Auf dem Runner lagen drei Läufe bei 0,345 / 0,672 / 0,655 ms für `main:exakt`: der Runner streut um den Faktor 2 zwischen Läufen, aber nicht mit der Last des Entwicklungsrechners. Das Budget stammt daher aus dem größten von drei Runner-Werten mal 1,5 (Entscheidung G2 der Koordination).
+
+**(c) Eine Untergrenze ist eine Aussage über den kleinsten Rückfall, den das Gate noch fängt.** Mit 1 ms blieb ein `Object.keys(variantCandidates)` je Aufruf (rund 0,3 ms) bei Messwerten von 0,001 ms grün; G4 senkte sie auf 0,1 ms. Die Mutationsprobe mit genau dieser Zeile in `searchLemmaByOrthography` trifft nur die acht schnellen `pg:`-Fälle (gemessen 0,29 bis 0,32 ms gegen 0,001 bis 0,002 ms vorher, Budget 0,1 ms); `pg:praefix` und `pg:unbekannt` bleiben grün. Lokal war das Gate auf einem belasteten Rechner auch ohne Mutation 5 von 24 rot, gegen die Runner-Budgets.
+
+**(d) `NaN > Budget` ist falsch, also grün.** `--reps 0` ergab 24 Zeilen `NaN ms ok`. Ungültige Zahlen enden jetzt mit Exit 2.
+
+### Verifikation
+
+Voller `npm test` (Port 8087, `--workers=2`) auf `1c82b9a5f` (vor dem Rebase lokal `f55a133e0`): `VERDICT: VOLLLAUF GRUEN (492 Tests, 51 Dateien)`; danach änderten sich nur Benchmark-Skript, Budgetdatei, Docs und Agent-Memory. Ergebnisgleichheit gegen `origin/main`: 4.530 Schlüssel byte-gleich. Review auf Opus (Fable-Limit), Runde 1 (5 Befunde, 2 der Klasse A und 3 der Klasse B, alle nachgemessen und behoben) und Runde 2 (Untergrenze nach G4, Ursachenformulierung, stderr).
+
+### Rote Zeilen
+
+Keine. Ein Heredoc-Versuch für eine Scratch-Datei wurde vom Hook gesperrt, bevor er etwas schrieb; das ist abgewendet, nicht gezählt. Die Nummern 150 bis 154 sind unverbraucht.
+
+### Was zurück an Christian geht
+
+#564 bleibt offen (D2, D3 und die Pakete der Spur E). Nichts zu entscheiden.
+
+---
+
+## 2026-10-10 (Lauf C, Zahlen): #451 Katalogzahlen raus, #414 seltenes Gate für die Verszählungs- und div-Zahlen
+
+Zwei Pakete derselben Spur. **C1 (#451, Schritte 1 bis 3):** `doc-count-audit.py` zählt nur noch, was ein XPath zählt (Datenzahlen), die Katalogzahlen (Tests, Tools, Spalten) sind aus Gate und Prosa heraus; PR #561, Squash `641d0ed2b`. **C2 (#414):** `scripts/audit/check-measured-counts.py` hält 28 wörtliche Sätze in vier Dateien (Reader-Kommentare, `korpus.css`, `docs/FEATURES.md`, `docs/TEI-MODEL.md`) gegen die Messung der beiden Zählskripte, die dafür ein maschinenlesbares `measure()` bekamen (gedruckte Ausgabe unverändert, per Diff geprüft). Läuft im eigenen Workflow `measured-counts.yml` (wöchentlich, bei `tei/` und an den gelesenen Dateien), weil ein Lauf rund vier Minuten braucht (263 s, ein Lauf) gegen fünf Sekunden für den Audit.
+
+### Was über den Einzelfall hinausgilt
+
+**(a) Eine Fundstelle ist erst gegatet, wenn ihr Satz in `CLAIMS` steht.** Runde 1 fand drei Zwillingsstellen derselben Zahlen, die ich übersehen hatte (Reader "159 der qualifizierenden divs", FEATURES "discards 1,169", `korpus.css` "1.061 der 1.097"). Der Weg dorthin war der Suchlauf über den ganzen Bestand nach den Zahlen, nicht nach dem Satz.
+
+**(b) Zahlenrand zählt.** Der erste Entwurf suchte den Satz als Teilstring: "500" hätte in "1.500" getroffen. Jetzt hat der Satz an Ziffernrändern eine Grenze, und die Diagnose "Zahl weicht ab" vs. "Anker nicht gefunden" kommt aus einem zweiten Muster mit beliebigen Zahlen.
+
+**(c) Zwei Allaussagen im Text sind Messbedingungen geworden** ("in keinem dieser Fälle", "no further types"); sie bleiben rot, bis jemand den Eintrag ändert.
+
+**(d) Bewusst nicht gegatet:** TEI-MODEL.md:352 (1,406 undatiert, gleich dem Tabellenwert), NLA "38 untypisierte" (Einzeltext, das Gate misst ihn nicht), "WH +466" (historische Diff-Aussage). Ebenso die Datumsstempel neben den Zahlen ("Stand 2026-09-08"): das Gate hält die Zahl, nicht das Datum.
+
+**(e) Lemma-Gesamtzahlen in Kommentaren** sind durch "rund 44.000" ersetzt oder samt Nenner gestrichen (drei Stellen in Runde 1). `lemma-explorer.js:74` trägt weiter "16.713 der rund 44.000"; der Reviewer vermerkt es als Randnotiz. G8 (der Kommentar bei ~874) ist nicht angefasst, er wartet auf B1.
+
+### Messung
+
+Mutationsproben mit gemessenen Werten, jeweils zurückgestellt und die Rücknahme geprüft: JS-Kommentar, FEATURES, TEI-MODEL, CSS, Randfall 159 → 1159, umformulierter Satz → "Anker nicht gefunden". Voller `npm test` (Port 8086, `--workers=2`): `VERDICT: VOLLLAUF GRUEN (473 Tests, 50 Dateien)`. Zwei Review-Runden auf Opus statt Fable (Fable-Limit, G4 in `docs/playbooks/kickoffs/2026-10-10-lauf.md`); Runde 2 ohne Befund.
+
+### Rote Zeilen
+
+Keine. Zwei eigene Zahlen (32 statt 34 Zeilen, 716 statt 715) habe ich vor dem Weiterreichen nachgemessen und in der Folgemeldung richtiggestellt; getragen hat keine etwas, die PR-Texte tragen die gemessenen Werte. Die Nummern 140 bis 144 sind unverbraucht.
+
+### Was zurück an Christian geht
+
+#451 bleibt offen, bis die Koordination Schritt 4 (die Zeile in `CLAUDE.md`) schreibt. #414 bleibt nach dem Merge offen (Bezug, kein Schließen).
+
+## 2026-10-09 (Spur 452): Zuschreibungsstatus für Werkautoren, Corpus Index 4.2.31, Authority Index 1.9.22
+
+Ein Vorgang (#452, im Zusammenhang mit #444) auf dem Zweig `claude/452-zuschreibung`: Autoren eines Werks tragen einen Status (ohne Zusatz anerkannt, `disputed`, `uncertain`, `rejected`) oder die Rolle `adapter`. Betroffen sind fünf Sigel: CR (Bligger von Steinach verworfen), BAX (Anonym als Bearbeiter), HOF und VDH (Stricker allein), RHB (Konrad von Würzburg umstritten, zählt als Autor). Daten, Schema, beide Indizes, API, Leseansicht, Suche und Playground tragen die Unterscheidung; die Anzeigetexte stammen von KZW („umstritten“, „unsicher zugeschrieben“, „verworfen“, „Bearbeiter“, Rubrik „Frühere Zuschreibungen“). Gemessen am Zweigkopf `75e5caf10`: `npm test` mit `VERDICT: VOLLLAUF GRUEN (473 Tests, 50 Dateien)`; fünf Review-Runden des Reviewers, die letzte ohne Befund.
+
+### Was über den Einzelfall hinausgilt
+
+**(a) „Zählender Autor“ ist ein eigener Begriff, kein Feld.** Zählend heißt: weder Bearbeiter noch verworfen. Das Kompatibilitätsfeld `author` bleibt der erste zählende Autor, alle Zuschreibungen stehen in `works[].attributions`. Jede Stelle, die einen Autor als Zeichenkette liest, sieht deshalb nur diesen ersten. Im Korpus betrifft das nach der Messung des Reviewers genau RHB und work_325; die Auswertung der Analysewerkzeuge (Gruppierung, Statistik) liest weiter nur den ersten Namen, eine eigene Autorenzeile im Korpusindex gehört nicht in diesen PR.
+
+**(b) Die Fehlerklasse „Autor als Zeichenkette“ hat drei Runden gebraucht.** Gefunden wurde sie nacheinander in `app.js` (Runde 2), in Dateiliste und Reim-Textfilter des Playgrounds (Runde 3) und im Tippfilter des Textvergleichs (Runde 4). Erst der Sweep in Runde 5 ging vom Eingabefeld rückwärts statt von `text.author` vorwärts und fand nichts mehr. Ein Suchlauf über `text.author` übersieht zusammengesetzte Strings (Beschriftungen, `data-`Attribute); das Eingabefeld ist der bessere Ausgangspunkt.
+
+**(c) Vor dem Push alle Schritte aus `data-integrity.yml` lokal laufen lassen, nicht die Liste aus dem Gedächtnis.** `check-author-refs.py` fehlte in meiner Liste und war in der CI rot; nach dem PR ging es mit `check-doc-inventories.py` (neue Spec und neues Lib-Modul fehlten in den Inventaren) noch einmal so. Wer eine Spec oder ein Modul anlegt, zieht `docs/DEVELOPMENT.md` und `assets/js/lib/README.md` im selben Zug nach. Behoben mit einer Ausnahme für verworfene Zuschreibungen (`0e5f1ab6e`), die die Koordination wegen des Freezes auf diesem Skript freigegeben hat.
+
+**(d) Die Werkesuche zählt Autorfelder fest auf** (`attributionNames(work)[1]`, `[2]`). Bei höchstens zwei zählenden Autoren je Werk (gemessen vom Reviewer) reicht das; bekommt ein Werk einen dritten, findet niemand den, und kein Test merkt es.
+
+### Rote Zeilen
+
+Vier, Nr. 115 bis 118: zweimal die unvollständige Gate-Liste vor dem Push (115 `check-author-refs.py`, 118 `check-doc-inventories.py`, beide erst in der CI rot) und zwei Wiederholungen der Fehlerklasse aus (b), nachdem die Lehre schon im Reviewer-Memory stand.
+
+### Was zurück an Christian geht
+
+Die Abnahme geht nach dem Merge an @wachauer allein, mit der Frage nach HOF und VDH (Stricker allein, der Anonym-Rest in `particDesc` bleibt mit veralteten Werklisten stehen) und der Frage, ob die Analysewerkzeuge alle Zuschreibungen zeigen sollen. Die Reviews liefen ausnahmsweise auf Opus statt Fable (Fable-Limit, Freigabe 09.10.); der erste volle Testlauf lief ohne gesetzten `MHDBDB_TEST_PORT`, also vermutlich auf dem Standardport 8080 statt auf dem zugeteilten 8083; die Koordination hat deshalb einen zweiten verlangt, der mit `MHDBDB_TEST_PORT=8083` auf dem Code-Endstand grün lief (473 Tests, 50 Dateien).
+
+---
+
+## 2026-10-09 (Spur 93): #93, Umzug der Textreihentypologie auf `textreihen/`
+
+Die alte Website `marketext.at/Textreihentypologie` liegt als Unterseite unter `textreihen/`: elf Seiten (Start, About, How To, Visualization & Browser, Use cases, Outreach, Bibliography mit Literatursuche, Download, "Gattungs-Explorer in MHDBDB Next", die zwei Beiträge), erreichbar über einen Footer-Link und eine Kachel auf `hilfe.html`, ohne Menüpunkt. Datenbasis ist der unveränderte SKOS-Stand `86c233f08` (12.06.2023, CC BY 4.0 laut README des Quellrepos), nicht `genres.xml`; der SKOS-Browser zeigt die 618 Kategorien mit 894 `broader`-Aussagen, und eine Kategorie mit mehreren direkten Eltern steht unter jedem (193 von 618, "Beschwörung" unter zwölf). Die Bibliografie (190 Zotero-Einträge) ist statisch gebaut. Zwei Review-Runden, Volllauf grün (466 Tests). Offen: KZW hat nicht beantwortet, ob Logos, Startbild und drei Screenshots übernommen werden dürfen (Kommentar vom 09.10. in #93); der Merge wartet darauf.
+
+### Was über den Einzelfall hinausgilt
+
+**(a) Die Lizenz stand im README, nicht in einer Lizenzdatei.** GitHub zeigte `license: null`, und der Kommentar vom 10.08. in #93 schloss daraus "keine Lizenz". Wer die Rechte eines Repos prüft, liest die README und die Datensätze an anderer Stelle (hier die Hamburger DOI-Einträge, ebenfalls CC BY 4.0), nicht nur das Lizenzfeld.
+
+**(b) Eine Zählung am Dateitext ist keine Zählung der Aussagen.** 881 Zeilen mit `skos:broader`, 894 Aussagen (siehe Fehlerjournal 109). Dasselbe bei Zotero: 205 Items über `/items`, 190 Bibliografieeinträge über `/items/top`; das Skript muss sagen, welchen Endpunkt es holt.
+
+**(c) Die Beispiele einer Anleitung tragen Alternativbezeichnungen, nicht die Vorzugsbezeichnung.** "Dietrichsepik" im How To ist `altLabel` von "Dietrichsepos". Der Browser findet beides; ein Test, der den Titel einer Beispiel-ID aus der Anleitung erwartet, scheitert sonst.
+
+**(d) Ein gieriger Regex im Bauskript hat 190 von 190 Einträgen ein `</div>` mitgegeben, unsichtbar, weil `<main>` kein offenes `<div>` hatte** (Runde 1). Ein Test, der nur Zahlen zählt, merkt das nicht; die Spec prüft jetzt die Zeile.
+
+**(e) Die Mutationsprobe der Linkspec traf beim ersten Versuch beide eingebauten Fehler** (kaputter Anker, fehlendes Bild); damit ist belegt, dass sie Anker und Bildquellen wirklich prüft und nicht nur Seiten abruft.
+
+**(f) Die alte Website hatte zwei eigene Fehler**, die beim Umzug nicht mitgewandert sind: einen internen Link auf `dokument.html#MHDBDB` (Seite existiert nicht) und den Platzhalter "#DOI (wird nachgeliefert)". Beides steht in `textreihen/README.md`.
+
+### Rote Zeilen
+
+Eine, Nr. 109: die Zeilenzahl der Turtle-Datei als Zahl der Aussagen gemeldet.
+
+### Was zurück an Christian geht
+
+Nichts, was er entscheiden müsste. Für KZW (und zuerst Julia, einfache Abnahme) nach dem Merge: die drei Bildgruppen (Antwort auf den Kommentar in #93 steht aus), und die Prüfschritte der Unterseite. In `CLAUDE.md` fehlt `textreihen/` im Verzeichnisbaum (Inbox an die Koordination).
+
+---
+
+## 2026-10-04 (Koordination): Lauf vom 02.10. abgeschlossen, Parzival-Bücher und „Strophe“ auf `main`
+
+Vier Vorgänge (#378, #370 Punkt 2, #358, #228) in drei Spuren, neun PRs gemergt; die Tabelle mit den Commits steht im Laufplan unter „Abnahme“. Die lokale Koordination hat am 03.10. an ihrem Fable-Limit an eine Cloud-Session übergeben, die #523 (A3) und #519 (B2) gemergt hat. Damit trägt der Parzival die 16 Bücher im TEI und zeigt sie als „Buch N“, die Dreißiger in PZ und WH heißen „Strophe N“. Bei KZW liegen jetzt die Prüfseite zu #370, der Mur-Vorschlag in #228 und die Abnahmen von #378, #228 und #358. Der `fable-reviewer` lief in der Cloud-Session ohne Limit; die Übergabe hat also getragen.
+
+### Lehren
+
+**(a) Vor jedem Merge die Dateiliste gegen die Zuteilung halten.** Beim ersten Merge (#517) vergessen, `assets/js/app.js` ging ungemeldet mit; ab da Teil der Merge-Prüfung, bei #523 und #519 gegen §3 gehalten.
+
+**(b) „Von Fable geprüft“ heißt: Kopf der Runde gleich Kopf des Merges, sonst den Diff dazwischen nennen.** Bei #523 lag zwischen Runde 1 und dem Merge-Kopf ein eingemergter `main`-Stand; erst die Trennung zwischen eigenem Diff und Merge machte sichtbar, dass sich nur das Einspielskript geändert hatte.
+
+**(c) Der Review-Bot läuft auf Entwürfen nicht** (`claude-code-review.yml` Z. 22). Ein Entwurf mit grüner CI hat deshalb keinen Bot-Kommentar, nicht einen ohne Befund.
+
+**(d) Ein Volllauf in einer Cloud-Session braucht zwei Handgriffe, die das Repo nicht mitbringt:** Playwright 1.55.1 erwartet den Chromium-Build 1193, der Container hat 1194, und `python3.13` hat kein `lxml`. Beides führt zu roten Tests, die nichts über den Code sagen (beim ersten Lauf 401 von 427). Wer einen Volllauf in der Cloud zählt, prüft vorher Browser-Build und `lxml`.
+
+### Rote Zeilen
+
+Eine, Nr. 85: eine Testursache als belegt in einen Merge-Commit und einen Issue-Kommentar geschrieben, gestützt auf eine Probe, die etwas anderes gemessen hatte.
+
+### Was zurück an Christian geht
+
+Die drei nicht blockierenden Test- und Kommentarlücken aus der Abnahme sind am selben Tag in #524 geschlossen. Dabei ist die Lehre aus dem B2-Eintrag vom 02.10. („ein Test, der ein Wort aus den Daten erwartet, muss dem Datenstand folgen“) zurückgenommen worden: sie galt nur, solange A3 noch ausstand. Seit WH die Kennzeichnung trägt, erwartet der Test fest „Strophe 77“, denn ein Test, der dem Datenstand folgt, meldet auch dessen Rückschritt nicht. Die Ursache des einen roten Wörterbuchnetz-Tests auf #523 bleibt ungeklärt.
+
+## 2026-10-02 (Spur B, B2): #358, Dreißiger heißen "Strophe", Parzival-Bücher "Buch N"
+
+KZW hat am 11.09. entschieden: im Parzival heißen die Bücher "Buch I" usw., die Dreißiger "Strophe" statt "Kapitel". Umgesetzt in der Leseansicht: `<div type="chapter" subtype="dreissiger">` wird als "Strophe N" beschriftet, `<milestone unit="book" n="II"/>` als Überschrift "Buch II" an seiner Stelle, mit eigener CSS-Regel `.section-head.book-heading` (Ä3). `type` bleibt `chapter`, damit Verszählungs-Rücksetzung und Deep-Links über `verseId` unberührt greifen. Die Kodierung selbst baut Spur A (A3); B2 wird erst danach gemergt, bis dahin prüft die Spec mit einem Testfragment.
+
+### Was über den Einzelfall hinausgilt
+
+**Die Messung "welche Stellen sagen Kapitel" hat genau eine Stelle ergeben.** Grep über JS, HTML und CSS: nur `divLabels` in `tei-text-reader.js` beschriftet `chapter`; kein KWIC, kein Playground, kein Export. Die übrigen HTML-Treffer dokumentieren das TEI-Enum. Das ist der Grund, warum die Umbenennung ein Einzeiler im Reader ist und kein Querschnitt.
+
+**Ein Test, der ein Wort aus den Daten erwartet, muss dem Datenstand folgen.** `reading-view.spec.js` erwartete für WH fest "Kapitel 77" und wäre mit A3 rot geworden. Er liest jetzt `subtype` aus dem TEI und erwartet entsprechend "Strophe 77" oder "Kapitel 77", damit er vor und nach der Umkodierung dasselbe prüft.
+
+**Die Position eines milestone ist eine Darstellungsfrage, nicht nur eine Kodierungsfrage.** Steht ein Buchmilestone laut Laufplan als erstes Kind eines Dreißiger-div, rendert er unter dem Label "Strophe N". Das hat die Fable-Runde 1 als Randbemerkung gefunden; behoben ist es im Reader (der milestone wird vor das Label gezogen, `state.hoisted` verhindert die Doppelung). Der Hoist hängt an `firstElementChild`: ein künftiges `<pb>` vor dem milestone würde ihn wieder unter das Label setzen, heute 0 Fälle (PZ 827 div, WH 467, alle mit `<l>` als erstem Kind).
+
+### Rote Zeilen
+
+Eine, Nr. 96: eine erfundene Stellenangabe ("Buch V bei 4,1") in einem Code-Kommentar.
+
+### Was zurück an Christian geht
+
+Nichts aus B2. Offen bis A3 und C2: die tatsächlichen Buchgrenzen (Laufplan nennt drei, II 58,27, III 116,5, IV 179,13, als ungeprüft); der PZ-Test in `dreissiger-buecher.spec.js` ist bis A3 übersprungen und wird danach entfernt (0 skipped auf dem Merge-Stand).
+
+## 2026-10-02: #358 TEI, Dreißiger-subtype und Buchgrenzen des Parzival (Spur A3 des Laufs vom 02.10.)
+
+PZ und WH tragen die Gliederung jetzt im Markup: `subtype="dreissiger"` an allen 827 (PZ) und 467 (WH) `div type="chapter"`, dazu in PZ 16 `<milestone unit="book" n="I"/>` bis `XVI`. Grenzen aus `ingest/parzival-buecher/grenzen.csv` (C2), Einspielskript `scripts/ingest/parzival-358/pz-wh-struktur.py`, Schema um beides erweitert (`div.subtype` geschlossen, kein GAP; `milestone` nur als Kind von `div`).
+
+### Was über den Einzelfall hinausgilt
+
+**Gemessen vor dem Schreiben, nicht angenommen.** In beiden Dateien ist jedes `div` ein `chapter` ohne weiteres Attribut außer `@n` (lückenlos 1..N), die Kinder sind nur `<l>`, es gibt kein `lg` und kein `milestone`; deshalb durfte `subtype` an jedes `div`. Alle 16 Grenzen sind `<l>` direkt unter dem chapter-div; II, III und IV liegen mitten im Dreißiger (58,27, 116,5, 179,13), die anderen 13 am Divanfang.
+
+**„Dreißiger" ist die Gliederungseinheit, keine Verszahl.** Von 827 PZ-Dreißigern haben 826 genau 30 Verse, Nr. 257 hat 32 (HUGO-Verszählung). Von 467 in WH haben 465 30 Verse, Nr. 57 hat 28, Nr. 467 (unvollendetes Ende) 24. Die Koordination hat die Abweichungen als Editionsbefund akzeptiert, der Schema-Kommentar sagt es ausdrücklich.
+
+**Kein Index-Bump.** Beide Indexe sind nach der Änderung auf sauberem Baum byte-identisch neu gebaut worden (`git status --short` leer). Der Korpus-Index liest `<w>` und `<l>` in Dokumentordnung (`build-corpus-index.py`, iterwalk), keines der beiden ändert sich; Index 4.2.25 ist deshalb zurückgegeben. Konsumenten gemessen: der Reader gibt für `milestone` mit `@unit != "verse"` nichts aus (Anzeige liegt bei B2, #519), KWIC, Reimwörterbuch und Positionszählung laufen über `w` und `lb`/`pb`, `build-api.py` liest keine TEI, kein Code vergleicht das Attributset eines `div`.
+
+**Ein Docstring versprach einen Haltepunkt, den es nicht gab.** Das Skript nannte als Haltepunkt eine nicht eindeutig zu findende `<l>`-Startzeile; die Prüfung am Ergebnis verglich aber nur `div/@n` und `l/@n`, nicht die `erste_wort_id`. Gefunden hat es der Fable-Reviewer per Mutationsprobe (ein zweites `<l n="27">` in div 58 lief durch). Behoben: die Ergebnisprüfung hält das erste `<w>` der Zeile nach dem `milestone` gegen die Wort-ID der CSV, und die Probe auf einer Kopie des Basisstands bricht jetzt ab; derselbe Lauf auf der Basis reproduziert beide Dateien byte-identisch. Die Daten waren nie betroffen (0 doppelte `l/@n` in einem `div`).
+
+**Das Schema bleibt eng, die Tabellenzeile sagt es jetzt.** `docs/DATA-MODEL.md` (Zeile zum Kapitelapparat, #66) schreibt `<milestone unit="chapter" n="N"/>` inline im Textfluss vor; das Schema erlaubt `milestone` nur als Kind von `div` mit `@unit="book"`. Im Korpus `tei/` gibt es heute außer den 16 neuen keine `milestone` (`unit="chapter"` steht nur im WZB-Ingest-Skript `scripts/ingest/wzb/wzb-structural-fix.py`), ein künftiger Ingest nach der Zeile fiele aber im Stage-2-Gate durch. Entschieden von der Koordination (G5 des Laufplans): die Werteliste wird nicht auf Vorrat geöffnet, weil keine Daten es verlangen; die Zeile trägt einen Satz, dass der erste Ingest, der `unit="chapter"` im Textfluss braucht, `schema/mhdbdb.rnc` in einem eigenen PR erweitert. #66 selbst bleibt unberührt.
+
+### Rote Zeilen
+
+Keine.
+
+### Was zurück an Christian geht
+
+Nichts aus A3.
+
+## 2026-10-02: #370 Punkt 2 eingespielt, Authority-Index 1.9.19 (Spur A2 des Laufs vom 02.10.)
+
+Die in C1 entschiedenen WZB-Paare sind in `tei/WZB.tei.xml` eingespielt: 486 Paare (461 ANLEGEN, 25 VERKNUEPFEN), 4.794 Tokens. Die 461 ANLEGEN-Paare tragen 4.765 Tokens und haben neue Typen `type_372393` bis `type_372853` bekommen; die 25 VERKNUEPFEN-Paare tragen 29 Tokens auf bestehenden Typen. Nicht angefasst: PRUEFSEITE (29 Paare, 338 Tokens) und NICHT_ANLEGEN (43 Paare, 260 Tokens). Einspielskript `scripts/ingest/wzb/wzb-corresp-punkt2.py` mit Batch-Prüfung vor dem Schreiben, Provenienz je Token in `ingest/wzb/370-corresp/punkt2-zuordnung.csv`.
+
+### Was über den Einzelfall hinausgilt
+
+**Die Ratsche stimmt, die zwei Zahlen waren zwei Mengen.** 5.273 ist die CSV-Zählung der Hauptliste (4.675 ANLEGEN + 598 PRUEFSEITE/NICHT_ANLEGEN), 5.392 der Stand der WZB: 5.273 + 10 Tokens, die seit der CSV-Zählung in 8 bereits entschiedenen Paaren dazukamen (`ŏ`-Schreibungen, `et`, u. a.), + 109 aus dem Nachtrag. Entschieden wird je Paar, deshalb gehen alle heutigen Tokens eines entschiedenen Paars mit. Baseline neu 600 (WZB 598, EKL 2).
+
+**Korpus-Index byte-identisch, Authority-Index nicht.** `build-corpus-index.py` liest `@corresp` nur am `msIdentifier`, nie am `<w>`; auch nach der Änderung der projectDesc-Quoten bleibt `data/corpus-index.json.gz` unverändert (Kommando: Build auf sauberem Baum, danach `git status --short` leer). Der Authority-Index trägt dagegen 302 neue Formen (233.962 auf 234.264) und 12 neue Kandidatenlisten (4.961 auf 4.973), also 1.9.19.
+
+**Zehn Zuordnungen schlagen um, und das ist Vorschrift B, kein Umhängen.** Je ein neu geprägter Typ hebt die Tokenzahl einer Form unter dem neuen Lemma über die des bisherigen Spitzenreiters (boeze, geheisse, gepflaget, kochen, reisse, steigen, tir, vassen, verrens, weicz). Kein bestehender Typ wurde umgehängt (`extract-variants`: lemma assignment changed 0, form text changed 0). Quittung im Flip-Gate für 1.9.18 auf 1.9.19, genau 10; die Tabelle mit Tokens je Kandidat steht im PR.
+
+**Was ein Gate nicht deckt, deckt auch eine Gegenzählung nicht.** Der Fable-Reviewer fand drei Nachbarzahlen, die der Lifecycle nicht gatet: die Kandidatenlisten- und Mehrfachzahlen in CONTRACTS und DATA-MODEL (4.961/4.979 auf 4.973/4.991), die Mengenangabe in der Zeile darunter, und die `@corresp`-Quote in der projectDesc der WZB (91,8 % auf 95,0 % der 149.165 `<w>`, 96,2 % auf 99,6 % der 142.360 lemmatisierten). Alle vor dem Push behoben; die Quote ist die Folge der eigentlichen Änderung und stand im Diff nicht.
+
+### Rote Zeilen
+
+Keine.
+
+### Was zurück an Christian geht
+
+Die 10 Umklappungen (Tabelle im PR) zur Abnahme durch KZW; `tir` und `kochen` sind die Grenzfälle. Offen bleiben die 29 PRUEFSEITE-Paare auf der Prüfseite.
+
+## 2026-10-02: #378 gebaut, Authority-Index 1.9.18 (Spur A1 des Laufs vom 02.10.)
+
+ADR-021 ist umgesetzt: Eine mehrdeutige normalisierte Schreibform liefert in Stufe 2 alle Kandidaten, geordnet nach Vorschrift B (Korpus-Tokens dieser Form unter dem Lemma), statt first-wins. Dazu das Gate gegen kippende Zuordnungen und, für Spur B (#228), das Feld `lemma.noCorpus`. Gemessen und gebaut wie folgt.
+
+**Frequenzquelle `form/@n` in `variants.xml`** (`extract-variants.py` schreibt es, Schema Pflichtattribut). Preis: jede Korpusänderung an einem `@corresp`-tragenden `<w>` ändert nun auch `variants.xml`, eine Zeile je Typ (drei mutierte Tokens gaben `token count n changed: 3`). Die Erstregeneration änderte alle 256.497 Zeilen und sonst nichts. **Indexformat additiv:** `variants[form]` bleibt eine ID, jetzt der erste Kandidat; `variantCandidates[form]` nur bei mehreren (4.961 Formen). Index 1.9.18, 2.063 bestehende Zuordnungen klappen gegen 1.9.17 um.
+
+### Was über den Einzelfall hinausgilt
+
+**Die Ticketzahlen haben gehalten, die Zählweise ist jetzt festgelegt.** Heute 4.979 umstrittene Formen (Ticket 31.08.: 4.972), nach Vorschrift B folgt first-wins bei 2.065 nicht dem häufigsten (2.064), davon 1.330 erreichbar (1.328). Gezählt wird nach Tokenform, nicht nach Variantentyp; die `@n`-Reihenfolge stimmt bei allen 4.979 Formen mit einer direkt am Korpus gezählten Vorschrift B überein, und der Fable-Reviewer hat dasselbe unabhängig gemessen.
+
+**Hängende Lemma-Verweise (#115) sind Kandidaten ohne Gegenstück.** Die erste Fassung ließ 24 Kandidatenlisten Lemma-IDs ohne Eintrag in `lexicon.xml` tragen; `halap` und `chana` wären darauf umgeklappt. Gefunden hat es die neue Spec, bevor irgendetwas gepusht war. Seither scheiden solche Kandidaten aus, solange die Form ein bekanntes Lemma hat (4.979 mehrfach beanspruchte Formen, 4.961 mit Kandidatenliste, 2.063 statt 2.065 Umklappungen). Kopplung, die bleibt: Legt #115 später ein dort fehlendes Lemma an, kann die Zuordnung umklappen, und das Gate verlangt eine Quittung für einen Nebeneffekt eines Lexikon-Commits.
+
+**Das Gate quittiert genau ein Versionspaar mit genau einer Zahl.** `check-variants-flips.py` ist rot bei jeder umgeklappten Form, außer `scripts/audit/variants-flips-ack.json` nennt Von- und Nach-Version und die exakte Anzahl; beim nächsten Bump ist die Quittung von selbst wirkungslos. Mutationsproben: unverändert grün, Einzelform umgehängt rot, Invariante `variants[form] = variantCandidates[form][0]` verletzt rot, Quittung mit 2.064 statt 2.063 rot. Die `.gitignore` schließt `scripts/audit/*.json` aus, die Quittung ist wie die Baselines mit `git add -f` eingetragen.
+
+**`noCorpus` kommt aus dem Korpus-Index, nicht aus `variants.xml`.** Quelle (a) hätte 1.288 geliefert (drei Lemmata sind nur über Tokens ohne `@corresp` belegt), (b) trifft die 1.285 von Spur B. Der Authority-Build liest damit `data/corpus-index.json.gz` und bricht bei fehlender oder versionsfremder Datei ab; die CI-Reihenfolge (Korpus vor Authority) stimmte schon.
+
+**Die Beispieldatei war gegen das eigene neue Schema ungültig**, und kein Gate prüft die Beispiele; der Reviewer fand es, nicht ein Werkzeug. Korrigiert und mit lxml-RelaxNG validiert (True); `hilfe-schema.html` lädt die Datei und zeigt sie jetzt richtig.
+
+**Offen, bei Spur B:** Die Form-Chips auf der Lemmaseite und im Suchpanel invertieren `variants` und führen eine Form nur unter ihrem ersten Kandidaten, wie vorher unter first-wins.
+
+### Rote Zeilen
+
+Keine.
+
+### Was zurück an Christian geht
+
+Nichts aus A1. Für A2 steht die Prüfung der Ratsche in `corresp-coverage-baseline.json` aus (Spur C meldet heute 5.392 statt 5.273 Tokens ohne `@corresp`).
+
+## 2026-10-02 (Spur B, B1): #228, reine Wortbestandteile im Wörterbuch und auf der Lemmaseite
+
+KZW hat am 01.10. entschieden: die 273 Einträge ohne Korpusbeleg, die eine andere Etymologie als Bestandteil nennt, tragen in Wörterbuch und Lemmaseite „Als Wortbestandteil erfasst; kein eigenständiger Beleg im aktuellen Korpus.“; der Status wird abgeleitet, nicht gespeichert, kein `entry/@type`. Umgesetzt: eine gemeinsame Regel in `assets/js/lib/component-only.js` (`noCorpus === true` am Lemma und Nennung in `etymology[].lemmaRef` eines anderen Lemmas), im Wörterbuch die Kurzmarke „nur als Wortbestandteil“ mit dem vollen Satz als Tooltip, auf der Lemmaseite der volle Satz unter dem Titelblock, dazu Hilfetext und `component-only.spec.js`. Gemergt wird erst nach A1, weil `noCorpus` im Authority-Index 1.9.17 noch nicht steht.
+
+### Was über den Einzelfall hinausgilt
+
+**Die Ableitung brauchte ein Indexfeld, und das hat die erste Messung entschieden, nicht das Raten.** Die Bestandteilsverweise standen längst im Authority-Index (`etymology[].lemmaRef`, nur `seg type="component"`), die Belegzahl nicht; sie steht nur im 40-MB-Corpus-Index, den die Lemmaseite lädt und das Wörterbuch nicht laden darf. Gemessen am Index 1.9.17 / 4.2.24: 1.285 Einträge ohne Beleg, davon 273 als Bestandteil genannt, *Mur* dabei. Beide Zahlen aus #228 reproduzierten. Spur A baut `noCorpus: true` in den ersten Bump.
+
+**Eine Spec, die ein noch nicht gebautes Feld braucht, mockt den Index.** `component-only.spec.js` ersetzt `authority-index.json.gz` per Route durch eine Kopie mit `noCorpus` an drei Fällen: *Mur* (Hinweis), ein ungenanntes Lemma (keiner), *ouwe* (genannt, aber belegt: keiner). Sie läuft damit vor A1; der dritte Test bindet die Sichtbarkeit an das Feld im echten Index und kippt nach A1 nur, wenn *Mur* es nicht bekommt, dann wäre der A1-Build der Befund.
+
+**Die Kennzeichnung sagt nichts über die Zerlegung.** Das war KZWs Bedingung, und die Spec prüft es am Wortlaut (kein „geprüft“, „bestätigt“, „korrekt“, „richtig“). Dass Murstetten überhaupt auf den Fluss zurückgeht, ist offen (C3).
+
+### Rote Zeilen
+
+Eine, Nr. 95: einen Reviewerbefund mit derselben fehlerhaften Messung „bestätigt“, mit der er selbst entstanden war.
+
+### Was zurück an Christian geht
+
+Nichts aus B1. Offen für die Hilfe: `hilfe-korpussuche.html` Z. 445 f. nennt für Registereinträge nur Lemma und Wortart-Kürzel; die Marke steht stattdessen in `hilfe-daten.html`. Ein Halbsatz dort wäre nach A1 stimmiger, ist aber nicht blockierend.
+
+## 2026-10-01: Sechs PRs, und die CI ist um ein Viertel schneller, nicht um die Hälfte
+
+Gemergt: #508 (#485, Lindas Beschreibung der Figurenbezeichnungen), #509 (#459, sieben WZB-Tokens auf *lende*, Index 4.2.24 / 1.9.17), #510 (#495, Gattungen im TEI-Kopf gegen `works.xml`, neues Gate `check-header-genres.py`), #511 und #512 (Laufzeit), #513 (#485, Beispielformen *Paris* / *der künic* nach Lindas Freigabe). #459 geschlossen.
+
+**Laufzeit.** `validate-corpus.py` läuft auf `--jobs` Workern (#511), drei Kopf-Prüfungen lesen per `corpus_files.tei_header` nur den `teiHeader`, `check-authority-cross-refs.py` und `build-begriffshilfe.py` scannen parallel, `build-corpus-index.py` parst jede Datei einmal statt zweimal (#512); jede Ausgabe ist gegen den alten Stand byte-identisch oder bis auf die Worker-Zeile gleich gemessen. Lokal fällt die Validierung von 393 bis 608 s auf 64 bis 68 s. **In CI fällt der Job `validate` nur von 748 auf 545 s** (Validierungsschritt 329 → 216 s), weil der Runner vier Kerne hat. Der größte Einzelposten ist danach der Checkout.
+
+**Der Checkout ist kein Hebel, und das ist gemessen, nicht vermutet.** Je 8 Läufe von `data-integrity`, `no-cdn-check` und `file-size-check`: die Dauer springt in allen drei zwischen rund 80 s und 130 bis 160 s, auch bei `fetch-depth: 1`; davon gut 60 s Download, gut 20 s Auspacken. Alle drei Workflows brauchen die Dateiinhalte (`check-file-sizes.py` liest Größen aus `git ls-tree -l`, `doc-count-audit` zählt `tei/`). Deshalb keine Änderung, und aus demselben Grund kein Aufteilen von `validate` in parallele Jobs: jeder brächte seinen eigenen Checkout mit. gzip bleibt auf Stufe 9 (Entscheidung chsteiner): zehn Sekunden Build gegen einen größeren Download für alle Leser.
+
+**Was eine Suche nach weiteren Hebeln nebenbei gefunden hat, betrifft Nutzer und nicht die Suite:** der Playground lädt beim Start den Korpus-Index, bevor der Router läuft (`playground-main.js:147-156`), auch für Routen, die ihn nicht brauchen. Notiert in #488, nicht umgesetzt.
+
+**Audit-Skripte sind cwd-relativ.** Aus dem Hauptbaum gegen einen Worktree gestartet, messen sie den Hauptbaum; zweimal an diesem Tag hat das ein falsches Ergebnis geliefert, beide Male vor dem Push gefangen. Im Worktree heißt der Aufruf `env -C <worktree> python scripts/audit/...`.
+
+Antworten des Tages: @wachauer zu #228 (Mur bleibt vorerst, Zuordnung erst an Quellen prüfen; die 273 reinen Bestandteile werden aus Belegen und Bestandteilsverweisen abgeleitet gekennzeichnet, kein `entry/@type`), @lindabeutel zu #485. Labels entsprechend nachgezogen.
+
 ## 2026-09-22: Review-page examples for reuse
 
 KZW approved collecting the blank review pages via a separate branch and PR after consultation with Chris. `examples/review-pages/` preserves byte-identical copies of the local #364, #371 and #390/#115 pages. The overview in INDEX documents scope, snapshot dates, exports and differences from #443, and links the external wachauer/mhdbdb-kuratorik example at commit 296f4ff4cfb3a68b526397c46baef9a3ec9189ef. Existing generators and templates accompany the newer examples; generators continue to write working pages at the repository root, leaving the archived snapshots unchanged. Browser tests now address the archived copies. No submitted human decisions or corpus/authority edits are included. Validation: seven Chromium tests passed at the archive paths; the stat page rendered 95 cards without browser errors and exported valid JSON. Archive copies verified byte-identical.
@@ -867,3 +1165,179 @@ Keine.
 
 - #486: Schreiber und Gate für `listBibl`, die 171 Titel, FR1 und FLG nach Zotero (KZW), Doku an die Kettenentscheidung.
 - Offen in #237 bei KZW: Blaschka 1934 für WLK (Werkeintrag vorbereiten, Zotero-Felder vorgeben).
+
+## 2026-10-02 – #370 Punkt 2: Vorprüfung der offenen Paare (Spur C)
+
+484 WZB-Paare aus Schreibung und Lemma ohne `@corresp` sind am Kontext entschieden: ANLEGEN 412 von 484 Paaren (4.675 von 5.273 Tokens), NICHT_ANLEGEN 43 (260), PRUEFSEITE 29 (338), VERKNUEPFEN 0. Dazu 74 Paare (109 Tokens), die seit der Arbeitsliste vom 31.08. dazugekommen sind: ANLEGEN 49 (80), VERKNUEPFEN 25 (29). Die 29 Prüfseitenfälle stehen auf `ingest/wzb/370-corresp/pruefseite-370.html` nach #443. Ausgang: `entscheidungen.csv`, `entscheidungen-nachtrag.csv`, Belege in `evidenz.json`.
+
+### Was über den Einzelfall hinausgilt
+
+**Die Liste vom 31.08. und der Korpus waren nicht mehr dieselbe Menge.** Die 484 Paare tragen heute 5.283 Tokens ohne `@corresp`, nicht 5.273 (8 Paare mit mehr Belegen), und 25 der 74 Paare danach hatten ihren Typ unter dem Lemma schon: das sind Punkt-1-Fälle, kein Anlegen. Der erste Entwurf hatte sie auf ANLEGEN gesetzt, und `fable-reviewer` hat es in Runde 1 gefunden. Die Koordination hat dafür den Wert `VERKNUEPFEN` festgelegt. **Soll für Spur A ist „alle Tokens ohne `@corresp` je Paar", nicht die Zahl der Liste.**
+
+**Ein Sammellemma verdeckt Befunde.** 41 der 484 Paare stehen unter `lemma_2` abc, das KZW am 11.09. (#228) ausdrücklich als eigenes Thema abgetrennt hat: alle NICHT_ANLEGEN, Zielvorschläge für 18 davon in `abc-befunde.csv`. Außerhalb von abc stehen 7 Paare der meil-Familie (82 Tokens) unter `heiligen`, obwohl die Belege „beflecken" meinen (Lexer Bd. 1, Sp. 2077): als KI-Vorschlag auf der Prüfseite, nicht angewendet.
+
+### Rote Zeilen
+
+Eine, Eintrag 100: `cd` und zweimal ein Heredoc in Shell-Befehlen. Der Hook hat die Heredocs geblockt.
+
+### Was zurück an Christian geht
+
+- Die 29 Fälle der Prüfseite (KZW oder wen sie benennt), darunter die cs-Randglossen (6 Paare) und die gemischten Paare `wirft`, `lose`, `weiden`, `pilgereimen`.
+- Offen für die Koordination: ob Spur A die 25 VERKNUEPFEN-Paare wie Punkt 1 behandelt.
+
+## 2026-10-02 – #358: die 16 Buchgrenzen des Parzival (Spur C)
+
+Die Bücher fehlten im TEI komplett (Alan, #358); KZW hat am 11.09. die Benennung „Buch I" usw. entschieden. `ingest/parzival-buecher/grenzen.csv` bildet die 16 Buchanfänge nach Lachmann auf die erste Wort-ID in `PZ.tei.xml` ab: I 1,1; II 58,27; III 116,5; IV 179,13; V 224,1; VI 280,1; VII 338,1; VIII 398,1; IX 433,1; X 503,1; XI 553,1; XII 583,1; XIII 627,1; XIV 679,1; XV 734,1; XVI 787,1. Quellen: Bartsch (Deutsche Classiker des Mittelalters 9-11, 1875-77) und Martin (Kommentar, 1903), beide als OCR-Volltext von archive.org gelesen, nicht am Scan.
+
+### Was über den Einzelfall hinausgilt
+
+**Die Bücher II bis IV beginnen mitten im Dreißiger, die anderen 13 an einem Dreißigeranfang**, und die Zählung der Dreißiger in den Wort-IDs trägt die Abbildung ohne Umweg. **Zwei Stellen waren aus dem Gedächtnis oder dem Eindruck falsch:** XIII beginnt bei 627,1, nicht bei 643,1 (Bartsch und Martin einig), und VIII bei 398,1, nicht bei 399,1. Die zweite hat erst die Gegenprobe des Reviewers gefunden. **Ein Skript, das die Anfangswörter gegen die Datei prüft, aus der sie stammen, prüft nur die Wort-ID-Abbildung**, nicht die Grenze; die Quellenspalte sagt es jetzt.
+
+### Rote Zeilen
+
+Eine, Eintrag 101: VIII am Erzählerton statt am ersten Vers der Quelle festgemacht.
+
+### Was zurück an Christian geht
+
+Nichts aus diesem Paket. Spur A3 setzt die Milestones aus der gemergten Datei.
+
+## 2026-10-02 – #228: Mur bei Murstetten (Spur C)
+
+KZW hat am 25.09. gefragt, ob der Bestandteil `Mur` (`lemma_66692`, Gewässername) in Murstetten (`lemma_66691`) stimmt, und am 01.10. präzisiert. Die drei Belege (HZU2, 1339, 1392, 1396) meinen denselben Ort in Niederösterreich und sagen über die Herkunft des Namens nichts. Winter (Jb. LKNÖ 54/55, S. 349–361) gibt für das Bestimmungswort Schusters Deutung wieder (vermutlich slawischer Personenname); von der Mur ist bei ihm nicht die Rede. Vorschlag als Kommentar in #228: `Mur` aus der Etymologie von `lemma_66691` streichen, kein Ersatzziel, `lemma_66692` bleibt wegen `Mûrouwe`. Die Notiz liegt unter `ingest/mur-228/README.md`, geändert ist nichts in `authority-files/`.
+
+### Was über den Einzelfall hinausgilt
+
+**Eine Deutung aus zweiter Hand trägt ihren Weg mit.** Schuster habe ich nicht geöffnet, nur Winters Wiedergabe von 1990 gelesen. Der Satz mit den Mauer-Orten ist Winters eigener, und `fable-reviewer` hat es in Runde 1 gefunden, weil der erste Entwurf ihn Schuster zugeschrieben hatte. Nach dem Befund steht jede Deutung mit der Person, die sie sagt, und dem Weg, auf dem sie zu mir kam.
+
+### Rote Zeilen
+
+Keine.
+
+### Was zurück an Christian geht
+
+- Die Entscheidung über den Vorschlag liegt bei KZW (#228). Die zweite Hälfte ihrer Frage vom 25.09., die Deutung von Murau, ist in diesem Schritt nicht geprüft.
+
+## 2026-10-05 – Doku-Check nach 178 Commits (Scorecard)
+
+**Scorecard Doku-Check 2026-10-05** (Anlass: 178 Commits seit dem Check vom 11.09., 13 der 15 Docs angefasst). Gates alle grün (`doc-count-audit`, `check-doc-inventories`, `check-index-versions`, `check-release-version v1.1.0`, `check-no-cdn`, Em-Dash, `build-pages --check`). Drei Algorithmen gegen den Code deckungsgleich (§C.1.2 Lemma-Nummer als Eingabe, §H.1 Keyness, §C.2.3 Dokumentsuche), drei XPaths der Build Script XPath Reference exakt (Korpus-Titel per `itertext`, `persName[@type="alternative"]`, `biblStruct`). Flow der 13 geänderten Docs von drei Sonnet-Agenten vollständig gelesen; jeder übernommene Befund selbst gegengelesen oder nachgemessen. **14 falsche Sachaussagen und 12 Kleinigkeiten behoben, je Befund ein Commit**, darunter `npm test` mit „ask the user first" im Lifecycle, `tei_all.rng` als „gitignored", ein `lemmaRef`-Beispiel in falscher Form, „15" statt 7 `div`-Typen, `<cb>` ohne die WZB, „98 today" statt 35 fehlender Ingest-Lemma-IDs, „GAPs 1–11" bei einem Schema mit 1 bis 9, 11 und 12, die verrutschten Zeilenanker in CONTRACTS und DECISIONS (jetzt Funktionsnamen).
+
+**Was über den Einzelfall hinausgilt:** elf der 14 Sachfehler sind Zahlen und Zustandssätze, die kein Gate sieht, `doc-count-audit` deckt nur seine eigene Liste. Wo der Satz die Zahl nicht braucht, ist sie gestrichen oder datiert worden statt mitgezogen. **Ein Agentenbefund war zur Hälfte falsch:** „396 refs / 109 IDs" sah wie veraltet aus, stimmt aber, weil `check-authority-cross-refs.py --check` Lemma- und Sense-IDs zusammen zählt; veraltet war nur die „98 today"-Stelle daneben. Bewusst nicht angefasst: zwei Em-Dashes in Bestandstext und die Zahlen 4.991 und 4.979 in CONTRACTS §C, die aus zwei Zählwegen stammen (`variants.xml` gegen Korpuszählung); ihre Differenz von 12 ist nicht nachgemessen.
+
+**Nachgang am selben Tag: ungegatete Zahlen und Zustandssätze.** Inventur per Skript über die 14 stabilen Docs: 199 undatierte Zahlen in 120 Absätzen vorher, 194 nachher (Summe beider Läufe 524). Jeder Kandidat erst gegen `doc-count-audit` geprüft (Lexikon, Varianten, Module sind gegatet und blieben), dann gemessen. **Zehn Befunde, je ein Commit:** API-Dateizahl 2,742 an fünf Stellen gestrichen (gemessen 2,743, die neue ist `api/works/work_WLK.json` aus #496; Verweis jetzt auf die Zählung in `api/index.json`); „19×" an drei Stellen, eine Zahl, die schon bei ihrer Einführung (`cd4734fc8`) nicht zu den eigenen Werten passte, auf die ~15× aus ADR-001; drei statt zwei Suchmodi in ARCHITECTURE; IndexedDB-Fristen nach #314; „the lexicon grows" (es ist gesunken); Tokenstand in TEI-MODEL 4.1 auf heute; `hi/@rend`-Tabelle datiert; Breve-ADR mit dem Stand von #235 Punkt 3 (48 von 113 Tokens ohne `@lemmaRef`); #18 hieß „data migration"; **WZB hat keinen `<authority>`-Block**, obwohl TEI-MODEL zweimal „all 667" sagte (`git log -S contrib_003` auf der Datei: nie vorhanden).
+
+**Drei Zahlen sahen falsch aus und stimmten:** „263 of 567 concepts" (zählt je Sprache; 304 wären die Konzepte mit irgendeinem Alternativbegriff, eine andere Menge), „Eight of the eleven" (die 12 in derselben Datei zählt die Module samt Naming und Pferden) und „666 headers / 664 texts" in FEATURES. Wer sie „korrigiert" hätte, hätte die Doku falsch gemacht. Die Größenangaben „~40 MB" für 42.22 MB blieben stehen: Rundung, kein Fehler. Offen und nicht Sache der Doku: der fehlende `<authority>`-Block in WZB (Korpusänderung) und, ob ein offener Vorgang die 48 Breve-Tokens führt (gesucht nur über das Wort „breve", #492 ist es nicht).
+
+**Beides noch am selben Tag erledigt.** Der Breve-Rest steht in **#526** (190 Tokens: 134 o/u, 48 w/n, 8 Makron; acht Suchbegriffe über alle offenen Issues, kein Vorgang führte ihn). #235 war versehentlich zugegangen: der Merge-Commit `144fbbd3c` enthielt „Kein Closes: #235", und GitHub liest `Closes: #235` als Schließbefehl, die Verneinung davor nicht. Der `<authority>`-Block steht seit Branch `claude/wzb-authority-block` auch in WZB, aus PZ übernommen bis auf die Zeilenenden: WZB ist die einzige Datei in `tei/` mit CRLF im Blob (`.gitattributes` setzt `*.xml -text`, `core.autocrlf` greift dort nicht). Ein `grep -c $'\r$'` in Git Bash meldet für dieselbe Datei 0 CR; byte-genau gezählt sind es 235,999. Indexe und API nach Neubau byte-identisch, kein Bump.
+
+## 2026-10-10 – #451: das Gate zählt nur noch Bestand (Spur C, Paket C1)
+
+**Was geschehen ist.** `doc-count-audit.py` zählt seit diesem PR nur noch, was ein XPath ohne menschliche Definition liefert (Korpusdateien und Authority-Dateien). Weg sind die Playground-Katalogzahlen mit ihren drei Ausnahmemengen, der Zahlwort-Scan, die sieben `INTENTIONALLY_SILENT`-Einträge an Code-Keys und der Kommentarblock in `data-integrity.yml`, der über die Playground-Grenze sprach. Das Skript hat 1002 Zeilen vorher und 715 nachher (`wc -l`), der Body von #451 nennt 954 und trifft keinen der beiden Stände.
+
+**Belegt, nicht behauptet.** Mutationsprobe in zwei Hälften: eine falsche Korpuszahl in `README.md` (667 auf 666) fängt das neue Gate weiter, eine falsche Werkzeugzahl in `playground/readme.md` (11 auf 10) fing nur das alte, das neue bleibt grün. Beide Dateien zurückgesetzt, `git status` leer. Das ist der Preis der Entscheidung, in einer Zeile.
+
+**Prosa.** Katalogzahlen raus aus `hilfe-playground.html`, `README.md`, `playground/readme.md` (auch die Checklistenzeile F3 mit „12 analysis tools“, die das Häkchen-Skip des alten Gates deckte), `docs/DESIGN.md`, `docs/FEATURES.md`, `docs/ARCHITECTURE.md` und zwei Kommentaren in `playground/js/`; Zeilennummern in Skriptkommentaren sind Namen geworden. Ersetzt wurde durch Streichen, nirgends durch eine Allaussage. Die Review-Runden fanden Restzahlen und eine Allaussage, die ich selbst eingebaut hatte („Each analysis tool has ...“). Runde 2 fand zwei weitere in `docs/FEATURES.md`, die Runde 1 und meine Suche übersehen hatten: „six controlled vocabularies“ und „the other ten“. Meine Suche lief über die Nomen (Werkzeuge, Module, Entry Points); die Runde fand sie über Zahlwörter ohne Katalognomen. Wer eine Streichung dieser Art prüft, sucht beide Wege.
+
+**Review auf Opus.** Der `fable-reviewer` lief wegen des Fable-Limits mit `model: opus` (G4 im Laufplan vom 10.10.). Er musste nach 40 Zügen zum Berichten aufgefordert werden.
+
+**Offen, bei der Koordination:** Ä1 (Zeile in `CLAUDE.md`), Ä2 (Kommentar in `no-cdn-check.yml`); und `docs/playbooks/MASTERPLAN-AUTONOME-CAREARBEIT-SESSION.md` Zeile 83 nennt das Erweitern des Gates um code-abgeleitete Counts „umgesetzt 2026-07-14“, was seit #451 zurückgenommen ist.
+
+## 2026-10-10 – #460 und #461: Verbformen von jagât, Säugetierknochen bei gebeine (Spur A, Lauf vom 10.10.)
+
+**Was geschehen ist.** #460: 145 der 185 Tokens von `lemma_3103` jagât (NOM) sind Verbformen (`jaget` 109, `jeit` 35, `jait` 1, 51 Dateien) und stehen jetzt auf `lemma_3102` jagen (`VRB`, ohne `@ana`, drei neu geprägte Variantentypen `type_372855` bis `type_372857`). Die 35 Substantive und die 5 unklaren Belege (`AXU_18452_5`, `WVW_6542_4`, `WH_28126_1`, `JT_48611000_4`, `JT_43134000_4`) sind unberührt; die Einstufung ist ein Leseurteil am Kontext, die Schreibung trennt die Klassen nicht (`jaget` und `jeit` tragen auch 14 echte Substantive). #461: `lemma_1958` gebeine bekommt `lemma_1958_sense_119196` mit `concept_14011100`, 21 Säugetier-Belege in 15 Dateien tragen ihn als `@ana`. Korpus-Index 4.2.32, Authority-Index 1.9.23. Arbeitslisten unter `ingest/pos-disambig/460-jagat/` und `ingest/review/461-gebeine/`, Skripte `apply-460-jagat.py` und `apply-461-gebeine.py` prüfen den Ist-Zustand vor dem Schreiben.
+
+**Belegt.** Beide Tabellen gegen `tei/` nachgelesen (185 von 185, 207 von 207). Die variants-Änderung ist genau die erwartete: 3 Typen dazu, 1 entfällt (`type_115155`), `n` bei `type_10674` 122 auf 13 und bei `type_10676` 39 auf 4. Das Flip-Gate meldet drei gewollte Umklappungen (`jaget`, `jeit`, `jait` von `lemma_3103` auf `lemma_3102`), die Quittung deckt genau sie. Alle CI-Schritte aus den Workflow-Dateien lokal gefahren, die Frische-Schritte reproduzieren byte-gleich; `npm test` auf Port 8084: VOLLLAUF GRUEN, 473 Tests in 50 Dateien. Review auf Opus (Fable am Limit): Runde 1 auf einem größeren Stand, Runde 2 auf dem Stand dieses PR ohne Befund am Diff. Chrome war nicht verbunden; ersatzweise ein headless-Playwright-Wegwerfskript gegen Port 8084 (nicht im Repo): die Lemmaseite von `gebeine` zeigt „Bedeutung 3: Körper/Gliedmaßen von Säugetieren“; die Suche nach `jagen` meldet 1.551 Treffer (1.406 vorher plus 145), die nach `jaget` 1.591 mit `jagen` vor `jagât` (1.551 plus die 40 verbliebenen). Das ist kein hart neu geladener Chrome-Lauf, sondern ein frischer Browserkontext. **Laufzeitwirkung:** keine Änderung an Build, Gate oder Test; die Build-Skripte ändern nur ihre Versionsliterale, der Volltest lief wie zuvor durch.
+
+### Was über den Einzelfall hinausgilt
+
+**Ein Feld, das aus zerlegten Tags zählt, erzeugt Gleichstände dort, wo es am meisten zu unterscheiden gäbe.** Aus #462 (pos und posAll aus dem Korpus): ein Token `NEG VRB` zählt für beide Teile, bei Negations- und Partikelverben stehen sie deshalb exakt gleichauf, und die Reihenfolge im Lexikon entschied. Die Vorab-Messung hatte 6.859 Gleichstände genannt und sie als unproblematisch geführt; mein erster Entwurf schrieb „die häufigste Wortart“ in die Doku, was bei Gleichstand nicht stimmt. Der Reviewer hat es gefunden (156 Lemmata, die nur durch einen Gleichstand ein neues pos bekamen). Die Entscheidung „das Inhaltswort gewinnt“ hob die Zahl der abweichenden pos von 1.537 auf 5.653 (beide von 9.987 mehrwertigen Lemmata mit Korpusbeleg), weil sie auch die 4.116 Gleichstände erfasste, bei denen der Lexikon-Erstwert gleichauf vorn lag. Daraufhin hat chsteiner #462 angehalten und KZW gefragt; der Stand liegt auf `claude/462-lemma-pos`, die Zerlegung in `ingest/pos-disambig/462-pos/README.md` auf diesem Zweig. **Vor der Regel die Grundmenge zerlegen, nicht nur die Fälle, auf die sie zielt.**
+
+**Ein Test, der eine Reihenfolge festschreibt, die ein Ingest kippen kann.** `cooccurrence-ranking.spec.js` erwartete für `salve` `posAll` `['NOM','VRB']`; im Korpus steht NOM 15 gegen VRB 16. Der Test gehört zu A3 und ist mit ihm herausgenommen.
+
+### Rote Zeilen
+
+Keine.
+
+### Was zurück an Christian geht
+
+- **#460, an KZW:** die 5 unklaren Belege (Kontext in `belege.tsv`), Frage nach dem Merge.
+- **#461, an KZW:** die 6 Tierbelege ohne Säugetier (Hahn, Fisch, Phönix, drei Drachen), die 9 offenen Belege und `concept_21104000` an `lemma_1958_sense_3004`, Frage nach dem Merge.
+- **#462, an KZW:** gestellt (Gleichstand durch zerlegte Tags, dazu 22 Lemmata, deren häufigster Korpus-Tag im Lexikon nicht geführt wird); #462 steht auf `auto:blocked`, `wait:kzw`.
+- Die Chrome-Prüfung in einem echten Browser steht aus (Erweiterung nicht verbunden), ersetzt durch das Playwright-Skript oben.
+
+## 2026-10-10 – #463: Stufe 1 ohne Korpusbeleg hält Stufe 2 nicht mehr ab (Spur lauf-b-suche)
+
+Entschieden war nur Stufe 2: Bringt Stufe 1 keinen belegten Treffer (Eintrag in `corpusIndex.lemmaIndex`), wird die Variantenliste mitgefragt, die Stufe-1-Treffer bleiben hinten in der Liste. Haupt- und Playground-Auflösung benutzen dasselbe Prädikat (`lemma-resolve.js`), die Schleifen bleiben je Seite. Gemessen (Authority 1.9.22, Korpus 4.2.31): 1.285 von 43.710 Lemmata ohne Beleg, `lemmaIndex` hat für die belegten genau einen Eintrag, 0 leere. Zeilen: `rosse` 0 auf 184, `gat` 0 auf 525, `hanc` 0 auf 0, `roz` 1 auf 1 (`rôz` ist belegt), `lenden` 20 auf 20.
+
+**Review auf Opus (G4), zwei Runden.** Runde 1 fand, dass der erste Entwurf Stufe 3 mitfragte, obwohl der Entscheidungstext sie nicht nennt (`Cordoba` löste per Präfix auf `cor` auf); Stufe 3 läuft wieder nur bei leerer Stufe 1 und 2. Runde 2 fand, dass der Playground unbelegte Homographen ungerankt zurückgab (`vlâder` gegen `vlader`); die Gleichstandsregel gilt jetzt auch ohne Beleg.
+
+**Folge, die bleibt:** Wer die Schreibform eines unbelegten Lemmas als Suchbegriff weitergibt (Wortbestandteil-Suche, "Im Korpus suchen"), landet beim belegten Lemma der Variante. Von 1.285 unbelegten Lemmata trifft das bei 573 (je Lemma gezählt). Eine ID-Übergabe nach CONTRACTS §C.1.1 würde es schließen und ist nicht Teil dieses Zuschnitts.
+
+**Runde 3** (Opus, nur das Delta) ohne Befund. **Runden 4 und 5** gehören dem CI-Bot-Kommentar zum PR: Er fand, dass der Playground-Rückfall `lemmaIndex || {}` (ein leeres, aber wahres Objekt) den Rückfall "ohne Index gilt alles als belegt" umging. Meine erste Antwort, eine `for...in`-Leerprüfung in `isAttestedLemma`, fand Runde 4 als Laufzeitfehler: O(n), gemessen ca. 4 ms je Aufruf bei 42.460 Schlüsseln, dreimal je Suche. Die Prüfung sitzt jetzt einmal je geladenem Index-Objekt in `authority-manager.js` (`getAttestationIndex()`), `isAttestedLemma` blieb ein Property-Zugriff. Lehre: ein O(1) aussehendes `for...in` mit `break` ist auf einem Objekt mit vielen Schlüsseln nicht O(1). **Nachgezogen:** DATA-MODEL.md Z. 643 ("first match wins"), DEVELOPMENT.md und der Modul-Docstring von `compare-findebuch-resolution-259.py` sagen jetzt, dass das Skript die Auflösung vor #463 nachbildet; sein Verhalten bleibt unverändert, die Anpassung ist Folgearbeit in #259 (der Funktions-Docstring Z. 295 behauptet noch "wie produktiv"). Der Kommentar in `lemma-explorer.js` Z. 874 geht an Spur C.
+
+## 2026-10-10 – #434: Die Korpussuche hat einen URL-Zustand und Browser-Zurück funktioniert (Spur lauf-b-suche)
+
+Entschieden (chsteiner, 10.10.): In der Adresse stehen der Suchbegriff und der geöffnete Text samt Fundstelle, sonst nichts. Die Suche schreibt `?search=` per `replaceState`, `openText()` schreibt `&textId=` (bei KWIC-Treffern `&position=`) per `pushState`, ein `popstate`-Handler öffnet oder schließt das Lesepanel, `handleURLParameters()` sucht zuerst und öffnet dann. Der alte `replaceState`, der die Parameter wegputzte, ist weg; die Begründung dafür stand nirgends (`6b339c57c` "keeps URL clean", `ddadb06ae` übernahm das Muster als Konvention). Neu im Reader: `closeReadingView()`, die ein laufendes Laden verwirft (`_loadSeq`), sonst öffnete ein Schließen während des Ladens das Panel nachträglich.
+
+**Review auf Opus (G4).** Runde 1 fand: Nach Browser-Zurück blieb die Autorzeile des geschlossenen Textes stehen (`showEmptyState` lief vorher nur auf frischem Panel, nie auf einem befüllten); der Test "Schließen während des Ladens" wartete fest 5 s und wäre bei einem Großtext auch ohne Abbruch grün gewesen. Mutationsprobe danach: Zeile `_loadSeq` in `closeReadingView` auskommentiert, `VERDICT: ROT`, zurückgenommen, `git diff` leer.
+
+**Laufzeit (#564).** Die Specs öffnen nicht mehr den ersten Treffer von "minne" (ein Großtext, JT hat 44 MB), sondern den kleinsten Treffertext. Die neue Spec: 9 Tests, Summe 77,7 s.
+
+**Bekannte Grenze:** ein Text, der aus einem Sigle-Link im Lesepanel geöffnet wird, ist noch kein History-Schritt. Bricht die Suche nach Browser-Zurück ab (leere Textauswahl), bleiben Suchfeld und Adresse bei der zuletzt ausgeführten Suche.
+
+## 2026-10-10 – #564 E1: Die leichten Gates holen den Korpus nicht mehr (Spur lauf-e-ci)
+
+`tei/` ist 1.366 von 1.651 MiB des Baums, und der Checkout war bei `no-cdn-check` (median 117 s von 124 s Job) und `file-size-check` (115 s von 119 s) der ganze Job. Jetzt: `no-cdn-check` 12 s Checkout, 20 s Job (5 Läufe); `file-size-check` 1 s und 6 s (5 Läufe). Gemessen per `workflow_dispatch` auf einem Wegwerfzweig, Vorher aus den letzten 25 erfolgreichen Läufen.
+
+**Drei Funde, die kein Gate gemeldet hätte.** (1) Ohne `tei/` zählt `doc-count-audit.py` "Korpus-Dateien 0", überspringt alle neun `corpus_files`-Paare ("pruefen derzeit nichts") und endet mit Exit 0: ein stilles Grün, die Prüfung wäre weg gewesen. Es liest nur die Dateinamen, also leere Platzhalter aus `git ls-tree` mit Guard 667 = 667; Mutationsprobe 667 auf 665: mit Platzhaltern rot, ohne `tei/` grün. (2) `check-no-cdn.py` und `check-no-em-dash.py` lesen auch `ingest/` und `examples/` (HTML-Prüfseiten, Markdown); ausgeschlossen wird deshalb nur `tei/*.tei.xml` und `data/*.json.gz`, und ein Kontrollschritt verlangt, dass jede andere getrackte Datei im Arbeitsbaum liegt. (3) `sparse-checkout` schaltet in der Action `--filter=blob:none` ein; `git ls-tree -l` lädt dann jeden Blob einzeln nach (Lauf 38047147806, Timeout nach 5 min 10 s), der volle Abruf ohne Arbeitsbaum brauchte 197 s. Die Zeit steckt im Abruf der 193 MiB, nicht im Schreiben. Lösung für den Größenwächter: Größen aus der Trees-API (`--github-tree`), Pfad für Pfad gegen `git ls-tree -r -z HEAD` belegt (G3 der Koordination).
+
+**Nicht übernommen:** derselbe sparse-Checkout für `data-integrity` und `measured-counts` war langsamer (167 s gegen 72 s, 345 s gegen 98 s), weil `tei/` danach nachgeladen wird. Lehre: ein Gate, das seinen Baum verkleinert, braucht einen Kontrollwert außerhalb des Zuschnitts, und die Beschleunigung braucht die Messung am echten Runner; der Gedanke "weniger Dateien ist schneller" stimmte bei zwei von vier Workflows nicht.
+
+## 2026-10-10 – #564 E2: Data Integrity läuft in zwei parallelen Jobs (Spur lauf-e-ci)
+
+Ein Job mit 24 Schritten summierte sich auf median 475 s (25 erfolgreiche Läufe vor 11:00 UTC; Checkout 72, RelaxNG-Validierung 212, Index-Rebuild 74, variants-Freshness 43, Cross-Refs 35). Jetzt zwei Jobs: `validate` (Schema- und Spiegel-Gates auf dem committeten Stand) und `freshness` (alles, was neu baut und vergleicht). Wanduhr median 349 s (5 Läufe, 296 bis 417), Job `validate` 340 s, Job `freshness` 296 s; die Summe der Job-Sekunden steigt von 475 auf 607 (zwei Checkouts). Der längere Job bleibt `validate`, weil die Validierung allein 212 s braucht; sie auf zwei Shards zu verteilen brächte rechnerisch rund 50 s Wanduhr gegen einen dritten Checkout und eine neue Option im Skript, und `freshness` läge dann mit 296 s vorn.
+
+**Nicht gemacht, mit Grund:** die RelaxNG-Validierung bei PRs ohne `tei/`-, `authority-files/`- und `schema/`-Änderung zu überspringen. Der Gewinn wäre nach der Teilung klein (Wanduhr bestimmt `freshness`, nicht `validate`), der Preis eine Lockerung: ein roter Stand auf `main` würde bei späteren Skript-PRs nicht mehr auffallen, und `data-integrity` hat keinen Wochenlauf, auf den man sich dafür stützen könnte.
+
+**Beleg, dass kein Gate etwas verliert.** Mechanisch: beide Fassungen als YAML geparst, jeder der 24 Schritte steht mit identischem Inhalt in genau einem Job (drei, Checkout/Python/Install, in beiden), Reihenfolge je Job eine Teilfolge der alten, `on:` und `concurrency` gleich. Mutationsprobe auf einem Wegwerfzweig (variants.xml: Zähler einer Form geändert; tei/EUS.tei.xml: `<bogus/>` im Body): `validate` rot am Schritt "Validate corpus" (`RELAXNG_ERR_ELEMNAME … got bogus`), `freshness` rot am Schritt "Freshness variants.xml", jeweils der erwartete Schritt. Ein Reviewer fand dazu drei Kommentare, die der Umbau falsch gemacht hatte (z. B. "vor der RelaxNG-Validierung" über dem Cross-Ref-Gate, das jetzt im anderen Job steht): ein Kommentar über die Reihenfolge ist eine Aussage über das Gate und muss mit dem Umbau umziehen.
+
+## 2026-10-10 – #564 E3: Laufzeitbudget der CI-Schritte
+
+Bis hierher wurde in den PR-Workflows nichts rot, wenn ein Schritt langsamer wurde; es gab nur `timeout-minutes` (5, 5 und 20 Minuten, in `data-integrity.yml` 45). Jetzt endet jeder Job von `no-cdn-check`, `file-size-check`, `measured-counts` und `data-integrity` (beide Jobs) mit einem Schritt (`if: always()`), der die Dauern der fertigen Schritte über die Actions-API liest und gegen `scripts/audit/runtime-budget.json` hält (Grenze Budget mal 1,5, Checkout mal 1,3, Untergrenze 10 s, Entscheidung chsteiner). Rot nur am PR; auf push und dispatch ein Kommentar in #574, nur auf `main`.
+
+**Warum letzter Schritt und kein `workflow_run`:** ein `workflow_run`-Workflow läuft im Kontext von `main`, läse das Budget nicht aus dem PR und wäre erst nach dem Merge testbar. `claude-code-review.yml` bleibt unberührt, die Action verlangt, dass die Datei der auf `main` gleicht.
+
+**Fail-closed:** auf einem PR ist jede unmögliche Messung (API, Job nicht gefunden, kein fertiger Schritt, Budgetdatei kaputt) Exit 2. Ein schon roter Job bekommt nur eine Warnung, damit das Gate die Ursache weder verdeckt noch verdoppelt. Selbsttest mit 28 Fällen, darunter eine Mutation (Faktor und Untergrenze 0 färbt jeden Schritt rot); Trockenlauf gegen eine echte API-Antwort ohne Überschreitung.
+
+**Offen:** die Budgets von `no-cdn-check`, `file-size-check` (je 3 bis 4 Läufe seit E1) und `measured-counts` (6) sind "n unter 10, vorläufig" und werden nachkalibriert (`--measure --since`). Der erste PR-Lauf zeigte den Fehler, den der Reviewer als ungeprüft markiert hatte: die Jobs-API führt den Schritt direkt vor dem Gate noch als `in_progress`, in jedem Job fehlte also genau der letzte, oft größte Schritt (in `validate` die 227 s der RelaxNG-Validierung) und das Gate blieb stumm grün. Ein laufender Schritt zählt jetzt mit "jetzt" als Ende, vier neue Selbsttestfälle. Das reichte nicht für `file-size-check` (3 von 4 Schritten, die API führte den Schritt noch ohne Startzeit), also fragt das Skript bis zu sechsmal nach, solange ein Schritt vor dem Gate weder fertig noch laufend ist, und ein danach unmessbarer Schritt ist auf dem PR rot. Danach meldeten alle Jobs ihre vollständige Schrittzahl (11, 4, 4, 12 und 14 in `no-cdn-check`, `file-size-check`, `measured-counts`, `validate`, `freshness`). Lehre: ein Gate, das Daten über sich selbst liest, bekommt sie vom Lauf, der noch läuft; "alle Schritte gemessen" ist eine Zahl, die man im ersten echten Lauf gegen die Schrittliste zählt. Die Delta-Runde über genau diese Korrektur fand zwei Fehler darin, die erst die Korrektur geschaffen hatte: die Wartezeit der Wiederholungen wurde dem laufenden Schritt angerechnet (ein 0-s-Schritt hätte 10 s bekommen und die feste Grenze gerissen), und auf push verschluckte ein unmessbarer Schritt den ganzen Bericht samt Kommentar in #574. Der Start des Skripts ist jetzt das Ende des laufenden Schritts, und Exit 2 gilt nur auf dem PR. Eine Korrektur am Gate braucht dieselbe Review-Runde wie das Gate. Reviewer-Frage: ein Faktor 1,3 auf einen 12-s-Checkout lässt nur 15,6 s; Rauschen von wenigen Sekunden wäre ein roter PR.
+
+## 2026-10-14 – #486: Editionsnachweis-Kette Zotero → works.xml → Header
+
+Spur `lauf-486`. Umgesetzt: der Header-`biblStruct` (`listBibl`) bekommt einen chirurgischen Schreiber und ein Gate in `sync_tei_headers.py`, der Online-Sync der Großschreibung ist in `works.xml` und in 183 Headern, FLG wird über den Zotero-Schlüssel ATWPNQPS zugeordnet, FR3 steht als befristete Ausnahme im Skript. Authority-Index 1.9.25, kein Korpus-Bump. Die Regeln der Kette stehen in CONTRACTS.md F.4a.
+
+**Was die Ticketangaben und die Messung auseinanderbrachten.** (1) Der Body nannte für die Frauenlob-Handkorrektur FR1/NCQNST4V. Sie hängt an FR3/MVWV5QYG: `115c3a01f` ändert in `works.xml` den Block `key="FR3"`, und der Sync hätte FR3 mit dem Inhalt von FR1 und FR2 überschrieben. FR1 bleibt beim Sync unverändert. (2) Der Body nannte "drei Abweichungen" zwischen Header und `works.xml`. Gemessen elementweise über alle 667 Header: von 678 Blöcken mit `@corresp` stehen 553 gleich, 119 nur in anderer Kindreihenfolge und 5 in 3 Dateien anders (FR3: Pfad des einzigen `<ref>`, HZ und LUU: nur die `@xml:id`-Suffixe); dazu der AK-Block mit 2 Zusatzelementen nur im Header und WZB ohne `@corresp`. Daraus wurde Enthaltensein statt Gleichheit. (3) 171 Werke und 187 Titelelemente stimmten (184 `biblStruct`, nur Großschreibung, kein Großbuchstabe fällt weg).
+
+**Was über den Einzelfall hinausgilt.** Ein Header, der eine Kopie plus textspezifische Ergänzungen trägt (AK, #134), lässt sich nur mit Enthaltensein prüfen und nur mit einem Schreiber pflegen, der Änderungen überträgt, statt den Block zu ersetzen. Daraus folgt eine Grenze, die dokumentiert und nicht behoben ist: ein Element, das in `works.xml` verschwindet oder seine Attribute ändert, steht im Header weiter oder doppelt, und das Gate sieht es nicht. Ein Sync, der eine Ausnahme tragen muss (FLG, FR3), trägt sie im Skript als benannte Konstante mit hartem Abbruch, nicht als Handkorrektur danach: der Lauf mit den zwei Ausnahmen ist byteweise gleich dem Lauf mit Handrücksetzung. Review: vier Runden, in Runde 2 zwei Befunde der Klasse A, die erst die Korrekturen aus Runde 1 geschaffen hatten (ein Tail-Vergleich über eine Schlüsselmenge machte ein erlaubtes Zusatzelement zum Fehler, und beim Verallgemeinern des Ersetzens fiel der Guard weg, der verhinderte, dass ein Container mit Kindern durch ein Blatt ersetzt wird). Beides unerreichbar im heutigen Korpus, beides vor dem Push gefunden. Ein dritter Fehler kam **nicht** aus dem lokalen Review, sondern vom CI-Bot auf dem gepushten PR, nach drei sauberen lokalen Runden: bei gleichem Anfang lief die Einfügung vor dem ersten Kind vor der Ersetzung desselben Kindes, die Ersetzung traf die eingefügten Bytes (Traceback). Die Mutationsproben der Runden 1 bis 3 setzten nie ein neues und ein geändertes erstes Kind zugleich. Der Bot-Kommentar ist hier gelesen worden, obwohl alle Checks grün waren: genau dafür steht diese Regel in CLAUDE.md.
+
+**Rote Zeilen.** Keine. Die zwei A-Befunde der Runde 2 sind im Kern der Lehre aus #397 ("was hing am Gegenteil dessen, was die Änderung wahr macht"), wurden aber von der Reviewrunde abgewendet, bevor sie trugen.
+
+**Was zurück an Christian geht.** (1) Das Zotero-Item MVWV5QYG (FR3) trägt den Inhalt von FR1 und FR2; die Frage an KZW steht in #486, bis zur Korrektur gilt die Ausnahme im Skript. (2) `BESTAND_BEHALTEN` hält für FLG Angaben fest, die nicht aus Zotero kommen: `analytic`, `editor`, `imprint` und `note` (Buch 1-2, Vollmann-Profe, 1990 gegen Buch 1-7, 1990-1993 bei FLG1). (3) Kommentar und Name des Steps "Werk-Identifier" in `data-integrity.yml` sagen nur `msIdentifier`; die Koordination zieht sie nach (Ä1 im Laufplan). (4) Die Grenze oben: verschwundene Elemente werden nicht propagiert.
+
+## 2026-10-14 – #554: Glossar Kochbuchforschung ins Lexikon
+
+Spur `lauf-554`. Umgesetzt: 93 Kommentare aus dem Glossar Kochbuchforschung stehen als `<note type="comment">` (`resp="contributors.xml#contrib_003"`, höchstens eine je Bedeutung) in `lexicon.xml`; Authority-Index 1.9.26, kein Korpus-Bump. Von den 189 mhd. Einträgen sind 120 einer Bedeutung zugeordnet, 17 offen, 52 ohne Kommentar. Von den 120 gehen 93 in die Daten, 22 als größere Kürzung, 1 als sachliche Rückfrage (grandmangerie: Verfasserangabe gegen `works.xml`) und 2 als Zusammenführung (huon, rëphuon) auf die Prüfseite `examples/review-pages/Glossar-554-Pruefung.html` (47 Fälle: A 17, B 22, C 5, D 1, E 2); 2 sind in diese beiden aufgegangen (henne, rëphenne). Lemmata mit kuratierter Aussage (Zählregel ADR-018): 1 von 43.710 vorher, 94 nachher. B5: Verweistabellen auf das Portal der Pflanzen des Mittelalters (nur Titel, URLs, Zuordnungen). Zahlen und Kriterien: `ingest/glossar-554/UEBERNAHME.md`.
+
+**Was über den Einzelfall hinausgilt.** (1) Eine Hilfssuche, die entfallene Textteile meldet, ist ein Hinweis und kein Beweis, und ihre Ausschlussregeln wirken in allen Einträgen: die Regel "Fußnote, URL, Seitenzahl, Literatur gilt als (b)" hat in 6 von 93 Einträgen mehr als eine Fundstelle verschluckt (drei auf der Prüfseite, drei im Text ergänzt). Wer so eine Regel schreibt, misst sie über den ganzen Bestand, nicht an den Fällen, die sie gerade zeigen. (2) Ein Lemma trägt je Bedeutung nur eine Notiz; zwei Glossareinträge mit derselben Bedeutung (henne und huon) lassen sich nur zusammenführen, und das ist, wenn die Poetisierungsteile verschieden sind, mehr als gleicher Text und eine Entscheidung für KZW. (3) Bis zu diesem PR trug genau ein Lemma einen Kommentar; Tests, die über "alle Kommentare" iterieren (`comment-attribution.spec.js`), laufen jetzt auf einer festen Stichprobe, weil 97 Seitenaufrufe unter der 60-Sekunden-Grenze nicht passen. Das wäre ohne die #397-Frage des Reviewers erst in der CI aufgefallen. (4) Fremder Text unter dem Namen der Urheberin: brôt enthält im Feld "Enzyklopädische Information" einen Zitatblock aus Peter C. A. Schels (Feldanfang "Informationen aus: …, 17.11.2017", rund 8.400 Zeichen); er ist nicht in den Daten, sondern Frage an KZW. Der Fundort ist das Feld selbst, nicht mit der Quelle abgeglichen.
+
+**Rote Zeilen.** Drei, Fehlerjournal 130 bis 132: ein `cd` in das Scratchpad (wieder zu `shell-konventionen.md`), die schmale Reviewrunde ohne `model: fable` (Regel 11 des Betriebsvertrags), und mehrere Aussagen in Docstring und README über den eigenen Text, die die Stelle nicht hergab. Review: drei Runden auf Fable, Runde 1 mit drei A-Befunden (Test über 97 Kommentare, drei übersehene (c)-Teile, zwei Umformulierungen), Runden 2 und 3 ohne A-Befund; dazu eine abgebrochene Opus-Runde.
+
+**Was zurück an Christian geht.** (1) KZW: die Prüfseite (47 Fälle) mit der Frage zur Zuordnung, zu den 22 Kürzungen, zu den 5 nicht übernommenen Einträgen, zu grandmangerie und zu huon/rëphuon; erst nach ihrer Antwort geht ein Fall in die Daten. (2) brôt: Schels-Auszug, siehe oben. (3) Ein Klug-Link an der Lemmaseite wäre eine Schema- und Frontend-Entscheidung; Linkziel nach KZW die übergeordnete Pflanzenseite. Klugs Seiten verlinken ihrerseits schon in die MHDBDB. (4) `dornber` (KZWs Beispiel einer bei Klug verzeichneten Form) steht in Klugs gmh-Liste nicht und in den 27 abgerufenen Seiten nicht; ob er in einer anderen Sprachstufe steht, ist nicht untersucht. (5) B4, Einklappfunktion für lange Kommentare: Vorschlag in `UEBERNAHME.md`, 61 von 93 Texten über 600 Zeichen, nicht umgesetzt. (6) Die Geviertstrich-Regel und die Du-Ansprache gelten für die Prüfseite; der Wortlaut der Texte ist über eine Stichprobe hinaus nicht gegen das Original geprüft.
+
+## 2026-10-14 – Lauf mit zwei Spuren (#486, #554): Koordination
+
+Operator-Lauf mit den Spuren `lauf-486` und `lauf-554` (Sonnet, unter dem Betriebsvertrag); Laufplan, Grenzverhandlungen G1 bis G7 und Abnahme in `docs/playbooks/kickoffs/2026-10-14-lauf.md`. Gemergt: #599 (`0258eb9db`, Authority 1.9.25) und #600 (`3dc1b189c`, Authority 1.9.26), nacheinander, die zweite Spur hat dazwischen rebased und den Index neu gebaut. Beide Tickets offen auf `auto:blocked` + `wait:kzw`.
+
+**Was über den Einzelfall hinausgilt.** (1) Die Widerspruchsklausel im Kickoff hat zweimal Ticketangaben gekippt, bevor Daten geschrieben waren: FR1 statt FR3 in #486 (die Angabe stand im Body, in einer Frage an KZW und im Kickoff) und "drei Abweichungen" im Header, wo 125 Blöcke abwichen, alle begründet. (2) Eine Längenschwelle (60 %) trennt "gestrafft" nicht von "inhaltlich gekürzt": `brî` lag mit 0,62 darüber und verlor trotzdem eine ganze Aufzählung. Was trennt, ist KZWs eigenes Kriterium, angewandt auf jedes entfallene Stück (G5). (3) Ein rotes Laufzeitbudget lässt sich an einem Schritt beurteilen, dessen Eingaben der PR nicht berührt: `lemma-pos` liest nur `tei/` und wurde ohne eine geänderte Datei dort von 18 auf 34 s langsamer. (4) `gh pr view --json files` schneidet bei 100 Dateien ab, ohne es zu sagen; die Dateiliste eines Daten-PR kommt aus `git diff --name-only`.
+
+**Rote Zeilen.** Eine aus der Koordination, Fehlerjournal 121 (FR1 ungeprüft aus dem Ticket in den Kickoff übernommen, obwohl `git show 115c3a01f` ein Aufruf war). Aus den Spuren 130 bis 132 (`lauf-554`), aus `lauf-486` keine.
+
+**Was zurück an Christian geht.** (1) Ein Datenmodell für Klug-Links an der Lemmaseite (Schema und Frontend). (2) Der Einklapp-Vorschlag für lange Kommentare (PR #600, `UEBERNAHME.md`). (3) Die Gate-Grenze aus #486: aus `works.xml` verschwundene Elemente bleiben im Header stehen. (4) `BESTAND_BEHALTEN` für FLG hält Angaben ohne Zotero-Quelle fest.

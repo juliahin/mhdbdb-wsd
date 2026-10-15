@@ -3,7 +3,7 @@
  *
  * Smoke-Tests fuer das kuratierte Figurenbezeichnungs-Modul: Route #naming,
  * Werk/Figur-Auswahl, Kategorie-Tabs, Belegstellen-Expand, MHG-normalisierter
- * Lemma-Filter und Pflicht-Attribution (Lizenzauflage CC BY-NC-SA).
+ * und diakritikgefalteter Lemma-Filter und Pflicht-Attribution (Lizenzauflage CC BY-NC-SA).
  *
  * Datengrundlage ist data/naming-index.json.gz (extern kuratiert, lindabeutel/
  * Naming-analysis). Die Tests locken Struktur, nicht exakte Zahlen.
@@ -17,7 +17,8 @@
  * steht der Quellstand daneben, gegen den sie gemessen wurde.
  */
 
-import { test, expect } from '@playwright/test';
+// Warmer Context pro Worker (#488): kein Storage-Zustand, keine Routes.
+import { test, expect } from '../warm-page.js';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
@@ -31,9 +32,15 @@ const INDEX_QUELLE = JSON.parse(
 test.describe('Naming Explorer (#59)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/playground/#naming');
-    // dispatchFromHash() laeuft erst nach Corpus-Load; danach laedt das Modul
-    // seinen eigenen Index lazy (fetch+pako, ~110 KB)
+    // dispatchFromHash() laeuft seit #535 nach dem Authority-Index, nicht
+    // erst nach dem Korpus-Index; danach laedt das Modul seinen eigenen Index
+    // lazy (fetch+pako, ~110 KB)
     await page.waitForSelector('#neWorkSelect', { state: 'visible', timeout: 60000 });
+    // Erst nach dem Korpus handeln: im warmen Context (#488) blockiert das
+    // Lesen des Korpus-Index aus IndexedDB den Hauptthread rund 3 s am Stueck,
+    // kalt bis 7 s mit ungzip, JSON.parse und IndexedDB-Schreiben; faellt eine
+    // Aktion hinein, reisst die 5-s-Frist danach (13.10.2026).
+    await page.waitForSelector('#fileBrowserSection', { state: 'visible', timeout: 60000 });
   });
 
   async function selectIwein(page) {
@@ -132,7 +139,7 @@ test.describe('Naming Explorer (#59)', () => {
   test('Lemma-Filter ist MHG-normalisiert (tore findet tôre)', async ({ page }) => {
     await selectIwein(page);
     await expect(page.locator('#resultsContainer')).toContainText('Lemma-Filter');
-    await expect(page.locator('#resultsContainer')).not.toContainText('Term');
+    await expect(page.locator('#resultsContainer')).not.toContainText(/Term(?!ini)/);
 
     await page.fill('#neNameFilter', 'tore');
     await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
@@ -140,6 +147,28 @@ test.describe('Naming Explorer (#59)', () => {
     const terms = await page.locator('[data-ne-term] td:nth-child(1)').allTextContents();
     expect(terms.length).toBeGreaterThan(0);
     expect(terms.some(t => t.includes('tôre'))).toBe(true);
+  });
+
+  test('Lemma-Filter ignoriert auch ë und Umlaut (neve findet nëve, kunic findet künic, #525)', async ({ page }) => {
+    // normalizeMHG kennt kein ë und expandiert ü zu ue; der Filter faltet
+    // deshalb zusaetzlich die Diakritika. Gawein traegt nëve, Artus künic
+    // (Quellstand data/naming-index.json.gz, gemessen 2026-10-06).
+    await page.selectOption('#neWorkSelect', 'IW');
+    await page.selectOption('#neFigureSelect', 'Gawein');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+
+    await page.fill('#neNameFilter', 'neve');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+    let terms = await page.locator('[data-ne-term] td:nth-child(1)').allTextContents();
+    expect(terms.some(t => t.includes('nëve'))).toBe(true);
+
+    // Der Figurwechsel leert den Filter, also danach neu setzen
+    await page.selectOption('#neFigureSelect', 'Artus');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+    await page.fill('#neNameFilter', 'kunic');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+    terms = await page.locator('[data-ne-term] td:nth-child(1)').allTextContents();
+    expect(terms.some(t => t.includes('künic'))).toBe(true);
   });
 
   test('Werk-Wechsel setzt Figur zurueck', async ({ page }) => {

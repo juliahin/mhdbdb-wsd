@@ -65,9 +65,9 @@ The header is already largely standardized across all 667 files. This section do
     <msDesc>
       <msIdentifier corresp="works.xml#work_{id}">
         <idno type="sigle">{SIGLE}</idno>
-        <idno type="handschriftencensus">{HC no.}</idno>  <!-- optional, 354 texts -->
-        <idno type="GND">{GND no.}</idno>                 <!-- optional, 216 texts -->
-        <idno type="wikidata">{Q no.}</idno>              <!-- optional, 129 texts, work level -->
+        <idno type="handschriftencensus">{HC no.}</idno>  <!-- optional, 355 texts (2026-10-05) -->
+        <idno type="GND">{GND no.}</idno>                 <!-- optional, 217 texts -->
+        <idno type="wikidata">{Q no.}</idno>              <!-- optional, 131 texts, work level -->
         <idno type="mwb-sigle">{MWB short sigle}</idno>   <!-- optional, 19 texts -->
         <msName xml:lang="de">{work title}</msName>
       </msIdentifier>
@@ -94,7 +94,8 @@ The header is already largely standardized across all 667 files. This section do
 ```
 
 **Rules:**
-- `<author ref>` points at the `<person>` entry in the same document (`profileDesc`), which in turn points at `persons.xml` via `@corresp`
+- `<author ref>` points at the `<person>` entry in the same document (`profileDesc`), which in turn points at `persons.xml` via `@corresp`. One exception since #452: an author with `@ana="rejected"` is not a participant of the text and has no `<person>` entry there (CR: `#person_227` points nowhere inside the file, by design; `check-author-refs.py` skips it). An adapter (`@role`) keeps its entry
+- `titleStmt/author` may repeat, and it may carry `@ana` (`disputed`, `uncertain`, `rejected`; none = accepted) and `@role="adapter"` (#452). The index takes as `text.author` the first author that is neither an adapter nor rejected. The evidence for a status is not copied into the header: it lives in the `<note type="attribution">` of the work in `works.xml` ([TEI-MODEL-AUTH-FILES.md §3.4](TEI-MODEL-AUTH-FILES.md#34-worksxml-register-of-works)). Three headers carry the attributes (CR rejected, BAX adapter, RHB disputed); HOF and VDH carry Stricker alone
 - `<msIdentifier corresp>` points at `works.xml` via fragment ID (`works.xml#work_{id}`)
 - the primary edition is always a `<biblStruct>` with a Zotero `corresp`
 - digital intermediaries as `<bibl type="digitalIntermediary">` (ADR-012)
@@ -112,7 +113,7 @@ Attribution of the people who worked on the MHDBDB runs centrally through `autho
 | Information | Place in the header | Pattern |
 |-------------|-----------------|--------|
 | collective team attribution | `<titleStmt>/<respStmt>` | `<orgName ref="contributors.xml#mhdbdb-team">` |
-| founders + coordinator (always the same, all 667 files) | `<publicationStmt>/<authority>` | `<persName role="founder\|coordinator" ref="contributors.xml#contrib_00X">` |
+| founders + coordinator (always the same, all 667 files since 2026-10-05) | `<publicationStmt>/<authority>` | `<persName role="founder\|coordinator" ref="contributors.xml#contrib_00X">` |
 | prominent lead editor (only for JT/PUC/TKA/TKR/VTC) | second `<titleStmt>/<respStmt>` | `<name role="lead-editor" ref="contributors.xml#contrib_00X">` |
 | a named contribution that is *not* a lead editorship (only WZB) | second `<titleStmt>/<respStmt>` | `<name ref="contributors.xml#contrib_00X">`, no `@role` |
 
@@ -260,7 +261,7 @@ TEI P5 requires in `<monogr>`: `(author|editor)*, title+, editor*, (idno|imprint
 - stanzas as `<lg>` with `@n`. Allowed `@type` values: `stanza`
 - optional enclosing `<div>` for books/sections
 - for songs: `<div type="song">` > `<lg type="stanza">` > `<l>`
-- caesuras as `<caesura/>` inside `<l>` (optional; 51,140 in 218 files, see 6.5)
+- caesuras as `<caesura/>` inside `<l>` (optional; dated count in 6.5)
 
 **Current state:** most verse texts have `<l>` without an `<lg>` wrapper. The migration happens step by step (issue #30, stage 2).
 
@@ -338,7 +339,7 @@ Texts with both verse and prose sections use nested `<div>` elements:
 
 ### 3.5 `div/@type` values (audit)
 
-15 distinct values in the existing corpus. They came over as 1:1 translations from the old database export (Julia's TEI documentation, June 2024).
+The old database export brought 15 distinct values, as 1:1 translations (Julia's TEI documentation, June 2024). After the consolidation the corpus carries 7 (recounted on 2026-10-05, same figures as the table below).
 
 For the full list of accepted values see the table "All div/@type decisions in full" below.
 
@@ -407,6 +408,24 @@ All numbers recounted on 2026-08-09 across all 667 corpus files (`div[@type]`, 5
 
 **Stanza check (verified):** `div type="stanza"` historically existed only in LZT (1,122) and has been migrated to `lg type="stanza"` since #23/v4.1.1; currently **0** `div type="stanza"` in the corpus (LZT now uses `lg type="stanza"`).
 
+### 3.5a Dreißiger and book boundaries in PZ and WH (#358)
+
+Parzival (PZ) and Willehalm (WH) are cut into sections of thirty lines (Dreißiger), each one a `<div type="chapter">` whose `@n` is the running number of the Dreißiger (PZ 1–827, WH 1–467). Two attributes and one element make that readable:
+
+```xml
+<div type="chapter" subtype="dreissiger" n="58">
+  <l n="1">…</l>
+  …
+  <milestone unit="book" n="II"/>   <!-- Buch II begins at 58,27, in the middle of the Dreißiger -->
+  <l n="27">…</l>
+```
+
+- **`div/@subtype="dreissiger"`** sits on **every** `div type="chapter"` of PZ (827) and WH (467), and nowhere else. The schema value list is closed (`div.subtype` in `mhdbdb.rnc`), no GAP. The value names the unit of division; it does **not** guarantee thirty lines: PZ 257 has 32, WH 57 has 28 and the unfinished WH 467 has 24 (counted 2026-10-02, 826 + 1 and 465 + 2 of the Dreißiger).
+- **`<milestone unit="book" n="I"/>` … `XVI`**, PZ only, 16 elements. Each is a **direct child of the chapter `div`**, immediately before the `<l>` that opens the book, never inside an `<lg>` and never inside a line (the schema allows `milestone` only as a child of `div`, deliberately not in `inline.model`). Books II, III and IV begin inside a Dreißiger (58,27, 116,5, 179,13), the other thirteen at the start of one. The boundary positions are the 16 rows of `ingest/parzival-buecher/grenzen.csv` (word id of the first word, source: Bartsch and Martin), the elements were inserted by `scripts/ingest/parzival-358/pz-wh-struktur.py`.
+- `@unit` is a closed list with the single value `book`; a second unit is a schema change.
+
+No effect on the indexes: the corpus index reads `<w>` and `<l>` in document order, so `data/corpus-index.json.gz` stays byte-identical (measured by rebuilding on a clean tree). The reading view ignores `milestone` with any `@unit` other than `verse`, so until it shows the book boundary the new elements render nothing.
+
 ---
 
 ## 4. Word element (`<w>`)
@@ -443,7 +462,7 @@ The `<w>` element is the central unit of annotation. In the target model all its
 | `@ana` | **standard** (att.global.analytic) | no | ~5.9M (migrated from `@meaningRef`, phase B1) | keep |
 | `@corresp` | **standard** (att.global) | no | ~7.5M (migrated from `@wordRef`, phase B2; URI → `variants.xml`) | keep |
 
-Corpus at the time of the audit (#32, 2026-04, before WZB): 9,282,982 `<w>` elements in 666 files; 20.4% without `@lemmaRef` (unannotated words, skipped by the corpus index, see CONTRACTS.md sec. B). Current state: 667 files, 9,431,294 `<w>`, of which 7,532,982 with `@lemmaRef` and 1,898,312 without (20.13%), measured 2026-07-31 with `scripts/audit/quantify-unannotated-tokens.py`. The figure 9,432,130 from 2026-06-10 (Code4Lib article, #142) predates the token removals from #138 and #236.
+Corpus at the time of the audit (#32, 2026-04, before WZB): 9,282,982 `<w>` elements in 666 files; 20.4% without `@lemmaRef` (unannotated words, skipped by the corpus index, see CONTRACTS.md sec. B). Current state: 667 files, 9,431,311 `<w>`, of which 7,545,736 with `@lemmaRef` and 1,885,575 without (19.99%), measured 2026-10-05 with `scripts/audit/quantify-unannotated-tokens.py` (on 2026-07-31: 9,431,294, 7,532,982 and 1,898,312). The figure 9,432,130 from 2026-06-10 (Code4Lib article, #142) predates the token removals from #138 and #236.
 
 > **Important:** `@lemmaRef` has been a standard attribute of the class `att.linguistic` since TEI P5 3.3.0 and did **not** have to be migrated. `@meaningRef` and `@wordRef` **were** the validation blockers (not TEI standard attributes); they were migrated corpus-wide to `@ana` and `@corresp` respectively (phase B1/B2, completed, 0 remaining occurrences, 667/667 files with `@ana`).
 
@@ -533,7 +552,7 @@ The human-readable base form stays accessible through the lookup `@lemmaRef` →
     │
     ├─ lexicon.xml: <sense xml:id="lemma_2598_sense_77615" ana="#type_8717 ...">
     │
-    └─ variants.xml: <form xml:id="type_8717">hân</form>
+    └─ variants.xml: <form xml:id="type_8717" n="11885">hân</form>
 ```
 
 **Migration (✓ completed):** `@wordRef` became `@corresp` (a standard attribute from `att.global`). The URI was corrected in the process, because the target sits in `variants.xml`, not in `lexicon.xml`:
@@ -641,7 +660,7 @@ TEI P5 provides `<pc>` (punctuation character) as the counterpart to `<w>`. It i
 
 `<hi rend="initial">` is a corpus convention and encodes decorated initials from manuscripts and prints.
 
-**Audit: `hi/@rend` values (666 files):**
+**Audit: `hi/@rend` values (2026-04-08, 666 files, before WZB; the values move with every ingest):**
 
 | Value | Count |
 |------|-------|
@@ -693,7 +712,7 @@ Marks a **metrical** caesura inside a line of verse (`<l>`). Measured on 2026-09
 <l n="32"><gap reason="lost"/></l>
 ```
 
-Marks text the edition could not supply. Measured on 2026-09-23: 1,940 occurrences in 114 files, all with `reason="lost"` (1,094 from the first pass, 846 from the second).
+Marks text the edition could not supply. Measured on 2026-10-06: 1,943 occurrences in 114 files, all with `reason="lost"` (1,094 from the first pass, 846 from the second, 3 by hand).
 
 **These used to be encoded as punctuation plus caesura** and were migrated in #252:
 
@@ -714,13 +733,13 @@ Two reasons for the change. `<caesura/>` denotes a metrical incision, not a miss
 
 | Left as it is | Count | Why |
 |---|--:|---|
-| `<l>` with a caesura, no `<w>`, but real text | 12 in 8 files | `FDS` carries the editorial note "(folgen Lied 34 bis Lied 37)", `EIL`, `GWTK` and `FR1` carry unlemmatized wording. A rule of "no `<w>` means a gap" would have deleted it |
-| `<l>` with visible characters that are not the marker | 38 | 22 lines with speech marks only (`<` and `>`, which in `GWTK` and `BRF` are quotation marks, one of them with a full stop), 5 with a lone comma or colon, 8 with a single bracket, and 3 with the complete marker plus one extra character |
+| `<l>` with a caesura and visible text with at least one letter, but no `<w>` as a direct child (the words, if any, sit inside `<supplied>` or `<hi>`) | 9 in 6 files (measured 2026-10-06; 12 in 8 on 2026-09-10, three went with the second pass) | `FDS` carries the editorial note "(folgen Lied 34 bis Lied 37)"; `EIL`, `GWTK`, `JT`, `MAI` and `WDB` carry wording inside `<supplied>` or `<hi>`. A rule of "no `<w>` means a gap" would have deleted it |
+| `<l>` with visible characters that are not the marker | 35 | 22 lines with speech marks only (`<` and `>`, which in `GWTK` and `BRF` are quotation marks, one of them with a full stop), 5 with a lone comma or colon, and 8 with a single bracket |
 | `<l><hi><caesura/></hi></l>`, the caesura not a direct child | 2 in `MUG` | the migration looks at direct children only and does not see these. Whether the `<hi>` should go with them is a decision, not a script bug |
 
 The `MUG` row is probably the same phenomenon as the migrated set, but saying so is a philological claim, not a mechanical one. **Open in #252**, as are the five lines with a lone comma or colon from the second row: they carry no bracket at all, KZW did not release them on 2026-09-22, and they were put to KZW with their context on 2026-09-23.
 
-The 8 single brackets form four pairs spanning several omitted verses (`SJH` lg179 n=6/7, `SUS` lg61 n=6/10, `SUS` lg127 n=7/8, `SVW` lg6 n=6/7); in `SUS` lg61 three now-migrated lines sit between them, so that omission is half encoded as gaps and half as a bracket. The 3 with marker plus one character are `NEIC` lg3 n=14 `< ( )`, `NEIR` lg5 n=6 `( ) ,` and `SJH` lg168 n=13 `( ) !`, which can be repaired by hand.
+The 8 single brackets form four pairs spanning several omitted verses (`SJH` lg179 n=6/7, `SUS` lg61 n=6/10, `SUS` lg127 n=7/8, `SVW` lg6 n=6/7); in `SUS` lg61 three now-migrated lines sit between them, so that omission is half encoded as gaps and half as a bracket. Three further lines carried the complete marker plus one extra character (`NEIC` lg3 n=14 `< ( )`, `NEIR` lg5 n=6 `( ) ,`, `SJH` lg168 n=13 `( ) !`); KZW released them on 2026-10-02, and they were migrated by hand on 2026-10-06 with the extra character kept.
 
 The second row is the reason the criterion asks for the exact marker `( )` rather than for "brackets". An earlier version accepted angle brackets too and would have deleted the closing quotation mark of a speech in `GWTK` line 36, leaving the speech opened in line 35 unclosed.
 
@@ -744,7 +763,7 @@ Wraps `<w>` elements with numeric content (Roman numerals and the like). Rendere
 <cb n="{column no.}"/>
 ```
 
-Marks a column break. Rare (996 occurrences in 3 files). Rendered as `[Sp. {n}]`.
+Marks a column break. Rare (1,956 occurrences in 4 files on 2026-10-05: WZB 960, GWTK 823, EHB 114, CLV 59). Rendered as `[Sp. {n}]`.
 
 ### 6.8 Known errors in the existing data
 
@@ -834,7 +853,7 @@ New texts have to meet the following minimum requirements:
 - [ ] `<w @lemmaRef>` for every annotated word
 - [ ] `@pos` with a valid tag from the 19-tag set (sec. 5)
 - [ ] body structure conforming to the genre pattern (sec. 3)
-- [ ] validation against `schema/mhdbdb.rnc` (once available)
+- [ ] validation against `schema/mhdbdb.rnc` (stage 2, see 9.3)
 
 ### 9.2 Recommended (non-blocking)
 
@@ -868,7 +887,7 @@ npm test
 **Schema files:**
 - `schema/mhdbdb.rnc`: source of truth (RELAX NG compact, hand-edited)
 - `schema/mhdbdb.rng`: generated via `trang schema/mhdbdb.rnc schema/mhdbdb.rng` (for lxml/Python)
-- `schema/tei_all.rng`: TEI P5 4.11.0 reference (gitignored, download command above)
+- `schema/tei_all.rng`: TEI P5 4.11.0 reference (committed, no download needed)
 
 **No ODD:** the TEI ODD toolchain (stylesheets + Roma) has 60-80 open issues, depends on XSLT 2.0 (Saxon), and the Roma web interface is unstable. TEI conformance criterion 5 ("documented via ODD or **analogous documentation**") is met by this document (TEI-MODEL.md) and the RELAX NG schema together.
 
@@ -932,7 +951,7 @@ Earlier errors (all fixed by migration):
 
 **Two-stage validation:**
 - **Stage 1:** `tei_all.rng` = the TEI P5 conformance test (criteria 1-4). Baseline: 633/667 green.
-- **Stage 2:** `mhdbdb.rnc` = the MHDBDB stamp. It covers all patterns in the existing data, including the 34 tei_all deviations (GAPs 1-11). Baseline: 667/667 green.
+- **Stage 2:** `mhdbdb.rnc` = the MHDBDB stamp. It covers all patterns in the existing data, including the 34 tei_all deviations (GAPs 1 to 9 and 11). Baseline: 667/667 green.
 
 `mhdbdb.rnc` is **not a strict subset** of `tei_all.rng`: it is stricter on some points (enumerated `@type` values, more restrictive child elements) and more permissive on others (the GAPs). The two stages check different properties and are complementary, not redundant.
 
@@ -940,10 +959,10 @@ Earlier errors (all fixed by migration):
 
 | File | Entries | Validation |
 |-------|----------|-------------|
-| lexicon.xml | 43,713 lemmata (+4 WZB 2026-05-08, +125 #115 stubs 2026-07-02, -1 hasenblâse #363 2026-09-10, -165 #228 2026-09-24) | tei_all ✓ · mhdbdb-authority ✓ |
-| variants.xml | 42,460 variant entries (256,512 forms) | tei_all ✓ · mhdbdb-authority ✓ |
+| lexicon.xml | 43,710 lemmata (+4 WZB 2026-05-08, +125 #115 stubs 2026-07-02, -1 hasenblâse #363 2026-09-10, -165 #228 2026-09-24, -3 #228 digits 2026-10-01) | tei_all ✓ · mhdbdb-authority ✓ |
+| variants.xml | 42,459 variant entries (256,961 forms) | tei_all ✓ · mhdbdb-authority ✓ |
 | persons.xml | 211 persons | tei_all ✓ · mhdbdb-authority ✓ |
-| works.xml | 584 works (+1 work_WZB) | tei_all ✓ · mhdbdb-authority ✓ |
+| works.xml | 585 works (+1 work_WZB, +1 work_WLK #237 2026-09-24) | tei_all ✓ · mhdbdb-authority ✓ |
 | concepts.xml | 567 categories | tei_all ✓ · mhdbdb-authority ✓ |
 | genres.xml | 615 categories | tei_all ✓ · mhdbdb-authority ✓ |
 | names.xml | 90 categories | tei_all ✓ · mhdbdb-authority ✓ |
@@ -966,8 +985,8 @@ A consolidated list of all deliberately non-normalized islands of data and of th
 
 | Exception / gap | Affected | Reason | Status / tracking |
 |------------------|-----------|-------|-------------------|
-| schema GAPs 1-11 (`schema/mhdbdb.rnc`) | 34 corpus files (category table above) | existing data; migration disproportionately expensive or semantically risky: documented exceptions to the data-before-schema rule | permanent; every GAP is commented in the schema |
-| ARI/PD-001 domain elements | 6 ARITHMETIC manuscripts (not yet in the corpus) | 12 non-schema element classes + 24 `div/@type` + 7 `hi/@rend` values from Carina's arithmetic books; they block stage-2 validation | decided 2026-05-08: domain tags go into the schema (DECISIONS.md § PD-001); schema extension + ingest still pending → #92 |
+| schema GAPs 1 to 9 and 11 (`schema/mhdbdb.rnc`) | 34 corpus files (category table above) | existing data; migration disproportionately expensive or semantically risky: documented exceptions to the data-before-schema rule | permanent; every GAP is commented in the schema |
+| ARI/PD-001 domain elements | 6 ARITHMETIC manuscripts (not yet in the corpus) | 12 non-schema element classes + 24 `div/@type` + 7 `hi/@rend` values from Carina's arithmetic books; without PD-001 they would fail stage-2 validation | decided 2026-05-08: domain tags go into the schema (DECISIONS.md § PD-001); the schema extension is on `main` since `b59350bb5` and the six converted files lie in `ingest/ari/`; only the ingest is pending, waiting on Carina's metadata → #92 |
 | lexicon.xml backfill | remaining 396 dangling refs / 109 IDs (category B: sense curation, category C: typos/homographs) | the WZB forward ingest stamped lemma IDs into the corpus only; category A (125 entries) was stubbed on 2026-07-02 via `backfill-lexicon.py` | open → #115 (B/C curatorial, KZW/Julia) |
 | WVV stanza anchors | WVV, 23 stanzas | unusual Linecode template, anchors missing (#23 follow-up) | **solved** 2026-07-08 (#110): the 4 open places contained 11 header-separated verse blocks, each is now an `<lg type="stanza">` of its own; WVV has 489 stanzas, token stream byte-identical |
 | editorial `<div>` shell | HUG, KLA, PL1-PL3, MBS series | follow-up from the manual TEI review (#30) | open → #138 (needs-clarification) |
@@ -985,9 +1004,9 @@ A consolidated list of all deliberately non-normalized islands of data and of th
 | this document | 1.0.0 | 2026-04-10 |
 | RELAX NG schema (`schema/mhdbdb.rnc`) | 1.0.0 | 2026-04-09 |
 | POS tagset | 1.0 (19 tags) | 2026-03 |
-| Corpus Index | 4.2.20 | 2026-09-24 |
-| Authority Index | 1.9.13 | 2026-09-24 |
-| authority schema (`schema/mhdbdb-authority.rnc`) | 1.1.0 | 2026-07-30 |
+| Corpus Index | 4.2.32 | 2026-10-10 |
+| Authority Index | 1.9.26 | 2026-10-14 |
+| authority schema (`schema/mhdbdb-authority.rnc`) | 1.2.0 | 2026-10-02 |
 
 ---
 
@@ -1004,7 +1023,7 @@ When new texts are ingested, the following defaults hold for editor attribution 
 2. **Collective team attribution** in `<titleStmt>/<respStmt>`:
    - `<orgName ref="contributors.xml#mhdbdb-team">MHDBDB-Team (vollständige Liste in contributors.xml)</orgName>`
 
-These three building blocks are identical in all 667 existing files and were set by the migration script `scripts/_archived/migrate-header-credits.py` (initially 666 files on 2026-04-15, WZB brought in line at the branch merge on 2026-05-06). For new ingests simply copy them from an existing file or from `schema/examples/corpus.example.tei.xml`.
+These building blocks were set by the migration script `scripts/_archived/migrate-header-credits.py` on 2026-04-15, in every corpus file of that day; WZB was not yet among them. It received only the team attribution at the branch merge on 2026-05-06 (`48204f386`) and got the authority block on 2026-10-05, copied unchanged from the other files. Since then both building blocks are identical in all 667 files. For new ingests simply copy them from an existing file or from `schema/examples/corpus.example.tei.xml`.
 
 **Do not write the full contributor list into the header.** The 50+ editors who historically worked on the existing texts live in `contributors.xml` and are covered by the collective `mhdbdb-team` reference. The header stays lean.
 

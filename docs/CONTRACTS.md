@@ -96,15 +96,15 @@ Breves on the remaining base characters stay untouched: 23 further WZB tokens (y
 | `person_1332` Wachsmut von Mühlhausen | `wachsmut von mühlhausen` | `wachsmut von muehlhausen` |
 | `work_435` Lyrik von Hugo von Mühldorf | `lyrik von hugo von mühldorf` | `lyrik von hugo von muehldorf` |
 
-All three were unfindable through normalized search. All 43,879 lemma normalizations and all 234,244 variant mappings remain unchanged. Hence Authority Index v1.6.2. **234,244 is the state of v1.6.2, not today's** (today 233,978, see §C): with the HUG stanza numerals, #138 also removed the type `type_195524` „cxlvix", attested only there, measured against the blob before `87b6dc941`. The difference of one is therefore a real data step and not a typo in either line (#277).
+All three were unfindable through normalized search. All 43,879 lemma normalizations and all 234,244 variant mappings remain unchanged. Hence Authority Index v1.6.2. **234,244 is the state of v1.6.2, not today's** (today's value is in §C): with the HUG stanza numerals, #138 also removed the type `type_195524` „cxlvix", attested only there, measured against the blob before `87b6dc941`. The difference of one is therefore a real data step and not a typo in either line (#277).
 
 **Not affected:** the corpus index stores lemma ids and positions, not normalized text forms; `build-corpus-index.py` does import `normalize_mhg` but never calls it. For the corpus text itself the checkable statement is sharper than the sample originally noted here: **there is not a single combining diaeresis and no combining tilde inside `<w>` anywhere in the corpus.** The 1,339 diaereses in 566 of the 667 files all sit outside the annotated tokens, mostly in the `<note>` bibliography prose of the teiHeader (places of publication such as Tübingen, Zürich). Inside `<w>` there are 774 combining marks in total, of which 752 are WZB breves and 22 are exotics: 11 dot below, 8 macron, 3 U+035B (the abbreviation zigzag in `cetera͛`, `her͛re`).
 
-**How these numbers are measured** (#318, without it they cannot be rechecked). All figures about **combining** marks (1,339 diaereses, 774 marks inside `<w>`, 752 breves, 22 exotics) are counted on the raw text, without prior Unicode normalization. Exactly **one** number in §A follows a different rule: the **469 lemmatized breve tokens** in the paragraph "Breve instead of diaeresis" above are counted **after NFD**, so precomposed `ŏ`/`ŭ` are included, because that is the set steps 0 and 3 handle together. The same holds for the derived split of 405 across o/u, which lives in [DECISIONS.md, ADR-016](DECISIONS.md) and not here. Measure without NFD and you get 467 and 403 and take the figure for stale; that is exactly what happened in the health check of 2026-07-31. The numbers **136** (breve on other base characters) and **64** (of those, lemmatized) are independent of normalization, identical with and without NFD. Recheck them with the same counting code once per variant.
+**How these numbers are measured** (#318, without it they cannot be rechecked). All figures about **combining** marks (1,339 diaereses, 774 marks inside `<w>`, 752 breves, 22 exotics) are counted on the raw text, without prior Unicode normalization. Exactly **one** number in §A follows a different rule: the **469 lemmatized breve tokens** in the paragraph "Breve instead of diaeresis" above are counted **after NFD**, so precomposed `ŏ`/`ŭ` are included, because that is the set steps 0 and 3 handle together. The same holds for the derived split of 405 across o/u, which lives in [DECISIONS.md, ADR-016](DECISIONS.md) and not here. Measure without NFD and you get 467 and 403 and take the figure for stale; that is exactly what happened in the health check of 2026-07-31. The numbers **136** (breve on other base characters) and **64** (of those, lemmatized, when this was written) are independent of normalization, identical with and without NFD. On 2026-10-07 the same count gives 136 and 65 before and 136 and 94 after #526 point 4, which annotated 29 of the 48 WZB tokens with a breve on `w` or `n` at the verse (Corpus Index 4.2.27, `scripts/ingest/wzb/wzb-breve-wn-526.py`). Recheck them with the same counting code once per variant.
 
-**No gain, but the same bucket:** inside `<w>` there are eight combining macrons (u 3, p 2, d 1, i 1, n 1). Step 0 composes four of them, the three `u` to `ū` and the `i` to `ī`; step 2 resolves both. For `d`, `n` and `p` there is no precomposed form. **They do not become findable through that either: none of the eight tokens carries a `@lemmaRef`** (`flūte`, `Dorūmbe`, `cap̄`, `vn̄`). They belong in the same backfill bucket as the 289 candidates below, not in a gain column.
+**No gain, but the same bucket:** inside `<w>` there are eight combining macrons (u 3, p 2, d 1, i 1, n 1). Step 0 composes four of them, the three `u` to `ū` and the `i` to `ī`; step 2 resolves both. For `d`, `n` and `p` there is no precomposed form. **They did not become findable through that either: when this was written, none of the eight tokens carried a `@lemmaRef`** (`flūte`, `Dorūmbe`, `cap̄`, `vn̄`), so they belonged in the same backfill bucket as the 289 candidates below, not in a gain column. Since 2026-10-07 six of them carry one, decided at the verse (#526, Corpus Index 4.2.26, `scripts/ingest/wzb/wzb-makron-526.py`); the two `cap̄` stay unannotated because they belong to the Latin chapter rubric.
 
-**Touched, but not followed up in this PR:** the WZB ingest scripts (`scripts/ingest/wzb/wzb-auto-match.py`, `-sense-assign.py`, `-sense-apply.py`) normalize through the same function. 289 WZB `<w>` with an o/u breve still carry no `@lemmaRef`, because the breve stopped the matcher; a re-run will resolve some of them. See ADR-016.
+**Touched, but not followed up in this PR:** the WZB ingest scripts (`scripts/ingest/wzb/wzb-auto-match.py`, `-sense-assign.py`, `-sense-apply.py`) normalize through the same function. 289 WZB `<w>` with an o/u breve carried no `@lemmaRef` when this was written, because the breve stopped the matcher; a re-run will resolve some of them. See ADR-016. Most of them have been annotated since; the remainder is tracked in #526.
 
 ### Helper Functions
 
@@ -114,7 +114,7 @@ The comparison helpers exist only on the JS side (`TextNormalizer.matchesNormali
 
 `normalizeMHG` **expands** a diacritic into a digraph (`ä` → `ae`), so that a user who types `baeume` reaches `Bäume`. `foldDiacritics` **collapses** it onto the base letter (`ä` → `a`), so that a user who types `baum` reaches `Bäume`. It ends with a generic decomposition pass, so accents outside the German set fall away too (`malmariee` reaches the genre `Malmariée-Lied`); the explicit rules before it stay, because a digraph or a chosen base letter is not something decomposition can decide. German umlaut alternation puts the umlaut in the inflected form (Baum/Bäume, Wald/Wälder, groß/größer) while the search box gets the stem, and under the expansion the stem is not even a prefix of the target. Both directions are needed and neither replaces the other.
 
-**Where the fold may be used:** the modern German and English descriptors of the authority files. Four call sites today, and `grep -rn "matchesFolded\|foldDiacritics" playground/js assets/js` is the way to check the list is still complete: `SearchPatterns.multiFieldNormalized` (the concept, genre, name and work explorers), `resolveQuery` in `concept-distribution.js`, `findAlternativeMatch` in `concept-explorer.js`, and `personNameMatches` in `person-explorer.js` (which the person explorer's own `findAlternativeMatch` uses as well). The last two are the ones that are easy to forget, and both were forgotten once. `concept-explorer.js` decides the "auch: ..." hint rather than the hit list, so a folded hit was listed with no explanation of why it matched. `person-explorer.js` does not go through `multiFieldNormalized` at all, while the work explorer does and compares `work.author`: the same 27 author names with an umlaut stand character-for-character in both sets, so `kurenberg` found the works and not the person next to them. **Where it may not:** anything that compares Middle High German attestations. `normalizeMHG` is the contract there, it is parity-tested against Python, and a fold applied to corpus forms would silently widen matches that §C's three-stage lemma resolution deliberately keeps narrow.
+**Where the fold may be used:** the modern German and English descriptors of the authority files. `grep -rn "matchesFolded\|foldDiacritics" playground/js assets/js` is the way to check the list is still complete: `SearchPatterns.multiFieldNormalized` (the concept, genre, name and work explorers), `resolveQuery` in `concept-distribution.js`, `findAlternativeMatch` in `concept-explorer.js`, and `personNameMatches` in `person-explorer.js` (which the person explorer's own `findAlternativeMatch` uses as well). The last two are the ones that are easy to forget, and both were forgotten once. `concept-explorer.js` decides the "auch: ..." hint rather than the hit list, so a folded hit was listed with no explanation of why it matched. `person-explorer.js` does not go through `multiFieldNormalized` at all, while the work explorer does and compares `work.author`: the same 27 author names with an umlaut stand character-for-character in both sets, so `kurenberg` found the works and not the person next to them. **Where it may not:** anything that compares Middle High German attestations. `normalizeMHG` is the contract there, it is parity-tested against Python, and a fold applied to corpus forms would silently widen matches that §C's three-stage lemma resolution deliberately keeps narrow. **The one exception** is the lemma filter of the naming explorer (`naming-explorer.js`, #525): it folds as a second net next to `normalizeMHG`, because the curated external index writes `ë` and `í` (`nëve`, `bíderbe`), which `normalizeMHG` does not know. It is a display filter over that index, not §C lemma resolution over the corpus, so the widening stays local to one table.
 
 Measured on 2026-09-11 over all five authority sets these call sites touch (567 concepts, 615 genres, 90 names, 584 works, 211 persons). **477 entries carry ä/ö/ü**, counted over exactly the fields the call sites compare and no others: concepts `termDE`/`termEN`/`altDE`/`altEN` (175), genres `termDE`/`termEN` (98), names `termDE`/`termEN` (23), works `title`/`author`/`sigle` (150), persons `preferredName`/`altNames` (31). Capitals count, because the fold lowercases first (Ämter, Ölproduktion and 10 more). Two traps this number has already fallen into, both worth repeating before anyone recounts it: over `termDE`/`termEN`/`title` alone it is 391, and a probe that reads the field names off `items[0]` never sees the alternative terms at all, because the first concept has none. Genres carry 250 `altDE` that no caller reads, so they are correctly outside the count.
 
@@ -281,7 +281,7 @@ function lemmaRefMatchesId(lemmaRef, lemmaId):
 | `lexicon.xml#lemma_308 lexicon.xml#lemma_5` | `lemma_5` | yes |
 | `lexicon.xml#lemma_30800` | `lemma_308` | **no** |
 
-**Applies to all highlight/match paths**, all routed through the single `lemmaRefMatchesId` since #130 (was 6 inline copies across 4 files, the duplication that made #126 possible). Call sites today, measured 2026-08-01: `tei-text-reader.js:770/:784` (single + multi-lemma), `kwic-service.js:93` (KWIC lines) and `ui-helpers.js:444` in the playground (context highlight).
+**Applies to all highlight/match paths**, all routed through the single `lemmaRefMatchesId` since #130 (was 6 inline copies across 4 files, the duplication that made #126 possible). Call sites, measured 2026-10-05: `tei-text-reader.js` `processWord()` (single + multi-lemma), `kwic-service.js` `extractKwicHits()` (KWIC lines), and in the playground `ui-helpers.js` `enrichFileResults()` (context highlight) plus `multi-lemma-export.js` `pruefePosition()` and `zeilenFensterModus()` (export).
 
 Two former call sites are gone, and both are worth naming because the rule is easy to think of as universal: `text-renderer.js` lost its dead render path and then the whole shim (audit #42 plus Carearbeit 2026-07), and `tei-manager.js` stopped calling it with #314. The latter is not a gap: the proximity search reads `words[]` from the corpus index, and that array holds exactly one lemma ID per position (`build-corpus-index.py`: `words.append(lemma_ids[0])`, #170). There is no whitespace-separated list to tokenize, so a normalized `===` is the same predicate there. The unused import stayed behind until #325.
 
@@ -295,49 +295,70 @@ Validated on real corpus data: PL1 689 → 57, OVG 369 → 26 (matches the resul
 
 ## C. 3-Stage Lemma Resolution Algorithm
 
-**Contract:** Search resolves user input to lemma IDs through exactly 3 stages, in order, with early return. One caller may skip all three: a component that already holds an exact lemma id can pin it (§C.1.1). That path exists in one place and nowhere else.
+**Contract:** Search resolves user input to lemma IDs through exactly 3 stages, in order, with early return. Stage 1 returns early only if at least one of its hits has a corpus attestation; otherwise stage 2 is asked as well (#463). Two inputs skip all three: a component that already holds an exact lemma id can pin it (§C.1.1), and a user who types a lemma number gets that id (§C.1.2). Those two paths exist in the places named there and nowhere else.
 
 **Why:** MHG has extensive orthographic variation. A single lemma can appear as dozens of attested forms. The 3-stage approach balances precision (exact first) with recall (fuzzy last).
 
-Source: `assets/js/search/search-engine.js` (`resolveLemmaIds`), `playground/js/data/authority-manager.js` (`searchLemmaByOrthography`). Since #224 the stage-3 predicate and its ranking distance live together in `assets/js/lib/lemma-resolve.js`; both interfaces import them. Only stage 3 is explicitly shared: stage 1 still differs (the main site compares against the index's precomputed `lemma.normalized`, the playground normalizes at runtime and additionally ranks homographs by corpus frequency). Since #224 the playground applies the frequency tie-break in **stage 3** as well, after the length distance and before index order (`authority-manager.js`, `searchLemmaByOrthography`). The pseudocode below reflects the main-site ordering; anyone who needs the playground order should read the lesson from #163/#164 along with it: at equal distance the more frequent lemma wins, because consumers of `matches[0]` silently take the first hit.
+Source: `assets/js/search/search-engine.js` (`resolveLemmaIds`), `playground/js/data/authority-manager.js` (`searchLemmaByOrthography`). Since #224 the stage-3 predicate and its ranking distance live together in `assets/js/lib/lemma-resolve.js`; both interfaces import them. Stage 3 and, since #463, the attestation predicate (`isAttestedLemma`, `stage1Holds`) are explicitly shared: the stage-1 loops still differ (the main site compares against the index's precomputed `lemma.normalized`, the playground normalizes at runtime and additionally ranks homographs by corpus frequency). Since #224 the playground applies the frequency tie-break in **stage 3** as well, after the length distance and before index order (`authority-manager.js`, `searchLemmaByOrthography`). The pseudocode below reflects the main-site ordering; anyone who needs the playground order should read the lesson from #163/#164 along with it: at equal distance the more frequent lemma wins, because consumers of `matches[0]` silently take the first hit.
 
 ### Pseudocode
 
 ```
 function resolveLemmaIds(normalized):
     // Input: already normalized via normalizeMHG() (Contract A)
-    // Called by searchLemma() which normalizes the raw user input first
+    // Called by resolveSearchTerm(), which first checks for a lemma number
+    // (§C.1.2) and otherwise normalizes the raw user input
 
     // Stage 1: Exact match on normalized canonical form
     results = []
     for each lemma in authorityIndex.lemmata:
         if lemma.normalized === normalized:
             results.push(lemma.id)
-    if results.length > 0:
+    if any id in results is attested:        // corpusIndex.lemmaIndex has an entry (#463)
         return results                       // EARLY RETURN — skip stages 2-3
+    // (results empty, or every hit unattested: continue; unattested hits stay in the list)
 
-    // Stage 2: Variants dictionary lookup (O(1) hash map)
-    variantMatch = authorityIndex.variants[normalized]
-    if variantMatch:
-        return [variantMatch]                // EARLY RETURN — skip stage 3
+    // Stage 2: Variants dictionary lookup (O(1) hash map). A form claimed by
+    // several lemmata has an entry in variantCandidates (ADR-021, #378):
+    // all of them, best first by Vorschrift B (see "Variant Dictionary Structure")
+    candidates = authorityIndex.variantCandidates[normalized]
+    stage2 = candidates ?? (variants[normalized] ? [variants[normalized]] : [])
+    if results is not empty:                 // here every stage-1 hit is unattested
+        return stage2 + results (without duplicates)   // EARLY RETURN, stage 3 is not asked
+    if stage2 is not empty:
+        return stage2                        // EARLY RETURN, 1..N ids, ranked
 
     // Stage 3: Partial match fallback (bidirectional PREFIX, see #224)
-    results = []
+    partial = []
     for each lemma in authorityIndex.lemmata:
         if lemma.normalized.startsWith(normalized)                  // stem input
            OR (lemma.normalized.length >= 3
                AND normalized.startsWith(lemma.normalized)):        // inflected input
-            results.push(lemma)
-    sort results by abs(len(lemma.normalized) - len(normalized))    // closest first
-    return results.map(lemma => lemma.id)                          // May be empty
+            partial.push(lemma)
+    sort partial by abs(len(lemma.normalized) - len(normalized))    // closest first
+    return partial.map(lemma => lemma.id)                          // May be empty
 ```
+
+### Stage 1 holds only with a corpus attestation (#463)
+
+Stage 1 compares against the lexicon, not against corpus usage, so a lemma with no corpus token won against an attested one as soon as its spelling matched the input. Measured on 2026-10-10 (Authority Index 1.9.22, Corpus Index 4.2.31): 1,285 of 43,710 lemmata have no corpus token, and for the lemmata of the lexicon `corpusIndex.lemmaIndex` has an entry for exactly the other 42,425 (0 empty entries, 0 deviations from the token sum over `texts[].lemmata`; the index has 42,460 keys, 35 of them without a lexicon entry). An unattested hit never produces a result row on the main site, but it cut off stage 2.
+
+Decided by chsteiner on 2026-10-10: **if stage 1 yields no attested hit, stage 2 is asked as well.** Stage 3 is not part of that decision: it runs as before only for inputs that find nothing in stages 1 and 2 (`Cordoba`, spelled like its own unattested lemma, would otherwise resolve to `cor` by prefix; `hanc` stays at 0 rows). Stage-1 hits stay in the id list. The lexicon is more than the corpus index and is meant to be, so unattested lemmata are not excluded, only they no longer stop the resolution.
+
+- **Attested means: has an entry in `lemmaIndex`**, corpus-wide, not within the current text selection or author filter.
+- **Without `lemmaIndex`** (old index states) everything counts as attested, which is the pre-#463 behaviour.
+- **`hasAmbiguousVariant` follows the same predicate**: the note appears when stage 1 holds no attested hit and stage 2 has candidates.
+- **Not covered:** a stage-1 hit that is attested but wrong (`lenden`: verb lemma `lemma_3702` wins over the noun `lemma_3701`) is a separate question. Nor does an attested stage-1 hit change anything, so `roz` (`rôz` has 1 token) still yields 1 row.
+- **Playground too** (coordination decision G1, 2026-10-10): `searchLemmaByOrthography` applies the same rule. The predicate (`isAttestedLemma`, `stage1Holds`) lives in `assets/js/lib/lemma-resolve.js` and both sides call it; the loops stay per side. Without the corpus index loaded the playground counts everything as attested (old behaviour).
+- **Order of the list: unattested stage-1 hits come last** (after the stage-2 candidates), because `matches[0]` callers in the playground (§C.1.1) must not take a lemma without a token.
+- **Consequence for callers that hand over a lemma's own spelling as a search term** (word-component search in the lemma explorer, the "Im Korpus suchen" button of the lemma page): for an unattested lemma that has a stage-2 entry, `matches[0]` is now the attested lemma of that variant (`Rosse` → `ros`), not the lemma itself. Measured on 2026-10-10 with the main site's `resolveLemmaIds`: the spelling of 573 of the 1,285 unattested lemmata (counted per lemma) now yields at least one attested foreign id. Passing the lemma id (`ids=`, §C.1.1) would close it and is not part of #463.
 
 ### Stage Behavior
 
 | Stage | Input Type | Return | Performance | Example |
 |-------|-----------|--------|-------------|---------|
 | 1 | Canonical or normalized form | 0..N lemma IDs (homographs) | O(n) scan | `brot` → `[lemma_879]` |
-| 2 | Attested orthographic variant | Exactly 1 lemma ID | O(1) lookup | `brott` → normalize → `brot` → variants[`brot`] → `lemma_879` |
+| 2 | Attested orthographic variant | 1..N lemma IDs: exactly one unless the form is ambiguous, then all candidates ranked by Vorschrift B; with unattested stage-1 hits, those follow the candidates | O(1) lookup | `brott` → normalize → `brot` → variants[`brot`] → `lemma_879`; `hab` → variantCandidates[`hab`] → `lemma_2598`, `lemma_2593` |
 | 3 | Prefix match, both directions | 0..N lemma IDs, closest first | O(n) scan + sort | `minnecl` → `minnec`, `minne`, `minneclîch`, …; `schwertkampf` → none |
 
 ### Stage 3: why prefix and not substring (#224)
@@ -376,11 +397,14 @@ User types: **brott**
 
 ### Variant Dictionary Structure
 
-- Flat map: `{ normalized_variant_form: lemma_id }`
-- 233,978 normalized entries (as of 2026-09-24; 256,512 raw forms in variants.xml, deduped first-occurrence-wins), extracted from `authority-files/variants.xml`
-- **Two numbers that have to stay different:** 256,512 is the count of raw forms in `variants.xml`, 233,978 the count of mappings in the runtime dictionary after deduplication. Whoever writes "variants dictionary" means the smaller one. Whoever reads 234,244 is reading the state before #138 (§A, step 0)
-- **First occurrence wins** – if two lemmata claim the same variant form, only the first one stored (source: `parse_variants()` in `build-authority-index.py`, the `if normalized_variant not in variants` guard). Line anchors drift; look the function up by name
-- **This rule is decided away and not yet built.** [ADR-021](DECISIONS.md#adr-021-an-ambiguous-written-form-returns-every-candidate-lemma-ranked-by-that-forms-own-frequency) (KZW, 2026-09-14, #378) replaces „exactly 1" with „0..N, ranked by how often *this* normalized form occurs under each candidate". Nothing in the code has changed, so the stage table above still describes what runs today; whoever implements the ADR renarrates the stage 2 row and the return shape in both consumers
+- Flat map: `{ normalized_variant_form: lemma_id }`, and since Authority Index 1.9.18 a second flat map `variantCandidates: { normalized_variant_form: [lemma_id, ...] }` that exists only for ambiguous forms
+- 234,264 normalized entries (as of 2026-10-10, #460; 256,961 raw forms in variants.xml, deduplicated by normalized form), extracted from `authority-files/variants.xml`; 4,976 of them have more than one candidate and an entry in `variantCandidates` (4,994 forms are claimed by more than one lemma; 18 of those are left with one candidate once the lemmata without a `lexicon.xml` entry are dropped, see below)
+- **Two numbers that have to stay different:** 256,961 is the count of raw forms in `variants.xml`, 234,264 the count of mappings in the runtime dictionary after deduplication. Whoever writes "variants dictionary" means the smaller one. Whoever reads 234,244 is reading the state before #138 (§A, step 0)
+- **Every claiming lemma is kept, ranked by Vorschrift B** (ADR-021, KZW 2026-09-14, built in Authority Index 1.9.18, #378). Until 1.9.17 the first one in document order won, which meant the smaller migration number, and the rest were dropped. Source: `parse_variants()` in `build-authority-index.py`; look the function up by name, line anchors drift
+- **Vorschrift B, counted as follows.** The rank key of a candidate is the number of corpus tokens of **this normalized form** under that lemma: the normalized text of the `<w>`, not the type id, and not the lemma's overall frequency (that is Vorschrift A). `extract-variants.py` writes it as `form/@n` (tokens of the type under the lemma) and the build sums it over all types of the lemma that normalize to the form. Ties go to the smaller lemma number. **Candidates without an entry in `lexicon.xml` are dropped** while the form has a lemma that is in it (dangling references, #115, 24 candidate lists on 2026-10-02): such a candidate can be neither shown nor linked, and with many tokens it would otherwise outrank the real lemma (`halap`, `chana`). A form claimed only by lemmata without an entry keeps the ranking among them. Checked on 2026-10-02 against a direct count over all `<w @lemmaRef>` of the corpus by normalized token text, before that filter: 0 of 4,979 lists differ in order, and the count over tokens with `@corresp` only gives the same figures. The figures of #378 recomputed on that date: 4,979 ambiguous forms (4,972 on 2026-08-31); the first-wins winner is not the most frequent candidate for 2,065 of them under B (2,064), of which 1,330 are reachable because stage 1 does not catch them first (1,328); under A 1,894 and 1,273 (1,893, 1,272). The deviation of 1 to 3 that #378 mentions is this choice of counting unit plus growth since August. Applied to `variants`, the rule re-points 2,063 forms against Authority Index 1.9.17: the 2,065 minus `halap` and `chana`
+- **`variants[form]` is the first candidate**, not a separate rule: a consumer that can hold one id per form keeps working and gets the best-ranked lemma. `variantCandidates[form][0] === variants[form]` for every key; `scripts/audit/check-variants-flips.py` checks it
+- **Consumers.** Stage 2 of the main site (`SearchEngine.resolveLemmaIds`) returns all candidates, and `korpus.html` shows the note „Diese Schreibform kann zu mehreren Lemmata gehören …" with the lemma badges in rank order (`SearchEngine.hasAmbiguousVariant`, only for a stage 2 hit with candidates). The playground (`AuthorityManager.searchLemmaByOrthography`) returns all candidates as well, so every `matches[0]` caller (multi-lemma search, co-occurrence, rhyme, verse position, lemma distribution) now takes the best-ranked one; the chip of the multi-lemma search holds one id per term (§C.1.1) and therefore shows only that one, without the note. `resolveComponentForms` in the lemma explorer takes the bridge form of every candidate. **Callers that take `matches[0]` or `variants[form]` are a bug class**, as already stated for stage 1 (#163/#164), and stage 2 now belongs to it
+- **Side effects.** The keyness reference set (§H.1) is built from `resolveSearchTerm`, so for an ambiguous form it now covers all candidates instead of one, and the log-likelihood values for such a search change. The lemma-page and search-panel form chips invert `variants` and therefore list a form only under the lemma that is its first candidate (as under first-wins before); extending them to `variantCandidates` is open
 - Keys are **normalized** forms (lowercase + MHG character mapping applied before storage)
 
 ### C.1.1 Pinned resolution: a caller that already holds the id (#58)
@@ -391,12 +415,12 @@ Handing over the label alone would send that click back through stage 1, where a
 homograph group returns `matches[0]`, which can be a different lemma than the one
 on screen.
 
-Measured on 2026-09-24 against `authority-files/lexicon.xml` (43,713 entries with a
-`form/orth`): 102 written forms carry more than one entry (216 lemmata), and after
+Measured on 2026-09-24 against `authority-files/lexicon.xml` (43,710 entries with a
+`form/orth` today; the measurement still included three digit lemmas that #228 removed on 2026-10-01, none of which shared a written form, so the figures below are unchanged): 102 written forms carry more than one entry (216 lemmata), and after
 normalization 476 forms do (991 lemmata, 2.27 percent). `sin`, `wal`, `mal` and `de`
 are in that set. Counting rule, because the number depends on it: group by
 `normalize_mhg()` from `scripts/mhg_normalizer.py`, the canonical normalizer, not by a
-hand-written character map. On the first measurement (2026-08-07, 43,879 entries,
+hand-written character map. On the first measurement (2026-08-07, 43,879 entries, not today's count;
 477/993) a shorter map yielded 475/988, and that is how the wrong pair got into the
 first draft of this section. The step from 477/993 to 476/991 is #228: it deleted
 `lemma_64413`, and the group `erklaeren` is left with `lemma_14608` alone.
@@ -441,6 +465,16 @@ other producers of `#multi-lemma&lemmata=...` do **not** pin yet and still resol
 by written form: `cooccurrence-ranking.js` (the "Belege" link) and
 `sendWordComponentSelection()` in the lemma explorer. Any claim that the hand-over
 is id-exact holds for the explorer button only.
+
+### C.1.2 Lemma number as input (#467)
+
+KZW on 2026-09-24: the corpus search and the multi-lemma search accept `4086` and `lemma_4086` and treat either „as a unique lemma id". `assets/js/lib/lemma-id-input.js` (`parseLemmaIdInput`) decides what counts as a number: optional `lemma_` (also `lexicon.xml#lemma_`, the `@lemmaRef` spelling), then digits, leading zeros dropped. Anything else is a written form and goes through the three stages.
+
+- **A number never reaches stage 1.** `1` is `lemma_1` (*a*), not the lemma spelled `1`, as long as such a lemma exists.
+- **An unknown number resolves to nothing**, it is not retried as a written form. The main site checks existence against `authorityIndex.lemmata` (`SearchEngine.resolveSearchTerm`), the playground against `authorityManager.findLemmaById` (`TEIExplorer.resolveLemmaIds`). Before #467 the playground passed a bare number through unchecked.
+- **The resolved lemma is shown.** The main site puts it in the lemma box even when it has no hit in the selection; the multi-lemma chip shows `lemma_4086 = mer`, or „unbekannte Lemma-Nummer".
+- **Links into the corpus search carry a written form, so a written form made of digits would now be read as a number.** The lemma page (`lemma-page.js`, "Im Korpus suchen" and the variant chips) therefore links `lemma_N` of the lemma it shows whenever the form parses as a number. Measured on 2026-10-01, after #228 removed `36`, `42` and `49`: 1 lemma is spelled in digits only (`1`, `lemma_53328`), and all 62 digit-only keys of the variants dictionary point to it, never to `lemma_<key>`. Every other link stays a word search.
+- **The dictionary is the exception** (`woerterbuch.js`, #481): there a bare number also lists the lemmata whose written form starts with it, because the register is a browsing tool, not a search.
 
 ---
 
@@ -596,7 +630,8 @@ function searchDocumentLevel(lemmaIds, corpusData):
             // position list, summed over all searched lemmata (#58).
             matchCount = sum over lemmaIds of
                 length(text.lemmata["lemma_" + cleanId] or text.lemmata[cleanId] or [])
-            results.push({filename, title, author, context: 'document', matchCount})
+            // matchCounts: the same lengths per lemma, keyed "lemma_" + cleanId
+            results.push({filename, title, author, context: 'document', matchCount, matchCounts})
 
     return results
     // No dedup needed — each text can only appear once (checked via containsAll)
@@ -608,6 +643,8 @@ function searchDocumentLevel(lemmaIds, corpusData):
 
 **A field removed and a field restored (#327, then #58):** the pushed object used to carry a `matchingWords` map, the hit count per lemma, built in a loop over `lemmaIds` with two index lookups per matching text. Its last reader was `formatMatchingWordsOrCounts` in `tei-ui.js`, which had lost its own callers long before; when that method went, the field became write-only and was dropped. The card then fell back to the only number left, `totalWords`, and showed the token count of the whole text as the hit count: the same figure for every lemma in that text, and summed into the header (`arm` as an adjective, lemma_285, reported 6,418,133 across 207 texts where 820 is right). #58 restored the count as `matchCount` and removed `totalWords`, because after the change it would itself have had no reader left. That is the trap to avoid here: a write-only field on this object is what produced the bug the first time.
 
+**Per-lemma counts and the attestations behind a card (#58, 2026-10-12).** `matchCounts` has a reader: with more than one searched lemma, the card preview in `tei-ui.js` (`createPreviewText`) lists the count per lemma after the total, so the sum is not read as the count of one lemma. The attestations themselves are not part of the result. A card expands and only then loads its text (`playground/js/ui/tei/dokument-belege.js`): positions from `text.lemmata[id]` of the index, wording and verse or line from the TEI via `ladeTei`/`collectPositionTokens` (§B counting, the same path as the export), each displayed position checked with `pruefePosition` so that a mismatch between index and TEI shows as an error on the card instead of a wrong link. Attestations are grouped per searched lemma in search order (colour slot = index in `lemmaIds`, `LEMMA_COLORS`), in text order within a group, capped at 50 per lemma and card with a note giving the total. Each row links to `korpus.html?textId=…&lemmaIds=<all searched ids>&position=<index position>`; „Gesamten Text öffnen“ is the same link without `position`. The ids are the ones the search ran with, never re-resolved from the written form.
+
 ---
 
 ## D. External API Contracts
@@ -616,7 +653,7 @@ function searchDocumentLevel(lemmaIds, corpusData):
 
 **Trigger:** Reading view opens a text whose work has a `wikidata` field in the authority index.
 
-Source: `assets/js/rendering/tei-text-reader.js` → `getWikidataImage()` (~line 939; P18 `wbgetclaims` request at ~line 944)
+Source: `assets/js/rendering/tei-text-reader.js` → `getWikidataImage()` (the P18 `wbgetclaims` request sits inside it)
 
 **Request chain (3 sequential calls):**
 
@@ -695,9 +732,9 @@ Response: {                              // illustrative shape, IDs schematic
 
 | Target | URL Pattern | Source |
 |--------|------------|--------|
-| Old MHDBDB | `https://mhdbdb-old.sbg.ac.at/mhdbdb/App?action=Dic&lid={numericId}` | `lemma-page.js:239` |
-| REALonline (IMAREAL) | `https://realonline.imareal.sbg.ac.at/suche#{json}` where json = `{"s":"{normalized}"}` | `lemma-page.js:244` |
-| Corpus search | `../korpus.html?search={lemma.lemma}` – evaluated in `app.js` `handleURLParameters()` (#144): fills the search field and triggers the normal search | `lemma-page.js:249` |
+| Old MHDBDB | `https://mhdbdb-old.sbg.ac.at/mhdbdb/App?action=Dic&lid={numericId}` | `lemma-page.js` `renderExternalLinks()` |
+| REALonline (IMAREAL) | `https://realonline.imareal.sbg.ac.at/suche#{json}` where json = `{"s":"{normalized}"}` | `lemma-page.js` `renderExternalLinks()` |
+| Corpus search | `../korpus.html?search={lemma.lemma}` – evaluated in `app.js` `handleURLParameters()` (#144): fills the search field and triggers the normal search; since #434 the address keeps `?search=` (FEATURES.md, URL state of the corpus search) | `lemma-page.js` `renderExternalLinks()` |
 | GND (person/work) | `https://d-nb.info/gnd/{gndId}` | `tei-text-reader.js` |
 | Wikidata (person/work) | `https://www.wikidata.org/wiki/{wikidataId}` | `tei-text-reader.js` |
 | Handschriftencensus | URL stored in authority index `work.handschriftencensus` | `tei-text-reader.js` |
@@ -723,7 +760,7 @@ Response (XML):
 
 **Why:** External dictionary networks link to MHDBDB lemmata by numeric ID. Breaking these URLs breaks scholarly infrastructure across institutions.
 
-Source: `404.html` (redirect), `lemma/lemma-page.js:48-72` (parsing)
+Source: `404.html` (redirect), `lemma/lemma-page.js` `parseLemmaId()` (parsing)
 
 ```
 URL routing (GitHub Pages, no server-side routing):
@@ -744,6 +781,14 @@ Parse order: ?id > #hash > path segment (first match wins)
 ```
 
 **ID mapping:** `numericId` → `lemma_{numericId}` (internal key) = Wikidata P9351 value = Worterbuchnetz `lid`
+
+### D.6 Curated Dataset Route: `playground/#horses` (#193)
+
+**Contract:** `https://dhcraft.org/mhdbdb-tei-only/playground/#horses` MUST open the Arthurian horses view. The route key `horses` in `playground/js/ui/core/router.js` is not renamed, and the module is not removed without a redirect from this address.
+
+**Why:** Luise Borek asked for a persistent address to name in her TUdatalib record (hdl:tudatalib/3695.2) as the place where her dataset is used. Decided by chsteiner on 2026-10-02 in #193: the route is promised as stable, and the Zenodo concept DOI (10.5281/zenodo.20627656) is named alongside it as the persistent identifier, in case the domain ever changes. As of 2026-10-02 the only Zenodo version is v1.0.0 of 2026-06-10, which predates the horses index (added 2026-08-08); the DOI covers the horses data only from the next release on.
+
+**Scope:** only the bare route. Parameters after it (horse selection, event filter) are view state and carry no promise; the selection is not in the URL today. The beta badge describes the curation state and does not weaken the address. No other playground route is covered by this contract.
 
 ---
 
@@ -868,6 +913,28 @@ The older route through `etree.parse(remove_blank_text=True)` plus `tree.write(p
 
 `--all` therefore routes `works` through the surgical writer as well. Until the review round of 2026-09-07 it fell into the old path silently, which would have deleted the 19 `mwb-sigle` with no gate saying a word: the invariant „the generator never touches `mwb-sigle`" held for the new path only, while the old one stood next to it looking like an option.
 
+### F.4a Edition Evidence: Zotero → `works.xml` → TEI Header
+
+**Contract (chsteiner, 2026-09-24, #486):** the chain runs Zotero → `works.xml` → TEI header, and the `biblStruct` in the header (`sourceDesc/msDesc/additional/listBibl`) is a **copy** of the one in `works.xml`. A correction to an edition therefore starts in Zotero. `enhance_works_with_zotero.py` carries it into `works.xml`, `sync_tei_headers.py --works` carries it into the headers.
+
+**The gate checks containment, not equality.** `sync_tei_headers.py --works --check` requires every element of the `works.xml` `biblStruct` to be present in the header `biblStruct` with the same content (NFC, whitespace collapsed), per `@corresp`; the order of the children does not matter. Elements that exist only in the header are allowed and are counted in the report. The header may carry text-specific additions: AK has a `biblScope unit="verse"` and a `note type="context"` that describe the excerpt and not the edition (#134). Equality would make that a permanent finding, and a writer that replaces the whole block would delete it. Measured 2026-10-14 over all 667 headers: 678 blocks matched to `works.xml` by `@corresp`, 119 of them in a different child order, 2 additional elements (both AK). The 679th block is WZB's (below).
+
+**Two rules in the comparison, and both are exceptions to byte equality:**
+
+- `@xml:id` is never compared and never written. `works.xml` assigns it uniquely across the whole file and appends a suffix on collision (`HZ_HZ_HZ`); a header assigns it per file. In HZ and LUU the suffixes of the two blocks are swapped relative to `works.xml`, with no difference in content.
+- A local pointer `#x` in `works.xml` corresponds to `works.xml#x` in the header, because from inside `tei/` a bare `#x` would dangle. This rule hangs on a single case today: the `<ref>` in the FR3 `biblStruct` (the supplement pointing at FR1), the only `<ref>` in `works.xml`.
+
+A `biblStruct` without `@corresp` has no Zotero item and is outside the chain. That is WZB: `works.xml` and the header each carry a hand-written `biblStruct`, and they differ in content. Neither side is checked or written.
+
+**The writer is as surgical as the one for the `msIdentifier`** (F.4). It replaces changed leaf elements (as a whole element, so a leaf carrying its own `@xml:id` would lose it; there is none today) and inserts missing elements after their predecessor, and leaves every other byte alone, line endings included. On the unchanged state it changes 0 files; on the sync of 2026-10-14 it changed 183 files, 187 lines each way, all of them `<title>` lines (capitalisation only). **Not covered:** an element that disappears from `works.xml` stays in the header as an additional element, since it cannot be told from a hand-made addition like AK's, and the gate does not see it. That includes an element whose attributes change in `works.xml` (`level="a"` to `level="m"`): the header then carries the old and the new one side by side.
+
+**Two named exceptions to "the edition is what Zotero says", both in `enhance_works_with_zotero.py` and not in a hand correction after a run:**
+
+- **FLG** is assigned by Zotero key, not by call number (KZW, 2026-10-12, #486). Zotero carries `FLG` as call number on `MLJUUSLC` (Harsch, the digital source), but the edition in `works.xml` is Neumann/Vollmann-Profe, which Zotero holds as `ATWPNQPS` (call number `FLG1`, also in use for FLG1). The script reads `ATWPNQPS` for FLG, never `MLJUUSLC` as an edition, and aborts if the item is missing. FLG and FLG1 differ in the extent of the text (Books 1 to 2 of the 1990 volume against Books 1 to 7, 1990–1993), which Zotero does not know. `BESTAND_BEHALTEN` therefore keeps the `analytic`, `editor`, `imprint` and `note` of the FLG entry from `works.xml`: this is information that does not come from Zotero.
+- **FR3** stays at the state of `115c3a01f` (#236, the supplement volume of 2000) until the Zotero item `MVWV5QYG` is corrected. Today that item carries the content of FR1 and FR2, and a sync would overwrite the correction. The entry in `BESTAND_BEHALTEN` is deleted as soon as Zotero is right.
+
+**What F.4 says about the five files** (AK, FR3, HZ, LUU, WZB) is explained here: AK is the text-specific addition, FR3 the pointer rule, HZ and LUU the `@xml:id` suffixes, WZB the entry without a Zotero item. None of them is drift.
+
 ### F.5 Name Forms: the Historical Form Leads, the Modernized One Stays as an Alternative
 
 **Contract:** where a person is attested under two name forms and both are defensible in the literature, `persons.xml` carries the historical or Middle High German form as `<persName type="preferred">` and the modernized one as `<persName type="alternative">`. Every other occurrence follows the preferred form. The alternative is never deleted: it is attested, and deleting it makes the person unfindable under the name a reader is likely to know.
@@ -902,6 +969,15 @@ A deviation there is categorically different from a deviation in the `titleStmt`
 
 This does not touch F.4: identifiers (`handschriftencensus`, `GND`, `wikidata`) stay generated from `works.xml`, name forms are not among them.
 
+### F.6 Attribution Status: Which Author a Reader Sees (#452)
+
+**Contract:** An `<author>` of a work carries its own status (`@ana`: `disputed`, `uncertain`, `rejected`; none = accepted) and possibly a role (`@role="adapter"`), see [TEI-MODEL-AUTH-FILES.md §3.4](TEI-MODEL-AUTH-FILES.md#34-worksxml-register-of-works). **Counting as author** means: not an adapter and not rejected. „Disputed" and „uncertain" count, with the note.
+
+- **The compatibility field is the first counting author.** `works[].author`/`authorRef` (authority index) and `texts[].author`/`authorRef` (corpus index) are the first `<author>` that counts. Rule in two places that must agree: `is_counting_author` in `build-authority-index.py` and the XPath `tei:author[not(@role) and not(@ana="rejected")]` in `build-corpus-index.py`; the JS counterpart is `isCountingAuthor` in `assets/js/lib/attributions.js`. For `work_325` (RHB) that is Anonym, KZW's order of 08.10.2026, not Konrad von Würzburg.
+- **Everything that needs more than one name reads `works[].attributions`.** The list holds every `<author>` in document order as `{ref, name, status?, role?, note?}`, rejected ones and adapters included, so a consumer decides itself; `status` and `role` are present only where set. Search filter by author, reading view, work and person explorer read it. **A consumer that reads only `author`/`authorRef` sees the first counting author and nothing else**: that is the case for every analysis table that groups or lists texts by `texts[].author` (the playground analysis tools, `lemma-page.js`).
+- **Persons:** `persons[].works` lists the works where the person counts as author (a disputed attribution included), `formerWorks` the works with a rejected attribution, `adaptedWorks` the works where they are adapter. The last two exist only on persons that have them. In the API all three are JSON arrays.
+- **The reading view and result tables show all counting authors with their status text** („Anonym; Konrad von Würzburg (umstritten)"), the adapter under „Bearbeiter" and rejected ones under „Frühere Zuschreibungen" (`assets/js/lib/attributions.js`, `STATUS_LABEL`).
+
 ---
 
 ## G. Static JSON API Contract (#45)
@@ -926,7 +1002,7 @@ This does not touch F.4: identifiers (`handschriftencensus`, `GND`, `wikidata`) 
 - **Every emitted file** carries `"license": "CC BY-NC-SA 4.0"`. Collection indexes are `{"license", "items"}`.
 - **Root manifest** (`api/index.json`): `project`, `license`, `contact`, `documentation`, `sources` (the two index versions – provenance for every consumer), `collections` (`href` + `count` each).
 - **Summary list schemas** (`items[]` per collection): persons `{id, preferredName}`; works `{id, title, sigle}`; concepts/genres/names `{id, termDE, termEN}`; texts `{id, title, author, wordCount}`.
-- **Full records** are the index records verbatim, plus `license`, with two transformations: `persons.works` is normalized from comma-string to a JSON array; texts are stripped of the heavy `words`/`lemmata`/`lineStarts`/`lineEnds` arrays (full token data stays in `data/corpus-index.json.gz` and `tei/`). Verbatim means additive index fields flow into the API automatically – e.g. lemma records carry `posAll[]` (every `<pos>` value; `pos` stays the first one) since Authority Index v1.6.0 (#161), and the curated fields `origin` (source languages + attribution) plus `senses[].definition` / `senses[].comment` since v1.7.0. The curated fields are **present only where curated** (1 lemma today) – consumers must treat them as optional, never as a schema promise per record. `origin.languages[]` is an **unordered set of origin layers**, source and transmission language alike; which is which is stated in the German prose of `origin.attribution`, not machine-readable. It is kept congruent with the language concepts in the `concept_23123000` subtree by curation rule (TEI-MODEL-AUTH-FILES §3.1), not by the build. The `*Resp` fields carry `contributors.xml#contrib_N` verbatim per §G.3's ref convention. Since Authority Index v1.9.10 (#270) each `senses[].commentResp` is accompanied by `senses[].commentRespName`, the display name resolved at build time from `contributors.xml`; it is present exactly where `commentResp` is. `definitionResp` and `origin.resp` stay unresolved, and `contributors.xml` is still not a collection of the index, so resolving those two IDs needs the XML file, not the API. Settled by [ADR-018](DECISIONS.md#adr-018-attribution-of-curated-lemma-statements-stops-at-the-data-layer-for-now) and its revision of 2026-09-23; the change was additive, no field was removed or renamed. Since v1.8.0 (#307) person records carry the same kind of optional pair: `altNames[]` (alternative name forms from `persons.xml`, present for 81 of 211 persons) and `altNormalized[]`. The two are **index-parallel by contract** – `altNormalized[i]` is `normalizeMHG(altNames[i])` – because the person explorer matches on the normalized entry and displays the readable one at the same position. A consumer that filters or reorders one list must do the same to the other. `@xml:lang` from the source is deliberately not carried: for a person both language forms name the same individual, so an alternative is a search key, not a display label (unlike concepts, where `termDE`/`termEN` are distinct labels and both get shown). One consequence to know before anyone asks for the language back: the dedup collapses the 34 cases where the German and English form are the same string, so a later parallel `altLangs[]` would have to carry a list per entry, not a single value.
+- **Full records** are the index records verbatim, plus `license`, with two transformations: `persons.works` (and, where present, `formerWorks` and `adaptedWorks`, F.6) is normalized from comma-string to a JSON array; texts are stripped of the heavy `words`/`lemmata`/`lineStarts`/`lineEnds` arrays (full token data stays in `data/corpus-index.json.gz` and `tei/`). Verbatim means additive index fields flow into the API automatically – e.g. lemma records carry `posAll[]` (every `<pos>` value of `lexicon.xml`) since Authority Index v1.6.0 (#161). Since v1.9.24 (#462) `posAll` is ordered by corpus frequency (the number of tokens carrying the part of speech, compound tags split into their parts; ties and lemmata without corpus tokens keep lexicon order) and `pos` is its first element, so `pos` is the most frequent corpus part of speech among the lexicon values instead of the first one in the lexicon; a lemma with a single lexicon part of speech is unchanged, and the set of values in `posAll` never changes. The frequencies come from `data/lemma-pos.json.gz` (`scripts/build-lemma-pos.py`), not from the authority files. The curated fields `origin` (source languages + attribution) plus `senses[].definition` / `senses[].comment` since v1.7.0. The curated fields are **present only where curated** (1 lemma today) – consumers must treat them as optional, never as a schema promise per record. `origin.languages[]` is an **unordered set of origin layers**, source and transmission language alike; which is which is stated in the German prose of `origin.attribution`, not machine-readable. It is kept congruent with the language concepts in the `concept_23123000` subtree by curation rule (TEI-MODEL-AUTH-FILES §3.1), not by the build. The `*Resp` fields carry `contributors.xml#contrib_N` verbatim per §G.3's ref convention. Since Authority Index v1.9.10 (#270) each `senses[].commentResp` is accompanied by `senses[].commentRespName`, the display name resolved at build time from `contributors.xml`; it is present exactly where `commentResp` is. Since v1.9.15 the same holds for `senses[].definitionRespName` next to `definitionResp` and `origin.respName` next to `origin.resp`. `contributors.xml` is still not a collection of the index: the API carries the names of the people these fields point at, not the register itself. Settled by [ADR-018](DECISIONS.md#adr-018-attribution-of-curated-lemma-statements-stops-at-the-data-layer-for-now) and its revisions of 2026-09-23 and 2026-09-25; both changes were additive, no field was removed or renamed. Since v1.8.0 (#307) person records carry the same kind of optional pair: `altNames[]` (alternative name forms from `persons.xml`, present for 81 of 211 persons) and `altNormalized[]`. The two are **index-parallel by contract** – `altNormalized[i]` is `normalizeMHG(altNames[i])` – because the person explorer matches on the normalized entry and displays the readable one at the same position. A consumer that filters or reorders one list must do the same to the other. `@xml:lang` from the source is deliberately not carried: for a person both language forms name the same individual, so an alternative is a search key, not a display label (unlike concepts, where `termDE`/`termEN` are distinct labels and both get shown). One consequence to know before anyone asks for the language back: the dedup collapses the 34 cases where the German and English form are the same string, so a later parallel `altLangs[]` would have to carry a list per entry, not a single value.
 - **Ref convention:** cross-references stay raw as in the source XML/indexes (`persons.xml#person_786`, `lexicon.xml#lemma_879_sense_1449`). Consumers parse the ID as the substring **after `#`**; the part before `#` names the source authority file, not an API path.
 
 ### G.4 Determinism = CI Gate Basis

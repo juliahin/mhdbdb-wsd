@@ -16,6 +16,7 @@ import {
   SearchPatterns,
 } from "../search/SearchHelpers.js";
 import { TextNormalizer } from "../../../../assets/js/lib/text-normalizer.js";
+import { findByIdInput, withIdHit } from "../../../../assets/js/lib/authority-id-input.js";
 
 /**
  * Mindestlänge der Eingabe im Wortbestandteil-Modus (#239 Anforderung 5).
@@ -70,7 +71,7 @@ export class LemmaExplorer {
     this.lastComponentTerm = null;
     // Aus statt undefined: der Default ist eine Entscheidung (@wachauer,
     // 2026-09-08 in #239) und keine Nebenwirkung einer fehlenden Zuweisung.
-    // Angeschaltet sperrt er 16.713 der 43.879 Lemmata dauerhaft aus: sie
+    // Angeschaltet sperrt er 16.713 der rund 44.000 Lemmata dauerhaft aus: sie
     // führen im Lexikon keine Wortbestandteile und können ihn nie
     // passieren. Dass gefiltert wird, sagt die Kopfzeile („davon N als
     // belegte Wortbildung angezeigt") und die gesetzte Checkbox durchaus;
@@ -121,9 +122,9 @@ export class LemmaExplorer {
    * Ein Lemma an die Belegsuche übergeben (#58).
    *
    * Übergeben wird die ID, nicht die Schreibform. Der Klick hat ein bestimmtes
-   * Lemma gemeint, und für 993 der 43.879 Lemmata (477 normalisierte Formen,
-   * gemessen am 2026-08-07) würde die Auflösung über die Schreibform ein
-   * anderes treffen: `sin`, `wal`, `mal`, `de`. Die Schreibform fährt nur als
+   * Lemma gemeint, und bei Homographen (Zählweise in CONTRACTS.md) sowie, seit
+   * #463, bei unbelegten Lemmata mit Stufe-2-Eintrag würde die Auflösung
+   * über die Schreibform ein anderes treffen: `sin`, `wal`, `mal`, `de`. Die Schreibform fährt nur als
    * Beschriftung mit, damit im Ergebnis „minne" steht und nicht „4130".
    *
    * Dokumentmodus, weil ein einzelnes Lemma keine Nähesuche trägt; die
@@ -230,7 +231,13 @@ export class LemmaExplorer {
     // Lemmasuche und wird nach der Rückkehr auf einen anderen Begriff gelegt.
     this.discardComponentViewState();
     const eingabe = document.getElementById("lemmaSearch");
-    const term = eingabe ? eingabe.value.trim() : "";
+    let term = eingabe ? eingabe.value.trim() : "";
+    // Eine Lemma-ID (#545) ist kein Wortbestandteil: in deren Modus wird sie zur
+    // Schreibform des Lemmas, sonst fiele sie als Zeichenfolge "lemma_6794" durch
+    if (modus === "component") {
+      const lemma = findByIdInput(this.authorityData.lemmata, "lemma", term);
+      if (lemma) term = lemma.lemma || "";
+    }
     const teile = ["lemmata"];
     if (modus === "component") teile.push("mode=component");
     if (term) teile.push(`q=${encodeURIComponent(term)}`);
@@ -243,7 +250,7 @@ export class LemmaExplorer {
       return;
     }
 
-    const matches = SearchPatterns.textContainsNormalized(
+    const textMatches = SearchPatterns.textContainsNormalized(
       this.authorityData.lemmata,
       searchTerm,
       (lemma) => lemma.lemma
@@ -251,7 +258,12 @@ export class LemmaExplorer {
 
     // #137: alphabetisch nach Lemma-Label sortieren (vorher implizit nach Lemma-ID),
     // VOR dem maxResults-Cut in handleSearchResults. Idiom wie concept-explorer.js.
-    matches.sort((a, b) => (a.lemma || "").localeCompare(b.lemma || "", "de"));
+    textMatches.sort((a, b) => (a.lemma || "").localeCompare(b.lemma || "", "de"));
+    // #545: ein ID-Treffer steht vor der alphabetischen Liste
+    const matches = withIdHit(
+      findByIdInput(this.authorityData.lemmata, "lemma", searchTerm),
+      textMatches
+    );
 
     const result = handleSearchResults(searchTerm, matches, {
       maxResults: 50,
@@ -313,8 +325,13 @@ export class LemmaExplorer {
     // in Stufe 1 hätte per Definition dieselbe normalisierte Form wie die
     // Eingabe, brächte also nichts Neues; dass es ihn gibt, meldet die
     // Exakt-Zeile im Kopf ohnehin.
-    const variantenId = this.authorityData.variants?.[eingabeNorm];
-    if (variantenId) {
+    // Mehrere Kandidaten (ADR-021, #378): jeder Kandidat liefert seine
+    // Brückenform, in der Reihenfolge nach Vorschrift B.
+    const kandidaten = this.authorityData.variantCandidates?.[eingabeNorm];
+    const variantenIds = Array.isArray(kandidaten)
+      ? kandidaten
+      : [this.authorityData.variants?.[eingabeNorm]].filter(Boolean);
+    for (const variantenId of variantenIds) {
       const lemma = this.authorityData.lemmata.find((l) => l.id === variantenId);
       const form = lemma ? TextNormalizer.normalizeMHG(lemma.lemma || "") : "";
       // Die Mindestlänge gilt auch für die Brückenform, sonst umgeht ein
@@ -539,7 +556,7 @@ export class LemmaExplorer {
       this.componentPicked.delete(wert);
     }
 
-    // Homographen gleichschreibend zusammenhalten. 102 der 43.765 Schreibformen
+    // Homographen gleichschreibend zusammenhalten. 102 Schreibformen
     // gehören mehr als einem Lemma (`sal`, `wal`, `sin` je vier), und das Modell
     // hält Formen, nicht IDs, weil die Multi-Lemma-Route Formen erwartet. Zwei
     // Checkboxen können deshalb denselben `value` tragen. Ohne diesen Abgleich
@@ -854,7 +871,9 @@ export class LemmaExplorer {
    * Anforderung 2: ausgewählte Lemmata gesammelt an die Multi-Lemma-Suche
    * geben. Übergeben werden die Originalformen, nicht die IDs, weil die
    * Multi-Lemma-Route Schreibformen erwartet und sie in der Ergebnisanzeige
-   * auch so beschriftet. Sie laufen dort durch Stufe 1 der Auflösung.
+   * auch so beschriftet. Sie laufen dort durch die Auflösung: Stufe 1 hält nur,
+   * wenn mindestens ein exakter Treffer im Korpus belegt ist, sonst kommen die
+   * Stufe-2-Treffer nach vorn (#463, `stage1Holds` in lemma-resolve.js).
    */
   sendWordComponentSelection() {
     // Aus dem Modell, nicht aus dem DOM (#251): eine Auswahl, die der Filter
@@ -1022,8 +1041,12 @@ export class LemmaExplorer {
             : this.escapeText(l.name)
         )
         .join(" • ");
+      // Seit #270 (KZW 25.09.2026) mit Urheber, wo der Index ihn aufgeloest hat.
+      const originLabel = lemma.origin.respName
+        ? `<strong>Herkunftserklärung von ${this.escapeText(lemma.origin.respName)}:</strong> `
+        : "";
       const attribution = lemma.origin.attribution
-        ? `<div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">${this.escapeText(lemma.origin.attribution)}</div>`
+        ? `<div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">${originLabel}${this.escapeText(lemma.origin.attribution)}</div>`
         : "";
       resultHTML += `
               <div style="margin-bottom: 8px;">
@@ -1072,9 +1095,13 @@ export class LemmaExplorer {
 
         // Kuratierte Prosa (<def> / <note type="comment"> im Lexikon).
         // Seit #270 nennt das Label den Urheber des Kommentars, wo der
-        // Index ihn aufgeloest hat (commentRespName).
+        // Index ihn aufgeloest hat (commentRespName), seit 25.09.2026 auch
+        // der Definition (definitionRespName).
+        const definitionLabel = sense.definitionRespName
+          ? `<strong>Definition von ${this.escapeText(sense.definitionRespName)}:</strong> `
+          : "";
         const definitionHTML = sense.definition
-          ? `<div style="margin-top: 4px; font-size: 0.9rem; color: #1e293b;">${this.escapeText(sense.definition)}</div>`
+          ? `<div style="margin-top: 4px; font-size: 0.9rem; color: #1e293b;">${definitionLabel}${this.escapeText(sense.definition)}</div>`
           : "";
         const commentLabel = sense.commentRespName
           ? `Kommentar von ${this.escapeText(sense.commentRespName)}:`
@@ -1106,18 +1133,12 @@ export class LemmaExplorer {
     return resultHTML;
   }
 
-  showLemmaDetails(lemmaId, lemmaText) {
-    // Navigate to Lemma Explorer with pre-filled search
-    this.showLemmataWithSearch();
-
-    // Pre-fill search input and trigger search
-    setTimeout(() => {
-      const searchInput = document.getElementById("lemmaSearch");
-      if (searchInput) {
-        searchInput.value = lemmaText;
-        this.searchLemmata(lemmaText);
-        searchInput.focus();
-      }
-    }, 0);
+  showLemmaDetails(lemmaId) {
+    // Ueber die ID statt die Schreibform (seit #545): die Schreibform fand jedes
+    // Lemma, das sie enthaelt ("stein" auch bechstein, steinwant), und das
+    // angeklickte stand irgendwo in der alphabetischen Liste. Ueber den Hash wie
+    // switchLemmaSearchMode, damit das Ziel bookmarkbar ist und ein Neuladen
+    // nicht auf den Begriffe-Explorer zurueckfaellt; der Router fuellt das Feld.
+    window.location.hash = `lemmata&q=${encodeURIComponent(lemmaId)}`;
   }
 }
