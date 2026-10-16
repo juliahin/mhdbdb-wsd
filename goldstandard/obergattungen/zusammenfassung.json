@@ -1,0 +1,166 @@
+{
+  "zieltokens": 1434270,
+  "texte_nach_regel": {
+    "eindeutig": 514,
+    "vorrang": 149,
+    "pruefen": 4
+  },
+  "gruppen": [
+    {
+      "gruppe": "Geistliche Literatur",
+      "texte": 74,
+      "anteil_hauptgruppe": 0.0764,
+      "anteil_anteilig": 0.0673,
+      "zielanteil_wurzel": 0.1164,
+      "erwartet_von_360": 41.9,
+      "d1_anteil_der_gruppe": 0.04
+    },
+    {
+      "gruppe": "Fach- und Rechtsliteratur",
+      "texte": 29,
+      "anteil_hauptgruppe": 0.0158,
+      "anteil_anteilig": 0.0136,
+      "zielanteil_wurzel": 0.053,
+      "erwartet_von_360": 19.1,
+      "d1_anteil_der_gruppe": 0.006
+    },
+    {
+      "gruppe": "Historiografie",
+      "texte": 14,
+      "anteil_hauptgruppe": 0.1038,
+      "anteil_anteilig": 0.1002,
+      "zielanteil_wurzel": 0.1357,
+      "erwartet_von_360": 48.8,
+      "d1_anteil_der_gruppe": 0.138
+    },
+    {
+      "gruppe": "Lehrdichtung",
+      "texte": 36,
+      "anteil_hauptgruppe": 0.0549,
+      "anteil_anteilig": 0.0458,
+      "zielanteil_wurzel": 0.0987,
+      "erwartet_von_360": 35.5,
+      "d1_anteil_der_gruppe": 0.003
+    },
+    {
+      "gruppe": "Großepik",
+      "texte": 91,
+      "anteil_hauptgruppe": 0.5857,
+      "anteil_anteilig": 0.5818,
+      "zielanteil_wurzel": 0.3223,
+      "erwartet_von_360": 116.0,
+      "d1_anteil_der_gruppe": 0.096
+    },
+    {
+      "gruppe": "Kurzdichtung",
+      "texte": 272,
+      "anteil_hauptgruppe": 0.0652,
+      "anteil_anteilig": 0.0644,
+      "zielanteil_wurzel": 0.1075,
+      "erwartet_von_360": 38.7,
+      "d1_anteil_der_gruppe": 0.118
+    },
+    {
+      "gruppe": "Lyrik",
+      "texte": 147,
+      "anteil_hauptgruppe": 0.0887,
+      "anteil_anteilig": 0.1174,
+      "zielanteil_wurzel": 0.1254,
+      "erwartet_von_360": 45.2,
+      "d1_anteil_der_gruppe": 0.186
+    },
+    {
+      "gruppe": "(zu prüfen)",
+      "texte": 4,
+      "anteil_hauptgruppe": 0.0095,
+      "anteil_anteilig": 0.0095,
+      "zielanteil_wurzel": 0.041,
+      "erwartet_von_360": 14.8,
+      "d1_anteil_der_gruppe": 0.004
+    }
+  ],
+  "vorrangfaelle": [
+    [
+      "Kurzdichtung|Lyrik",
+      83
+    ],
+    [
+      "Geistliche Literatur|Kurzdichtung|Lyrik",
+      30
+    ],
+    [
+      "Geistliche Literatur|Lyrik",
+      6
+    ],
+    [
+      "Kurzdichtung|Lehrdichtung|Lyrik",
+      6
+    ],
+    [
+      "Großepik|Kurzdichtung|Lyrik",
+      5
+    ],
+    [
+      "Geistliche Literatur|Kurzdichtung",
+      5
+    ],
+    [
+      "Fach- und Rechtsliteratur|Historiografie|Lehrdichtung",
+      3
+    ],
+    [
+      "Kurzdichtung|Lehrdichtung",
+      3
+    ],
+    [
+      "Großepik|Lehrdichtung",
+      3
+    ],
+    [
+      "Großepik|Historiografie",
+      2
+    ],
+    [
+      "Großepik|Kurzdichtung",
+      1
+    ],
+    [
+      "Großepik|Lyrik",
+      1
+    ],
+    [
+      "Geistliche Literatur|Historiografie",
+      1
+    ]
+  ],
+  "pruefen": [
+    [
+      "HNI",
+      "Helmasperger Notariatsinstrument",
+      "",
+      "Mediale Sonderform",
+      187
+    ],
+    [
+      "HZU",
+      "Herzogenburger Urkunden",
+      "",
+      "Mediale Sonderform",
+      1422
+    ],
+    [
+      "HZU2",
+      "Herzogenburger Urkunden",
+      "",
+      "Mediale Sonderform",
+      11952
+    ],
+    [
+      "SBF",
+      "Flugschrift Donnerstein",
+      "Flugblatt",
+      "Mediale Sonderform",
+      57
+    ]
+  ]
+}

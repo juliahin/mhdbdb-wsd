@@ -221,16 +221,17 @@ Befund vom 2026-10-08 (alle 667 Texte, 7.545.732 lemmatisierte Tokens):
 
 - Wenige große Texte dominieren: OVG allein 4,6 %, die zehn größten zusammen rund 26 %.
 - Lyrik umfasst 485 Texte, aber nur 3,6 % der Tokens; Fachliteratur liegt bei rund 0,4 %.
-- Die Gattungstaxonomie (`genres.xml`, 615 Gattungen) ist polyhierarchisch und flach: Fast alle
-  Gattungen hängen direkt an den beiden Wurzeln „Epik, Lyrik und Dramatik" und „Wissensliteratur
-  und Gebrauchsliteratur". 406 Texte haben eine Gattung, 260 mehrere, TRO hat keine.
+- Die Gattungsangaben folgen der MHDBDB-Textreihentypologie (`genres.xml`, 615 Kategorien,
+  polyhierarchisch): zwei Wurzeln, 12 Kategorien auf Ebene 1, bis zu 6 Ebenen. Jeder Text trägt im
+  Header zu jeder Textreihe eine eindeutige Herkunft (`ana="parent"`). Korrektur vom 2026-10-16:
+  Die frühere Angabe, die Taxonomie sei flach und TRO habe keine Gattung, war falsch
+  (Einzelheiten in [OBERGATTUNGEN.md](OBERGATTUNGEN.md)).
 - Datierung und Vers/Prosa liegen nicht maschinenlesbar vor (#118; WZB ist Prosa, steht aber in `<l>`).
 
-Die **Obergattungsgruppen** (ca. 6 bis 8, z. B. höfische und heroische Großepik, Lyrik, Kleinepik,
-geistliche Literatur, Lehrdichtung und Didaxe, Historiografie, Fach- und Gebrauchsliteratur) werden
-als versionierte Zuordnungstabelle Gattung → Gruppe festgelegt, mit einer dokumentierten Regel für
-Texte mit mehreren Gattungen. Die Tabelle steuert die Gewichte in 4.4 und muss deshalb vor
-Freeze 1 stehen.
+Die **Obergattungsgruppen** sind die Ebene 1 der Textreihentypologie, zusammengelegt, wo das Korpus
+zu dünn ist; Zuordnung über die Herkunft im Header, bei mehreren Gruppen Vorrang der Inhaltsbereiche
+vor den Formen. Entwurf zur Prüfung: [OBERGATTUNGEN.md](OBERGATTUNGEN.md). Die Tabelle steuert die
+Gewichte in 4.4 und muss deshalb vor Freeze 1 stehen.
 
 ### 4.9 Manifest pro Item
 
@@ -460,7 +461,7 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 5. ~~Ausschlussliste der LLM-berührten Tokens bauen~~: erledigt am 2026-10-08, Regel bestätigt am 2026-10-16 (Abschnitt 3, Punkt 1).
 6. **Korpusstand fürs Einfrieren:** vorher mit dem Upstream-`main` abgleichen, dann Commit festlegen.
 7. **Teststärke:** grob gerechnet (Abschnitt 4.7); Anteil diskordanter Paare im Pilot schätzen, dann N vor Freeze 2 bestätigen.
-8. **Obergattungsgruppen** festlegen (philologische Entscheidung), inklusive Regel für Texte mit mehreren Gattungen und Gattung für TRO.
+8. **Obergattungsgruppen** prüfen und festlegen: Entwurf vom 2026-10-16 in [OBERGATTUNGEN.md](OBERGATTUNGEN.md), Abschnitt 5.
 9. **Datierung und Vers/Prosa:** Sollen sie als weitere Ausgleichsmerkmale dienen? Dann braucht es eine manuelle Zuordnung pro Text (z. B. Jahrhundert über den Handschriftencensus, bei 323 Werken verlinkt).
 10. ~~Obergrenze an Tokens pro Text~~: 3, bestätigt am 2026-10-16 (Abschnitt 4.4).
 11. **Schwelle für das Ende des Pilots** (Vorschlag α ≥ 0,80, Untergrenze 0,67) vor dem Pilot festlegen.
