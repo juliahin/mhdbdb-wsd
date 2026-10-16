@@ -48,19 +48,72 @@ wie in der Präregistrierung und in `.agent/workflows/sense-disambiguator.md`.
 
 ## 3. Grundgesamtheit und Ausschlüsse
 
-**Grundgesamtheit:** alle `<w>` im Korpus mit `@lemmaRef` auf ein Lemma, dessen Inventar mindestens
-zwei Senses hat und dessen Wortart laut `lexicon.xml` NOM, VRB oder ADJ ist (VEX und VEM werden VRB
-zugeschlagen).
+**Grundgesamtheit:** alle `<w>` mit `@lemmaRef` auf ein Lemma mit mindestens zwei Senses im
+Inventar, deren **Wortart** NOM, VRB oder ADJ ist (VEX und VEM zählen als VRB). Die Wortart wird
+so bestimmt (entschieden am 2026-10-16):
 
-**Schicht „Silber":** Jedes Token gehört entweder zu *Silber ja* (trägt `@ana`) oder zu *Silber
-nein*. Beide Schichten werden gezogen. *Silber nein* ist der Korpusteil, für den WSD gebraucht
-wird; *Silber ja* erlaubt nebenbei die Messung der Silberqualität.
+1. aus `lexicon.xml`, wenn das Lemma dort genau eine Wortart hat;
+2. sonst aus dem `@pos` des Tokens, wenn es genau eine Wortart nennt;
+3. sonst ist das Token nicht in der Grundgesamtheit.
+
+Ohne Schritt 2 fielen 3.654 polyseme Lemmata mit 920.011 Tokens heraus, darunter zentrale
+Wörter wie *guot*: mehr als die ganze übrige Zielmenge. Ein Lemma kann so in mehreren Wortarten
+vorkommen; Einheit der Schichtung ist daher das Paar aus Lemma und Wortart. Gemessen am
+2026-10-16 (ohne WZB, Ausschlussliste vom 2026-10-08): 930.645 Tokens über Schritt 1, 503.625 über
+Schritt 2, zusammen **1.434.270 Tokens** in 5.132 Paaren aus Lemma und Wortart (4.797 Lemmata);
+409.893 Tokens bleiben wegen mehrdeutigem Token-`@pos` draußen. Präpositionen und Adverbien sind
+bewusst nicht enthalten: Ihre Senses sind in der MHDBDB funktional-grammatisch (z. B. *in* mit
+drei Senses), eine andere Aufgabe als lexikalische WSD, und sie fehlen auch in den
+Vergleichsdatensätzen. Polyseme PRP-Lemmata mit eindeutiger Lexikon-Wortart: 6 Lemmata, 53.333
+Tokens; ADV: 94 Lemmata, 29.475 Tokens.
+
+**Silber ist eine Eigenschaft des Textes, nicht des Tokens.** In teilweise annotierten Texten
+tragen die monosemen Tokens `@ana`, die polysemen nicht (Beispiel ABG: alle 2.251 monosemen
+lemmatisierten Tokens mit `@ana`, keines der 745 polysemen). Über die Zieltokens gerechnet ist
+die Verteilung zweigipflig: 345 Texte haben weniger als 10 % Silber, 203 Texte mindestens 90 %,
+dazwischen fast keine (gemessen am 2026-10-16). Deshalb gibt es statt einer Token-Schicht zwei
+**Domänen**:
+
+- **D1, durchannotiert:** Texte, in denen mindestens 90 % der Zieltokens `@ana` tragen
+  (203 Texte, 140.480 Zieltokens, ca. 10 %).
+- **D0, übrige Texte** (463 Texte, 1.293.790 Zieltokens). Das ist der Korpusteil, für den WSD
+  gebraucht wird.
+
+Folgen, die in jede Auswertung gehören: Die gemessene Silberqualität ist die Qualität der
+Annotationskampagne dieser 203 Texte, nichts darüber hinaus. Unterschiede zwischen D1 und D0 sind
+mit Text und Gattung vermischt und werden nicht als Silber-Effekt gedeutet. Die MFS-Baseline wird
+aus Silber gelernt, also im Wesentlichen aus D1, und auf D0 angewandt; diese Verschiebung ist
+realistisch, wird aber benannt.
 
 **Ausschlüsse** (jeder Ausschluss wird mit Anzahl im Datasheet dokumentiert):
 
-1. Tokens, deren `@lemmaRef` oder `@ana` von einem LLM-Lauf stammt (u. a. WZB Phase 1b bis 3,
-   #198, #216, #369/#371, #387, GWTK). Grundlage: `revisionDesc` der Texte und `ingest/pos-disambig/*/`.
-   Die Ausschlussliste muss vor der Ziehung gebaut werden (offener Punkt).
+1. **Tokens, deren Annotation nach der Migration verändert wurde** (bestätigt von Julia am
+   2026-10-16). Jedes Token wird mit seinem Zustand im Commit `0422429fc` (2025-07-23, Stand nach
+   der Migration, 666 Texte) verglichen. Das Sense-Attribut hieß dort `@meaningRef` und wurde am
+   2026-04-09 in `@ana` umbenannt (#32); verglichen wird der Inhalt, nicht der Attributname.
+   Werkzeug: [`ausschluss_nachmigration.py`](ausschluss_nachmigration.py).
+   - **Ausgeschlossen** wird ein Token mit `@lemmaRef`, wenn es in einem nach der Baseline
+     ingestierten Text liegt (WZB, ganz), wenn seine `xml:id` in der Baseline fehlt, oder wenn sich
+     `@lemmaRef` oder der Sense geändert hat.
+   - **Nur markiert, nicht ausgeschlossen** wird ein Token, bei dem sich ausschließlich `@pos`
+     geändert hat. Lemma und Sense sind dann unverändert, die Annotator:innen sehen `@pos` nicht,
+     und die Wortart für die Schichtung kommt aus `lexicon.xml`. Ein Ausschluss würde zudem
+     gezielt die Fachliteratur treffen, die Abschnitt 4 anheben will. Einschränkung: Bei Lemmata
+     mit mehrdeutiger Lexikon-Wortart kommt die Wortart aus dem Token (oben, Schritt 2), bei
+     markierten Tokens also aus dem POS-Abgleich von #32. Die Markierung bleibt deshalb im Manifest,
+     und eine Sensitivitätsanalyse wiederholt die Hauptauswertung ohne markierte Tokens.
+   - `@corresp` wird nicht verglichen: Es verknüpft nur den Variantentyp.
+   - **Warum ein Git-Vergleich und keine Ingest-Logs:** Die Läufe (#189, #198, #216, #369, #387 u. a.)
+     mischen regelbasierte Schritte, LLM-Entscheidungen und Einzelentscheidungen von KZW, und nicht
+     jeder führt eine Token-Liste. Der Vergleich erfasst jede Änderung, auch ungeloggte; die Listen
+     in `ingest/pos-disambig/*/` dienen nur der Herkunftsangabe.
+   - **Stand 2026-10-08** (Commit `f6fbebf`, 7.545.732 lemmatisierte Tokens): 157.459 ausgeschlossen,
+     davon 142.330 aus WZB und 15.129 mit geändertem Lemma oder Sense (15.110 davon durch eine
+     Ingest-Liste gedeckt, 19 aus Läufen ohne Token-Liste). 34.336 nur markiert, überwiegend aus dem
+     POS-Abgleich von #32 (Commit `82c90dd85`: ADP, AC1 bis AC3, FLG, ABG, ABS, AGS). Beim Einfrieren
+     wird das Skript auf dem dann gültigen Korpusstand erneut ausgeführt.
+   - Die Token-Liste wird nicht ins Repo gelegt; sie ist aus Skript und Commits reproduzierbar.
+     Ins Manifest geht nur `zusammenfassung.json` mit Zählungen und Commits.
 2. Lemmata, bei denen zwei Senses dieselbe Begriffsgruppe haben. Diese Senses sind für niemanden
    unterscheidbar. Gemessen am 2026-10-08: 22 Lemmata.
 3. Lemmata mit mindestens einem Sense ohne Begriffszeiger. Er ließe sich nicht darstellen.
@@ -70,60 +123,129 @@ wird; *Silber ja* erlaubt nebenbei die Messung der Silberqualität.
 
 ## 4. Stichprobendesign
 
-**Zellen:** 36 = Polysemiegrad laut Inventar (2 / 3 / 4+) × Wortart (NOM / VRB / ADJ) ×
-Frequenzquartil.
+Festgelegt am 2026-10-16 nach einer Literaturrecherche ([LITERATUR-STICHPROBE.md](LITERATUR-STICHPROBE.md))
+und einer skeptischen Zweitmeinung. Zahlen sind vorläufig: gemessen auf dem Korpusstand vom
+2026-10-16 mit der Ausschlussliste vom 2026-10-08; beim Einfrieren wird neu gemessen.
 
-- **Frequenz** wird über das ganze Korpus gezählt, nicht über eine Teilmenge. In der Teilmenge
-  der 190 vollständig annotierten Texte lagen die Quartilgrenzen bei 1 / 4 / 13, Q1 bestand
-  damit nur aus Wörtern, die dort genau einmal vorkommen.
-- **Polysemie nach Inventar, nicht nach Belegung:** Die Menügröße bestimmt die Schwierigkeit für
-  Mensch und LLM. Dass bei 1.444 von 1.737 Ziel-Lemmata (Teilmenge, 2026-10-08) nicht alle
-  Inventar-Senses im Silber belegt sind, ist ein Befund fürs Datasheet, kein Schichtungsmerkmal.
+### 4.1 Schätzziele
 
-**Umfang:** N ≈ 500, also ca. 14 Tokens pro Zelle.
+- **Primär:** die gepaarte Differenz der Genauigkeit LLM minus MFS-Baseline, **ungewichtet** über
+  die Hauptstichprobe (Abschnitt 9.2). Das Schätzziel lautet damit: Genauigkeit über die Vielfalt
+  polysemer Lemmata, nicht über die Tokenmasse des Korpus.
+- **Sekundär:** Inter-Annotator-Agreement (alle Komponenten), Silberqualität (nur D1),
+  Schwierigkeitsfaktoren (gemischtes Modell, 4.6), korpusgewichtete Genauigkeit.
+- Begründung: Mehrere Ziele werden offen benannt, eines wird primär gesetzt (Kish 1988). Eine
+  korpusgewichtete Zahl hinge fast ganz am obersten Frequenzband, das 92,6 % der Zieltokens trägt;
+  sie wird nur mit effektiver Stichprobengröße n_eff = n / (1 + CV² der Gewichte) berichtet.
 
-**Innerhalb einer Zelle:** höchstens ein Token pro Lemma, damit hochfrequente Lemmata (*haben*,
-*werden*) die Stichprobe nicht dominieren. Aufteilung auf *Silber ja / nein* siehe offene Punkte.
+### 4.2 Komponenten
 
-**Ausgleich der Korpus-Schieflage (Gattung, Text):** Die Stichprobe soll das Korpus möglichst
-in seiner Breite abbilden und den überlieferungsbedingten Bias abmildern, ohne Zellen leerlaufen
-zu lassen. Befund vom 2026-10-08 (alle 667 Texte, 7.545.732 lemmatisierte Tokens):
+| Komponente | Umfang | Zweck |
+|---|---|---|
+| Hauptstichprobe | 36 Zellen × 10 = 360 Items, 1 Token pro Paar aus Lemma und Wortart | primäres Schätzziel, Agreement, Schwierigkeitsfaktoren |
+| Lemma-Panel | 30 Paare aus Lemma und Wortart × 5 Tokens = 150 Items | Lemma- gegen Kontextschwierigkeit, Sense-Abdeckung und Silberqualität pro Lemma |
+| Pilot-Pool | ca. 100 Items, Lemmata disjunkt zu Haupt- und Panelstichprobe | Pilotrunden (Abschnitt 7), Schätzung des Anteils diskordanter Paare |
+
+Zusammen ca. 510 Items für die Hauptrunde. Die Panel-Lemmata kommen in der Hauptstichprobe nicht
+vor. Pilot-Lemmata sind disjunkt, damit Besprechungen im Pilot nicht auf dieselben Lemmata in der
+Hauptrunde durchschlagen.
+
+### 4.3 Zellen der Hauptstichprobe
+
+36 Zellen = **Polysemie** × **Wortart** × **Frequenzband**:
+
+- **Polysemie** = Zahl der Senses im Inventar: 2 / 3 / 4+ (4+ reicht bis 15, Median 5). Inventar
+  statt Belegung, weil die Menügröße für alle Lemmata beobachtbar ist, auch ohne Silber, und das
+  ist, was Mensch und LLM sehen. Die Zahl der im Silber belegten Senses, der MFS-Anteil und die
+  Sense-Entropie werden pro Item im Manifest mitgeführt, als Kovariaten (Loureiro et al. 2021 und
+  Passonneau et al. 2010 finden die Schiefe aussagekräftiger als die Sense-Zahl). Geschichtet wird
+  nicht nach ihnen, weil sie aus Silber stammen, dessen Qualität selbst gemessen werden soll.
+- **Wortart:** NOM / VRB / ADJ nach der Regel in Abschnitt 3.
+- **Frequenzband** = Belege des Paars aus Lemma und Wortart in der Grundgesamtheit, feste Grenzen
+  **1–3 / 4–20 / 21–200 / >200** (entschieden am 2026-10-16). Feste Bänder verschieben sich beim
+  Neuzählen nicht, und anders als Quartile über Lemma-Typen trennen sie Wörter mit 62 von solchen mit
+  100.000 Belegen.
+
+Besetzung am 2026-10-16: Jede Zelle hat mindestens 16 Paare (kleinste: 3 ADJ >200 mit 16,
+3 ADJ 1–3 mit 95), also reicht 1 Token pro Paar überall für 10 Items.
+
+### 4.4 Ziehung
+
+1. **Domänenquote:** 30 % der Hauptstichprobe aus D1 (entschieden am 2026-10-16), also 3 von 10 Items
+   pro Zelle. Hat eine Zelle zu wenige Paare mit Belegen in D1 (vor allem in den Bändern 1–3 und
+   4–20), wird der Fehlbetrag auf Zellen derselben Wortart mit Überschuss verteilt. Erreichte
+   Anteile pro Zelle stehen im Manifest. Mit ca. 150 D1-Items (Haupt und Panel) ist die
+   Silberqualität auf etwa ±7 Prozentpunkte bestimmbar.
+2. **Stufe 1, Paar:** pro Zelle und Domäne werden Paare aus Lemma und Wortart ohne Zurücklegen
+   gleich wahrscheinlich gezogen.
+3. **Stufe 2, Token:** vom gezogenen Paar wird ein Token der jeweiligen Domäne gezogen, gewichtet
+   für den **Gattungsausgleich**: Jedes Token erhält das Gewicht T_G^(−1/2), wobei T_G der
+   Tokenanteil seiner Obergattungsgruppe in der Grundgesamtheit ist. Damit nähert sich der Anteil
+   der Gruppen der Quadratwurzel-Allokation (Potenzallokation mit q = 0,5; Bankier 1988): Lyrik und
+   Fachliteratur werden angehoben, ohne die Großepik zu verdrängen.
+4. **Obergrenze pro Text:** höchstens 3 Items aus einem Text über alle Komponenten (bestätigt am 2026-10-16). Ist die Grenze
+   erreicht, wird in Stufe 2 neu gezogen. Vorbild: ReM nimmt große Texte nur in Ausschnitten auf
+   (Klein & Dipper 2016); zugleich hält die Grenze den Klumpeneffekt klein.
+5. **Inklusionswahrscheinlichkeiten** jeder Ziehung werden mitgeschrieben; daraus entstehen die
+   Gewichte für die sekundäre, korpusgewichtete Auswertung und für die Rückgewichtung der Domänen.
+6. **Fester Seed**, im Manifest. Ziehungsskript, Gattungstabelle und Parameter werden mit eingefroren.
+
+### 4.5 Lemma-Panel
+
+- 30 Paare aus Lemma und Wortart aus den Bändern 21–200 und >200, 10 pro Wortart, innerhalb der
+  Wortart 3 / 3 / 4 auf die Polysemiestufen 2 / 3 / 4+.
+- Voraussetzung: Belege in mindestens 5 verschiedenen Texten. Pro Paar 5 Tokens aus 5 verschiedenen
+  Texten, davon mindestens 2 aus D1, wo vorhanden (für die Silberqualität pro Lemma).
+- Ausgewertet mit Bootstrap nach Lemma. Das Panel ist eine eigene Komponente und geht nicht in das
+  primäre Schätzziel ein.
+
+### 4.6 Was die Zellen leisten und was nicht
+
+Mit 10 Items pro Zelle ist ein Zellwert auf etwa ±25 Prozentpunkte unsicher: Zellen sind
+Berichts-, keine Testeinheiten. Schwierigkeitsfaktoren werden mit **einem** gemischten logistischen
+Modell über alle Items geschätzt (Polysemie, Wortart, Frequenzband, Domäne als feste Effekte;
+Text und, im Panel, Lemma als Zufallseffekte). Die ausgewogene Besetzung hält die Prädiktoren
+nahezu unabhängig voneinander; das ist ihr eigentlicher Zweck.
+
+### 4.7 Teststärke
+
+Für den gepaarten Vergleich (McNemar; Connor 1987) mit α = 0,05 und Power 0,80 ist die kleinste
+nachweisbare Differenz bei 360 Items etwa 5,8 / 7,5 / 8,8 Prozentpunkte, wenn 15 / 25 / 35 % der
+Items diskordant sind (eine Methode richtig, die andere falsch). Bei 500 Items wären es 4,8 / 6,2 /
+7,4. Je Wortart (ca. 120 Items) sind nur Unterschiede um 10 Punkte und mehr nachweisbar. Der Pilot
+schätzt den Anteil diskordanter Paare (Card et al. 2020); liegt er hoch, wird N vor Freeze 2 erhöht.
+
+### 4.8 Gattungsausgleich: Befund und Gattungstabelle
+
+Befund vom 2026-10-08 (alle 667 Texte, 7.545.732 lemmatisierte Tokens):
 
 - Wenige große Texte dominieren: OVG allein 4,6 %, die zehn größten zusammen rund 26 %.
 - Lyrik umfasst 485 Texte, aber nur 3,6 % der Tokens; Fachliteratur liegt bei rund 0,4 %.
-  Eine tokenproportionale Ziehung würde beides fast verschwinden lassen.
 - Die Gattungstaxonomie (`genres.xml`, 615 Gattungen) ist polyhierarchisch und flach: Fast alle
   Gattungen hängen direkt an den beiden Wurzeln „Epik, Lyrik und Dramatik" und „Wissensliteratur
-  und Gebrauchsliteratur". Eine verwendbare Ebene von Obergattungen gibt es nicht; sie muss
-  philologisch festgelegt werden (offener Punkt). 406 Texte haben eine Gattung, 260 mehrere, TRO hat keine.
-- Eine Datierung pro Text liegt nicht maschinenlesbar vor (alle Header tragen pauschal `gmh`, #118).
-  Vers/Prosa lässt sich aus dem Markup nicht verlässlich ablesen (WZB ist Prosa, steht aber in `<l>`).
+  und Gebrauchsliteratur". 406 Texte haben eine Gattung, 260 mehrere, TRO hat keine.
+- Datierung und Vers/Prosa liegen nicht maschinenlesbar vor (#118; WZB ist Prosa, steht aber in `<l>`).
 
-Vorgeschlagenes Verfahren:
+Die **Obergattungsgruppen** (ca. 6 bis 8, z. B. höfische und heroische Großepik, Lyrik, Kleinepik,
+geistliche Literatur, Lehrdichtung und Didaxe, Historiografie, Fach- und Gebrauchsliteratur) werden
+als versionierte Zuordnungstabelle Gattung → Gruppe festgelegt, mit einer dokumentierten Regel für
+Texte mit mehreren Gattungen. Die Tabelle steuert die Gewichte in 4.4 und muss deshalb vor
+Freeze 1 stehen.
 
-1. **Obergattungsgruppen** (ca. 6 bis 8, z. B. höfische und heroische Großepik, Lyrik,
-   Kleinepik, geistliche Literatur, Lehrdichtung und Didaxe, Historiografie, Fach- und
-   Gebrauchsliteratur) als eigene, versionierte Zuordnungstabelle Gattung → Gruppe. Bei
-   Mehrfachzuordnung entscheidet eine dokumentierte Regel.
-2. **Kompromissallokation:** Der Zielanteil einer Gruppe ist proportional zur Quadratwurzel ihres
-   Tokenanteils (Potenzallokation zwischen proportional und gleich verteilt). Das hebt Lyrik und
-   Fachliteratur an, ohne sie so stark zu gewichten wie die Großepik.
-3. **Umsetzung als weiche Quote:** Die 36 Zellen bleiben die harte Schichtung. Innerhalb einer Zelle
-   wird mit Gewichten gezogen, sodass die Gruppenanteile über die ganze Stichprobe den Zielanteilen
-   nahekommen. Die erreichten Anteile werden im Datasheet berichtet.
-4. **Obergrenze pro Text:** höchstens wenige Tokens aus einem Text (Wert offen), damit OVG, PL1 bis PL3,
-   JT und TRO nicht dominieren.
-5. Die Gruppen- und Textgewichte gehen in die gewichtete Auswertung (oben) ein.
+### 4.9 Manifest pro Item
 
-**Zufall:** fester Seed, im Manifest dokumentiert. Das Ziehungsskript wird mit eingefroren.
+Item-ID, `xml:id`, Datei, Komponente, Zelle, Lemma, Wortart und ihre Herkunft (Lexikon oder Token),
+Zahl der Senses (Inventar und im Silber belegt), MFS-Anteil und Entropie im Silber (Leave-out),
+Frequenz und Band, Domäne, Obergattungsgruppe, Markierung „nur `@pos` geändert",
+Inklusionswahrscheinlichkeit.
 
-**Was die Zellen leisten und was nicht:** Sie sorgen für eine ausgewogene Abdeckung. Mit 14 Tokens
-pro Zelle sind Zellwerte zu unsicher für eigene Schlüsse. Inferenz läuft über die Randverteilungen
-(je Polysemiegrad, Wortart, Quartil mindestens ca. 120 Tokens) und über das Gesamtergebnis.
+### 4.10 Zwei Einfrierpunkte
 
-**Gewichtung:** Die gleiche Besetzung der Zellen bildet die Korpusverteilung nicht ab. Ergebnisse
-werden zweifach berichtet: ungewichtet (zellbalanciert) und mit Gewichten nach dem Tokenanteil
-der Zelle in der Grundgesamtheit.
+- **Freeze 1, vor der Ziehung:** Grundgesamtheit und Ausschlüsse mit Zahlen, Wortartregel, Zellen,
+  Bänder, Domänenquote, Panel-Regeln, Gattungstabelle, Obergrenze pro Text, Seed, Korpus-Commit.
+- **Freeze 2, vor der Hauptrunde:** Richtlinien, Pilotschwelle, Agreement-Maße, Bewertungsregeln
+  (Abschnitt 9.2), MFS-Definition, LLM-Konfiguration (Modell und Version, Prompt, Temperatur,
+  Anzahl der Läufe pro Item, ob das LLM dieselben Karten sieht wie die Menschen), endgültiges N.
 
 ## 5. Darstellung des Inventars: Vergabe der Begriffsgruppen
 
@@ -256,7 +378,7 @@ Auf der Sense-Ebene werden berichtet:
    aus demselben Text nicht unabhängig sind. Grobe Erwartung: bei N ≈ 500 etwa ±0,05 bis ±0,09,
    bei Untergruppen von ca. 120 Items etwa ±0,11 bis ±0,18 (eigene Rechnung mit der
    Großstichproben-Näherung, nachgerechnet am 2026-10-08).
-6. **Aufschlüsselung** nach Polysemiegrad, Wortart, Frequenzquartil, Obergattungsgruppe und
+6. **Aufschlüsselung** nach Polysemiegrad, Wortart, Frequenzband, Domäne, Obergattungsgruppe und
    angegebener Sicherheit, jeweils mit Intervall.
 7. **Zwei Ebenen des Begriffssystems:** zusätzlich die Übereinstimmung, wenn jeder Sense auf die
    Oberbegriffe seiner Begriffe abgebildet wird. Die Granularität ist der stärkste bekannte
@@ -268,10 +390,20 @@ Auf der Sense-Ebene werden berichtet:
 - **Jede:r gegen das Gold:** Übereinstimmung jeder Annotator:in mit dem adjudizierten Gold, dazu die
   Adjudikationsstatistik nach Ursachencode. Hohe Roh-IAA sagt nichts über die Qualität des
   adjudizierten Golds (Passonneau & Carpenter 2014).
-- **Silberqualität:** Genauigkeit von Silber-`@ana` gegen Gold, nur Schicht *Silber ja*.
+- **Silberqualität:** Genauigkeit von Silber-`@ana` gegen Gold, nur Domäne D1 (Abschnitt 3), mit dem Vorbehalt, dass sie nur die Annotationskampagne dieser Texte beschreibt.
 - **LLM gegen Baseline:** Genauigkeit gegen Gold. Die MFS-Baseline wird aus Silber gelernt,
   **ohne** die Stichproben-Tokens, und auf denselben Gold-Items gemessen. Damit ist der Vergleich
   gepaart (McNemar-Test) statt gegen einen festen Wert.
+  - **Rückfall:** Hat ein Lemma nach dem Leave-out kein Silber, gilt der erste Sense in
+    `lexicon.xml`. Der Anteil der Rückfall-Items wird berichtet; die Untergruppe „MFS aus Silber"
+    wird sekundär ausgewertet. Der Test läuft über alle Items.
+  - **Bewertungsregeln (vor Freeze 2 festgeschrieben):** Primäre Auswertungsmenge sind Items mit
+    Gold-Status `SENSE` oder `MEHRERE`. Bei `MEHRERE` zählt eine Vorhersage als richtig, wenn sie
+    einer der Gold-Senses ist. Items mit `KEINE_PASST`, `LEMMA_FALSCH`, `KONTEXT_UNZUREICHEND` oder
+    `TEXT_DEFEKT` gehen nicht in die Genauigkeit ein; wie oft das LLM bei ihnen abstiniert oder
+    trotzdem einen Sense wählt, wird gesondert berichtet.
+  - Zusätzlich Macro-Genauigkeit nach Sense und die Genauigkeit auf Nicht-MFS-Items, weil dort die
+    harten Fälle liegen (Maru et al. 2022).
 - **LLM gegen menschliche Annotator:innen:** Zusätzlich zum Vergleich mit dem Gold wird geprüft,
   ob das LLM mit den beiden Menschen so gut übereinstimmt wie diese untereinander (Prinzip des
   „Alternative Annotator Test", Calderon et al. 2025). Die menschliche IAA ist die Obergrenze,
@@ -290,7 +422,8 @@ Auf der Sense-Ebene werden berichtet:
 |---|---|---|
 | Protokoll, Richtlinien, Datasheet | dieses Verzeichnis | ja |
 | Manifest: Token-IDs, Zellzuordnung, Seed, Korpus-Commit, Prüfsummen von Korpus, `lexicon.xml`, `concepts.xml` | dieses Verzeichnis | ja |
-| Ziehungsskript | dieses Verzeichnis | ja |
+| Ziehungsskript, Ausschlussskript, `ausschluss/zusammenfassung.json` | dieses Verzeichnis | ja |
+| Token-Liste der Ausschlüsse (`ausschluss/ausschluss-tokens.csv`) | nur lokal, reproduzierbar | nein |
 | Menschliche Labels, Ereignisprotokolle, Adjudikation | privat (Drive oder privates Repo) | erst mit der Publikation, dann Zenodo |
 
 Grund für die Trennung: Öffentliche Labels können in die Trainingsdaten künftiger LLMs geraten,
@@ -307,25 +440,31 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 |---|---|---|---|---|
 | A1 | Gold = bestehende MHDBDB-Annotation | Gold = neue Doppelannotation, bestehende Annotation = Silber | Herkunft, Zeitpunkt und Richtlinien der Bestandsannotation sind undokumentiert | 2026-10-08 |
 | A2 | Quelle: bereits annotierte Texte ohne WZB | ganzes Korpus, geschichtet nach Silber ja/nein, ohne LLM-berührte Tokens | Mit A1 entfällt der Grund, nur annotierte Texte zu nehmen; der unannotierte Teil ist die eigentliche Zielpopulation | 2026-10-08 |
-| A3 | 6 Zellen mit je ≥ 50 | 36 Zellen mit je ca. 14, Frequenz über das ganze Korpus, höchstens 1 Token pro Lemma und Zelle | Frequenz als Schwierigkeitsfaktor; Zellen dienen der Balance, Inferenz über Randverteilungen | 2026-10-08 |
+| A3 | 6 Zellen mit je ≥ 50 | Hauptstichprobe 36 Zellen × 10 (Polysemie × Wortart × feste Frequenzbänder), 1 Token pro Paar aus Lemma und Wortart; dazu Lemma-Panel 30 × 5 und Pilot-Pool | Frequenz als Schwierigkeitsfaktor (Kilgarriff 1998); Panel trennt Lemma- von Kontextschwierigkeit; Inferenz über ein gemischtes Modell | 2026-10-08, geändert 2026-10-16 |
 | A4 | feste Baseline 66,7 %, einseitiger Binomialtest | MFS aus Silber ohne Stichprobe, gepaart auf denselben Items (McNemar) | Feste Baseline ist in-sample und auf anderer Population gerechnet | 2026-10-08 |
 | A5 | Julia blind gegen LLM und Gold | zwei menschliche Annotator:innen (Julia, Alan van Beek) und Adjudikation | Gold braucht gemessene Übereinstimmung zwischen Menschen | 2026-10-08 |
 | A6 | Sense-Wahl, LLM darf `abstain` | Statusliste mit Ausweichlabels und `MEHRERE` | Das Inventar passt nicht immer; erzwungene Wahl brächte Fehlzuordnungen ins Gold | 2026-10-08 |
 | A7 | keine Gattungsbalance | weiche Gattungsquote mit Quadratwurzel-Allokation, Obergrenze pro Text | Überlieferungsbedingter Bias des Korpus soll im Goldstandard abgemildert werden | 2026-10-08 |
 | A8 | Cohen's κ zwischen LLM und Julia | α mit MASI als Hauptmaß, Statusebene getrennt, Bootstrap-Intervalle nach Text, AC1 als Kontrolle | WSD-spezifische Literatur (Artstein & Poesio 2008; Passonneau 2006) und starke Prävalenz | 2026-10-08 |
+| A9 | Wortart laut Lexikon | Lexikon-Wortart, sonst eindeutiges Token-`@pos` | Ohne Rückfall fielen 920.011 Tokens mit mehrdeutiger Lexikon-Wortart heraus | 2026-10-16 |
+| A10 | Schicht Silber ja/nein pro Token | Domänen D1 (durchannotierte Texte) und D0, D1 mit fester Quote von 30 % | Silber ist eine Texteigenschaft (zweigipflige Verteilung) | 2026-10-16 |
+| A11 | Hypothese gegen festen Wert | primäres Schätzziel: ungewichtete gepaarte Differenz LLM minus MFS, Bewertungsregeln für `MEHRERE` und Ausweichlabels | Mehrere Ziele, eines primär (Kish 1988); gewichtete Zahl hätte kleine n_eff | 2026-10-16 |
 
 ## 12. Offene Punkte
 
-1. **Silber-Aufteilung je Zelle:** hälftig oder nach Anteil in der Grundgesamtheit?
+1. ~~Silber-Aufteilung je Zelle~~: entschieden am 2026-10-16, Domäne D1 mit 30 % (Abschnitt 4.4).
 2. **Dritte Person** für die Prüfung der Adjudikation (Abschnitt 7, Schritt 6), z. B. KZW?
    Und wer adjudiziert selbst: Julia und Alan gemeinsam im Gespräch, oder die dritte Person?
-3. **Pilotgröße** und Alans Zeitbudget (bestimmt, ob N ≈ 500 realistisch ist).
+3. **Pilotgröße** und Alans Zeitbudget (bestimmt, ob ca. 510 Items realistisch sind).
 4. **Kontextausschnitt:** Wie viele Verse bzw. Zeilen standardmäßig, wie viele erweitert? Werktitel zeigen?
-5. **Ausschlussliste der LLM-berührten Tokens** bauen (Abschnitt 3, Punkt 1).
+5. ~~Ausschlussliste der LLM-berührten Tokens bauen~~: erledigt am 2026-10-08, Regel bestätigt am 2026-10-16 (Abschnitt 3, Punkt 1).
 6. **Korpusstand fürs Einfrieren:** vorher mit dem Upstream-`main` abgleichen, dann Commit festlegen.
-7. **Leistungsanalyse** für den gepaarten Vergleich neu rechnen, sobald die Silber-Aufteilung feststeht.
+7. **Teststärke:** grob gerechnet (Abschnitt 4.7); Anteil diskordanter Paare im Pilot schätzen, dann N vor Freeze 2 bestätigen.
 8. **Obergattungsgruppen** festlegen (philologische Entscheidung), inklusive Regel für Texte mit mehreren Gattungen und Gattung für TRO.
 9. **Datierung und Vers/Prosa:** Sollen sie als weitere Ausgleichsmerkmale dienen? Dann braucht es eine manuelle Zuordnung pro Text (z. B. Jahrhundert über den Handschriftencensus, bei 323 Werken verlinkt).
-10. **Obergrenze an Tokens pro Text.**
+10. ~~Obergrenze an Tokens pro Text~~: 3, bestätigt am 2026-10-16 (Abschnitt 4.4).
 11. **Schwelle für das Ende des Pilots** (Vorschlag α ≥ 0,80, Untergrenze 0,67) vor dem Pilot festlegen.
 12. **Grobe Ebene des Begriffssystems** für die Zwei-Ebenen-Auswertung festlegen (welche Oberbegriffsstufe).
+13. **Ausschlüsse 2 bis 4** (Abschnitt 3) auf die neue Wortartregel und das ganze Korpus umrechnen.
+14. **Einwilligung von Alan** zu Protokollierung und Veröffentlichung (DMP, Abschnitt 4).
+15. **Privates Repository** anlegen und eine zweite Sicherungskopie festlegen (DMP, Abschnitt 3).
