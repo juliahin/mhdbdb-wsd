@@ -43,3 +43,23 @@ Ist die Sammlung weiter, kopieren und den Stand oben mitziehen. Ist diese Kopie 
 ## Was hier nicht hineingehört
 
 Agenten, die nur zu einem Ticket gehören, und Agenten, die nichts mit diesem Korpus zu tun haben. Die zwei hier stehen in den Projektregeln; wer einen dritten hinzufügt, sollte ihn dort zuerst gebraucht haben.
+
+## Agenten des Dissertations-Forks (`juliahin/mhdbdb-wsd`)
+
+Seit dem 2026-10-23 liegen hier vier weitere Agenten. Sie gehören nicht zum Projektkern, sondern zur WSD-Dissertation in diesem Fork, und stammen nicht aus `claude-code-setup`, sind also keine Kopie und werden hier gepflegt. Eingecheckt sind sie, weil ihre Anweisungen zur Methodendokumentation der Arbeit gehören.
+
+| Datei | Agent | Modell | Wofür |
+|---|---|---|---|
+| `autor.md` | `autor` | Opus | Artikeltext aus `knowledge/`, `goldstandard/` und geprüfter Literatur; ohne Webzugriff, zitiert nur ✔-Einträge, sonst Marker `[BELEG FEHLT …]` |
+| `gutachter.md` | `gutachter` | Fable | Peer Review eines fertigen Entwurfs; liest kalt, misst Zahlen nach, ändert nichts |
+| `quellen.md` | `quellen` | Opus | Literatur und Nachschlagewerke suchen und am Original prüfen; pflegt den Prüfstatus (✔ ○ ✘) in den Literaturdateien |
+| `protokollant.md` | `protokollant` | Sonnet | Protokoll, Abweichungslog, Prompt-Log und `knowledge/` nachführen; misst nach, entscheidet nicht |
+
+**Warum dieser Zuschnitt** (entschieden mit Julia am 2026-10-23):
+
+- Nachschlagen und Prüfen in einem Agenten, weil eine Literaturangabe ohne Prüfung am Original genau die ungeprüften ○-Einträge erzeugt, die `goldstandard/LITERATUR-IAA.md` schon trägt.
+- Protokoll und Knowledge-Files in einem Agenten, weil für beide dieselben Regeln gelten: nachmessen, Stand angeben, nach dem Freeze nur noch Einträge im Abweichungslog.
+- Schreiben und Begutachten getrennt und auf verschiedenen Modellen, damit der Gutachter den Text ohne Entstehungsgeschichte liest und seine Fehler nicht mit denen des Autors korrelieren.
+- Der Autor hat keinen Webzugriff: Zitate kommen nur aus geprüften Literaturdateien. Fehlende Belege gehen als Marker an `quellen`. Subagenten starten keine Subagenten, die Übergabe läuft deshalb über die Hauptsitzung.
+
+Abgrenzung zu den beiden Agenten oben: `reviewer` prüft Code-Diffs, `gutachter` Manuskripte; `fable-advisor` berät bei offenen Designfragen, `gutachter` urteilt über einen fertigen Text.

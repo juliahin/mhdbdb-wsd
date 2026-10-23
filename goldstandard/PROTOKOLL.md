@@ -34,9 +34,14 @@ Nebenfragen, die das Design ohne Mehraufwand mitbeantwortet:
 | **Inventar** | Die `<sense>`-Einträge eines Lemmas in `authority-files/lexicon.xml`. Ein Sense ist ausschließlich durch seine Begriffszeiger (`<ptr target="concepts.xml#…">`) bestimmt, die auf das geprüfte Begriffssystem der MHDBDB verweisen. |
 | **Begriffsgruppe** | Die Menge der Begriffe, auf die ein Sense zeigt. Sie ist das, was Annotator:innen als „Bedeutung" sehen. |
 
-**Was über Silber bekannt ist:** Laut Hinkelmanns & Zeppezauer-Wachauer (2023) wurden
-MHDBDB-Bedeutungen an graphematische Typen im Wortartikel gehängt (nur über eine
-Literaturrecherche erschlossen, Originaltext noch selbst zu prüfen). Das Korpus zeigt aber
+**Was über Silber bekannt ist:** Hinkelmanns & Zeppezauer-Wachauer (2023, S. 180) schreiben,
+linguistische Annotationen (Beispiele dort: POS, Phrasen- und Satzstrukturen) sollten künftig
+„im Stand-Off-Verfahren mit Linked Open Data (LOD) auf die Tokens der Texte bezogen [werden] und
+nicht wie bisher auf die graphematischen Types im Wortartikel“. Von Bedeutungen ist an dieser
+Stelle nicht die Rede; dass auch die Senses an graphematischen Typen hingen, ist eine **Lesart**,
+gestützt durch die Typlisten an `<sense>` (`knowledge/data.md`, B1). Prüfstatus ✔: Original am
+2026-10-23 gelesen (`literatur/pdf/Hinkelmanns-Zeppezauer-Wachauer-2023-MHDBDB-Projektbericht.pdf`,
+PDF-Seite 4 = gedruckte S. 180). Das Korpus zeigt aber
 mehr als reine Typ-Annotation. Gemessen am 2026-10-08 über alle Silber-Tokens polysemer
 Lemmata (444.428 mit `corresp`): Bei 25,0 % der 29.677 Kombinationen aus Lemma und Typ tragen
 Tokens derselben Wortform verschiedene Senses. Nur bei 34,1 % der Tokens ist der Sense durch den
@@ -450,6 +455,7 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 | A9 | Wortart laut Lexikon | Lexikon-Wortart, sonst eindeutiges Token-`@pos` | Ohne Rückfall fielen 920.011 Tokens mit mehrdeutiger Lexikon-Wortart heraus | 2026-10-16 |
 | A10 | Schicht Silber ja/nein pro Token | Domänen D1 (durchannotierte Texte) und D0, D1 mit fester Quote von 30 % | Silber ist eine Texteigenschaft (zweigipflige Verteilung) | 2026-10-16 |
 | A11 | Hypothese gegen festen Wert | primäres Schätzziel: ungewichtete gepaarte Differenz LLM minus MFS, Bewertungsregeln für `MEHRERE` und Ausweichlabels | Mehrere Ziele, eines primär (Kish 1988); gewichtete Zahl hätte kleine n_eff | 2026-10-16 |
+| A12 | (keine Abweichung vom Design) Quellenangabe in Abschnitt 2 | Quellenangabe zu Hinkelmanns & Zeppezauer-Wachauer (2023) berichtigt: gedruckte S. 180, wörtliches Zitat, Übertragung auf Bedeutungen als Lesart gekennzeichnet; Prüfstatus ○ → ✔ | Vorher stand dort, die Quelle belege die Anbindung von Bedeutungen an Typen; im Original steht nur „linguistische Annotationen“ (POS, Phrasen- und Satzstrukturen). Entscheidung Julia Hintersteiner, 2026-10-23 | 2026-10-23 |
 
 ## 12. Offene Punkte
 

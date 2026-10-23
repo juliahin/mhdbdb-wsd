@@ -35,8 +35,10 @@ prüfen, besonders die Einträge aus 2026 und alle mit ○.
 - **Werte bei graduellen Urteilen:** DURel ρ ≈ 0,57 bis 0,68 (Schlechtweg et al. 2018 ○), SemEval
   Runde 1 ρ ≈ 0,58 bis 0,69, Erk et al. 2013 ρ ≈ 0,50 bis 0,62 (graduell) gegenüber 0,638 Einzelsense ○.
 - **Mittelhochdeutsch:** UD-Treebank α = 0,85 für Syntax (Dipper et al. 2024 ○). Für die MHDBDB wurde
-  **keine** veröffentlichte IAA gefunden. Hinkelmanns & Zeppezauer-Wachauer 2023 ○ beschreiben die
-  Bedeutungszuweisung an Typen im Wortartikel; die Korpusmessung im Protokoll (Abschnitt 2) zeigt,
+  **keine** veröffentlichte IAA gefunden. Hinkelmanns & Zeppezauer-Wachauer 2023 ✔ (S. 180) sagen, linguistische
+  Annotationen (POS, Phrasen- und Satzstrukturen) seien „bisher“ auf graphematische Types im
+  Wortartikel bezogen gewesen; dass auch Bedeutungen so angebunden waren, ist eine Lesart, nicht
+  belegt. Die Korpusmessung im Protokoll (Abschnitt 2) zeigt,
   dass Silber trotzdem teilweise pro Beleg unterscheidet.
 - **Lücke:** keine IAA-Studie für ein onomasiologisches Inventar (Begriffssystem) gefunden, und kein
   WSD-Goldstandard, der zugleich nach Gattung, Zeit und Raum schichtet. Beides ist ein möglicher

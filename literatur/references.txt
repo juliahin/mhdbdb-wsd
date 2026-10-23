@@ -1,0 +1,554 @@
+@inproceedings{tittel2018deaf,
+  author    = {Tittel, Sabine and Chiarcos, Christian},
+  title     = {Historical Lexicography of {Old French} and {Linked Open Data}: Transforming the Resources of the {Dictionnaire étymologique de l'ancien français} with {OntoLex-Lemon}},
+  booktitle = {Proceedings of the Eleventh International Conference on Language Resources and Evaluation (LREC 2018). GLOBALEX Workshop (GLOBALEX-2018)},
+  pages     = {58--66},
+  publisher = {European Language Resources Association},
+  address   = {Paris},
+  year      = {2018},
+  venue     = {Miyazaki, Japan}
+}
+
+@online{doe2024,
+  editor       = {Cameron, Angus and Amos, Ashley Crandell and Healey, Antonette diPaolo},
+  title        = {{Dictionary of Old English}: {A} to {Le} online},
+  year         = {2024},
+  organization = {Dictionary of Old English Project, University of Toronto},
+  url          = {https://dictionary.doe.utoronto.ca/doe/},
+  urldate      = {2026-08-23}
+}
+
+@online{deaf,
+  author       = {Baldinger, Kurt},
+  editor       = {Möhren, Frankwalt and Städtler, Thomas},
+  title        = {{DEAF} électronique. {Dictionnaire} étymologique de l'ancien français},
+  year         = {2010},
+  organization = {Heidelberger Akademie der Wissenschaften},
+  url          = {https://deaf-server.adw.uni-heidelberg.de/},
+  urldate      = {2026-08-23}
+}
+
+@article{mambrini2023lila,
+  author  = {Mambrini, Francesco and Passarotti, Marco Carlo},
+  title   = {The {LiLa} {Lemma Bank}: A Knowledge Base of {Latin} Canonical Forms},
+  journal = {Journal of Open Humanities Data},
+  year    = {2023},
+  volume  = {9},
+  number  = {1},
+  pages   = {28},
+  doi     = {10.5334/johd.145}
+}
+
+@article{hinkelmanns2019lexikographie,
+  author  = {Hinkelmanns, Peter},
+  title   = {Mittelhochdeutsche Lexikographie und {Semantic Web}. Die Anbindung der ‚{Mittelhochdeutschen Begriffsdatenbank}‘ an {Linked Open Data}},
+  journal = {Das Mittelalter},
+  year    = {2019},
+  volume  = {24},
+  number  = {1},
+  pages   = {129--141},
+  doi     = {10.1515/mial-2019-0009},
+  url     = {https://doi.org/10.1515/mial-2019-0009}
+}
+
+@inproceedings{tittel2020hallig,
+  author    = {Tittel, Sabine and Gillis-Webber, Frances and Nannini, Alessandro A.},
+  title     = {Towards an Ontology Based on {Hallig-Wartburg}'s {Begriffssystem} for Historical Linguistic {Linked Data}},
+  booktitle = {Proceedings of the 7th Workshop on Linked Data in Linguistics (LDL-2020)},
+  editor    = {Ionov, Maxim and McCrae, John P. and Chiarcos, Christian and Declerck, Thierry and Bosque-Gil, Julia and Gracia, Jorge},
+  pages     = {1--10},
+  publisher = {European Language Resources Association},
+  address   = {Marseille, France},
+  year      = {2020},
+  url       = {https://aclanthology.org/2020.ldl-1.1/}
+}
+
+@inproceedings{navigli2012quick,
+  author    = {Navigli, Roberto},
+  title     = {A Quick Tour of Word Sense Disambiguation, Induction and Related Approaches},
+  booktitle = {{SOFSEM} 2012: Theory and Practice of Computer Science},
+  editor    = {Bieliková, Mária and Friedrich, Gerhard and Gottlob, Georg and Katzenbeisser, Stefan and Turán, György},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {7147},
+  pages     = {115--129},
+  publisher = {Springer},
+  address   = {Berlin, Heidelberg},
+  year      = {2012},
+  doi       = {10.1007/978-3-642-27660-6_10}
+}
+
+@article{ScholgerBleier2026,
+  author  = {Scholger, Martina and Bleier, Roman},
+  title   = {{ChatGPT} as an assistant for digital scholarly editing},
+  journal = {RIDE},
+  year    = {2026},
+  volume  = {19},
+  editor  = {Bleier, Roman and Dumont, Stefan},
+  doi     = {10.18716/ride.a.19.4},
+  note    = {Accessed: 2026-04-23},
+  url     = {https://doi.org/10.18716/ride.a.19.4}
+}
+
+@inproceedings{beck2023ghisbert,
+  author    = {Beck, Christin and Köllner, Marisa},
+  title     = {{GHisBERT} -- Training {BERT} from scratch for lexical semantic investigations across historical {German} language stages},
+  booktitle = {Proceedings of the 4th Workshop on Computational Approaches to Historical Language Change (LChange 2023)},
+  year      = {2023},
+  url       = {https://aclanthology.org/2023.lchange-1.4.pdf}
+}
+
+@incollection{scholler1978maschinelle,
+  author    = {Scholler, Harald and Schmidt, Klaus M.},
+  title     = {Maschinelle Hilfe bei der Herstellung von Glossaren zu mittelhochdeutschen Werken nach Begriffsbereichen},
+  booktitle = {Maschinelle Verarbeitung altdeutscher Texte I. Beiträge zum Symposion Mannheim 11./12. Juni 1971},
+  editor    = {Lenders, Winfried and Moser, Hugo},
+  publisher = {Erich Schmidt},
+  address   = {Berlin},
+  year      = {1978},
+  series    = {Maschinelle Verarbeitung altdeutscher Texte},
+  volume    = {1},
+  pages     = {139--149}
+}
+
+@inproceedings{schmidt1985algorithmic,
+  author    = {Schmidt, Klaus M.},
+  title     = {An Algorithmic Approach to a Parser For Automatic Disambiguation of Homographs in Middle High German on the Basis of the Conceptual Dictionary Project},
+  booktitle = {Computers in Literary and Linguistic Computing. Proceedings of the 11th International Conference},
+  editor    = {Hamesse, Jacqueline and Zampolli, Antonio},
+  publisher = {Slatkine},
+  address   = {Genève},
+  year      = {1985},
+  pages     = {345--353}
+}
+
+@incollection{schmidt1978wege,
+  author    = {Schmidt, Klaus M.},
+  title     = {Wege zu Begriffsglossaren und einem Begriffswörterbuch mittelhochdeutscher Epik},
+  booktitle = {Maschinelle Verarbeitung Altdeutscher Texte. Beiträge zum Symposion Mannheim 11./12. Juni 1971},
+  editor    = {Lenders, Winfried and Moser, Hugo},
+  publisher = {Erich Schmidt},
+  address   = {Berlin},
+  year      = {1978},
+  series    = {Maschinelle Verarbeitung altdeutscher Texte},
+  volume    = {1},
+  pages     = {127--146}
+}
+
+@incollection{hinkelmanns2020ez,
+  author    = {Hinkelmanns, Peter and Zeppezauer-Wachauer, Katharina},
+  title     = {ez ist ein wârheit, niht ein spel, daz netze was sinewel. Die {MHDBDB} im {Semantic Web}},
+  booktitle = {Digitale Methoden und Objekte in Forschung und Vermittlung der mediävistischen Disziplinen},
+  editor    = {Fischer, Martin},
+  publisher = {University of Bamberg Press},
+  address   = {Bamberg},
+  year      = {2020},
+  pages     = {73--86}
+}
+
+@article{zeppezauer2022fuenfzig,
+  author  = {Zeppezauer-Wachauer, Katharina},
+  title   = {50 Jahre {Mittelhochdeutsche Begriffsdatenbank} ({MHDBDB}). Eine Jubiläums-Zeitreise zwischen Lochkarten, Pixel-Drachen, relationaler Datenbank und Graph Daten},
+  journal = {BmE Themenheft},
+  volume  = {12},
+  year    = {2022},
+  pages   = {161--186},
+  doi     = {10.25619/BmE20223203},
+  note    = {Digitale Mediävistik. Perspektiven der Digital Humanities für die Altgermanistik}
+}
+
+@online{zeppezauer2023textreihen,
+  author   = {Zeppezauer-Wachauer, Katharina and Heiles, Marco},
+  title    = {Eine digitale Textreihentypologie für deutschsprachige Texte des Mittelalters und der Frühen Neuzeit},
+  journal  = {Mittelalter. Interdisziplinäre Forschung und Rezeptionsgeschichte},
+  year     = {2023},
+  date     = {2023-06-13},
+  url      = {https://doi.org/10.58079/rhbs},
+  urldate  = {2025-10-25},
+  addendum = {Vgl. auch: https://github.com/Middle-High-German-Conceptual-Database/textseries}
+}
+
+@online{zeppezauer2024konde,
+  author    = {Zeppezauer-Wachauer, Katharina and Färberböck, Peter},
+  title     = {{Mittelhochdeutsche Begriffsdatenbank} ({MHDBDB})},
+  booktitle = {{KONDE} Weißbuch},
+  editor    = {Galka, Selina and Klug, Helmut W.},
+  year      = {2024},
+  url       = {https://hdl.handle.net/11471/562.50.52},
+  urldate   = {2025-10-25},
+  note      = {PID: o:konde.52}
+}
+
+@online{borek2022eindeutig,
+  author  = {Borek, Luise and Zeppezauer-Wachauer, Katharina and Ketschik, Nora},
+  title   = {Eindeutig Uneindeutig. Zur Modellierung von Unschärfe in der Mediävistik},
+  journal = {Mittelalter. Interdisziplinäre Forschung und Rezeptionsgeschichte},
+  year    = {2022},
+  date    = {2022-02-16},
+  url     = {https://mittelalter.hypotheses.org/27658}
+}
+
+@online{pollin2025system,
+  author  = {Pollin, Christopher},
+  title   = {System 1.42: Wie (Frontier-){LLMs} „tatsächlich“ funktionieren},
+  journal = {Digital Humanities Craft},
+  year    = {2025},
+  date    = {2025-07-01},
+  url     = {https://dhcraft.org/excellence/blog/System1-42/}
+}
+
+@online{fortext_iaa,
+  author  = {{fortext}},
+  title   = {Inter-Annotator Agreement ({IAA})},
+  year    = {2025},
+  url     = {https://fortext.net/ueber-fortext/glossar/inter-annotator-agreement-iaa},
+  urldate = {2025-10-25}
+}
+
+@online{beansbytes_active,
+  author  = {{Beans and Bytes}},
+  title   = {Aktives Lernen (Active Learning Strategy)},
+  year    = {2025},
+  url     = {https://www.beansandbytes.de/ki-lexikon/aktives-lernen-active-learning-strategy},
+  urldate = {2025-10-25}
+}
+
+@online{mhdbdb_spacy,
+  author = {{MHDBDB Team}},
+  title  = {{spaCy} Model for Middle High German},
+  year   = {2024},
+  url    = {https://github.com/Middle-High-German-Conceptual-Database/Spacy-Model-for-Middle-High-German}
+}
+
+@online{vanbeek2024relaunch,
+  author  = {van Beek, Alan Lena},
+  title   = {Der Relaunch der {Mittelhochdeutschen Begriffsdatenbank} ({MHDBDB}) ist als Open Beta gestartet},
+  journal = {Digital Humanities an der Universität Salzburg},
+  year    = {2024},
+  date    = {2024-03-07},
+  url     = {https://doi.org/10.58079/vz5d},
+  urldate = {2025-10-25}
+}
+
+@online{hintersteiner2024evaluation,
+  author  = {Hintersteiner, Julia and Göggelmann, Michael and van Beek, Alan and Zeppezauer-Wachauer, Katharina},
+  title   = {Von der Datenpflege zur Schnittstellenentwicklung: Eine Evaluation des Datenkolosses {MHDBDB}},
+  journal = {Digital Humanities an der Universität Salzburg},
+  year    = {2024},
+  date    = {2024-11-18},
+  url     = {https://doi.org/10.58079/12p9n},
+  urldate = {2025-10-25}
+}
+
+@online{pollin2025promptotyping,
+  author  = {Pollin, Christopher},
+  title   = {Promptotyping: Von der Idee zur Anwendung},
+  journal = {Digital Humanities Craft},
+  year    = {2025},
+  date    = {2025-04-24},
+  url     = {https://dhcraft.org/excellence/blog/Promptotyping/}
+}
+
+@mastersthesis{koehnlein2025blick,
+  author  = {Köhnlein, Viktoria Barbara},
+  title   = {Ein Blick hinter die Punktwolke},
+  school  = {Karl-Franzens-Universität Graz},
+  year    = {2025},
+  address = {Graz},
+  type    = {Masterarbeit},
+  url     = {https://search.obvsg.at/primo-explore/fulldisplay?docid=OBV_alma71611618310003331&vid=OBV}
+}
+
+@article{jannidis2025large,
+  author  = {Jannidis, Fotis and Kleymann, Rabea and Schröter, Julian and Zinsmeister, Heike},
+  title   = {Do Large Language Models Understand Literature? Case Studies and Probing Experiments on German Poetry},
+  journal = {Journal of Computational Literary Studies},
+  year    = {2025},
+  volume  = {4},
+  number  = {1},
+  doi     = {10.48694/jcls.4225},
+  url     = {https://doi.org/10.48694/jcls.4225}
+}
+
+@techreport{steller2025kixdh,
+  author      = {Steller, Jonatan Jalle},
+  title       = {{KI} $\times$ {DH}: Zum Umgang mit {ML}, Transformern und {LLMs} in der Digitalen Akademie},
+  institution = {Akademie der Wissenschaften und der Literatur | Mainz},
+  year        = {2025},
+  type        = {Working Paper},
+  version     = {0.9.3},
+  month       = {2},
+  doi         = {10.5281/zenodo.14824040},
+  url         = {https://doi.org/10.5281/zenodo.14824040},
+  note        = {Digitale Akademie}
+}
+
+@inproceedings{weeber2021assisted,
+  author    = {Weeber, Franziska and Hamborg, Felix and Donnay, Karsten and Gipp, Bela},
+  title     = {Assisted Text Annotation Using Active Learning to Achieve High Quality with Little Effort},
+  booktitle = {2021 IEEE International Conference on Big Data (Big Data)},
+  year      = {2021},
+  pages     = {2235--2244},
+  publisher = {IEEE},
+  address   = {Orlando, FL, USA},
+  doi       = {10.1109/BigData52589.2021.9651748}
+}
+
+@misc{chen2025harnessing,
+  author        = {Chen, Zhijun and others},
+  title         = {Harnessing Multiple Large Language Models: A Survey on {LLM} Ensemble},
+  year          = {2025},
+  eprint        = {2502.18036},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2502.18036},
+  note          = {Preprint}
+}
+
+@phdthesis{henrich2015word,
+  author  = {Henrich, Verena},
+  title   = {Word Sense Disambiguation with {GermaNet}},
+  school  = {Eberhard Karls Universität Tübingen},
+  year    = {2015},
+  address = {Tübingen},
+  doi     = {10.15496/publikation-4706},
+  url     = {http://hdl.handle.net/10900/63284}
+}
+
+@article{navigli2009wsd,
+  author  = {Navigli, Roberto},
+  title   = {Word Sense Disambiguation: A Survey},
+  journal = {ACM Computing Surveys},
+  volume  = {41},
+  number  = {2},
+  pages   = {1--69},
+  year    = {2009},
+  doi     = {10.1145/1459352.1459355}
+}
+
+@book{agirreEdmonds2006,
+  editor    = {Agirre, Eneko and Edmonds, Philip},
+  title     = {Word Sense Disambiguation: Algorithms and Applications},
+  series    = {Text, Speech and Language Technology},
+  volume    = {33},
+  publisher = {Springer},
+  address   = {Dordrecht},
+  year      = {2006},
+  doi       = {10.1007/978-1-4020-4809-8}
+}
+
+@article{miller1995wordnet,
+  author  = {Miller, George A.},
+  title   = {{WordNet}: A Lexical Database for {English}},
+  journal = {Communications of the ACM},
+  volume  = {38},
+  number  = {11},
+  pages   = {39--41},
+  year    = {1995},
+  doi     = {10.1145/219717.219748}
+}
+
+@book{fellbaum1998wordnet,
+  editor    = {Fellbaum, Christiane},
+  title     = {{WordNet}: An Electronic Lexical Database},
+  publisher = {MIT Press},
+  address   = {Cambridge, MA},
+  year      = {1998}
+}
+
+@inproceedings{henrich2010germanet,
+  author    = {Henrich, Verena and Hinrichs, Erhard},
+  title     = {{GernEdiT} -- The {GermaNet} Editing Tool},
+  booktitle = {Proceedings of the Seventh International Conference on Language Resources and Evaluation (LREC'10)},
+  pages     = {2228--2235},
+  publisher = {European Language Resources Association},
+  address   = {Valletta, Malta},
+  year      = {2010},
+  url       = {https://aclanthology.org/L10-1180/}
+}
+
+@inproceedings{lesk1986,
+  author    = {Lesk, Michael},
+  title     = {Automatic Sense Disambiguation Using Machine Readable Dictionaries: How to Tell a Pine Cone from an Ice Cream Cone},
+  booktitle = {Proceedings of the 5th Annual International Conference on Systems Documentation (SIGDOC '86)},
+  pages     = {24--26},
+  publisher = {ACM},
+  address   = {New York, NY},
+  year      = {1986},
+  doi       = {10.1145/318723.318728}
+}
+
+@inproceedings{henrich2012webcage,
+  author    = {Henrich, Verena and Hinrichs, Erhard and Vodolazova, Tatiana},
+  title     = {{WebCAGe} -- A Web-Harvested Corpus Annotated with {GermaNet} Senses},
+  booktitle = {Proceedings of the 13th Conference of the European Chapter of the Association for Computational Linguistics (EACL 2012)},
+  pages     = {387--396},
+  publisher = {Association for Computational Linguistics},
+  address   = {Avignon, France},
+  year      = {2012},
+  url       = {https://aclanthology.org/E12-1040/}
+}
+
+@misc{rem2016,
+  author       = {Klein, Thomas and Wegera, Klaus-Peter and Dipper, Stefanie and Wich-Reif, Claudia},
+  title        = {Referenzkorpus Mittelhochdeutsch (1050--1350), Version 1.0},
+  year         = {2016},
+  howpublished = {\url{https://www.linguistics.ruhr-uni-bochum.de/rem/}}
+}
+
+@techreport{rem2016handbuch,
+  author      = {Klein, Thomas and Dipper, Stefanie},
+  title       = {Handbuch zum Referenzkorpus Mittelhochdeutsch},
+  institution = {Sprachwissenschaftliches Institut, Ruhr-Universität Bochum},
+  year        = {2016},
+  url         = {https://linguistics.rub.de/forschung/arbeitsberichte/19.pdf}
+}
+
+@article{tiger2004,
+  author  = {Brants, Sabine and Dipper, Stefanie and Hansen, Silvia and Lezius, Wolfgang and Smith, George},
+  title   = {{TIGER}: Linguistic Interpretation of a {German} Corpus},
+  journal = {Research on Language and Computation},
+  volume  = {2},
+  number  = {4},
+  pages   = {597--620},
+  year    = {2004},
+  doi     = {10.1007/s11168-004-7431-3}
+}
+
+@techreport{tuebadz,
+  author      = {Telljohann, Heike and Hinrichs, Erhard and Kübler, Sandra and Zinsmeister, Heike and Beck, Kathrin},
+  title       = {Stylebook for the {Tübingen} Treebank of Written {German} ({TüBa-D/Z})},
+  institution = {Seminar für Sprachwissenschaft, Universität Tübingen},
+  year        = {2017},
+  url         = {https://uni-tuebingen.de/index.php?id=89339}
+}
+
+@inproceedings{devlin2019bert,
+  author    = {Devlin, Jacob and Chang, Ming-Wei and Lee, Kenton and Toutanova, Kristina},
+  title     = {{BERT}: Pre-training of Deep Bidirectional Transformers for Language Understanding},
+  booktitle = {Proceedings of the 2019 Conference of the NAACL-HLT},
+  pages     = {4171--4186},
+  year      = {2019},
+  doi       = {10.18653/v1/N19-1423}
+}
+
+@misc{liu2019roberta,
+  author        = {Liu, Yinhan and Ott, Myle and Goyal, Naman and Du, Jingfei and Joshi, Mandar and Chen, Danqi and Levy, Omer and Lewis, Mike and Zettlemoyer, Luke and Stoyanov, Veselin},
+  title         = {{RoBERTa}: A Robustly Optimized {BERT} Pretraining Approach},
+  year          = {2019},
+  eprint        = {1907.11692},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/1907.11692}
+}
+
+% =====================================================================
+%  NEWLY MERGED: works cited in the article but missing from the list
+%  above. TODO fields from the earlier .bib were verified and resolved
+%  (except tei, see note) before merging.
+% =====================================================================
+
+@inproceedings{bhat2023,
+  author    = {Bhat, Savita and Varma, Vasudeva},
+  title     = {Large Language Models as Annotators: A Preliminary Evaluation for Annotating Low-Resource Language Content},
+  booktitle = {Proceedings of the 4th Workshop on Evaluation and Comparison of NLP Systems (Eval4NLP)},
+  year      = {2023},
+  pages     = {100--107},
+  address   = {Bali, Indonesia},
+  publisher = {Association for Computational Linguistics}
+  % NOTE: pages / workshop number not independently verified.
+}
+
+@misc{pangakis2023,
+  author        = {Pangakis, Nicholas and Wolken, Samuel and Fasching, Neil},
+  title         = {Automated Annotation with Generative {AI} Requires Validation},
+  year          = {2023},
+  eprint        = {2306.00176},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CL},
+  doi           = {10.48550/arXiv.2306.00176},
+  url           = {https://arxiv.org/abs/2306.00176}
+}
+
+@inproceedings{coannotating2023,
+  author    = {Li, Minzhi and Shi, Taiwei and Ziems, Caleb and Kan, Min-Yen and Chen, Nancy F. and Liu, Zhengyuan and Yang, Diyi},
+  title     = {{CoAnnotating}: Uncertainty-Guided Work Allocation between Human and Large Language Models for Data Annotation},
+  booktitle = {Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+  year      = {2023},
+  pages     = {1487--1505},
+  address   = {Singapore},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/2023.emnlp-main.92},
+  url       = {https://aclanthology.org/2023.emnlp-main.92/}
+}
+
+@inproceedings{iacobacci2016,
+  author    = {Iacobacci, Ignacio and Pilehvar, Mohammad Taher and Navigli, Roberto},
+  title     = {Embeddings for Word Sense Disambiguation: An Evaluation Study},
+  booktitle = {Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics (ACL), Volume 1: Long Papers},
+  year      = {2016},
+  pages     = {897--907},
+  address   = {Berlin, Germany},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/P16-1085}
+}
+
+@article{dipper2013,
+  author  = {Dipper, Stefanie and Donhauser, Karin and Klein, Thomas and Linde, Sonja and Müller, Stefan and Wegera, Klaus-Peter},
+  title   = {{HiTS}: ein Tagset für historische Sprachstufen des Deutschen},
+  journal = {Journal for Language Technology and Computational Linguistics (JLCL)},
+  volume  = {28},
+  number  = {1},
+  year    = {2013},
+  pages   = {85--137},
+  note    = {Special Issue}
+}
+
+@techreport{schiller1999,
+  author      = {Schiller, Anne and Teufel, Simone and Stöckert, Christine and Thielen, Christine},
+  title       = {Guidelines für das Tagging deutscher Textcorpora mit {STTS} (Kleines und großes Tagset)},
+  institution = {Universität Stuttgart and Universität Tübingen},
+  year        = {1999},
+  url         = {http://www.sfs.uni-tuebingen.de/resources/stts-1999.pdf}
+}
+
+@online{tei,
+  author  = {{TEI Consortium}},
+  title   = {{TEI} {P5}: Guidelines for Electronic Text Encoding and Interchange},
+  year    = {2024},
+  url     = {https://tei-c.org/guidelines/p5/},
+  urldate = {2026-07-16},
+  note    = {TODO: cite the specific version/release used}
+}
+
+@online{wbdea,
+  title        = {Die {Wenzelsbibel} -- Digitale Edition und Analyse ({WB-DEA})},
+  editor       = {Kern, Manfred},
+  organization = {Fachbereich Germanistik der Universität Salzburg and Österreichische Nationalbibliothek},
+  year         = {2024},
+  url          = {https://edition.onb.ac.at/wenzelsbibel},
+  urldate      = {2026-07-16},
+  note         = {Pilot phase 2022--2024}
+}
+
+% =====================================================================
+%  Für den DHd2027-DC-Abstract ergänzt (Juli 2026)
+% =====================================================================
+
+% Selbstzitat: Status vor Einreichung anpassen ("in Vorbereitung" ->
+% "eingereicht"); nach Annahme journal/volume/pages/doi ergänzen.
+@unpublished{hintersteiner_wzb,
+  author  = {Hintersteiner, Julia},
+  title   = {Interoperability as a Philological Task: {LLM}-Assisted Integration of the {Wenceslas Bible} into the {Middle High German Conceptual Database} ({MHDBDB})},
+  year    = {2026},
+  note    = {in Vorbereitung},
+}
+
+% Pipeline als zitierbare Ressource. Bei Zenodo-Archivierung DOI und
+% version ergänzen -- belastbarer als ein blosser GitHub-Link.
+@online{mhdbdb_teionly,
+  author       = {{MHDBDB}},
+  title        = {{MHDBDB} {TEI}-Only: Annotationspipeline und {TEI}-Datensatz},
+  year         = {2026},
+  organization = {Digital Humanities Craft},
+  url          = {https://github.com/DigitalHumanitiesCraft/mhdbdb-tei-only},
+  urldate      = {2026-07-23},
+}

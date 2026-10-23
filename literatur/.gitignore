@@ -1,0 +1,7 @@
+# Volltexte und eigenes Material sind urheberrechtlich geschützt bzw. privat und bleiben lokal;
+# im Repo liegen nur README, Vorlage und Zusammenfassungen
+pdf/*
+!pdf/.gitkeep
+archiv-intermedialitaet/
+material/
+md/
