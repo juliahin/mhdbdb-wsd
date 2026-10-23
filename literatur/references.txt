@@ -142,12 +142,27 @@
   publisher = {University of Bamberg Press},
   address   = {Bamberg},
   year      = {2020},
-  pages     = {73--86}
+  pages     = {73--84},
+  doi       = {10.20378/irb-56078}
+}
+
+@incollection{hinkelmanns2023mhdbdb,
+  author    = {Hinkelmanns, Peter and Zeppezauer-Wachauer, Katharina},
+  title     = {{Mittelhochdeutsche Begriffsdatenbank} ({MHDBDB})},
+  booktitle = {Digitale Edition in {Österreich} / Digital Scholarly Edition in {Austria}},
+  editor    = {Bleier, Roman and Klug, Helmut W.},
+  series    = {Schriften des Instituts für Dokumentologie und Editorik},
+  volume    = {16},
+  publisher = {Books on Demand},
+  address   = {Norderstedt},
+  year      = {2023},
+  pages     = {179--181},
+  url       = {http://kups.ub.uni-koeln.de/70464/}
 }
 
 @article{zeppezauer2022fuenfzig,
   author  = {Zeppezauer-Wachauer, Katharina},
-  title   = {50 Jahre {Mittelhochdeutsche Begriffsdatenbank} ({MHDBDB}). Eine Jubiläums-Zeitreise zwischen Lochkarten, Pixel-Drachen, relationaler Datenbank und Graph Daten},
+  title   = {50 Jahre {Mittelhochdeutsche Begriffsdatenbank} ({MHDBDB}). Eine Jubiläums-Zeitreise zwischen Lochkarten, Pixel-Drachen, relationaler Datenbank und Graphdaten},
   journal = {BmE Themenheft},
   volume  = {12},
   year    = {2022},
@@ -285,12 +300,12 @@
 @inproceedings{weeber2021assisted,
   author    = {Weeber, Franziska and Hamborg, Felix and Donnay, Karsten and Gipp, Bela},
   title     = {Assisted Text Annotation Using Active Learning to Achieve High Quality with Little Effort},
-  booktitle = {2021 IEEE International Conference on Big Data (Big Data)},
+  booktitle = {2021 ACM/IEEE Joint Conference on Digital Libraries (JCDL)},
   year      = {2021},
-  pages     = {2235--2244},
+  pages     = {287--288},
   publisher = {IEEE},
-  address   = {Orlando, FL, USA},
-  doi       = {10.1109/BigData52589.2021.9651748}
+  address   = {Champaign, IL, USA},
+  doi       = {10.1109/JCDL52503.2021.00038}
 }
 
 @misc{chen2025harnessing,
@@ -352,7 +367,8 @@
   title     = {{WordNet}: An Electronic Lexical Database},
   publisher = {MIT Press},
   address   = {Cambridge, MA},
-  year      = {1998}
+  year      = {1998},
+  doi       = {10.7551/mitpress/7287.001.0001}
 }
 
 @inproceedings{henrich2010germanet,
@@ -404,7 +420,7 @@
 }
 
 @article{tiger2004,
-  author  = {Brants, Sabine and Dipper, Stefanie and Hansen, Silvia and Lezius, Wolfgang and Smith, George},
+  author  = {Brants, Sabine and Dipper, Stefanie and Eisenberg, Peter and Hansen-Schirra, Silvia and König, Esther and Lezius, Wolfgang and Rohrer, Christian and Smith, George and Uszkoreit, Hans},
   title   = {{TIGER}: Linguistic Interpretation of a {German} Corpus},
   journal = {Research on Language and Computation},
   volume  = {2},
@@ -419,7 +435,8 @@
   title       = {Stylebook for the {Tübingen} Treebank of Written {German} ({TüBa-D/Z})},
   institution = {Seminar für Sprachwissenschaft, Universität Tübingen},
   year        = {2017},
-  url         = {https://uni-tuebingen.de/index.php?id=89339}
+  month       = jul,
+  url         = {https://hinrichs.sfs.uni-tuebingen.de/files/tbs/tuebadz-stylebook-1707.pdf}
 }
 
 @inproceedings{devlin2019bert,
