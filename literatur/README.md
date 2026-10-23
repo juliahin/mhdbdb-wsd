@@ -6,8 +6,12 @@ Angelegt am 2026-10-23, Bestand am selben Tag gesichtet und umsortiert.
 | Ordner/Datei | Inhalt | im Repo? |
 |---|---|---|
 | `pdf/` | Volltexte der aktiven Literatur, flach, Dateiname `Nachname-Jahr-Kurztitel.pdf` | **nein** (`.gitignore`) |
+| `md/` | Volltexte als Markdown, gleicher Name wie das PDF, mit Seitenmarken `<!-- PDF-Seite n -->` (physische PDF-Seite, nicht die gedruckte); `_protokoll.jsonl` hält pro Umwandlung SHA-256 des PDFs, OCR ja/nein und Docling-Version fest. Erzeugt von `pdf_zu_md.py`; Erstlauf über alle PDFs am 2026-10-23 begonnen | **nein** (aus den Volltexten abgeleitet) |
+| `pdf_zu_md.py` | Umwandlung `pdf/` nach `md/` mit Docling, Scans per OCR; Aufruf im Docstring | ja |
 | `zusammenfassungen/` | eine `.md` pro Werk, gleicher Name wie das PDF | ja |
 | `VORLAGE.md` | Gliederung jeder Zusammenfassung | ja |
+| `references.txt` | BibTeX der Literatur zur Dissertation | ja |
+| `BESCHAFFUNG.md` | Werke aus `references.txt` ohne PDF: Angaben geprüft, legaler Zugangsweg | ja |
 | `archiv-intermedialitaet/` | Literatur zum früheren Dissertationsthema (Intermedialität), 23 Dateien samt alter Literaturliste; wird nicht zusammengefasst | **nein** |
 | `material/` | eigene Listen und Folien (`Literaturliste.xlsx`, `Free-Prompting-25.pptx`) und `umbenennung-2026-10-23.csv` mit allen alten und neuen Dateinamen | **nein** |
 

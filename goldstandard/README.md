@@ -2,7 +2,8 @@
 
 Goldstandard für die Bedeutungsdisambiguierung (WSD) im MHDBDB-Korpus, Teil der Dissertation von
 Julia Hintersteiner. Dieses Verzeichnis gehört zum Fork `juliahin/mhdbdb-wsd`, nicht zum
-Projektkern.
+Projektkern. Übersicht über alle Bereiche der Dissertation (Daten, Literatur, Doktorat, Agenten):
+[`../knowledge/README.md`](../knowledge/README.md).
 
 ## Dokumentationsebenen
 

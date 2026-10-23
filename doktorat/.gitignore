@@ -1,0 +1,6 @@
+# Unterlagen zum Doktoratsstudium bleiben lokal: PDFs (auch öffentliche, sie tragen eigene
+# Markierungen) und alles Persönliche (Betreuungsvereinbarung, Zulassung, Zeugnisse, Exposé-Fassungen,
+# Korrespondenz) in privat/. Im Repo liegt nur die README.
+*
+!.gitignore
+!README.md
