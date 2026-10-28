@@ -11,7 +11,7 @@ Angelegt am 2026-10-23, Bestand am selben Tag gesichtet und umsortiert.
 | `archiv-intermedialitaet/` | Literatur zum früheren Dissertationsthema (Intermedialität), 23 Dateien samt alter Literaturliste; wird nicht zusammengefasst | **nein** |
 | `material/` | eigene Listen und Folien (`Literaturliste.xlsx`, `Free-Prompting-25.pptx`) und `umbenennung-2026-10-23.csv` mit allen alten und neuen Dateinamen | **nein** |
 | `md/` | maschinell erzeugt: `<Name>.md` (Volltext, `pdf_zu_md.py`) und `<Name>.markierungen.md` (Julias Anmerkungen im PDF, `markierungen.py`) | **nein** |
-| `pdf_zu_md.py`, `markierungen.py` | die beiden Skripte dazu; Aufruf und Verfahren im Kopf der Datei | ja |
+| `pdf_zu_md.py`, `markierungen.py`, `seiten.py` | die Skripte dazu; Aufruf und Verfahren im Kopf der Datei. `seiten.py` legt rohe Textebene und Seitenbilder zum Prüfen in einen eigenen Ordner pro Aufruf unter `temp/seiten/` (gitignored) und gibt dessen Pfad aus | ja |
 
 `pdf/` ist der einzige Ort für die Volltexte. Kopien unter alten Namen (direkt in `literatur/`, in
 `Dissertation/attachments/`) wurden am 2026-10-28 entfernt, nachdem jede per SHA-256 als byte-gleich
@@ -35,10 +35,15 @@ Das Thema steht deshalb in der Übersicht unten, die PDFs liegen flach.
    Abbildungen oder Baumdiagrammen verwirft Docling oft auch den Fließtext; liefert es weniger als
    30 % der Zeichen der Textebene, hängt das Skript die rohe Textebene gekennzeichnet an (am
    2026-10-28 mit `--nachtragen` für 40 Seiten in 10 PDFs nachgeholt, u. a. Köhnlein S. 34 zur Homonymie).
-   Tabellen und Text in Abbildungen bleiben trotzdem am PDF zu prüfen.
-3. **Zusammenfassen:** Der Agent `quellen` liest jedes PDF vollständig und füllt die Vorlage.
-   Gibt es `md/<Name>.markierungen.md`, liest er sie mit: Die Stellen, die Julia markiert hat,
-   gehören geprüft, ob sie in die Kernaussagen gehören. Pro Lauf etwa fünf Werke, mehrere Läufe
+   Tabellen und Text in Abbildungen bleiben trotzdem am PDF zu prüfen. Außerdem stellt Docling einen
+   Absatz, der über einen Seitenumbruch läuft, ganz unter die Anfangsseite; Seitenangaben deshalb an
+   der Textebene prüfen (`python literatur/seiten.py <Name>.pdf`).
+3. **Zusammenfassen:** Der Agent `aufbereiter` (seit 2026-10-28; vorher `quellen`) liest jedes
+   Werk vollständig und füllt die Vorlage. Gibt es `md/<Name>.markierungen.md`, liest er sie mit:
+   Die Stellen, die Julia markiert hat, gehören geprüft, ob sie in die Kernaussagen gehören. Er
+   wandelt bei Bedarf selbst um, prüft an Textebene und Seitenbildern, trägt für seine Werke die
+   Spalte „Zusammenfassung“, bibliografische Korrekturen, `references.txt` und geklärte Fragen in
+   `BESCHAFFUNG.md` selbst nach und löscht am Ende genau die Prüfordner, die er angelegt hat. Pro Lauf zwei bis fünf Werke, mehrere Läufe
    parallel. Bücher kapitelweise; der Auftrag nennt dann die relevanten Kapitel.
 4. **Gegenlesen:** Jede Zusammenfassung beginnt mit dem Status „KI-Zusammenfassung, nicht
    gegengelesen". Erst wenn Julia Kernaussagen und Seitenangaben am PDF geprüft hat, wird daraus

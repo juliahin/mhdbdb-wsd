@@ -17,6 +17,7 @@ Verdichtet 14.10.2026.
 **Windows**
 - `python -X utf8`: cp1252 bricht an ł, w̆ und Emoji; ASCII-safe drucken (Umlaute als `�` sind cp1252, kein Datenbefund). Unter `python -I` wirkt `PYTHONIOENCODING`/`PYTHONUTF8` nicht, nur `-I -X utf8`; `-I` kappt die User-Site-Packages (`lxml` fehlt): Projektskripte und eigene Proben ohne `-I`, `-I` nur für fremde Downloads.
 - `rg -c` summieren mit `awk -F: '{s+=$NF}'` (`$2` trifft Laufwerk C). Exit-Code nie hinter `| tail` messen. rg über die Wurzel hängt an tei/: je Verzeichnis suchen.
+- **Fork `juliahin/mhdbdb-wsd` auf Julias Rechner (28.10.):** kein Worktree-Guard, Mehrfach-Kommandos mit `&&` und `;` laufen durch. Read mit `pages` scheitert (`where pdftoppm` leer), PDFs nur über `pymupdf` (installiert) oder `literatur/md/<Name>.md` lesbar. `literatur/pdf/`, `md/`, `material/` sind gitignored und lokal vorhanden; `temp/` existiert leer, Probeausgaben dort selbst wieder löschen.
 
 **GitHub**
 - Laptop: `gh issue view N --json title,body,comments`, `gh pr view N --json comments` (Bot-Kommentar voll); `gh pr list --json number,headRefName,files` für „welcher offene PR berührt Quelle X". In `--jq` `startswith()` statt Regex.

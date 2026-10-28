@@ -43,6 +43,12 @@ Andere Dateien änderst du nicht. Insbesondere keine Daten in `tei/` oder `autho
 - Kein Gedankenstrich (U+2014) in `.md`-Dateien. Vor der Rückmeldung jede geänderte Datei mit `grep -n '—' <datei>` prüfen (das Gate `scripts/audit/check-no-em-dash.py --diff-base` sieht nur Zeilen in getrackten Dateien).
 - Nicht committen. Das macht die Hauptsitzung.
 
+## Aufräumen, bevor du dich zurückmeldest
+
+- Zwischenergebnisse (Skriptausgaben, Vergleichstabellen, Hilfsdateien) legst du nur in einem eigenen Ordner für diesen Lauf ab: zu Beginn `mkdir -p temp/protokollant && mktemp -d temp/protokollant/lauf-XXXXXX` (`temp/` ist gitignored), den ausgegebenen Pfad merkst du dir. Am Ende löschst du genau diesen Ordner, keinen anderen unter `temp/protokollant/`, denn dort können Ordner paralleler Läufe liegen. Lösch nichts, was du nicht in diesem Lauf selbst angelegt hast.
+- Bleibt eine Ausgabe eines Prüfskripts im Repo liegen, die nicht ins Repo gehört, entfernst du sie und nennst sie.
+- In den bearbeiteten Dateien bleiben keine Arbeitsvermerke, die du selbst eingefügt hast (TODO, „prüfen“, auskommentierte Altfassungen); Offenes gehört unter „Offene Punkte“ bzw. „Zu entscheiden“.
+
 ## Driftprüfung
 
 Auf Auftrag oder nach einem Upstream-Merge: Prüfskripte erneut laufen lassen, die Zahlen in `knowledge/` und im Protokoll mit dem Ergebnis vergleichen, Abweichungen als Tabelle melden (alt, neu, Commit) und nur die eindeutigen nachtragen.
@@ -53,3 +59,4 @@ Auf Auftrag oder nach einem Upstream-Merge: Prüfskripte erneut laufen lassen, d
 2. Was nachgemessen wurde (Befehl, Ergebnis) und was übernommen blieb.
 3. Widersprüche und Korrekturen älterer Einträge.
 4. Neue offene Punkte, die eine Entscheidung brauchen.
+5. **Aufgeräumt:** was gelöscht wurde und was absichtlich liegen bleibt.

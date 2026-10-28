@@ -45,8 +45,13 @@ Lies die relevanten Dateien selbst, bevor du schreibst. Verlass dich nicht auf d
 
 Knapp, präzise, ohne Werbesprache. Eine Behauptung pro Satz, wo es geht. Begriffe so verwenden, wie das Protokoll sie definiert (Gold, Silber, Inventar, Begriffsgruppe); im englischen Text einmal einführen und dann gleich halten. Methodenteil so, dass jemand die Studie aus ihm nachbauen könnte.
 
+## Aufräumen, bevor du dich zurückmeldest
+
+Du hast kein Bash und kannst nichts löschen, also legst du nichts Temporäres an: keine Entwurfs- oder Sicherungskopien (`*-alt.md`, `*-v2.md`, `*.bak`), keine Notizdateien neben dem Zielpfad. Überarbeitest du, dann in der Zieldatei selbst. Hast du doch eine Datei außer dem Zielpfad angelegt, nenn sie in der Rückmeldung, damit die Hauptsitzung sie löscht. Im Text bleiben nur die definierten Marker (`[BELEG …]`, `[ZAHL FEHLT …]`), keine eigenen TODO-Vermerke.
+
 ## Rückmeldung
 
 1. Was geschrieben wurde (Datei, Abschnitte, Umfang).
 2. Alle Marker `[BELEG …]` und `[ZAHL FEHLT …]` als Liste, damit sie an `quellen` bzw. `protokollant` gehen können.
 3. Stellen, an denen die Quellenlage dünner ist als die Kernaussage im Auftrag: dort hast du schwächer formuliert. Sag, wo und warum.
+4. **Aufgeräumt:** „nichts außer dem Zielpfad angelegt“ oder die Liste der Dateien, die die Hauptsitzung löschen soll.

@@ -18,8 +18,9 @@ Verdichtet 14.10.2026. Dieses Memory ist Eingabe, keine Messung: Zahlen daraus v
 - Benannte Ausnahme: greift sie an der Bedingung oder am Namen? Am Namen schaltet sie die Prüfung ab.
 - Prüft das Gate den Wert oder nur die Konsistenz zweier Stellen desselben Autors?
 - Vor Klasse A über eine Invariante die Basis mitmessen: hält sie dort nicht, ist es Vorbestand.
-- Zahlen stehen oft mehrfach: nach dem Gate-Lauf `grep -rn` über die alte Zahl; die Zweitzeile neben einem Anker selbst lesen.
+- Zahlen stehen oft mehrfach: nach dem Gate-Lauf `grep -rn` über die alte Zahl; die Zweitzeile neben einem Anker selbst lesen. Dasselbe für ein Pfadmuster, das ein Fix ändert (`temp/seiten/<Name>/` blieb in Runde 2 in einem dritten Agenten stehen, dessen Zeile der Fix selbst verlängert hatte): über alle Agentendefinitionen und READMEs grep, nicht nur über die im Auftrag genannten.
 - Harter Fehler NACH dem ersten Schreibvorgang ist kein Guard: Zeile des `raise SystemExit` gegen die des ersten `write_text` halten (sync_tei_headers; `update-disambig-status-493.py`). Sonde: Kopie mit kaputter Liste, `--apply`, Hash vor/nach.
+- **Agenten-Aufräumregel „lösche nur, was du selbst angelegt hast":** den Erzeuger des Temporären lesen. `mkdir(exist_ok=True)` plus `open(..., "w")` reicht, damit ein zweiter Lauf am selben Werk stillschweigend in den Ordner des ersten schreibt; dann kann kein Lauf Eigenes von Fremdem unterscheiden, und die Regel löscht Fremdes (Fork `mhdbdb-wsd`, `literatur/seiten.py`, 28.10.). Sonde: Skript zweimal mit verschiedenen Seiten laufen lassen, Ordnerinhalt ansehen. Auch die Agentendefinition auf zwei Sätze prüfen, die sich für genau diesen Fall widersprechen.
 
 **Auftrag, JOURNAL, Threads**
 - Zahlen und Daten im Auftrag stammen oft aus Verdichtungen: im Thread nachlesen (UTC beachten); wachsende Zahlen nur als damals <= jetzt prüfbar. Vorher-Zahlen von der Live-Seite gehören zum dort aufgelösten Lemma (Homograph `arm`). Personennamen gegen contributors.xml.

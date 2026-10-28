@@ -41,7 +41,7 @@ Ein ○ wird nur dann ✔, wenn du die Stelle wirklich gelesen hast. Hinter eine
 
 ## Zusammenfassungen aus lokalen Volltexten
 
-Für Werke in `literatur/pdf/` gilt `literatur/README.md`: Lies das PDF vollständig (Read mit `pages`, höchstens 20 Seiten pro Aufruf), fülle `literatur/VORLAGE.md` aus und speichere die Zusammenfassung unter `literatur/zusammenfassungen/<gleicher Name>.md`. Ergänze die Übersichtstabelle in `literatur/README.md`. Jede Kernaussage und jede Zahl braucht eine Seitenangabe. Was nicht im PDF steht, kommt nicht hinein. Der Status bleibt „KI-Zusammenfassung, nicht gegengelesen", bis Julia ihn ändert. Ist ein PDF ohne Textebene oder unvollständig, brich ab und melde das.
+Ganze Werke aus `literatur/pdf/` fasst der Agent `aufbereiter` zusammen; er hat dafür Bash und die Skripte. Bekommst du trotzdem einen solchen Auftrag, gelten seine Regeln für den Inhalt (`.claude/agents/aufbereiter.md`, Abschnitt „Regeln für den Inhalt“): gedruckte Seiten, Zahlen an Textebene oder Seitenbild prüfen, Julias Markierungen einbeziehen. Read mit `pages` geht auf diesem Rechner nicht (pdftoppm fehlt); lies stattdessen `literatur/md/<Name>.md` und, falls der Auftrag ihn nennt, den Ordner mit Textebene und Seitenbildern, den `literatur/seiten.py` je Aufruf unter `temp/seiten/<Name>-<Zeitstempel>-<Prozess>/` anlegt. Der Status bleibt „KI-Zusammenfassung, nicht gegengelesen“, bis Julia ihn ändert. Die Zeile in `literatur/README.md` und `references.txt` trägt dann die Hauptsitzung nach, außer der Auftrag nennt diese Dateien ausdrücklich. Ist ein PDF ohne Textebene oder unvollständig, brich ab und melde das.
 - Kein Gedankenstrich (U+2014) in `.md`-Dateien. Ist er Teil eines zitierten Titels, setze ihn in Backticks.
 - Aktualisiere beim Bearbeiten einer Literaturdatei die Zeile **Stand:** mit Datum und einem Halbsatz, was geprüft wurde.
 
@@ -49,9 +49,14 @@ Für Werke in `literatur/pdf/` gilt `literatur/README.md`: Lies das PDF vollstä
 
 Für Bedeutungs-, Lemma- oder Werkfragen: Lexer, BMZ, Findebuch (über das Wörterbuchnetz), Handschriftencensus, GND, Wikidata. Gib an, welches Werk was sagt, mit Link auf den Eintrag. Bewerte nicht, ob die MHDBDB-Annotation „richtig" ist. Lege die Belege vor, die Entscheidung trifft ein Mensch.
 
+## Aufräumen, bevor du dich zurückmeldest
+
+Du hast kein Bash und kannst nichts löschen, also legst du nichts Temporäres an: keine Entwürfe, Sicherungskopien oder Notizdateien im Repo, nur die Literaturdateien aus dem Auftrag. Über WebFetch abgerufene PDFs landen im Sitzungsverzeichnis von Claude Code, nicht im Repo; nenn ihre Pfade in der Rückmeldung, wenn sie gebraucht werden könnten (z. B. eine Verlagsfassung für `literatur/pdf/`). Hast du doch eine Datei angelegt, die nicht bleiben soll, nenn sie, damit die Hauptsitzung sie löscht.
+
 ## Rückmeldung
 
 1. Tabelle: Angabe | Status vorher → nachher | Fundstelle bzw. Grund.
 2. Alle ✘ ausdrücklich, mit dem, was die Quelle wirklich sagt.
 3. Neue Quellen, die die Frage verändern könnten (höchstens fünf, jeweils mit Status).
 4. Was offen bleibt und warum (Bezahlschranke, nicht auffindbar).
+5. **Aufgeräumt:** „nichts Temporäres angelegt“ oder die Liste der Dateien, die die Hauptsitzung löschen soll, und die Pfade abgerufener PDFs.

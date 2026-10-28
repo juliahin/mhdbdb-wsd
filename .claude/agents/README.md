@@ -46,7 +46,7 @@ Agenten, die nur zu einem Ticket gehören, und Agenten, die nichts mit diesem Ko
 
 ## Agenten des Dissertations-Forks (`juliahin/mhdbdb-wsd`)
 
-Seit dem 2026-10-23 liegen hier vier weitere Agenten. Sie gehören nicht zum Projektkern, sondern zur WSD-Dissertation in diesem Fork, und stammen nicht aus `claude-code-setup`, sind also keine Kopie und werden hier gepflegt. Eingecheckt sind sie, weil ihre Anweisungen zur Methodendokumentation der Arbeit gehören.
+Hier liegen fünf weitere Agenten, vier seit dem 2026-10-23 und `aufbereiter` seit dem 2026-10-28. Sie gehören nicht zum Projektkern, sondern zur WSD-Dissertation in diesem Fork, und stammen nicht aus `claude-code-setup`, sind also keine Kopie und werden hier gepflegt. Eingecheckt sind sie, weil ihre Anweisungen zur Methodendokumentation der Arbeit gehören.
 
 | Datei | Agent | Modell | Wofür |
 |---|---|---|---|
@@ -54,6 +54,7 @@ Seit dem 2026-10-23 liegen hier vier weitere Agenten. Sie gehören nicht zum Pro
 | `gutachter.md` | `gutachter` | Fable | Peer Review eines fertigen Entwurfs; liest kalt, misst Zahlen nach, ändert nichts |
 | `quellen.md` | `quellen` | Opus | Literatur und Nachschlagewerke suchen und am Original prüfen; pflegt den Prüfstatus (✔ ○ ✘) in den Literaturdateien |
 | `protokollant.md` | `protokollant` | Sonnet | Protokoll, Abweichungslog, Prompt-Log und `knowledge/` nachführen; misst nach, entscheidet nicht |
+| `aufbereiter.md` | `aufbereiter` | Opus | Literatur in `literatur/` aufbereiten: umwandeln, Markierungen auslesen, zusammenfassen, README, `references.txt` und `BESCHAFFUNG.md` für die eigenen Werke selbst nachtragen (seit 2026-10-28) |
 
 **Warum dieser Zuschnitt** (entschieden mit Julia am 2026-10-23):
 
@@ -63,3 +64,14 @@ Seit dem 2026-10-23 liegen hier vier weitere Agenten. Sie gehören nicht zum Pro
 - Der Autor hat keinen Webzugriff: Zitate kommen nur aus geprüften Literaturdateien. Fehlende Belege gehen als Marker an `quellen`. Subagenten starten keine Subagenten, die Übergabe läuft deshalb über die Hauptsitzung.
 
 Abgrenzung zu den beiden Agenten oben: `reviewer` prüft Code-Diffs, `gutachter` Manuskripte; `fable-advisor` berät bei offenen Designfragen, `gutachter` urteilt über einen fertigen Text.
+
+**Mehr Spielraum nur für die Literaturaufbereitung** (Julia, 2026-10-28: „gib den agenten mehr selbstständigkeiten aber NUR für die aktuellen transformations arbeiten“): Dafür gibt es `aufbereiter` als eigenen Agenten, statt `quellen` allgemein Bash und Schreibrechte zu geben. Er darf in `literatur/` umwandeln, Prüfmaterial unter `temp/seiten/` anlegen, zusammenfassen und für seine Werke README, `references.txt` und `BESCHAFFUNG.md` selbst nachtragen, außerdem eine frei lizenzierte Verlagsfassung als neue Datei ablegen (ihre README-Zeile übernimmt die Priorität der vorhandenen Zeile desselben Werks). Er ändert nichts außerhalb von `literatur/` und `temp/seiten/`, benennt keine PDFs um, setzt keine Prioritäten und keinen Status „gegengelesen“ und committet nicht. Anlass war die Sitzung vom 2026-10-28: Die Läufe durften README und Bibliografie nicht anfassen, und jeder Nachtrag lief über die Hauptsitzung.
+
+**Aufräumen** (Julia, 2026-10-28: „dass sie selbstständig wenn sie ihre arbeit erledigt haben hinter sich aufräumen“), für alle fünf Fork-Agenten:
+
+- Temporäres liegt nur unter `temp/` (gitignored), und zwar in einem eigenen Ordner pro Lauf bzw. Aufruf: `seiten.py` legt für `aufbereiter` je Aufruf `temp/seiten/<Name>-<Zeitstempel>-<Prozess>/` an, `protokollant` je Lauf `temp/protokollant/lauf-XXXXXX/` (`mktemp -d`). Wer einen Ordner angelegt hat, löscht am Ende genau diesen, und nur ihn. Ein gemeinsamer Ordner pro Werk war im ersten Entwurf vorgesehen; die Review-Runde hat gemessen, dass dann ein Lauf das Material eines parallelen Laufs am selben Werk löschen kann.
+- Agenten ohne Bash (`autor`, `quellen`) können nichts löschen und legen deshalb nichts Temporäres an; Ausnahmen nennen sie, damit die Hauptsitzung sie löscht. `gutachter` schreibt ohnehin nichts und entfernt nur, was ein Messbefehl unerwartet hinterlässt.
+- Im Repo bleiben nur Ergebnisse, keine Entwürfe, Sicherungskopien oder selbst eingefügten Arbeitsvermerke.
+- Jede Rückmeldung endet mit einer Zeile **Aufgeräumt:**.
+
+`reviewer` und `fable-advisor` sind davon ausgenommen: Sie sind eine Kopie aus `claude-code-setup` (siehe oben), und eine Änderung hier ginge beim nächsten Abgleich verloren oder liefe dort unbemerkt mit. Projekteigene Skills gibt es nicht.
