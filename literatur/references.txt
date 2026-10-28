@@ -117,10 +117,13 @@
   title     = {An Algorithmic Approach to a Parser For Automatic Disambiguation of Homographs in Middle High German on the Basis of the Conceptual Dictionary Project},
   booktitle = {Computers in Literary and Linguistic Computing. Proceedings of the 11th International Conference},
   editor    = {Hamesse, Jacqueline and Zampolli, Antonio},
-  publisher = {Slatkine},
-  address   = {Genève},
+  publisher = {Champion-Slatkine},
+  address   = {Paris and Genève},
+  series    = {Proceedings of the International Conferences of the Association for Literary and Linguistic Computing},
+  volume    = {1},
   year      = {1985},
-  pages     = {345--353}
+  pages     = {345--353},
+  note      = {Tagung Louvain-la-Neuve, 2.--6. April 1984. Band am Titelblatt bestätigt, Schmidts Beitrag darin nur über ResearchGate (Stand 2026-10-28)}
 }
 
 @incollection{schmidt1978wege,
@@ -323,7 +326,7 @@
 
 @phdthesis{henrich2015word,
   author  = {Henrich, Verena},
-  title   = {Word Sense Disambiguation with {GermaNet}},
+  title   = {Word Sense Disambiguation with {GermaNet}: Semi-Automatic Enhancement and Empirical Results},
   school  = {Eberhard Karls Universität Tübingen},
   year    = {2015},
   address = {Tübingen},
@@ -338,6 +341,7 @@
   volume  = {41},
   number  = {2},
   pages   = {1--69},
+  note    = {Article 10, gezählt 10:1 bis 10:69},
   year    = {2009},
   doi     = {10.1145/1459352.1459355}
 }
@@ -417,7 +421,11 @@
   author      = {Klein, Thomas and Dipper, Stefanie},
   title       = {Handbuch zum Referenzkorpus Mittelhochdeutsch},
   institution = {Sprachwissenschaftliches Institut, Ruhr-Universität Bochum},
+  type        = {Bochumer Linguistische Arbeitsberichte},
+  number      = {19},
   year        = {2016},
+  month       = dec,
+  note        = {ISSN 2190-0949},
   url         = {https://linguistics.rub.de/forschung/arbeitsberichte/19.pdf}
 }
 
@@ -484,7 +492,41 @@
   archiveprefix = {arXiv},
   primaryclass  = {cs.CL},
   doi           = {10.48550/arXiv.2306.00176},
-  url           = {https://arxiv.org/abs/2306.00176}
+  url           = {https://arxiv.org/abs/2306.00176},
+  note          = {Preprint; begutachtete Fassung: pangakis2025keeping}
+}
+
+@inproceedings{pangakis2025keeping,
+  author    = {Pangakis, Nicholas and Wolken, Samuel},
+  title     = {Keeping Humans in the Loop: Human-Centered Automated Annotation with Generative {AI}},
+  booktitle = {Proceedings of the International AAAI Conference on Web and Social Media (ICWSM)},
+  volume    = {19},
+  number    = {1},
+  pages     = {1471--1492},
+  year      = {2025},
+  doi       = {10.1609/icwsm.v19i1.35883}
+}
+
+@article{galka2026annotating,
+  author  = {Galka, Selina and Vogeler, Georg},
+  title   = {Annotating, projecting, and interpreting named entities in digital scholarly editions with {LLMs}},
+  journal = {International Journal of Digital Humanities},
+  volume  = {7},
+  number  = {3},
+  pages   = {483--509},
+  year    = {2026},
+  doi     = {10.1007/s42803-025-00114-8}
+}
+
+@article{strutz2026multidimensional,
+  author  = {Strutz, Sabrina},
+  title   = {A Multi-Dimensional Evaluation Framework for Assessing {LLM} Performance in {TEI} Encoding},
+  journal = {Journal of Open Humanities Data},
+  volume  = {12},
+  pages   = {39},
+  year    = {2026},
+  doi     = {10.5334/johd.484},
+  note    = {Artikel 39, S. 1--20}
 }
 
 @inproceedings{coannotating2023,

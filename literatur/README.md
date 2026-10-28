@@ -63,23 +63,24 @@ aus dem PDF abgelesen; „zu prüfen" heißt, sie stehen dort nicht vollständig
 
 | PDF | Kurzbeleg | Thema | Prio | Seiten | Anmerkung | Zusammenfassung |
 |---|---|---|---|---|---|---|
-| `Schmidt-oJ-Parser-Homographen-MHD.pdf` | Schmidt o. J. | MHDBDB, Homographen, Begriffssystem | 1 | 9 | Scan ohne Textebene, braucht OCR; S. 345 bis 353 eines Sammelbands, jüngster Verweis 1983; Quelle und Jahr zu prüfen; enthält Julias Markierungen; laut Literaturliste gelesen und zusammengefasst | nein |
-| `Hinkelmanns-2019-MHD-Lexikographie-Semantic-Web.pdf` | Hinkelmanns 2019 | MHDBDB, Begriffssystem, Linked Data | 1 | 13 | DOI 10.1515/mial-2019-0009 | nein |
-| `Tittel-etal-2020-Hallig-Wartburg-Ontologie.pdf` | Tittel, Gillis-Webber & Nannini 2020 | Begriffssystem (Hallig-Wartburg), Ontologie | 1 | 10 | LDL-2020 @ LREC | nein |
-| `Klein-Dipper-2016-Handbuch-ReM.pdf` | Klein & Dipper 2016 | Mittelhochdeutsch, Korpus | 1 | 23 | BLA 19 | nein |
+| `Schmidt-1985-Parser-Homographen-MHD.pdf` | Schmidt 1985 | MHDBDB, Homographen, Begriffssystem | 1 | 9 | Scan ohne Textebene (OCR); S. 345 bis 353 in Hamesse & Zampolli (Hg.), *Computers in Literary and Linguistic Computing*, Champion-Slatkine 1985 (Band am Titelblatt ✔, Schmidts Beitrag darin nur über ResearchGate ○); hieß bis 2026-10-28 `Schmidt-oJ-…`; enthält Julias Markierungen; laut Literaturliste gelesen und zusammengefasst | [ja](zusammenfassungen/Schmidt-1985-Parser-Homographen-MHD.md) |
+| `Hinkelmanns-2019-MHD-Lexikographie-Semantic-Web.pdf` | Hinkelmanns 2019 | MHDBDB, Begriffssystem, Linked Data | 1 | 13 | DOI 10.1515/mial-2019-0009 | [ja](zusammenfassungen/Hinkelmanns-2019-MHD-Lexikographie-Semantic-Web.md) |
+| `Tittel-etal-2020-Hallig-Wartburg-Ontologie.pdf` | Tittel, Gillis-Webber & Nannini 2020 | Begriffssystem (Hallig-Wartburg), Ontologie | 1 | 10 | LDL-2020 @ LREC | [ja](zusammenfassungen/Tittel-etal-2020-Hallig-Wartburg-Ontologie.md) |
+| `Klein-Dipper-2016-Handbuch-ReM.pdf` | Klein & Dipper 2016 | Mittelhochdeutsch, Korpus | 1 | 23 | BLA 19 | [ja](zusammenfassungen/Klein-Dipper-2016-Handbuch-ReM.md) |
 | `Dipper-etal-2013-HiTS.pdf` | Dipper et al. 2013 | historische Wortarten, Tagset | 2 | 53 | JLCL 28(1), 85 bis 137 | nein |
-| `Navigli-2009-WSD-Survey.pdf` | Navigli 2009 | WSD Überblick | 1 | 69 | ACM Computing Surveys | nein |
+| `Navigli-2009-WSD-Survey.pdf` | Navigli 2009 | WSD Überblick | 1 | 69 | ACM Computing Surveys | [ja](zusammenfassungen/Navigli-2009-WSD-Survey.md) |
 | `Ide-Veronis-1998-WSD-State-of-the-Art.pdf` | Ide & Véronis 1998 | WSD Überblick | 2 | 51 | Jahr und Venue nicht im PDF, zu prüfen | nein |
 | `Navigli-2012-Quick-Tour-WSD.pdf` | Navigli 2012 | WSD Überblick | 3 | 15 | SOFSEM, LNCS 7147 | nein |
-| `Henrich-2015-WSD-GermaNet.pdf` | Henrich 2015 | WSD Deutsch, Goldstandard | 1 | 393 | Dissertation Tübingen; kapitelweise | nein |
+| `Henrich-2015-WSD-GermaNet.pdf` | Henrich 2015 | WSD Deutsch, Goldstandard | 1 | 393 | Dissertation Tübingen; kapitelweise | [ja](zusammenfassungen/Henrich-2015-WSD-GermaNet.md) |
 | `Henrich-etal-2012-WebCAGe.pdf` | Henrich, Hinrichs & Vodolazova 2012 | WSD Deutsch, Korpus | 2 | 10 | EACL 2012 | nein |
 | `Iacobacci-etal-2016-Embeddings-WSD.pdf` | Iacobacci, Pilehvar & Navigli 2016 | WSD Methoden | 3 | 11 | ACL 2016; hieß vorher `navigli.pdf` | nein |
 | `Rekabsaz-2018-Word-Representation.pdf` | Rekabsaz 2018 | WSD Methoden | 3 | 140 | Dissertation TU Wien | nein |
 | `Miller-1995-WordNet.pdf` | Miller 1995 | Inventare | 3 | 3 | CACM 38(11) | nein |
-| `Pangakis-etal-2023-Automated-Annotation-Validation.pdf` | Pangakis, Wolken & Fasching 2023 | LLM als Annotator, Validierung | 1 | 20 | Preprint, Status zu prüfen | nein |
-| `Bhat-Varma-2023-LLMs-as-Annotators.pdf` | Bhat & Varma 2023 | LLM als Annotator, ressourcenarme Sprachen | 1 | 8 | Eval4NLP 2023 | nein |
-| `Li-etal-2023-CoAnnotating.pdf` | Li et al. 2023 | LLM und Mensch annotieren gemeinsam | 1 | 12 | Venue zu prüfen | nein |
-| `Galka-Vogeler-2026-LLM-NER-Editionen.pdf` | Galka & Vogeler 2026 | LLM-Annotation in Editionen | 1 | 27 | IJDH, DOI 10.1007/s42803-025-00114-8 | nein |
+| `Pangakis-etal-2023-Automated-Annotation-Validation.pdf` | Pangakis, Wolken & Fasching 2023 | LLM als Annotator, Validierung | 1 | 20 | arXiv-Preprint (nur v1); begutachtete Fassung ist Pangakis & Wolken 2025 (nächste Zeile), beim Zitieren diese verwenden | [ja](zusammenfassungen/Pangakis-etal-2023-Automated-Annotation-Validation.md) |
+| `Pangakis-Wolken-2025-Humans-in-the-Loop.pdf` | Pangakis & Wolken 2025 | LLM als Annotator, Validierung | 1 | 22 | ICWSM 19(1), S. 1471 bis 1492, DOI 10.1609/icwsm.v19i1.35883; begutachtete Fassung von Pangakis et al. 2023 mit neuem Titel, ohne Fasching, teils anderen Zahlen (siehe Zusammenfassung von 2023) | nein |
+| `Bhat-Varma-2023-LLMs-as-Annotators.pdf` | Bhat & Varma 2023 | LLM als Annotator, ressourcenarme Sprachen | 1 | 8 | Eval4NLP 2023 | [ja](zusammenfassungen/Bhat-Varma-2023-LLMs-as-Annotators.md) |
+| `Li-etal-2023-CoAnnotating.pdf` | Li et al. 2023 | LLM und Mensch annotieren gemeinsam | 1 | 19 | EMNLP 2023, S. 1487 bis 1505, DOI 10.18653/v1/2023.emnlp-main.92; Verlagsfassung seit 2026-10-28 (vorher arXiv v1 ohne Anhänge) | [ja](zusammenfassungen/Li-etal-2023-CoAnnotating.md) |
+| `Galka-Vogeler-2026-LLM-NER-Editionen.pdf` | Galka & Vogeler 2026 | LLM-Annotation in Editionen | 1 | 27 | IJDH 7(3), S. 483 bis 509 laut Crossref (lokales PDF: Online-First ohne Seitenzahlen), DOI 10.1007/s42803-025-00114-8 | [ja](zusammenfassungen/Galka-Vogeler-2026-LLM-NER-Editionen.md) |
 | `Jannidis-etal-2025-LLMs-German-Poetry.pdf` | Jannidis et al. 2025 | LLM und historische Literatur | 2 | 25 | JCLS 4(1) | nein |
 | `Beck-Koellner-2023-GHisBERT.pdf` | Beck & Köllner 2023 | Sprachmodell historisches Deutsch | 2 | 13 | LChange 2023 | nein |
 | `Weeber-etal-2021-Active-Learning.pdf` | Weeber et al. 2021 | Annotation | 3 | 2 | Kurzbeitrag; laut Literaturliste gelesen und zusammengefasst | nein |
@@ -101,14 +102,14 @@ aus dem PDF abgelesen; „zu prüfen" heißt, sie stehen dort nicht vollständig
 | `Schiller-etal-1999-STTS.pdf` | Schiller et al. 1999 | Tagset Deutsch | 3 | 87 | Jahr aus altem Dateinamen, im PDF nicht lesbar | nein |
 | `Telljohann-etal-2004-TueBa-DZ.pdf` | Telljohann, Hinrichs & Kübler 2004 | Baumbank Deutsch | 3 | 4 | LREC 2004 | nein |
 | `Hinkelmanns-Zeppezauer-Wachauer-2020-MHDBDB.pdf` | Hinkelmanns & Zeppezauer-Wachauer 2020 | MHDBDB, Begriffssystem, Linked Data | 2 | 12 | gedruckt S. 73 bis 84 (Bamberg); erwähnt keine graphematischen Types | nein |
-| `Hinkelmanns-Zeppezauer-Wachauer-2023-MHDBDB-Projektbericht.pdf` | Hinkelmanns & Zeppezauer-Wachauer 2023 | MHDBDB, Herkunft der Typlisten | 1 | 5 | gedruckt S. 179 bis 181; Kernstelle S. 180 (PDF-Seite 4); KUPS, CC BY 3.0 | nein |
+| `Hinkelmanns-Zeppezauer-Wachauer-2023-MHDBDB-Projektbericht.pdf` | Hinkelmanns & Zeppezauer-Wachauer 2023 | MHDBDB, Herkunft der Typlisten | 1 | 5 | gedruckt S. 179 bis 181; Kernstelle S. 180 (PDF-Seite 4); KUPS, CC BY 3.0 | [ja](zusammenfassungen/Hinkelmanns-Zeppezauer-Wachauer-2023-MHDBDB-Projektbericht.md) |
 | `Henrich-Hinrichs-2010-GernEdiT.pdf` | Henrich & Hinrichs 2010 | WSD Deutsch, Annotationswerkzeug | 3 | 8 | LREC 2010, gedruckt S. 2228 bis 2235 | nein |
 | `Mambrini-Passarotti-2023-LiLa.pdf` | Mambrini & Passarotti 2023 | Linked Data, Latein | 3 | 5 | JOHD 9(1), Artikel 28 | nein |
 | `Scholger-Bleier-2026-ChatGPT-RIDE.pdf` | Scholger & Bleier 2026 | LLM und digitale Editionen | 2 | 32 | RIDE 19, Rezension der Ressource ChatGPT | nein |
 | `Telljohann-etal-2017-TueBa-DZ-Stylebook.pdf` | Telljohann et al. 2017 | Baumbank Deutsch, Richtlinien | 3 | 166 | Stylebook, Juli 2017 | nein |
 | `Tittel-Chiarcos-2018-DEAF-LOD.pdf` | Tittel & Chiarcos 2018 | Linked Data, historische Lexikographie | 3 | 10 | Venue laut `BESCHAFFUNG.md` widersprüchlich (LDL-2018 oder GLOBALEX), PDF ohne Seitenzahlen | nein |
-| `Zeppezauer-Wachauer-2022-Fuenfzig-Jahre-MHDBDB.pdf` | Zeppezauer-Wachauer 2022 | MHDBDB, Geschichte, Graphdaten | 1 | 27 | BmE Themenheft 12, S. 161 bis 186 | nein |
-| `Strutz-2026-LLM-TEI-Evaluation.pdf` | Strutz 2026 | LLM-Evaluation, TEI-Kodierung | 2 | 20 | JOHD 12, Artikel 39, DOI 10.5334/johd.484 (Zitiervorschlag S. 1); lag bis 2026-10-28 als `69b0024ec3b99.pdf` unverzeichnet in `literatur/`; fehlt in `references.txt` | nein |
+| `Zeppezauer-Wachauer-2022-Fuenfzig-Jahre-MHDBDB.pdf` | Zeppezauer-Wachauer 2022 | MHDBDB, Geschichte, Graphdaten | 1 | 27 | BmE Themenheft 12, S. 161 bis 186 | [ja](zusammenfassungen/Zeppezauer-Wachauer-2022-Fuenfzig-Jahre-MHDBDB.md) |
+| `Strutz-2026-LLM-TEI-Evaluation.pdf` | Strutz 2026 | LLM-Evaluation, TEI-Kodierung | 2 | 20 | JOHD 12, Artikel 39, DOI 10.5334/johd.484 (Zitiervorschlag S. 1); lag bis 2026-10-28 als `69b0024ec3b99.pdf` unverzeichnet in `literatur/` | nein |
 
 **In der Literaturliste, aber ohne PDF:** Roe 2025 (*How to Use Generative AI in Educational
 Research*), Abualhaija 2016 (*D-Bees*), Tischler 2010 (*Word sense disambiguation, Einsatz in der
