@@ -72,12 +72,12 @@ aus dem PDF abgelesen; „zu prüfen" heißt, sie stehen dort nicht vollständig
 | `Hinkelmanns-2019-MHD-Lexikographie-Semantic-Web.pdf` | Hinkelmanns 2019 | MHDBDB, Begriffssystem, Linked Data | 1 | 13 | DOI 10.1515/mial-2019-0009 | [ja](zusammenfassungen/Hinkelmanns-2019-MHD-Lexikographie-Semantic-Web.md) |
 | `Tittel-etal-2020-Hallig-Wartburg-Ontologie.pdf` | Tittel, Gillis-Webber & Nannini 2020 | Begriffssystem (Hallig-Wartburg), Ontologie | 1 | 10 | LDL-2020 @ LREC | [ja](zusammenfassungen/Tittel-etal-2020-Hallig-Wartburg-Ontologie.md) |
 | `Klein-Dipper-2016-Handbuch-ReM.pdf` | Klein & Dipper 2016 | Mittelhochdeutsch, Korpus | 1 | 23 | BLA 19 | [ja](zusammenfassungen/Klein-Dipper-2016-Handbuch-ReM.md) |
-| `Dipper-etal-2013-HiTS.pdf` | Dipper et al. 2013 | historische Wortarten, Tagset | 2 | 53 | JLCL 28(1), 85 bis 137 | nein |
+| `Dipper-etal-2013-HiTS.pdf` | Dipper et al. 2013 | historische Wortarten, Tagset | 2 | 53 | JLCL 28(1), S. 85 bis 137, DOI 10.21248/jlcl.28.2013.170 (Crossref), CC BY 4.0 | [ja](zusammenfassungen/Dipper-etal-2013-HiTS.md) |
 | `Navigli-2009-WSD-Survey.pdf` | Navigli 2009 | WSD Überblick | 1 | 69 | ACM Computing Surveys | [ja](zusammenfassungen/Navigli-2009-WSD-Survey.md) |
-| `Ide-Veronis-1998-WSD-State-of-the-Art.pdf` | Ide & Véronis 1998 | WSD Überblick | 2 | 51 | Jahr und Venue nicht im PDF, zu prüfen | nein |
+| `Ide-Veronis-1998-WSD-State-of-the-Art.pdf` | Ide & Véronis 1998 | WSD Überblick | 2 | 51 | *Computational Linguistics* 24(1), S. 1 bis 40, März 1998 (ACL Anthology J98-1001); **lokales PDF ist ein Manuskript mit eigener Seitenzählung**, Zitate an der Druckfassung nachschlagen | [ja](zusammenfassungen/Ide-Veronis-1998-WSD-State-of-the-Art.md) |
 | `Navigli-2012-Quick-Tour-WSD.pdf` | Navigli 2012 | WSD Überblick | 3 | 15 | SOFSEM, LNCS 7147 | nein |
 | `Henrich-2015-WSD-GermaNet.pdf` | Henrich 2015 | WSD Deutsch, Goldstandard | 1 | 393 | Dissertation Tübingen; kapitelweise | [ja](zusammenfassungen/Henrich-2015-WSD-GermaNet.md) |
-| `Henrich-etal-2012-WebCAGe.pdf` | Henrich, Hinrichs & Vodolazova 2012 | WSD Deutsch, Korpus | 2 | 10 | EACL 2012 | nein |
+| `Henrich-etal-2012-WebCAGe.pdf` | Henrich, Hinrichs & Vodolazova 2012 | WSD Deutsch, Korpus | 2 | 10 | EACL 2012, S. 387 bis 396 (ACL Anthology E12-1039) | [ja](zusammenfassungen/Henrich-etal-2012-WebCAGe.md) |
 | `Iacobacci-etal-2016-Embeddings-WSD.pdf` | Iacobacci, Pilehvar & Navigli 2016 | WSD Methoden | 3 | 11 | ACL 2016; hieß vorher `navigli.pdf` | nein |
 | `Rekabsaz-2018-Word-Representation.pdf` | Rekabsaz 2018 | WSD Methoden | 3 | 140 | Dissertation TU Wien | nein |
 | `Miller-1995-WordNet.pdf` | Miller 1995 | Inventare | 3 | 3 | CACM 38(11) | nein |
@@ -86,19 +86,19 @@ aus dem PDF abgelesen; „zu prüfen" heißt, sie stehen dort nicht vollständig
 | `Bhat-Varma-2023-LLMs-as-Annotators.pdf` | Bhat & Varma 2023 | LLM als Annotator, ressourcenarme Sprachen | 1 | 8 | Eval4NLP 2023 | [ja](zusammenfassungen/Bhat-Varma-2023-LLMs-as-Annotators.md) |
 | `Li-etal-2023-CoAnnotating.pdf` | Li et al. 2023 | LLM und Mensch annotieren gemeinsam | 1 | 19 | EMNLP 2023, S. 1487 bis 1505, DOI 10.18653/v1/2023.emnlp-main.92; Verlagsfassung seit 2026-10-28 (vorher arXiv v1 ohne Anhänge) | [ja](zusammenfassungen/Li-etal-2023-CoAnnotating.md) |
 | `Galka-Vogeler-2026-LLM-NER-Editionen.pdf` | Galka & Vogeler 2026 | LLM-Annotation in Editionen | 1 | 27 | IJDH 7(3), S. 483 bis 509 laut Crossref (lokales PDF: Online-First ohne Seitenzahlen), DOI 10.1007/s42803-025-00114-8 | [ja](zusammenfassungen/Galka-Vogeler-2026-LLM-NER-Editionen.md) |
-| `Jannidis-etal-2025-LLMs-German-Poetry.pdf` | Jannidis et al. 2025 | LLM und historische Literatur | 2 | 25 | JCLS 4(1) | nein |
-| `Beck-Koellner-2023-GHisBERT.pdf` | Beck & Köllner 2023 | Sprachmodell historisches Deutsch | 2 | 13 | LChange 2023 | nein |
+| `Jannidis-etal-2025-LLMs-German-Poetry.pdf` | Jannidis et al. 2025 | LLM und historische Literatur | 2 | 25 | JCLS 4(1) | [ja](zusammenfassungen/Jannidis-etal-2025-LLMs-German-Poetry.md) |
+| `Beck-Koellner-2023-GHisBERT.pdf` | Beck & Köllner 2023 | Sprachmodell historisches Deutsch | 2 | 13 | LChange 2023 | [ja](zusammenfassungen/Beck-Koellner-2023-GHisBERT.md) |
 | `Weeber-etal-2021-Active-Learning.pdf` | Weeber et al. 2021 | Annotation | 3 | 2 | Kurzbeitrag; laut Literaturliste gelesen und zusammengefasst | nein |
-| `Semmelrock-etal-2025-Reproducibility-ML.pdf` | Semmelrock et al. 2025 | Reproduzierbarkeit | 2 | 19 | AI Magazine; Literaturliste nennt 2024 | nein |
+| `Semmelrock-etal-2025-Reproducibility-ML.pdf` | Semmelrock et al. 2025 | Reproduzierbarkeit | 2 | 19 | AI Magazine 46(2), e70002, 2025, DOI 10.1002/aaai.70002 (Crossref); 2024 ist der arXiv-Preprint 2406.14325 | [ja](zusammenfassungen/Semmelrock-etal-2025-Reproducibility-ML.md) |
 | `Kowald-etal-2024-Trustworthy-AI.pdf` | Kowald et al. 2024 | Vertrauenswürdige KI | 3 | 21 | Frontiers in Big Data | nein |
-| `Klein-etal-2025-Provocations.pdf` | Klein et al. 2025 | KI und Geisteswissenschaften | 2 | 21 | arXiv 2502.19190 | nein |
+| `Klein-etal-2025-Provocations.pdf` | Klein et al. 2025 | KI und Geisteswissenschaften | 2 | 21 | arXiv 2502.19190, lokal v1; v2 vom 2026-01-12, als FAccT 2026 gesetzt, Erscheinen nicht bestätigt (Stand 2026-10-28) | [ja](zusammenfassungen/Klein-etal-2025-Provocations.md) |
 | `Steller-2024-KI-DH-Positionspapier.pdf` | Steller 2024 | KI in den DH | 3 | 20 | Positionspapier v0.9.1 | nein |
 | `Gengnagel-etal-2024-LLM-Glossary.pdf` | Gengnagel et al. 2024 | LLM Begriffe | 3 | 11 | Entwurf | nein |
 | `Chen-etal-2025-LLM-Ensemble.pdf` | Chen et al. 2025 | LLM-Ensembles | 3 | 10 | Survey; laut Literaturliste gelesen und zusammengefasst | nein |
 | `Yang-etal-2024-Harnessing-LLMs.pdf` | Yang et al. 2024 | LLM Überblick | 3 | 32 | DOI 10.1145/3649506 | nein |
 | `An-etal-2024-LLM-Context.pdf` | An et al. 2024 | LLM Kontextnutzung | 3 | 19 | | nein |
 | `Campesato-2024-LLM-Introduction.pdf` | Campesato 2024 | LLM Lehrbuch | 3 | 502 | nur bei Bedarf kapitelweise | nein |
-| `Koehnlein-2025-Benchmark-Framework-LLM.pdf` | Köhnlein 2025 | LLM-Benchmark, Linguistik | 2 | 97 | Masterarbeit Graz; laut Literaturliste gelesen und zusammengefasst, die Zusammenfassung liegt nicht hier | nein |
+| `Koehnlein-2025-Benchmark-Framework-LLM.pdf` | Köhnlein 2025 | LLM-Benchmark, Linguistik | 2 | 97 | Masterarbeit Graz; laut Literaturliste gelesen und zusammengefasst, die Zusammenfassung liegt nicht hier | [ja](zusammenfassungen/Koehnlein-2025-Benchmark-Framework-LLM.md) |
 | `Matusch-2025-Entitaeten-Disambiguierung.pdf` | Matusch 2025 | Entitäten-Disambiguierung | 3 | 83 | Masterarbeit FH Joanneum | nein |
 | `Ristic-2025-Symbolic-NLI-German.pdf` | Ristic 2025 | NLI Deutsch | 3 | 85 | Diplomarbeit TU Wien | nein |
 | `Ganslmayer-Schwarz-2021-Historische-Wortbildung.pdf` | Ganslmayer & Schwarz (Hg.) 2021 | historische Wortbildung | 3 | 453 | Sammelband; relevante Beiträge auswählen | nein |
@@ -106,15 +106,15 @@ aus dem PDF abgelesen; „zu prüfen" heißt, sie stehen dort nicht vollständig
 | `Liu-etal-2019-RoBERTa.pdf` | Liu et al. 2019 | Sprachmodelle | 3 | 13 | arXiv | nein |
 | `Schiller-etal-1999-STTS.pdf` | Schiller et al. 1999 | Tagset Deutsch | 3 | 87 | Jahr aus altem Dateinamen, im PDF nicht lesbar | nein |
 | `Telljohann-etal-2004-TueBa-DZ.pdf` | Telljohann, Hinrichs & Kübler 2004 | Baumbank Deutsch | 3 | 4 | LREC 2004 | nein |
-| `Hinkelmanns-Zeppezauer-Wachauer-2020-MHDBDB.pdf` | Hinkelmanns & Zeppezauer-Wachauer 2020 | MHDBDB, Begriffssystem, Linked Data | 2 | 12 | gedruckt S. 73 bis 84 (Bamberg); erwähnt keine graphematischen Types | nein |
+| `Hinkelmanns-Zeppezauer-Wachauer-2020-MHDBDB.pdf` | Hinkelmanns & Zeppezauer-Wachauer 2020 | MHDBDB, Begriffssystem, Linked Data | 2 | 12 | gedruckt S. 73 bis 84 (Bamberg); erwähnt keine graphematischen Types | [ja](zusammenfassungen/Hinkelmanns-Zeppezauer-Wachauer-2020-MHDBDB.md) |
 | `Hinkelmanns-Zeppezauer-Wachauer-2023-MHDBDB-Projektbericht.pdf` | Hinkelmanns & Zeppezauer-Wachauer 2023 | MHDBDB, Herkunft der Typlisten | 1 | 5 | gedruckt S. 179 bis 181; Kernstelle S. 180 (PDF-Seite 4); KUPS, CC BY 3.0 | [ja](zusammenfassungen/Hinkelmanns-Zeppezauer-Wachauer-2023-MHDBDB-Projektbericht.md) |
 | `Henrich-Hinrichs-2010-GernEdiT.pdf` | Henrich & Hinrichs 2010 | WSD Deutsch, Annotationswerkzeug | 3 | 8 | LREC 2010, gedruckt S. 2228 bis 2235 | nein |
 | `Mambrini-Passarotti-2023-LiLa.pdf` | Mambrini & Passarotti 2023 | Linked Data, Latein | 3 | 5 | JOHD 9(1), Artikel 28 | nein |
-| `Scholger-Bleier-2026-ChatGPT-RIDE.pdf` | Scholger & Bleier 2026 | LLM und digitale Editionen | 2 | 32 | RIDE 19, Rezension der Ressource ChatGPT | nein |
+| `Scholger-Bleier-2026-ChatGPT-RIDE.pdf` | Scholger & Bleier 2026 | LLM und digitale Editionen | 2 | 32 | RIDE 19, Rezension der Ressource ChatGPT, DOI 10.18716/ride.a.19.4; Zitierweise Absatznummer | [ja](zusammenfassungen/Scholger-Bleier-2026-ChatGPT-RIDE.md) |
 | `Telljohann-etal-2017-TueBa-DZ-Stylebook.pdf` | Telljohann et al. 2017 | Baumbank Deutsch, Richtlinien | 3 | 166 | Stylebook, Juli 2017 | nein |
 | `Tittel-Chiarcos-2018-DEAF-LOD.pdf` | Tittel & Chiarcos 2018 | Linked Data, historische Lexikographie | 3 | 10 | Venue laut `BESCHAFFUNG.md` widersprüchlich (LDL-2018 oder GLOBALEX), PDF ohne Seitenzahlen | nein |
 | `Zeppezauer-Wachauer-2022-Fuenfzig-Jahre-MHDBDB.pdf` | Zeppezauer-Wachauer 2022 | MHDBDB, Geschichte, Graphdaten | 1 | 27 | BmE Themenheft 12, S. 161 bis 186 | [ja](zusammenfassungen/Zeppezauer-Wachauer-2022-Fuenfzig-Jahre-MHDBDB.md) |
-| `Strutz-2026-LLM-TEI-Evaluation.pdf` | Strutz 2026 | LLM-Evaluation, TEI-Kodierung | 2 | 20 | JOHD 12, Artikel 39, DOI 10.5334/johd.484 (Zitiervorschlag S. 1); lag bis 2026-10-28 als `69b0024ec3b99.pdf` unverzeichnet in `literatur/` | nein |
+| `Strutz-2026-LLM-TEI-Evaluation.pdf` | Strutz 2026 | LLM-Evaluation, TEI-Kodierung | 2 | 20 | JOHD 12, Artikel 39, DOI 10.5334/johd.484 (Zitiervorschlag S. 1); lag bis 2026-10-28 als `69b0024ec3b99.pdf` unverzeichnet in `literatur/` | [ja](zusammenfassungen/Strutz-2026-LLM-TEI-Evaluation.md) |
 
 **In der Literaturliste, aber ohne PDF:** Roe 2025 (*How to Use Generative AI in Educational
 Research*), Abualhaija 2016 (*D-Bees*), Tischler 2010 (*Word sense disambiguation, Einsatz in der

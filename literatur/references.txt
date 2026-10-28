@@ -408,7 +408,7 @@
   publisher = {Association for Computational Linguistics},
   address   = {Avignon, France},
   year      = {2012},
-  url       = {https://aclanthology.org/E12-1040/}
+  url       = {https://aclanthology.org/E12-1039/}
 }
 
 @misc{rem2016,
@@ -561,6 +561,7 @@
   number  = {1},
   year    = {2013},
   pages   = {85--137},
+  doi     = {10.21248/jlcl.28.2013.170},
   note    = {Special Issue}
 }
 
@@ -613,4 +614,38 @@
   organization = {Digital Humanities Craft},
   url          = {https://github.com/DigitalHumanitiesCraft/mhdbdb-tei-only},
   urldate      = {2026-07-23},
+}
+
+@article{ide1998introduction,
+  author  = {Ide, Nancy and Véronis, Jean},
+  title   = {Introduction to the Special Issue on Word Sense Disambiguation: The State of the Art},
+  journal = {Computational Linguistics},
+  volume  = {24},
+  number  = {1},
+  pages   = {1--40},
+  year    = {1998},
+  month   = mar,
+  url     = {https://aclanthology.org/J98-1001/},
+  note    = {Lokales PDF ist ein Manuskript mit eigener Seitenzählung}
+}
+
+@article{semmelrock2025reproducibility,
+  author  = {Semmelrock, Harald and Ross-Hellauer, Tony and Kopeinik, Simone and Theiler, Dieter and Haberl, Armin and Thalmann, Stefan and Kowald, Dominik},
+  title   = {Reproducibility in Machine-Learning-Based Research: Overview, Barriers, and Drivers},
+  journal = {AI Magazine},
+  volume  = {46},
+  number  = {2},
+  pages   = {e70002},
+  year    = {2025},
+  doi     = {10.1002/aaai.70002}
+}
+
+@misc{klein2025provocations,
+  author        = {Klein, Lauren and Martin, Meredith and Brock, André and Antoniak, Maria and Walsh, Melanie and Johnson, Jessica Marie and Tilton, Lauren and Mimno, David},
+  title         = {Provocations from the Humanities for Generative {AI} Research},
+  year          = {2025},
+  eprint        = {2502.19190},
+  archiveprefix = {arXiv},
+  url           = {https://arxiv.org/abs/2502.19190},
+  note          = {v1 2025-02-26 (lokal), v2 2026-01-12}
 }
