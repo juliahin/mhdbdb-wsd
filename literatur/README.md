@@ -31,7 +31,11 @@ Das Thema steht deshalb in der Übersicht unten, die PDFs liegen flach.
 2. **Umwandeln:** `python literatur/pdf_zu_md.py` (Volltext) und `python literatur/markierungen.py`
    (Anmerkungen) aus dem Repo-Wurzelverzeichnis. Docling liest keine Anmerkungen, deshalb das zweite
    Skript. Markierungen gibt es bisher in 17 PDFs (Stand 2026-10-28); was als „Zeichen“ erscheint, sind
-   gezeichnete Häkchen und Randstriche, für die nur die Position angegeben ist.
+   gezeichnete Häkchen und Randstriche, für die nur die Position angegeben ist. Auf Seiten mit
+   Abbildungen oder Baumdiagrammen verwirft Docling oft auch den Fließtext; liefert es weniger als
+   30 % der Zeichen der Textebene, hängt das Skript die rohe Textebene gekennzeichnet an (am
+   2026-10-28 mit `--nachtragen` für 40 Seiten in 10 PDFs nachgeholt, u. a. Köhnlein S. 34 zur Homonymie).
+   Tabellen und Text in Abbildungen bleiben trotzdem am PDF zu prüfen.
 3. **Zusammenfassen:** Der Agent `quellen` liest jedes PDF vollständig und füllt die Vorlage.
    Gibt es `md/<Name>.markierungen.md`, liest er sie mit: Die Stellen, die Julia markiert hat,
    gehören geprüft, ob sie in die Kernaussagen gehören. Pro Lauf etwa fünf Werke, mehrere Läufe

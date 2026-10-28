@@ -5,6 +5,7 @@ Aufruf aus dem Repo-Wurzelverzeichnis:
     python literatur/pdf_zu_md.py                 alle PDFs, die noch kein aktuelles .md haben
     python literatur/pdf_zu_md.py Datei.pdf ...   nur diese (Name relativ zu literatur/pdf/)
     python literatur/pdf_zu_md.py --neu           alle neu umwandeln
+    python literatur/pdf_zu_md.py --nachtragen    vorhandene .md um ausgelassene Textebene ergänzen
 
 Ausgabe nach literatur/md/ (nicht im Repo, die Volltexte sind urheberrechtlich geschützt):
   <Name>.md            Markdown mit Seitenmarken <!-- PDF-Seite n --> vor jeder Seite.
@@ -27,6 +28,7 @@ import io
 import tempfile
 import importlib.metadata
 import json
+import re
 import sys
 import time
 
@@ -74,6 +76,23 @@ def konverter(ocr):
     return DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opt)})
 
 
+NACHTRAG = "<!-- Docling hat diese Seite weitgehend ausgelassen; es folgt die rohe Textebene des PDFs -->"
+
+
+def zeichen(text):
+    return len(re.sub(r"\s|<!-- image -->", "", text))
+
+
+def mit_textebene(pdf, n, md):
+    """Docling verwirft auf Seiten mit Abbildungen oder Baumdiagrammen oft auch den Fließtext
+    (am 2026-10-28 gemessen: 40 Seiten in 10 PDFs). Liefert es weniger als 30 % der Zeichen der
+    Textebene, wird diese gekennzeichnet angehängt."""
+    roh = pdf[n - 1].get_text()
+    if NACHTRAG in md or zeichen(roh) <= 300 or zeichen(md) >= 0.3 * zeichen(roh):
+        return md, False
+    return md.rstrip() + f"\n\n{NACHTRAG}\n\n{roh.strip()}\n", True
+
+
 def umwandeln(pfad, conv, ocr):
     t0 = time.time()
     if ocr:
@@ -83,19 +102,51 @@ def umwandeln(pfad, conv, ocr):
             doc = conv.convert(sauber).document
     else:
         doc = conv.convert(pfad).document
+    pdf = pymupdf.open(pfad)
     teile = []
     for n in sorted(doc.pages):
-        teile.append(f"<!-- PDF-Seite {n} -->\n\n"
-                     + doc.export_to_markdown(page_no=n, image_mode=ImageRefMode.PLACEHOLDER))
+        md = doc.export_to_markdown(page_no=n, image_mode=ImageRefMode.PLACEHOLDER)
+        if not ocr:
+            md, _ = mit_textebene(pdf, n, md)
+        teile.append(f"<!-- PDF-Seite {n} -->\n\n" + md)
     kopf = f"<!-- Quelle: pdf/{pfad.name} | Docling {VERSION} | nicht gegengelesen -->\n\n"
     (MD / (pfad.stem + ".md")).write_text(kopf + "\n\n".join(teile) + "\n", encoding="utf-8")
     return len(doc.pages), round(time.time() - t0, 1)
+
+
+def nachtragen(pfad):
+    """Vorhandenes .md um die Textebene der Seiten ergänzen, die Docling ausgelassen hat."""
+    ziel = MD / (pfad.stem + ".md")
+    if not ziel.exists():
+        return []
+    pdf = pymupdf.open(pfad)
+    teile = re.split(r"(<!-- PDF-Seite (\d+) -->)", ziel.read_text(encoding="utf-8"))
+    ergaenzt = []
+    for i in range(1, len(teile), 3):
+        n = int(teile[i + 1])
+        md, neu = mit_textebene(pdf, n, teile[i + 2])
+        if neu:
+            teile[i + 2] = "\n\n" + md.lstrip() + "\n"
+            ergaenzt.append(n)
+    if ergaenzt:
+        ziel.write_text("".join(t for j, t in enumerate(teile) if j % 3 != 2), encoding="utf-8")
+    return ergaenzt
 
 
 def main(argv):
     neu = "--neu" in argv
     namen = [a for a in argv if not a.startswith("--")]
     pdfs = [PDF / n for n in namen] if namen else sorted(PDF.glob("*.pdf"))
+    if "--nachtragen" in argv:
+        for p in pdfs:
+            seiten = nachtragen(p)
+            if seiten:
+                print(f"{p.name}: Textebene nachgetragen auf PDF-Seite {', '.join(map(str, seiten))}")
+                with open(MD / "_protokoll.jsonl", "a", encoding="utf-8") as fh:
+                    fh.write(json.dumps({"datei": p.name, "status": "textebene nachgetragen", "seiten_nachgetragen": seiten,
+                                         "zeitpunkt": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")},
+                                        ensure_ascii=False) + "\n")
+        return
     convs = {}
     for p in pdfs:
         ziel = MD / (p.stem + ".md")
