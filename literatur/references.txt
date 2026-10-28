@@ -268,14 +268,15 @@
   url     = {https://dhcraft.org/excellence/blog/Promptotyping/}
 }
 
-@mastersthesis{koehnlein2025blick,
-  author  = {Köhnlein, Viktoria Barbara},
-  title   = {Ein Blick hinter die Punktwolke},
-  school  = {Karl-Franzens-Universität Graz},
+@mastersthesis{koehnlein2025bewertung,
+  author  = {Köhnlein, Viktoria},
+  title   = {Bewertung und Erweiterung eines linguistischen Benchmark-Frameworks für große Sprachmodelle ({LLMs})},
+  school  = {Karl-Franzens-Universität Graz, Institut für Digitale Geisteswissenschaften},
   year    = {2025},
+  month   = may,
   address = {Graz},
   type    = {Masterarbeit},
-  url     = {https://search.obvsg.at/primo-explore/fulldisplay?docid=OBV_alma71611618310003331&vid=OBV}
+  note    = {Begutachter: Georg Vogeler (Titelblatt). Der früher hier verknüpfte OBV-Datensatz „Ein Blick hinter die Punktwolke“ ist eine andere Arbeit}
 }
 
 @article{jannidis2025large,
