@@ -189,8 +189,11 @@ Besetzung am 2026-10-16: Jede Zelle hat mindestens 16 Paare (kleinste: 3 ADJ >20
    der Gruppen der Quadratwurzel-Allokation (Potenzallokation mit q = 0,5; Bankier 1988): Lyrik und
    Fachliteratur werden angehoben, ohne die Großepik zu verdrängen.
 4. **Obergrenze pro Text:** höchstens 3 Items aus einem Text über alle Komponenten (bestätigt am 2026-10-16). Ist die Grenze
-   erreicht, wird in Stufe 2 neu gezogen. Vorbild: ReM nimmt große Texte nur in Ausschnitten auf
-   (Klein & Dipper 2016); zugleich hält die Grenze den Klumpeneffekt klein.
+   erreicht, wird in Stufe 2 neu gezogen. Die Grenze hält den Klumpeneffekt klein (Gale, Church & Yarowsky 1992; All-Words-Sets als
+   Klumpenstichproben, Raganato et al. 2017). Ein Vorbild im ReM gibt es dafür nicht: Das
+   Handbuch (Klein & Dipper 2016, S. 4) kennt für eReM nur eine Untergrenze von 20.000 Tokens
+   bei einigen Großtexten; nach 50-Jahres-Abschnitten, Sprachräumen und Textart strukturiert
+   ist MiGraKo (S. 3), nicht eReM (S. 5).
 5. **Inklusionswahrscheinlichkeiten** jeder Ziehung werden mitgeschrieben; daraus entstehen die
    Gewichte für die sekundäre, korpusgewichtete Auswertung und für die Rückgewichtung der Domänen.
 6. **Fester Seed**, im Manifest. Ziehungsskript, Gattungstabelle und Parameter werden mit eingefroren.
@@ -456,6 +459,7 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 | A10 | Schicht Silber ja/nein pro Token | Domänen D1 (durchannotierte Texte) und D0, D1 mit fester Quote von 30 % | Silber ist eine Texteigenschaft (zweigipflige Verteilung) | 2026-10-16 |
 | A11 | Hypothese gegen festen Wert | primäres Schätzziel: ungewichtete gepaarte Differenz LLM minus MFS, Bewertungsregeln für `MEHRERE` und Ausweichlabels | Mehrere Ziele, eines primär (Kish 1988); gewichtete Zahl hätte kleine n_eff | 2026-10-16 |
 | A12 | (keine Abweichung vom Design) Quellenangabe in Abschnitt 2 | Quellenangabe zu Hinkelmanns & Zeppezauer-Wachauer (2023) berichtigt: gedruckte S. 180, wörtliches Zitat, Übertragung auf Bedeutungen als Lesart gekennzeichnet; Prüfstatus ○ → ✔ | Vorher stand dort, die Quelle belege die Anbindung von Bedeutungen an Typen; im Original steht nur „linguistische Annotationen“ (POS, Phrasen- und Satzstrukturen). Entscheidung Julia Hintersteiner, 2026-10-23 | 2026-10-23 |
+| A13 | (keine Abweichung von der Regel) Begründung der Obergrenze pro Text (Abschnitt 4.4, Punkt 4): „Vorbild: ReM nimmt große Texte nur in Ausschnitten auf“ | Begründung nur über den Klumpeneffekt; ReM nicht mehr als Vorbild genannt. Regel unverändert (3 Items pro Text) | Falsch gelesen: Die 20.000 Tokens sind in eReM eine Untergrenze für einige Großtexte (Klein & Dipper 2016, S. 4); das Raster aus 50-Jahres-Abschnitten, Sprachräumen und Textart gilt für MiGraKo (S. 3), eReM ist „kein strukturiertes Korpus“ (S. 5); eine Obergrenze pro Text formuliert das Handbuch nicht. Entscheidung Julia Hintersteiner, 2026-10-28. Gleiche Korrektur in LITERATUR-STICHPROBE.md | 2026-10-28 |
 
 ## 12. Offene Punkte
 

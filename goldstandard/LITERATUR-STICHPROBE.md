@@ -1,6 +1,6 @@
 # Literatur: Stichprobendesign für den WSD-Goldstandard
 
-**Stand:** 2026-10-16. Recherchiert von einem Recherche-Agenten (Claude Code), dazu eine skeptische
+**Stand:** 2026-10-28 (Zeile ReM korrigiert; sonst 2026-10-16). Recherchiert von einem Recherche-Agenten (Claude Code), dazu eine skeptische
 Zweitmeinung zum Entwurf. Ergänzt [LITERATUR-IAA.md](LITERATUR-IAA.md).
 
 **Prüfstatus:** ✔ = Volltext oder Verlagsseite vom Agenten gelesen, ○ = nur bibliografisch oder
@@ -20,7 +20,7 @@ am 2026-10-16). Vor dem Zitieren jede Angabe am Original prüfen.
 | Mehrere Ziele offen benennen statt ein künstliches Einzelziel; Optima sind flach. Ein primäres Schätzziel festlegen, andere mit vorab angegebener Präzision. | Kish 1988 ○; Costa, Satorra & Ventura 2004 ○ | Primäres Schätzziel festlegen |
 | Repräsentativität durch geschichtete statt proportionale Korpusgestaltung. | Biber 1993 ○ | Gattungsausgleich begründen |
 | Historische Daten sind fragmentarisch und schief überliefert („bad data"). | Nevalainen 1999 ○ | Bias benennen |
-| ReM: Raster aus 50-Jahres-Perioden, Dialektregionen, Vers/Prosa/Urkunde; große Texte nur in Ausschnitten (ca. 20.000 Tokens). | Klein & Dipper 2016 ✔ | Vorbild für Obergrenze pro Text |
+| MiGraKo (Teilkorpus von ReM) ist nach 50-Jahres-Abschnitten, Sprachräumen und Vers/Prosa/Urkunde strukturiert (S. 3). eReM nimmt Texte „in aller Regel“ komplett auf; bei sechs Großtexten wurden Ausschnitte auf „wenigstens 20.000 Tokens“ vergrößert, also Untergrenze (S. 4); eReM ist „kein strukturiertes Korpus wie MiGraKo“ (S. 5). Eine Obergrenze pro Text formuliert das Handbuch nicht. | Klein & Dipper 2016 ✔ (am Original gegengelesen 2026-10-28) | Beispiel für Schichtung nach Zeit, Sprachraum und Textart (MiGraKo); **kein** Vorbild für die Obergrenze pro Text (Korrektur, A13) |
 | Korpusdaten verletzen die Zufallsannahme auf Textebene; Resampling mit dem Text als Einheit. | Evert 2006 ○; Lijffijt et al. 2016 ○ | Bootstrap nach Text |
 | One sense per discourse: zwei Belege eines polysemen Nomens im selben Text haben zu 94 % denselben Sense. | Gale, Church & Yarowsky 1992 ✔ | 1 Token pro Lemma vermeidet den stärksten Klumpeneffekt |
 | Polysemiegrad sagt Schwierigkeit schlecht voraus; Sense-Schiefe (Verhältnis erster Sense zum Rest, normierte Entropie) ist der stärkere Faktor. | Loureiro et al. 2021 ✔; Passonneau et al. 2010 ✔ | Entropie und MFS-Anteil als Kovariaten |
