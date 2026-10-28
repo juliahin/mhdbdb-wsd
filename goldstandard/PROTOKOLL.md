@@ -1,6 +1,6 @@
 # WSD-Goldstandard: Protokoll v2
 
-**Status:** Entwurf vom 2026-10-08, noch nicht eingefroren.
+**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-28: 9.2 und Abweichungslog A14 ergänzt), noch nicht eingefroren.
 **Verantwortlich:** Julia Hintersteiner. Zweiter Annotator: Alan van Beek.
 **Vorgänger:** präregistriertes Evaluationsprotokoll vom 2026-04-24, wiederherstellbar mit
 `git show 873322658^:docs/features/034-wenzelsbibel-annotation.md` (Abschnitt „Pre-registered evaluation protocol").
@@ -411,6 +411,17 @@ Auf der Sense-Ebene werden berichtet:
     einer der Gold-Senses ist. Items mit `KEINE_PASST`, `LEMMA_FALSCH`, `KONTEXT_UNZUREICHEND` oder
     `TEXT_DEFEKT` gehen nicht in die Genauigkeit ein; wie oft das LLM bei ihnen abstiniert oder
     trotzdem einen Sense wählt, wird gesondert berichtet.
+  - **Einwand gegen die `MEHRERE`-Regel und Sensitivität:** Die Primärregel entspricht Henrichs
+    Option (iii), „to score a system already as correct if it assigns only one of the multiple
+    senses“. Henrich verwirft sie, weil sie „slightly higher evaluation results than would be
+    genuinely correct“ erbrächte, und hält Teilwertung (Option i) für fairer (Henrich 2015,
+    S. 151 bis 152). Die präregistrierte Primärregel bleibt stabil; zusätzlich werden zwei
+    Sensitivitätsauswertungen berichtet: (a) Teilwertung mit dem Dice-Koeffizienten zwischen der
+    Menge der Gold-Senses G und der vorhergesagten Menge (bei genau einem vorhergesagten Sense
+    2/(|G|+1) bei Treffer, sonst 0; Henrich nutzt Dice nach Véronis 1998); (b) Genauigkeit ohne
+    die `MEHRERE`-Items (Henrichs Option ii). Beides gilt für LLM und MFS-Baseline gleichermaßen,
+    damit der gepaarte Vergleich gepaart bleibt. Der Anteil der `MEHRERE`-Items an der
+    Auswertungsmenge wird berichtet.
   - Zusätzlich Macro-Genauigkeit nach Sense und die Genauigkeit auf Nicht-MFS-Items, weil dort die
     harten Fälle liegen (Maru et al. 2022).
 - **LLM gegen menschliche Annotator:innen:** Zusätzlich zum Vergleich mit dem Gold wird geprüft,
@@ -460,6 +471,7 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 | A11 | Hypothese gegen festen Wert | primäres Schätzziel: ungewichtete gepaarte Differenz LLM minus MFS, Bewertungsregeln für `MEHRERE` und Ausweichlabels | Mehrere Ziele, eines primär (Kish 1988); gewichtete Zahl hätte kleine n_eff | 2026-10-16 |
 | A12 | (keine Abweichung vom Design) Quellenangabe in Abschnitt 2 | Quellenangabe zu Hinkelmanns & Zeppezauer-Wachauer (2023) berichtigt: gedruckte S. 180, wörtliches Zitat, Übertragung auf Bedeutungen als Lesart gekennzeichnet; Prüfstatus ○ → ✔ | Vorher stand dort, die Quelle belege die Anbindung von Bedeutungen an Typen; im Original steht nur „linguistische Annotationen“ (POS, Phrasen- und Satzstrukturen). Entscheidung Julia Hintersteiner, 2026-10-23 | 2026-10-23 |
 | A13 | (keine Abweichung von der Regel) Begründung der Obergrenze pro Text (Abschnitt 4.4, Punkt 4): „Vorbild: ReM nimmt große Texte nur in Ausschnitten auf“ | Begründung nur über den Klumpeneffekt; ReM nicht mehr als Vorbild genannt. Regel unverändert (3 Items pro Text) | Falsch gelesen: Die 20.000 Tokens sind in eReM eine Untergrenze für einige Großtexte (Klein & Dipper 2016, S. 4); das Raster aus 50-Jahres-Abschnitten, Sprachräumen und Textart gilt für MiGraKo (S. 3), eReM ist „kein strukturiertes Korpus“ (S. 5); eine Obergrenze pro Text formuliert das Handbuch nicht. Entscheidung Julia Hintersteiner, 2026-10-28. Gleiche Korrektur in LITERATUR-STICHPROBE.md | 2026-10-28 |
+| A14 | Bewertungsregel bei `MEHRERE` (Abschnitt 9.2): „richtig, wenn einer der Gold-Senses getroffen“ | Regel unverändert; zwei Sensitivitätsauswertungen ergänzt: Teilwertung mit Dice-Koeffizient und Genauigkeit ohne `MEHRERE`-Items, jeweils für LLM und MFS; Anteil der `MEHRERE`-Items wird berichtet | Henrich (2015, S. 151 bis 152) verwirft diese Regel (Option iii), weil sie die Ergebnisse leicht überschätze, und hält Teilwertung für fairer. Präregistrierte Primärregel bleibt stabil, der Einwand wird beantwortet statt übergangen. Entscheidung Julia Hintersteiner, 2026-10-28 | 2026-10-28 |
 
 ## 12. Offene Punkte
 

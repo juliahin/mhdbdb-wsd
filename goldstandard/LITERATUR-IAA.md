@@ -1,6 +1,6 @@
 # Literatur: Inter-Annotator-Agreement für den WSD-Goldstandard
 
-**Stand:** 2026-10-08. Zusammengetragen von drei Recherche-Agenten (Claude Code) zu drei Fragen:
+**Stand:** 2026-10-28 (Zeile Henrich 2015 ergänzt; sonst 2026-10-08). Zusammengetragen von drei Recherche-Agenten (Claude Code) zu drei Fragen:
 Maße in der WSD, Ablauf und Stichprobengröße, Praxis bei historischen Sprachen.
 
 **Prüfstatus beachten.** ✔ heißt: Der Agent hat den Volltext oder die Verlagsseite gelesen.
@@ -24,6 +24,7 @@ prüfen, besonders die Einträge aus 2026 und alle mit ○.
 | Labels vor der Aggregation mitveröffentlichen; Abweichung ist oft Signal. | Prabhakaran et al. 2021 ✔; Plank 2022 ✔ | 7 |
 | Hohe Roh-IAA belegt nicht die Qualität des adjudizierten Golds. | Passonneau & Carpenter 2014 ○ | 9.2 |
 | LLM ersetzt Menschen nur, wenn es mit ihnen so gut übereinstimmt wie diese untereinander. | Calderon, Reichart & Dror 2025 ○ | 9.2 |
+| Bei Items mit mehreren Gold-Senses nennt Henrich fünf Wege (Teilwertung, ignorieren, „einer getroffen“ gilt als richtig, alle bis auf einen Sense entfernen, je Sense ein Eintrag). „Einer getroffen“ verwirft er, weil es die Ergebnisse leicht überschätzt; Teilwertung mit Dice (Véronis 1998) hält er für fairer. Das Protokoll behält die Regel als Primärregel und berichtet Dice-Teilwertung und Auswertung ohne `MEHRERE`-Items zusätzlich. | Henrich 2015 ✔ (S. 151 bis 152, Abschnitt 6.2); Véronis 1998 ○ und Resnik & Yarowsky 1997, 1999 ○ (zitiert nach Henrich 2015, S. 151 bis 152) | 9.2 |
 | Kontamination: Testdaten nicht im Klartext veröffentlichen; verschlüsseln, Lizenz, Canary. | Sainz et al. 2023 ✔; Jacovi et al. 2023 ✔ | 10 |
 | Ursachentypologie für Abweichungen (Richtlinienlücke, Regelverstoß, unterschiedliches Textverständnis). | Barteld, Dreessen, Ihden & Schröder 2015 (Vortragsfolien) ○ | 7 |
 
@@ -80,6 +81,7 @@ nachgerechnet, halbe Breite des 95-%-Intervalls:
 - Ghizzota, E. et al. (2026). Linguistic knowledge graphs for sense prediction: Latin. LREC. https://aclanthology.org/2026.lrec-1.856/
 - Gwet, K. L. (2008). Computing inter-rater reliability and its variance in the presence of high agreement. *British Journal of Mathematical and Statistical Psychology* 61, 29–48.
 - Hayes, A. F. & Krippendorff, K. (2007). Answering the call for a standard reliability measure for coding data. *Communication Methods and Measures* 1(1), 77–89.
+- Henrich, V. (2015). *Word Sense Disambiguation with GermaNet: Semi-Automatic Enhancement and Empirical Results*. Dissertation, Eberhard Karls Universität Tübingen. doi:10.15496/publikation-4706 (Titel vom Titelblatt, DOI aufgelöst; `literatur/references.txt`, `henrich2015word`)
 - Hinkelmanns, P. & Zeppezauer-Wachauer, K. (2023). Mittelhochdeutsche Begriffsdatenbank (MHDBDB). In Bleier & Klug (Hg.), *Digitale Edition in Österreich*, 179–181.
 - Hovy, E. (2010). Annotation. Tutorial, ACL. https://aclanthology.org/P10-5004/
 - Hovy, E., Marcus, M., Palmer, M., Ramshaw, L. & Weischedel, R. (2006). OntoNotes: The 90% solution. NAACL-HLT. https://aclanthology.org/N06-2015/
