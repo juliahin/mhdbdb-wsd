@@ -10,6 +10,13 @@ Angelegt am 2026-10-23, Bestand am selben Tag gesichtet und umsortiert.
 | `VORLAGE.md` | Gliederung jeder Zusammenfassung | ja |
 | `archiv-intermedialitaet/` | Literatur zum früheren Dissertationsthema (Intermedialität), 23 Dateien samt alter Literaturliste; wird nicht zusammengefasst | **nein** |
 | `material/` | eigene Listen und Folien (`Literaturliste.xlsx`, `Free-Prompting-25.pptx`) und `umbenennung-2026-10-23.csv` mit allen alten und neuen Dateinamen | **nein** |
+| `md/` | maschinell erzeugt: `<Name>.md` (Volltext, `pdf_zu_md.py`) und `<Name>.markierungen.md` (Julias Anmerkungen im PDF, `markierungen.py`) | **nein** |
+| `pdf_zu_md.py`, `markierungen.py` | die beiden Skripte dazu; Aufruf und Verfahren im Kopf der Datei | ja |
+
+`pdf/` ist der einzige Ort für die Volltexte. Kopien unter alten Namen (direkt in `literatur/`, in
+`Dissertation/attachments/`) wurden am 2026-10-28 entfernt, nachdem jede per SHA-256 als byte-gleich
+mit einer Datei in `pdf/`, `material/` oder `archiv-intermedialitaet/` bestätigt war; drei ältere
+Fassungen in `Dissertation/attachments/` enthielten nur eine Teilmenge der Markierungen in `pdf/`.
 
 **Dateinamen:** bei zwei Autor:innen beide Namen, ab drei `Nachname-etal`, bei Sammelbänden die
 Herausgeber:innen. Umlaute als `ae`, `oe`, `ue`. Ohne bekanntes Jahr `oJ`.
@@ -21,13 +28,18 @@ Das Thema steht deshalb in der Übersicht unten, die PDFs liegen flach.
 
 1. **Ablegen:** neue PDFs nach `pdf/`, nach dem Muster benennen. Gescannte PDFs ohne Textebene
    vorher mit OCR versehen, sonst lässt sich nichts zitieren.
-2. **Zusammenfassen:** Der Agent `quellen` liest jedes PDF vollständig und füllt die Vorlage.
-   Pro Lauf etwa fünf Werke, mehrere Läufe parallel. Bücher kapitelweise; der Auftrag nennt dann
-   die relevanten Kapitel.
-3. **Gegenlesen:** Jede Zusammenfassung beginnt mit dem Status „KI-Zusammenfassung, nicht
+2. **Umwandeln:** `python literatur/pdf_zu_md.py` (Volltext) und `python literatur/markierungen.py`
+   (Anmerkungen) aus dem Repo-Wurzelverzeichnis. Docling liest keine Anmerkungen, deshalb das zweite
+   Skript. Markierungen gibt es bisher in 17 PDFs (Stand 2026-10-28); was als „Zeichen“ erscheint, sind
+   gezeichnete Häkchen und Randstriche, für die nur die Position angegeben ist.
+3. **Zusammenfassen:** Der Agent `quellen` liest jedes PDF vollständig und füllt die Vorlage.
+   Gibt es `md/<Name>.markierungen.md`, liest er sie mit: Die Stellen, die Julia markiert hat,
+   gehören geprüft, ob sie in die Kernaussagen gehören. Pro Lauf etwa fünf Werke, mehrere Läufe
+   parallel. Bücher kapitelweise; der Auftrag nennt dann die relevanten Kapitel.
+4. **Gegenlesen:** Jede Zusammenfassung beginnt mit dem Status „KI-Zusammenfassung, nicht
    gegengelesen". Erst wenn Julia Kernaussagen und Seitenangaben am PDF geprüft hat, wird daraus
    „gegengelesen am …". Nur dann zählt sie für den Agenten `autor` als ✔.
-4. **Verdichten:** Thematische Synthesen bleiben in `goldstandard/LITERATUR-*.md` und verweisen
+5. **Verdichten:** Thematische Synthesen bleiben in `goldstandard/LITERATUR-*.md` und verweisen
    auf die Zusammenfassung hier, statt sie zu wiederholen.
 
 ## Regeln
@@ -91,6 +103,7 @@ aus dem PDF abgelesen; „zu prüfen" heißt, sie stehen dort nicht vollständig
 | `Telljohann-etal-2017-TueBa-DZ-Stylebook.pdf` | Telljohann et al. 2017 | Baumbank Deutsch, Richtlinien | offen | 166 | Stylebook, Juli 2017 | nein |
 | `Tittel-Chiarcos-2018-DEAF-LOD.pdf` | Tittel & Chiarcos 2018 | Linked Data, historische Lexikographie | offen | 10 | Venue laut `BESCHAFFUNG.md` widersprüchlich (LDL-2018 oder GLOBALEX), PDF ohne Seitenzahlen | nein |
 | `Zeppezauer-Wachauer-2022-Fuenfzig-Jahre-MHDBDB.pdf` | Zeppezauer-Wachauer 2022 | MHDBDB, Geschichte, Graphdaten | offen | 27 | BmE Themenheft 12, S. 161 bis 186 | nein |
+| `Strutz-2026-LLM-TEI-Evaluation.pdf` | Strutz 2026 | LLM-Evaluation, TEI-Kodierung | offen | 20 | JOHD 12, Artikel 39, DOI 10.5334/johd.484 (Zitiervorschlag S. 1); lag bis 2026-10-28 als `69b0024ec3b99.pdf` unverzeichnet in `literatur/`; fehlt in `references.txt` | nein |
 
 **In der Literaturliste, aber ohne PDF:** Roe 2025 (*How to Use Generative AI in Educational
 Research*), Abualhaija 2016 (*D-Bees*), Tischler 2010 (*Word sense disambiguation, Einsatz in der
