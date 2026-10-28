@@ -52,7 +52,8 @@ Das Thema steht deshalb in der Übersicht unten, die PDFs liegen flach.
 
 ## Übersicht
 
-Priorität für das Zusammenfassen (Vorschlag vom 2026-10-23): **1** trägt Protokoll oder Daten
+Priorität für das Zusammenfassen (Vorschlag vom 2026-10-23, die neun zuletzt aufgenommenen Werke
+von Julia am 2026-10-28 eingestuft): **1** trägt Protokoll oder Daten
 direkt, **2** Methodenkontext für den Artikel, **3** Hintergrund. Bibliografische Angaben sind
 aus dem PDF abgelesen; „zu prüfen" heißt, sie stehen dort nicht vollständig.
 
@@ -95,15 +96,15 @@ aus dem PDF abgelesen; „zu prüfen" heißt, sie stehen dort nicht vollständig
 | `Liu-etal-2019-RoBERTa.pdf` | Liu et al. 2019 | Sprachmodelle | 3 | 13 | arXiv | nein |
 | `Schiller-etal-1999-STTS.pdf` | Schiller et al. 1999 | Tagset Deutsch | 3 | 87 | Jahr aus altem Dateinamen, im PDF nicht lesbar | nein |
 | `Telljohann-etal-2004-TueBa-DZ.pdf` | Telljohann, Hinrichs & Kübler 2004 | Baumbank Deutsch | 3 | 4 | LREC 2004 | nein |
-| `Hinkelmanns-Zeppezauer-Wachauer-2020-MHDBDB.pdf` | Hinkelmanns & Zeppezauer-Wachauer 2020 | MHDBDB, Begriffssystem, Linked Data | offen | 12 | gedruckt S. 73 bis 84 (Bamberg); erwähnt keine graphematischen Types | nein |
-| `Hinkelmanns-Zeppezauer-Wachauer-2023-MHDBDB-Projektbericht.pdf` | Hinkelmanns & Zeppezauer-Wachauer 2023 | MHDBDB, Herkunft der Typlisten | offen | 5 | gedruckt S. 179 bis 181; Kernstelle S. 180 (PDF-Seite 4); KUPS, CC BY 3.0 | nein |
-| `Henrich-Hinrichs-2010-GernEdiT.pdf` | Henrich & Hinrichs 2010 | WSD Deutsch, Annotationswerkzeug | offen | 8 | LREC 2010, gedruckt S. 2228 bis 2235 | nein |
-| `Mambrini-Passarotti-2023-LiLa.pdf` | Mambrini & Passarotti 2023 | Linked Data, Latein | offen | 5 | JOHD 9(1), Artikel 28 | nein |
-| `Scholger-Bleier-2026-ChatGPT-RIDE.pdf` | Scholger & Bleier 2026 | LLM und digitale Editionen | offen | 32 | RIDE 19, Rezension der Ressource ChatGPT | nein |
-| `Telljohann-etal-2017-TueBa-DZ-Stylebook.pdf` | Telljohann et al. 2017 | Baumbank Deutsch, Richtlinien | offen | 166 | Stylebook, Juli 2017 | nein |
-| `Tittel-Chiarcos-2018-DEAF-LOD.pdf` | Tittel & Chiarcos 2018 | Linked Data, historische Lexikographie | offen | 10 | Venue laut `BESCHAFFUNG.md` widersprüchlich (LDL-2018 oder GLOBALEX), PDF ohne Seitenzahlen | nein |
-| `Zeppezauer-Wachauer-2022-Fuenfzig-Jahre-MHDBDB.pdf` | Zeppezauer-Wachauer 2022 | MHDBDB, Geschichte, Graphdaten | offen | 27 | BmE Themenheft 12, S. 161 bis 186 | nein |
-| `Strutz-2026-LLM-TEI-Evaluation.pdf` | Strutz 2026 | LLM-Evaluation, TEI-Kodierung | offen | 20 | JOHD 12, Artikel 39, DOI 10.5334/johd.484 (Zitiervorschlag S. 1); lag bis 2026-10-28 als `69b0024ec3b99.pdf` unverzeichnet in `literatur/`; fehlt in `references.txt` | nein |
+| `Hinkelmanns-Zeppezauer-Wachauer-2020-MHDBDB.pdf` | Hinkelmanns & Zeppezauer-Wachauer 2020 | MHDBDB, Begriffssystem, Linked Data | 2 | 12 | gedruckt S. 73 bis 84 (Bamberg); erwähnt keine graphematischen Types | nein |
+| `Hinkelmanns-Zeppezauer-Wachauer-2023-MHDBDB-Projektbericht.pdf` | Hinkelmanns & Zeppezauer-Wachauer 2023 | MHDBDB, Herkunft der Typlisten | 1 | 5 | gedruckt S. 179 bis 181; Kernstelle S. 180 (PDF-Seite 4); KUPS, CC BY 3.0 | nein |
+| `Henrich-Hinrichs-2010-GernEdiT.pdf` | Henrich & Hinrichs 2010 | WSD Deutsch, Annotationswerkzeug | 3 | 8 | LREC 2010, gedruckt S. 2228 bis 2235 | nein |
+| `Mambrini-Passarotti-2023-LiLa.pdf` | Mambrini & Passarotti 2023 | Linked Data, Latein | 3 | 5 | JOHD 9(1), Artikel 28 | nein |
+| `Scholger-Bleier-2026-ChatGPT-RIDE.pdf` | Scholger & Bleier 2026 | LLM und digitale Editionen | 2 | 32 | RIDE 19, Rezension der Ressource ChatGPT | nein |
+| `Telljohann-etal-2017-TueBa-DZ-Stylebook.pdf` | Telljohann et al. 2017 | Baumbank Deutsch, Richtlinien | 3 | 166 | Stylebook, Juli 2017 | nein |
+| `Tittel-Chiarcos-2018-DEAF-LOD.pdf` | Tittel & Chiarcos 2018 | Linked Data, historische Lexikographie | 3 | 10 | Venue laut `BESCHAFFUNG.md` widersprüchlich (LDL-2018 oder GLOBALEX), PDF ohne Seitenzahlen | nein |
+| `Zeppezauer-Wachauer-2022-Fuenfzig-Jahre-MHDBDB.pdf` | Zeppezauer-Wachauer 2022 | MHDBDB, Geschichte, Graphdaten | 1 | 27 | BmE Themenheft 12, S. 161 bis 186 | nein |
+| `Strutz-2026-LLM-TEI-Evaluation.pdf` | Strutz 2026 | LLM-Evaluation, TEI-Kodierung | 2 | 20 | JOHD 12, Artikel 39, DOI 10.5334/johd.484 (Zitiervorschlag S. 1); lag bis 2026-10-28 als `69b0024ec3b99.pdf` unverzeichnet in `literatur/`; fehlt in `references.txt` | nein |
 
 **In der Literaturliste, aber ohne PDF:** Roe 2025 (*How to Use Generative AI in Educational
 Research*), Abualhaija 2016 (*D-Bees*), Tischler 2010 (*Word sense disambiguation, Einsatz in der
