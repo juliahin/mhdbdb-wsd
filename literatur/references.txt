@@ -400,6 +400,19 @@
   url     = {http://hdl.handle.net/10900/63284}
 }
 
+@phdthesis{rekabsaz2018word,
+  author  = {Rekabsaz, Navid},
+  title   = {Word Representation for Text Analysis and Search: Document Retrieval, Sentiment Analysis, and Cross Lingual Word Sense Disambiguation},
+  school  = {TU Wien, Fakultät für Informatik},
+  year    = {2018},
+  address = {Wien},
+  type    = {Dissertation},
+  pagetotal = {128},
+  doi     = {10.34726/hss.2018.62352},
+  url     = {http://hdl.handle.net/20.500.12708/1909},
+  note    = {Betreuer Allan Hanbury, Zweitbetreuer Mihai Lupu; Titelblatt datiert 4. April 2018, reposiTUm nennt als Einreichung 2019-01; Angaben am Titelblatt, an DataCite (DOI aufgelöst) und reposiTUm geprüft 2026-10-29}
+}
+
 @article{navigli2009wsd,
   author  = {Navigli, Roberto},
   title   = {Word Sense Disambiguation: A Survey},
