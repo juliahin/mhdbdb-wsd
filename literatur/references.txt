@@ -925,3 +925,28 @@
   pages     = {225--249},
   note      = {Seiten an der Textebene geprüft 2026-10-29}
 }
+
+@mastersthesis{matusch2025entitaeten,
+  author  = {Matusch, Felix},
+  title   = {Untersuchung von Methoden zur Erkennung und Disambiguierung von Entitäten in Texten},
+  school  = {FH JOANNEUM, Masterstudiengang Data Science and Artificial Intelligence},
+  year    = {2025},
+  month   = jun,
+  address = {Graz},
+  type    = {Masterarbeit},
+  note    = {Betreuer: Michael Hammer; datiert 30.06.2025 (Titelblatt, PDF-Seite 1). Kein Repositoriums- oder Katalogeintrag gefunden (drei Websuchen 2026-10-29)}
+}
+
+@mastersthesis{ristic2025symbolic,
+  author  = {Ristic, Kristian},
+  title   = {Symbolic Natural Language Inference for German Open Information Extraction},
+  school  = {Technische Universität Wien, Fakultät für Informatik},
+  year    = {2025},
+  month   = may,
+  address = {Wien},
+  type    = {Diplomarbeit},
+  pagetotal = {69},
+  doi     = {10.34726/hss.2025.130460},
+  url     = {https://repositum.tuwien.at/handle/20.500.12708/216545},
+  note    = {Betreuung: Gábor Recski. Titelblatt datiert 4. Mai 2025; DataCite: eingereicht 2025-05, Supervisor Recski, 69 Seiten; reposiTUm: Institut E194 Information Systems Engineering, In Copyright (abgerufen 2026-10-29)}
+}
