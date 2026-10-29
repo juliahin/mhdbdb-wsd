@@ -523,12 +523,29 @@
 }
 
 @techreport{tuebadz,
-  author      = {Telljohann, Heike and Hinrichs, Erhard and Kübler, Sandra and Zinsmeister, Heike and Beck, Kathrin},
+  author      = {Telljohann, Heike and Hinrichs, Erhard W. and Kübler, Sandra and Zinsmeister, Heike and Beck, Kathrin},
   title       = {Stylebook for the {Tübingen} Treebank of Written {German} ({TüBa-D/Z})},
   institution = {Seminar für Sprachwissenschaft, Universität Tübingen},
   year        = {2017},
   month       = jul,
-  url         = {https://hinrichs.sfs.uni-tuebingen.de/files/tbs/tuebadz-stylebook-1707.pdf}
+  url         = {https://hinrichs.sfs.uni-tuebingen.de/files/tbs/tuebadz-stylebook-1707.pdf},
+  urldate     = {2026-10-29},
+  note        = {Titelblatt geprüft 2026-10-29; lokales PDF byte-gleich mit der URL; Releaseseite https://uni-tuebingen.de/en/134290 datiert Release 11.0 auf 06/2018, das Stylebook auf Juli 2017}
+}
+
+@inproceedings{telljohann2004tuba,
+  author    = {Telljohann, Heike and Hinrichs, Erhard and Kübler, Sandra},
+  title     = {The {Tüba-D/Z} Treebank: Annotating {German} with a Context-Free Backbone},
+  booktitle = {Proceedings of the Fourth International Conference on Language Resources and Evaluation ({LREC}'04)},
+  editor    = {Lino, Maria Teresa and Xavier, Maria Francisca and Ferreira, Fátima and Costa, Rute and Silva, Raquel},
+  pages     = {2229--2232},
+  publisher = {European Language Resources Association (ELRA)},
+  address   = {Lisbon, Portugal},
+  year      = {2004},
+  month     = may,
+  url       = {https://aclanthology.org/L04-1096/},
+  urldate   = {2026-10-29},
+  note      = {Seiten aus dem PDF (gedruckte Seitenzahlen), ACL Anthology ohne Seitenangabe; lokales PDF byte-gleich mit http://www.lrec-conf.org/proceedings/lrec2004/pdf/135.pdf}
 }
 
 @inproceedings{devlin2019bert,
@@ -662,9 +679,12 @@
 @techreport{schiller1999,
   author      = {Schiller, Anne and Teufel, Simone and Stöckert, Christine and Thielen, Christine},
   title       = {Guidelines für das Tagging deutscher Textcorpora mit {STTS} (Kleines und großes Tagset)},
-  institution = {Universität Stuttgart and Universität Tübingen},
+  institution = {Universität Stuttgart, Institut für maschinelle Sprachverarbeitung, and Universität Tübingen, Seminar für Sprachwissenschaft},
   year        = {1999},
-  url         = {http://www.sfs.uni-tuebingen.de/resources/stts-1999.pdf}
+  month       = aug,
+  url         = {https://www.ims.uni-stuttgart.de/documents/ressourcen/lexika/tagsets/stts-1999.pdf},
+  urldate     = {2026-10-29},
+  note        = {„Guidelines, version 1999“ laut IMS-Seite German Tagsets; Titelblatt „August 1999“ am Seitenbild geprüft 2026-10-29. Nicht die „Vorläufigen Guidelines“ (Draft, 14.11.1995), die TüBa-D/Z als Schiller, Teufel \& Thielen 1995 zitiert. Lokales PDF byte-gleich mit https://hinrichs.sfs.uni-tuebingen.de/files/tbs/stts-1999.pdf}
 }
 
 @online{tei,
