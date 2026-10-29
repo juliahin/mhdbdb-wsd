@@ -836,3 +836,72 @@
   url       = {https://aclanthology.org/2025.emnlp-main.1720/},
   note      = {CC BY 4.0; Preprint arXiv:2509.13905}
 }
+
+@book{campesato2024llm,
+  author    = {Campesato, Oswald},
+  title     = {Large Language Models: An Introduction},
+  series    = {MLI Generative AI Series},
+  publisher = {Mercury Learning and Information},
+  address   = {Boston, MA},
+  year      = {2024},
+  pagetotal = {480},
+  isbn      = {978-1-5015-2329-8},
+  doi       = {10.1515/9781501520587},
+  url       = {https://reference-global.com/book/9781501520587},
+  note      = {Imprint von De Gruyter Inc.; ISBN Paperback, im Impressum als 978-1-501523-298 gedruckt; E-Book PDF 978-1-5015-2058-7, ePub 978-1-5015-2060-0; keine Auflage angegeben; Erscheinungsdatum laut reference-global Oktober 2024, laut Crossref 2024-06-14, Vorwort August 2024; Titelblatt, Crossref und reference-global geprüft 2026-10-29}
+}
+
+@book{ganslmayer2021historische,
+  editor    = {Ganslmayer, Christine and Schwarz, Christian},
+  title     = {Historische Wortbildung. {Theorien} -- {Methoden} -- {Perspektiven}},
+  series    = {Germanistische Linguistik},
+  volume    = {252--254},
+  publisher = {Georg Olms},
+  address   = {Hildesheim, Zürich, New York},
+  year      = {2021},
+  pagetotal = {VI, 446},
+  isbn      = {978-3-487-15973-7},
+  note      = {Druckausgabe (Broschur) laut DNB-Katalog (IDN 1235962849) und Reihenseite des Forschungszentrums Deutscher Sprachatlas; Online-Ressource ISBN 978-3-487-42298-5 (DNB IDN 1261966643, URN urn:nbn:de:101:1-2022070622501502999972), diese ISBN steht im Impressum des lokalen PDFs (S. IV); ISSN 0072-1492; keine DOI, alle Rechte vorbehalten; geprüft 2026-10-29}
+}
+
+@incollection{ganslmayer2021einleitung,
+  author    = {Ganslmayer, Christine and Schwarz, Christian},
+  title     = {Historische Wortbildung. {Theorien} -- {Methoden} -- {Perspektiven}. {Einleitung} der {Herausgeber}},
+  booktitle = {Historische Wortbildung. {Theorien} -- {Methoden} -- {Perspektiven}},
+  editor    = {Ganslmayer, Christine and Schwarz, Christian},
+  series    = {Germanistische Linguistik},
+  volume    = {252--254},
+  publisher = {Georg Olms},
+  address   = {Hildesheim, Zürich, New York},
+  year      = {2021},
+  pages     = {1--20},
+  note      = {Titel nach dem Inhaltsverzeichnis; im Kopf des Beitrags (S. 1) „Theorie“ statt „Theorien“; Seiten an der Textebene geprüft 2026-10-29}
+}
+
+@incollection{dipper2021referenzkorpus,
+  author    = {Dipper, Stefanie},
+  title     = {Das {Referenzkorpus Mittelhochdeutsch}: {Nutzungsmöglichkeiten} für morphologische Untersuchungen},
+  booktitle = {Historische Wortbildung. {Theorien} -- {Methoden} -- {Perspektiven}},
+  editor    = {Ganslmayer, Christine and Schwarz, Christian},
+  series    = {Germanistische Linguistik},
+  volume    = {252--254},
+  publisher = {Georg Olms},
+  address   = {Hildesheim, Zürich, New York},
+  year      = {2021},
+  pages     = {145--186},
+  note      = {Seiten an der Textebene geprüft 2026-10-29}
+}
+
+@incollection{pimenova2021semantische,
+  author    = {Pimenova, Natalia},
+  title     = {Semantische Systemrelationen als Faktoren im diachronen Wandel von Wortbildungssystemen},
+  booktitle = {Historische Wortbildung. {Theorien} -- {Methoden} -- {Perspektiven}},
+  editor    = {Ganslmayer, Christine and Schwarz, Christian},
+  series    = {Germanistische Linguistik},
+  volume    = {252--254},
+  publisher = {Georg Olms},
+  address   = {Hildesheim, Zürich, New York},
+  year      = {2021},
+  pages     = {225--249},
+  note      = {Seiten an der Textebene geprüft 2026-10-29}
+}
