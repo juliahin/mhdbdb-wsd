@@ -1,9 +1,10 @@
 {
-  "zieltokens": 1434270,
+  "zieltokens": 1434213,
   "texte_nach_regel": {
     "eindeutig": 514,
-    "vorrang": 149,
-    "pruefen": 4
+    "vorrang": 148,
+    "entschieden": 4,
+    "weggelassen": 1
   },
   "gruppen": [
     {
@@ -11,53 +12,53 @@
       "texte": 74,
       "anteil_hauptgruppe": 0.0764,
       "anteil_anteilig": 0.0673,
-      "zielanteil_wurzel": 0.1164,
-      "erwartet_von_360": 41.9,
+      "zielanteil_wurzel": 0.1201,
+      "erwartet_von_360": 43.2,
       "d1_anteil_der_gruppe": 0.04
     },
     {
       "gruppe": "Fach- und Rechtsliteratur",
-      "texte": 29,
-      "anteil_hauptgruppe": 0.0158,
-      "anteil_anteilig": 0.0136,
-      "zielanteil_wurzel": 0.053,
-      "erwartet_von_360": 19.1,
-      "d1_anteil_der_gruppe": 0.006
+      "texte": 32,
+      "anteil_hauptgruppe": 0.0253,
+      "anteil_anteilig": 0.0231,
+      "zielanteil_wurzel": 0.0691,
+      "erwartet_von_360": 24.9,
+      "d1_anteil_der_gruppe": 0.004
     },
     {
       "gruppe": "Historiografie",
-      "texte": 14,
-      "anteil_hauptgruppe": 0.1038,
+      "texte": 13,
+      "anteil_hauptgruppe": 0.0943,
       "anteil_anteilig": 0.1002,
-      "zielanteil_wurzel": 0.1357,
-      "erwartet_von_360": 48.8,
-      "d1_anteil_der_gruppe": 0.138
+      "zielanteil_wurzel": 0.1334,
+      "erwartet_von_360": 48.0,
+      "d1_anteil_der_gruppe": 0.152
     },
     {
       "gruppe": "Lehrdichtung",
       "texte": 36,
       "anteil_hauptgruppe": 0.0549,
       "anteil_anteilig": 0.0458,
-      "zielanteil_wurzel": 0.0987,
-      "erwartet_von_360": 35.5,
+      "zielanteil_wurzel": 0.1018,
+      "erwartet_von_360": 36.6,
       "d1_anteil_der_gruppe": 0.003
     },
     {
       "gruppe": "Großepik",
-      "texte": 91,
-      "anteil_hauptgruppe": 0.5857,
-      "anteil_anteilig": 0.5818,
-      "zielanteil_wurzel": 0.3223,
-      "erwartet_von_360": 116.0,
-      "d1_anteil_der_gruppe": 0.096
+      "texte": 92,
+      "anteil_hauptgruppe": 0.5952,
+      "anteil_anteilig": 0.5819,
+      "zielanteil_wurzel": 0.3352,
+      "erwartet_von_360": 120.7,
+      "d1_anteil_der_gruppe": 0.094
     },
     {
       "gruppe": "Kurzdichtung",
       "texte": 272,
       "anteil_hauptgruppe": 0.0652,
       "anteil_anteilig": 0.0644,
-      "zielanteil_wurzel": 0.1075,
-      "erwartet_von_360": 38.7,
+      "zielanteil_wurzel": 0.111,
+      "erwartet_von_360": 39.9,
       "d1_anteil_der_gruppe": 0.118
     },
     {
@@ -65,18 +66,9 @@
       "texte": 147,
       "anteil_hauptgruppe": 0.0887,
       "anteil_anteilig": 0.1174,
-      "zielanteil_wurzel": 0.1254,
-      "erwartet_von_360": 45.2,
+      "zielanteil_wurzel": 0.1294,
+      "erwartet_von_360": 46.6,
       "d1_anteil_der_gruppe": 0.186
-    },
-    {
-      "gruppe": "(zu prüfen)",
-      "texte": 4,
-      "anteil_hauptgruppe": 0.0095,
-      "anteil_anteilig": 0.0095,
-      "zielanteil_wurzel": 0.041,
-      "erwartet_von_360": 14.8,
-      "d1_anteil_der_gruppe": 0.004
     }
   ],
   "vorrangfaelle": [
@@ -118,7 +110,7 @@
     ],
     [
       "Großepik|Historiografie",
-      2
+      1
     ],
     [
       "Großepik|Kurzdichtung",
@@ -133,34 +125,5 @@
       1
     ]
   ],
-  "pruefen": [
-    [
-      "HNI",
-      "Helmasperger Notariatsinstrument",
-      "",
-      "Mediale Sonderform",
-      187
-    ],
-    [
-      "HZU",
-      "Herzogenburger Urkunden",
-      "",
-      "Mediale Sonderform",
-      1422
-    ],
-    [
-      "HZU2",
-      "Herzogenburger Urkunden",
-      "",
-      "Mediale Sonderform",
-      11952
-    ],
-    [
-      "SBF",
-      "Flugschrift Donnerstein",
-      "Flugblatt",
-      "Mediale Sonderform",
-      57
-    ]
-  ]
+  "pruefen": []
 }

@@ -1,7 +1,8 @@
-# Obergattungsgruppen für den Gattungsausgleich: Entwurf zur Prüfung
+# Obergattungsgruppen für den Gattungsausgleich
 
-**Status:** Entwurf vom 2026-10-16, von Julia zu prüfen. Steuert die Gewichte der Ziehung
-(Protokoll, Abschnitt 4.4) und muss vor Freeze 1 feststehen.
+**Status:** entschieden von Julia Hintersteiner am 2026-10-30 (Entwurf vom 2026-10-16). Steuert die
+Gewichte der Ziehung (Protokoll, Abschnitt 4.4); wird mit Freeze 1 eingefroren. Dateiname und
+Skriptname (`obergattungen_entwurf.py`) bleiben.
 **Werkzeug:** [`obergattungen_entwurf.py`](obergattungen_entwurf.py). Vorschlag pro Text zum
 Durchsehen: `obergattungen/texte.csv`, Zahlen: `obergattungen/zusammenfassung.json`.
 
@@ -59,7 +60,7 @@ Textreihe (NBU: Historiografie).
 | Reiseliteratur | Fach- und Rechtsliteratur | im Korpus über die Herkunft kein Text |
 | Mediale Sonderform | (keine Gruppe) | beschreibt das Medium, nicht den Inhalt; wird ignoriert, wenn der Text eine andere Gruppe hat |
 
-**Mehrere Gruppen (149 Texte):** Eine Hauptgruppe nach festem Vorrang, **Inhaltsbereiche vor
+**Mehrere Gruppen (148 Texte nach Vorrang):** Eine Hauptgruppe nach festem Vorrang, **Inhaltsbereiche vor
 Formen**: Geistliche Literatur > Fach- und Rechtsliteratur > Historiografie > Lehrdichtung >
 Großepik > Kurzdichtung > Lyrik. Begründung: Für die Verteilung von Wortbedeutungen ist der
 Sachbereich (geistlich, fachlich, rechtlich, historisch) vermutlich prägender als die Form, und
@@ -73,33 +74,41 @@ genau diese Bereiche sind im Korpus selten. Was die Regel tatsächlich tut:
 | Kurzdichtung + Lehrdichtung + Lyrik | 6 | Lehrdichtung | |
 | Großepik + Kurzdichtung + Lyrik | 5 | Großepik | Frauendienst (FD, FDS, FLD, FH, FP) |
 | Geistliche Literatur + Kurzdichtung | 5 | Geistliche Literatur | |
-| übrige Kombinationen | 14 | nach Vorrang | |
+| übrige Kombinationen | 13 | nach Vorrang | |
 
-Jede Zuordnung steht in `obergattungen/texte.csv` mit Spalte `regel` (eindeutig, vorrang, pruefen).
+Jede Zuordnung steht in `obergattungen/texte.csv` mit Spalte `regel` (eindeutig, vorrang, entschieden, weggelassen). Gemessen am 2026-10-30 aus `zusammenfassung.json`: 514 eindeutig, 148 nach Vorrang, 4 von Julia entschieden (HZU2, HZU, HNI, BAR), 1 weggelassen (SBF); zusammen 667 Texte.
 
 ## 3. Ergebnis
 
-Zieltokens der Grundgesamtheit (Protokoll, Abschnitt 3): 1.434.270. Zielanteil nach
-Quadratwurzel-Allokation, erwartete Items bei 360 in der Hauptstichprobe:
+Zieltokens der Grundgesamtheit (Protokoll, Abschnitt 3) ohne den weggelassenen Text SBF:
+1.434.213 (vorher 1.434.270, Differenz 57 = SBF). Die Zahl gilt auch ohne Ausschluss 4 des
+Protokolls (ersetzt am 2026-10-30, A19); er war in ihr nie enthalten. Zielanteil nach
+Quadratwurzel-Allokation, erwartete Items bei 360 in der Hauptstichprobe (Stand 2026-10-30,
+`obergattungen/zusammenfassung.json`):
 
 | Gruppe | Texte | Anteil im Korpus | Zielanteil | erwartet von 360 | davon Tokens in D1 |
 |---|---|---|---|---|---|
-| Großepik | 91 | 58,6 % | 32,2 % | 116 | 9,6 % |
-| Historiografie | 14 | 10,4 % | 13,6 % | 49 | 13,8 % |
-| Lyrik | 147 | 8,9 % | 12,5 % | 45 | 18,6 % |
-| Geistliche Literatur | 74 | 7,6 % | 11,6 % | 42 | 4,0 % |
-| Kurzdichtung | 272 | 6,5 % | 10,8 % | 39 | 11,8 % |
-| Lehrdichtung | 36 | 5,5 % | 9,9 % | 36 | 0,3 % |
-| Fach- und Rechtsliteratur | 29 | 1,6 % | 5,3 % | 19 | 0,6 % |
-| zu prüfen (4 Texte, unten) | 4 | 1,0 % | 4,1 % | 15 | 0,4 % |
+| Großepik | 92 | 59,5 % | 33,5 % | 120,7 | 9,4 % |
+| Historiografie | 13 | 9,4 % | 13,3 % | 48,0 | 15,2 % |
+| Lyrik | 147 | 8,9 % | 12,9 % | 46,6 | 18,6 % |
+| Geistliche Literatur | 74 | 7,6 % | 12,0 % | 43,2 | 4,0 % |
+| Kurzdichtung | 272 | 6,5 % | 11,1 % | 39,9 | 11,8 % |
+| Lehrdichtung | 36 | 5,5 % | 10,2 % | 36,6 | 0,3 % |
+| Fach- und Rechtsliteratur | 32 | 2,5 % | 6,9 % | 24,9 | 0,4 % |
+
+Der Anteil im Korpus ist der Tokenanteil der Hauptgruppe, die Zeile „zu prüfen" des Entwurfs
+entfällt.
 
 ## 4. Was dabei auffällt
 
-1. **Großepik sinkt von 59 % auf 32 %**, Fach- und Rechtsliteratur steigt von 1,6 % auf 5,3 %.
+1. **Großepik sinkt von 59,5 % auf 33,5 %**, Fach- und Rechtsliteratur steigt von 2,5 % auf 6,9 %.
    Das ist der gewollte Ausgleich.
-2. **Historiografie stößt an die Obergrenze pro Text.** 14 Texte zu je höchstens 3 Items ergeben
-   höchstens 42, der Zielanteil verlangt 49 (OVG allein trägt den größten Teil der Gruppe). Folge:
-   Historiografie bleibt etwas unter dem Ziel; der Rest verteilt sich auf die anderen Gruppen.
+2. **Historiografie stößt an die Obergrenze pro Text.** 13 Texte zu je höchstens 3 Items ergeben
+   höchstens 39, der Zielanteil verlangt 48 (OVG allein trägt den größten Teil der Gruppe). Deshalb
+   gilt für Historiografie ausnahmsweise eine Obergrenze von 5 Items pro Text (Entscheidung Julia,
+   2026-10-30; Protokoll 4.4, A20): 13 × 5 = höchstens 65, das deckt 48 ab. Ohne Ausnahme hätte OVG
+   grob 45 % der Gruppe, mit 5 höchstens etwa 10 %. (Grobe Wasserstandsrechnung mit proportionaler
+   Verteilung, keine Ziehungssimulation.)
 3. **Die Silberdomäne D1 deckt die seltenen Bereiche fast nicht ab.** In Lehrdichtung (0,3 %),
    Fach- und Rechtsliteratur (0,6 %) und Geistlicher Literatur (4,0 %) liegen kaum Tokens in den
    durchannotierten Texten. Die 30 % D1-Items kommen also fast nur aus Großepik, Historiografie,
@@ -111,20 +120,31 @@ Quadratwurzel-Allokation, erwartete Items bei 360 in der Hauptstichprobe:
    stiege ihr Gesamtanteil wieder. Deshalb bleibt Großepik eine Gruppe; die Unterkategorie steht im
    Manifest und kann ausgewertet werden.
 
-## 5. Zu entscheiden
+## 5. Entscheidungen (Julia Hintersteiner, 2026-10-30)
 
-1. **Gruppen:** Passen die sieben Gruppen und die Zusammenlegungen (Religiöser Gebrauchstext zu
-   Geistlicher Literatur; Fachliteratur, Rechtstext und Reiseliteratur zusammen)?
-2. **Vorrang:** Inhaltsbereiche vor Formen, in der Reihenfolge oben?
-3. **Die vier Texte ohne Gruppe** (Herkunft nur „Mediale Sonderform"). Vorschlag, bitte prüfen:
+Im Entwurf standen vier offene Fragen. Antworten, jeweils mit dem Wortlaut, soweit er etwas festlegt:
 
-   | Sigle | Titel | Textreihe | Zieltokens | Vorschlag |
-   |---|---|---|---|---|
-   | HZU2 | Herzogenburger Urkunden | (keine) | 11.952 | Fach- und Rechtsliteratur (Urkunden) |
-   | HZU | Herzogenburger Urkunden | (keine) | 1.422 | Fach- und Rechtsliteratur (Urkunden) |
-   | HNI | Helmasperger Notariatsinstrument | (keine) | 187 | Fach- und Rechtsliteratur (Rechtsdokument) |
-   | SBF | Flugschrift Donnerstein | Flugblatt | 57 | unsicher; Ereignisbericht spräche für Historiografie |
+1. **Gruppen:** Die sieben Gruppen und die Zusammenlegungen (Religiöser Gebrauchstext zu Geistlicher
+   Literatur; Fachliteratur, Rechtstext und Reiseliteratur zusammen) passen. („die anderen punkte passen alle so")
+2. **Vorrang:** Inhaltsbereiche vor Formen, in der Reihenfolge von Abschnitt 2, bestätigt.
+3. **Die vier Texte ohne Gruppe** (Herkunft nur „Mediale Sonderform"):
 
-4. **Obergrenze und Historiografie:** Soll Historiografie ausnahmsweise mehr als 3 Items pro Text
-   bekommen dürfen, um den Zielanteil zu erreichen, oder bleibt die Obergrenze vorrangig
-   (Vorschlag: Obergrenze vorrangig, weil sie den Klumpeneffekt begrenzt)?
+   | Sigle | Titel | Zieltokens | Entscheidung |
+   |---|---|---|---|
+   | HZU2 | Herzogenburger Urkunden | 11.952 | Fach- und Rechtsliteratur |
+   | HZU | Herzogenburger Urkunden | 1.422 | Fach- und Rechtsliteratur |
+   | HNI | Helmasperger Notariatsinstrument | 187 | Fach- und Rechtsliteratur |
+   | SBF | Flugschrift Donnerstein | 57 | weggelassen, aus der Grundgesamtheit genommen |
+
+   („HZU und HZU2 passt, HNI auch und SBF weglassen")
+4. **Obergrenze und Historiografie:** Ausnahme ja. Historiografie darf bis zu 5 Items pro Text
+   bekommen, sonst bleibt es bei 3 („ja ausnahme für historiographie", „dann 5 pro Text").
+5. **Barlaam und Josaphat (BAR) und Apollonius von Tyrus (APO):** Beide landen nur über die
+   Vorrangregel bei Historiografie (BAR: Herkunft Historiografie | Höfischer Roman; APO:
+   Historiografie | Großepik). Julia: „Barlaam und Josaphat soll nicht dort bleiben. das andere
+   schon." APO bleibt Historiografie. **Umsetzung der Hauptsitzung, nicht Wortlaut Julias:** BAR
+   wurde der Großepik zugeordnet, der einzigen anderen Gruppe seiner Herkunft. Im Skript steht BAR
+   unter `ENTSCHIEDEN`, in `texte.csv` mit `regel = entschieden`.
+
+Folge: Historiografie hat 13 statt 14 Texte, Großepik 92 statt 91, Fach- und Rechtsliteratur 32
+statt 29.

@@ -31,7 +31,7 @@ XLANG = "{http://www.w3.org/XML/1998/namespace}lang"
 OUT = Path("goldstandard/obergattungen")
 OUT.mkdir(parents=True, exist_ok=True)
 
-# Entwurf: Ebene-1-Kategorie der Typologie -> Gruppe. Zu prüfen von Julia.
+# Ebene-1-Kategorie der Typologie -> Gruppe (Entwurf 2026-10-16, von Julia bestätigt am 2026-10-30).
 GRUPPE = {
     "Großepik": "Großepik",
     "Lyrik": "Lyrik",
@@ -49,6 +49,11 @@ GRUPPE = {
 # Vorrang bei mehreren Gruppen: Inhaltsbereiche vor Formen (Begründung im Entwurf)
 VORRANG = ["Geistliche Literatur", "Fach- und Rechtsliteratur", "Historiografie", "Lehrdichtung",
            "Großepik", "Kurzdichtung", "Lyrik"]
+# Von Julia zugeordnet bzw. weggelassen (2026-10-30), geht jeder Regel vor: HZU2, HZU, HNI hatten
+# nur „Mediale Sonderform“; BAR fiele nach Vorrang zu Historiografie
+ENTSCHIEDEN = {"HZU2": "Fach- und Rechtsliteratur", "HZU": "Fach- und Rechtsliteratur",
+               "HNI": "Fach- und Rechtsliteratur", "BAR": "Großepik"}
+WEGGELASSEN = {"SBF"}
 
 # --- Typologie: transitive Reduktion von genres.xml ---
 g = etree.parse("authority-files/genres.xml")
@@ -132,7 +137,11 @@ for f in sorted(Path("tei").glob("*.tei.xml")):
         weg = "form"
     gruppen = {GRUPPE[x] for x in e1_h if GRUPPE.get(x)}
     medium_only = not gruppen and "Mediale Sonderform" in e1_h
-    if len(gruppen) == 1:
+    if sig in WEGGELASSEN:
+        haupt, regel = "", "weggelassen"
+    elif sig in ENTSCHIEDEN:
+        haupt, regel = ENTSCHIEDEN[sig], "entschieden"
+    elif len(gruppen) == 1:
         haupt, regel = next(iter(gruppen)), "eindeutig"
     elif len(gruppen) > 1:
         haupt, regel = min(gruppen, key=VORRANG.index), "vorrang"
@@ -171,10 +180,11 @@ with open(OUT / "texte.csv", "w", newline="", encoding="utf-8") as fh:
     cw.writerows(rows)
 
 # --- Anteile: anteilig (Text zählt 1/k in jeder seiner Gruppen) und nach Hauptgruppe ---
-tot = sum(r["zieltokens"] for r in rows)
+gezaehlt = [r for r in rows if r["regel"] != "weggelassen"]
+tot = sum(r["zieltokens"] for r in gezaehlt)
 anteilig, haupt_t, texte, d1 = Counter(), Counter(), Counter(), Counter()
-for r in rows:
-    gs = r["gruppen"].split("|") if r["gruppen"] else ["(zu prüfen)"]
+for r in gezaehlt:
+    gs = r["gruppen"].split("|") if r["gruppen"] else [r["hauptgruppe"] or "(zu prüfen)"]
     for x in gs:
         anteilig[x] += r["zieltokens"] / len(gs)
     haupt_t[r["hauptgruppe"] or "(zu prüfen)"] += r["zieltokens"]

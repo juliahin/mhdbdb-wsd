@@ -1,6 +1,6 @@
 # WSD-Goldstandard: Protokoll v2
 
-**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-30: Abschnitte 3, 4.2, 4.10, 9.2 und Abweichungslog A15 bis A18 ergänzt), noch nicht eingefroren.
+**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-30: Abschnitte 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.2, 12 und Abweichungslog A15 bis A20 ergänzt oder geändert), noch nicht eingefroren.
 **Verantwortlich:** Julia Hintersteiner. Zweiter Annotator: Alan van Beek.
 **Vorgänger:** präregistriertes Evaluationsprotokoll vom 2026-04-24, wiederherstellbar mit
 `git show 873322658^:docs/features/034-wenzelsbibel-annotation.md` (Abschnitt „Pre-registered evaluation protocol").
@@ -66,7 +66,10 @@ Wörter wie *guot*: mehr als die ganze übrige Zielmenge. Ein Lemma kann so in m
 vorkommen; Einheit der Schichtung ist daher das Paar aus Lemma und Wortart. Gemessen am
 2026-10-16 (ohne WZB, Ausschlussliste vom 2026-10-08): 930.645 Tokens über Schritt 1, 503.625 über
 Schritt 2, zusammen **1.434.270 Tokens** in 5.132 Paaren aus Lemma und Wortart (4.797 Lemmata);
-409.893 Tokens bleiben wegen mehrdeutigem Token-`@pos` draußen. Präpositionen und Adverbien sind
+409.893 Tokens bleiben wegen mehrdeutigem Token-`@pos` draußen. Diese Zahl enthielt Ausschluss 4
+(unten) nie. Ohne den Text SBF (weggelassen, Abschnitt 4.8) sind es 1.434.213 Tokens (Stand
+2026-10-30, `obergattungen/zusammenfassung.json`); die übrigen Zahlen dieses Absatzes
+(Paare, Lemmata, Schritte 1 und 2) sind seitdem nicht neu gemessen. Präpositionen und Adverbien sind
 bewusst nicht enthalten: Ihre Senses sind in der MHDBDB funktional-grammatisch (z. B. *in* mit
 drei Senses), eine andere Aufgabe als lexikalische WSD, und sie fehlen auch in den
 Vergleichsdatensätzen. Polyseme PRP-Lemmata mit eindeutiger Lexikon-Wortart: 6 Lemmata, 53.333
@@ -123,15 +126,31 @@ realistisch, wird aber benannt.
    unterscheidbar. Gemessen am 2026-10-08: 22 Lemmata.
 3. Lemmata mit mindestens einem Sense ohne Begriffszeiger. Er ließe sich nicht darstellen.
    Gemessen am 2026-10-08: 126 Senses ohne Zeiger (Anzahl der betroffenen Lemmata noch zu zählen).
-4. Lemmata mit disjunkten Token-`@pos`-Werten (Verdacht auf Lemmatisierungsfehler), wie in
-   `goldstandard-test.py`. In der Teilmenge der 190 vollständig annotierten Texte: 763 Lemmata.
-   **Vorläufig:** Ein Wortartwechsel zwischen Lemma und Beleg kann gewollt sein, etwa beim
-   substantivierten Infinitiv oder substantivierten Adjektiv. ReM führt nominalisierte Infinitive
-   als `NA` mit Lemma-Wortart `VVINF` (Ganslmayer & Schwarz 2021, S. 164), und HiTS wertet die
-   Abweichung zwischen Lemma- und Beleg-Wortart als Information, nicht als Fehler (Dipper et al.
-   2013, S. 92 bis 95). Vor Freeze 1 wird an einer Stichprobe der betroffenen Lemmata geprüft, wie
-   viele davon echte Lemmatisierungsfehler sind; bis dahin gilt der Ausschluss als vorläufig.
-   Größe und Auswahlregel der Stichprobe sind offen (Abschnitt 12, Punkt 13).
+4. ~~Lemmata mit disjunkten Token-`@pos`-Werten~~: **gestrichen am 2026-10-30** (A19, löst A15
+   ab), ersetzt durch eine **Markierung `pos_abweichend`**. Ein Token trägt sie, wenn sein
+   `@pos` (VEX und VEM als VRB) keine Überschneidung mit den Wortarten des Lemmas in
+   `lexicon.xml` hat. Markierte Tokens bleiben in der Grundgesamtheit und gehen ins Manifest
+   (4.9). Echte Lemmatisierungsfehler fängt der Status `LEMMA_FALSCH` beim Annotieren (Abschnitt 6).
+   - **Warum nicht ausschließen:** Ein Wortartwechsel zwischen Lemma und Beleg kann gewollt sein,
+     etwa beim substantivierten Infinitiv oder Adjektiv. ReM führt nominalisierte Infinitive als
+     `NA` mit Lemma-Wortart `VVINF` (Ganslmayer & Schwarz 2021, S. 164), und HiTS wertet die
+     Abweichung als Information, nicht als Fehler (Dipper et al. 2013, S. 92 bis 95; beide aus
+     nicht gegengelesenen KI-Zusammenfassungen).
+   - **Der Ausschluss verzerrte nach Frequenz** (Messung der Hauptsitzung 2026-10-30 über das
+     ganze Korpus ohne WZB, Lemmata mit mindestens zwei Senses, Definition aus
+     `goldstandard-test.py`, Zeilen 128 bis 135; übernommen, nicht nachgemessen): 277 Lemmata
+     mit zusammen 253.147 Tokens. Anteil betroffener Lemmata je Band (Belege 1–3 / 4–20 /
+     21–200 / >200): 23 von 3.110 (0,7 %), 80 von 1.927 (4,2 %), 85 von 1.625 (5,2 %), 89 von
+     966 (9,2 %). In den Bändern 21–200 und >200 lösten 68 bzw. alle 89 Fälle eine Wortart mit
+     weniger als 5 % der Belege aus (Beispiel lemma_5710: 11.900 VRB, 1 NOM). Der Ausschluss
+     hätte vor allem häufige Lemmata getroffen.
+   - **Größe der Markierung** (Messung der Hauptsitzung, 2026-10-30, Abgrenzung wie in
+     `obergattungen_entwurf.py`; übernommen, nicht nachgemessen): 226 von 1.434.213 Tokens
+     (0,02 %) aus 118 Lemmata. Die Zahl ist klein, weil die Wortartliste im Lexikon fast jede
+     vorkommende Token-Wortart enthält.
+   - **Prüfstichprobe:** Statt der Stichprobe von Lemmata aus A15 werden ca. 30 markierte Tokens
+     von Hand eingeordnet (Lemmatisierungsfehler, Substantivierung, Tagfehler). Das Ergebnis geht
+     ins Datasheet. Auswahlregel der 30 ist offen (Abschnitt 12, Punkt 13).
 
 ## 4. Stichprobendesign
 
@@ -203,7 +222,9 @@ Besetzung am 2026-10-16: Jede Zelle hat mindestens 16 Paare (kleinste: 3 ADJ >20
    Tokenanteil seiner Obergattungsgruppe in der Grundgesamtheit ist. Damit nähert sich der Anteil
    der Gruppen der Quadratwurzel-Allokation (Potenzallokation mit q = 0,5; Bankier 1988): Lyrik und
    Fachliteratur werden angehoben, ohne die Großepik zu verdrängen.
-4. **Obergrenze pro Text:** höchstens 3 Items aus einem Text über alle Komponenten (bestätigt am 2026-10-16). Ist die Grenze
+4. **Obergrenze pro Text:** höchstens 3 Items aus einem Text über alle Komponenten (bestätigt am 2026-10-16);
+   **Ausnahme Historiografie: höchstens 5** (entschieden am 2026-10-30, A20), weil 13 Texte × 3 = 39
+   Items den Zielanteil von etwa 48 Items nicht erreichen. Ist die Grenze
    erreicht, wird in Stufe 2 neu gezogen. Die Grenze hält den Klumpeneffekt klein (Gale, Church & Yarowsky 1992; All-Words-Sets als
    Klumpenstichproben, Raganato et al. 2017). Ein Vorbild im ReM gibt es dafür nicht: Das
    Handbuch (Klein & Dipper 2016, S. 4) kennt für eReM nur eine Untergrenze von 20.000 Tokens
@@ -253,14 +274,18 @@ Befund vom 2026-10-08 (alle 667 Texte, 7.545.732 lemmatisierte Tokens):
 
 Die **Obergattungsgruppen** sind die Ebene 1 der Textreihentypologie, zusammengelegt, wo das Korpus
 zu dünn ist; Zuordnung über die Herkunft im Header, bei mehreren Gruppen Vorrang der Inhaltsbereiche
-vor den Formen. Entwurf zur Prüfung: [OBERGATTUNGEN.md](OBERGATTUNGEN.md). Die Tabelle steuert die
-Gewichte in 4.4 und muss deshalb vor Freeze 1 stehen.
+vor den Formen. **Entschieden am 2026-10-30** (Julia Hintersteiner): sieben Gruppen, Einzelheiten
+und Zuordnung der Sonderfälle in [OBERGATTUNGEN.md](OBERGATTUNGEN.md). Der Text SBF (Flugschrift
+Donnerstein, 57 Zieltokens, nur „Mediale Sonderform") ist **weggelassen**, also nicht in der
+Grundgesamtheit; HZU2, HZU und HNI gehören zu Fach- und Rechtsliteratur, BAR zur Großepik. Die
+Tabelle steuert die Gewichte in 4.4 und wird mit Freeze 1 eingefroren.
 
 ### 4.9 Manifest pro Item
 
 Item-ID, `xml:id`, Datei, Komponente, Zelle, Lemma, Wortart und ihre Herkunft (Lexikon oder Token),
 Zahl der Senses (Inventar und im Silber belegt), MFS-Anteil und Entropie im Silber (Leave-out),
-Frequenz und Band, Domäne, Obergattungsgruppe, Markierung „nur `@pos` geändert",
+Frequenz und Band, Domäne, Obergattungsgruppe, Markierung „nur `@pos` geändert", Markierung
+`pos_abweichend` (Abschnitt 3, Ausschluss 4),
 Inklusionswahrscheinlichkeit.
 
 ### 4.10 Zwei Einfrierpunkte
@@ -508,6 +533,8 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 | A16 | Mehrere Läufe pro Item (Abschnitt 4.10): im Protokoll nur „Anzahl der Läufe pro Item“ | Freeze 2 legt fest, was als LLM-Vorhersage gilt (vorab bestimmter Lauf, Mehrheit mit Gleichstandsregel oder Verteilung); Übereinstimmung zwischen den Läufen wird als eigenes Ergebnis berichtet (Mittelwert, Streuung) | Mehrheit ist ein Ensemble, McNemar verglich sonst Ensemble gegen Einzelbaseline; Temperatur 0 ist keine Zusage für Determinismus (Chen et al. 2025, S. 5; Pangakis & Wolken 2025, S. 1474 Fn. 12, S. 1475; Basile et al. 2025, S. 5; Campesato 2024, S. 218). Vorschlag V9 aus der Literaturauswertung vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30; welche Aggregationsregel gilt, entscheidet sie in Freeze 2 | 2026-10-30 |
 | A17 | Zweck des Pilot-Pools (Abschnitt 4.2): Pilotrunden, Schätzung diskordanter Paare | Zweck erweitert: Prompt-Wortlaut, Antwortformat, Few-shot-Beispiele und Formatvergleiche nur am Pilot-Pool gewählt; Few-shot-Beispiele aus Silber ohne Stichproben-Tokens; Wirkungen von Prompt-Überarbeitungen nur an ungesehenen Items berichtet | Trennung von Entwicklungs- und Testdaten; Prompt-Formulierung streut im Mittel um etwa 5 Punkte (Meconi et al. 2025, S. 33900). Vorschlag V10 aus der Literaturauswertung vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
 | A18 | Bewertungsregeln (Abschnitt 9.2): ungültige LLM-Antworten nicht geregelt | Ungültige Antworten (unparsbar, ID außerhalb des Menüs, ID eines anderen Lemmas, mehrere IDs bei `SENSE`) als eigene Kategorie berichtet, im primären gepaarten Vergleich als falsch gewertet; Antwort als Kartennummer oder Sense-ID, Sense-ID direkt aus der Nummer abgeleitet | Ein Ausschluss bräche die Paarung, weil MFS nie ungültig antwortet; Textabgleich ist bei kurzen, ähnlichen Begriffsnamen unsicher (Strutz 2026, S. 4 bis 6, 16; Meconi et al. 2025, S. 33898 bis 33899). Vorschlag V25 aus der Literaturauswertung vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
+| A19 | Ausschluss 4 (Abschnitt 3): Lemmata mit disjunkten Token-`@pos`-Werten ausgeschlossen (A15: vorläufig) | Ausschluss gestrichen; stattdessen Markierung `pos_abweichend` im Manifest, Tokens bleiben in der Grundgesamtheit; echte Lemmatisierungsfehler fängt `LEMMA_FALSCH`; Prüfstichprobe wird zu ca. 30 von Hand eingeordneten markierten Tokens, Ergebnis ins Datasheet. Löst A15 ab (A15 bleibt als Zwischenstand stehen) | Der Ausschluss verzerrt nach Frequenz (betroffene Lemmata: 0,7 % im Band 1–3, 9,2 % im Band >200; Messung der Hauptsitzung, übernommen) und trifft Wortartwechsel, die gewollt sein können. Die Markierung betrifft 226 Tokens (0,02 %). Die Grundgesamtheit 1.434.270 enthielt Ausschluss 4 nie, ihre Zahl ändert sich dadurch nicht. Entscheidung Julia Hintersteiner, 2026-10-30 („ja das hier 1. den ausschluss streichen und durch eine markierung ersetzen“) | 2026-10-30 |
+| A20 | Obergrenze pro Text (Abschnitt 4.4, Punkt 4): höchstens 3 Items, ohne Ausnahme | Ausnahme Historiografie: höchstens 5 Items pro Text | 13 Texte × 3 = 39 Items erreichen den Zielanteil von etwa 48 Items nicht; mit 5 sind höchstens 65 möglich. Ohne Grenze hätte OVG grob 45 % der Gruppe, mit 5 höchstens etwa 10 % (grobe Wasserstandsrechnung der Hauptsitzung mit proportionaler Verteilung, keine Ziehungssimulation). Gleichzeitig entschieden: Gattungstabelle (OBERGATTUNGEN.md, Abschnitt 5) mit SBF weggelassen, HZU2, HZU und HNI zu Fach- und Rechtsliteratur, BAR (Umsetzung der Hauptsitzung nach Julias Antwort) zur Großepik, APO bleibt Historiografie. Entscheidung Julia Hintersteiner, 2026-10-30 („Historiografie: dann 5 pro Text“) | 2026-10-30 |
 
 ## 12. Offene Punkte
 
@@ -519,11 +546,11 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 5. ~~Ausschlussliste der LLM-berührten Tokens bauen~~: erledigt am 2026-10-08, Regel bestätigt am 2026-10-16 (Abschnitt 3, Punkt 1).
 6. **Korpusstand fürs Einfrieren:** vorher mit dem Upstream-`main` abgleichen, dann Commit festlegen.
 7. **Teststärke:** grob gerechnet (Abschnitt 4.7); Anteil diskordanter Paare im Pilot schätzen, dann N vor Freeze 2 bestätigen.
-8. **Obergattungsgruppen** prüfen und festlegen: Entwurf vom 2026-10-16 in [OBERGATTUNGEN.md](OBERGATTUNGEN.md), Abschnitt 5.
+8. ~~Obergattungsgruppen prüfen und festlegen~~: entschieden am 2026-10-30 ([OBERGATTUNGEN.md](OBERGATTUNGEN.md), Abschnitt 5; Abschnitt 4.8).
 9. **Datierung und Vers/Prosa:** Sollen sie als weitere Ausgleichsmerkmale dienen? Dann braucht es eine manuelle Zuordnung pro Text (z. B. Jahrhundert über den Handschriftencensus, bei 323 Werken verlinkt).
 10. ~~Obergrenze an Tokens pro Text~~: 3, bestätigt am 2026-10-16 (Abschnitt 4.4).
 11. **Schwelle für das Ende des Pilots** (Vorschlag α ≥ 0,80, Untergrenze 0,67) vor dem Pilot festlegen.
 12. **Grobe Ebene des Begriffssystems** für die Zwei-Ebenen-Auswertung festlegen (welche Oberbegriffsstufe).
-13. **Ausschlüsse 2 bis 4** (Abschnitt 3) auf die neue Wortartregel und das ganze Korpus umrechnen.
+13. **Ausschlüsse 2 und 3** (Abschnitt 3) auf die neue Wortartregel und das ganze Korpus umrechnen. Ausschluss 4 entfällt (A19); offen bleibt die Auswahlregel für die ca. 30 von Hand einzuordnenden Tokens mit Markierung `pos_abweichend`.
 14. **Einwilligung von Alan** zu Protokollierung und Veröffentlichung (DMP, Abschnitt 4).
 15. **Privates Repository** anlegen und eine zweite Sicherungskopie festlegen (DMP, Abschnitt 3).

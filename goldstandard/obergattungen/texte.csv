@@ -32,7 +32,7 @@ AXW,Der Wernigeroder Alexander,4684,0.063,D0,Alexanderroman,Antikenroman,Großep
 AZW,Drei Äpfel zur Warnung,126,0.071,D0,Marienmirakel,Mirakelerzählung|Erzählende Kurzform,Kurzdichtung,herkunft,Kurzdichtung,Kurzdichtung,eindeutig,
 BAB,Die Buhlschaft auf dem Baume,210,0.076,D0,Schwank|Märe,Scherzdichtung|Erzählende Kurzform,Kurzdichtung|Lyrik,herkunft,Kurzdichtung|Lyrik,Kurzdichtung,vorrang,
 BAD,Die böse Adelheid,132,0.045,D0,Schwank|Märe,Scherzdichtung|Erzählende Kurzform,Kurzdichtung|Lyrik,herkunft,Kurzdichtung|Lyrik,Kurzdichtung,vorrang,
-BAR,Barlaam und Josaphat,13673,0.082,D0,"Geschichtsdichtung|Spielmannsepik, sogenannte (veraltet)",Historiografie|Höfischer Roman,Großepik|Historiografie,herkunft,Großepik|Historiografie,Historiografie,vorrang,
+BAR,Barlaam und Josaphat,13673,0.082,D0,"Geschichtsdichtung|Spielmannsepik, sogenannte (veraltet)",Historiografie|Höfischer Roman,Großepik|Historiografie,herkunft,Großepik|Historiografie,Großepik,entschieden,
 BAX,Alexanderlied,361,0.086,D0,Alexanderroman,Antikenroman,Großepik,herkunft,Großepik,Großepik,eindeutig,
 BDK,Deutschenspiegel,1379,0.007,D0,Chronik|Großdidaxe|Landrechtsbuch und Lehnsrechtsbuch|Fürstenspiegel,Historiografie|Rechtstext|Größere Ständelehre|Hofkünste|Lehrdichtung,Fachliteratur|Historiografie|Lehrdichtung|Rechtstext,herkunft,Fach- und Rechtsliteratur|Historiografie|Lehrdichtung,Fach- und Rechtsliteratur,vorrang,
 BEK,Die beiden Königinnen,151,0.04,D0,Geistliche Rede,Diskursive Kurzform,Kurzdichtung|Lyrik,herkunft,Kurzdichtung|Lyrik,Kurzdichtung,vorrang,
@@ -282,7 +282,7 @@ HK,Heinrich von Kempten,921,1.0,D1,Märe,Erzählende Kurzform,Kurzdichtung,herku
 HMRG,Regimen sanitatis,406,0.071,D0,Gesundheitsregel,Text zur Diätetik,Fachliteratur,herkunft,Fach- und Rechtsliteratur,Fach- und Rechtsliteratur,eindeutig,
 HMT,Buch von Troja,2181,0.072,D0,Trojaroman,Antikenroman,Großepik,herkunft,Großepik,Großepik,eindeutig,
 HMU,Lyrik von Hugo von Mühldorf,12,1.0,D1,Minnesang,Lyrik,Lyrik,herkunft,Lyrik,Lyrik,eindeutig,
-HNI,Helmasperger Notariatsinstrument,187,0.246,D0,,Mediale Sonderform,Mediale Sonderform,herkunft,,,pruefen,ja
+HNI,Helmasperger Notariatsinstrument,187,0.246,D0,,Mediale Sonderform,Mediale Sonderform,herkunft,,Fach- und Rechtsliteratur,entschieden,ja
 HOF,Von der Hochfahrt,116,0.034,D0,Bîspel|Geistliche Rede|Märe,Diskursive Kurzform|Erzählende Kurzform,Kurzdichtung|Lyrik,herkunft,Kurzdichtung|Lyrik,Kurzdichtung,vorrang,
 HOR,Der Hort,61,1.0,D1,Bîspel,Erzählende Kurzform,Kurzdichtung,herkunft,Kurzdichtung,Kurzdichtung,eindeutig,
 HPF,Der hässliche Pfaffe,73,1.0,D1,Mirakelerzählung,Erzählende Kurzform,Kurzdichtung,herkunft,Kurzdichtung,Kurzdichtung,eindeutig,
@@ -304,8 +304,8 @@ HVW,Lyrik von Hugo von Werbenwag,88,0.057,D0,Minnesang,Lyrik,Lyrik,herkunft,Lyri
 HWI,Lyrik von Herrand von Wildonie,79,1.0,D1,Minnesang,Lyrik,Lyrik,herkunft,Lyrik,Lyrik,eindeutig,
 HZ,Herzmäre,657,1.0,D1,Märe,Erzählende Kurzform,Kurzdichtung,herkunft,Kurzdichtung,Kurzdichtung,eindeutig,
 HZO,Die Herren zu Österreich,151,0.132,D0,Bîspel,Erzählende Kurzform,Kurzdichtung,herkunft,Kurzdichtung,Kurzdichtung,eindeutig,
-HZU,Herzogenburger Urkunden,1422,0.195,D0,,Mediale Sonderform,Mediale Sonderform,herkunft,,,pruefen,ja
-HZU2,Herzogenburger Urkunden,11952,0.049,D0,,Mediale Sonderform,Mediale Sonderform,herkunft,,,pruefen,ja
+HZU,Herzogenburger Urkunden,1422,0.195,D0,,Mediale Sonderform,Mediale Sonderform,herkunft,,Fach- und Rechtsliteratur,entschieden,ja
+HZU2,Herzogenburger Urkunden,11952,0.049,D0,,Mediale Sonderform,Mediale Sonderform,herkunft,,Fach- und Rechtsliteratur,entschieden,ja
 IW,Iwein,6894,0.156,D0,Artusroman,Bretonischer Roman,Großepik,herkunft,Großepik,Großepik,eindeutig,
 JEW,Weltchronik,22370,0.07,D0,Weltchronik,Chronik,Historiografie,herkunft,Historiografie,Historiografie,eindeutig,
 JKN,Der Jesusknabe als Geisel,74,0.068,D0,Marienleben,Marienmirakel|Bibeldichtung,Geistliche Literatur|Kurzdichtung|Lyrik,herkunft,Geistliche Literatur|Kurzdichtung|Lyrik,Geistliche Literatur,vorrang,
@@ -496,7 +496,7 @@ SAL,Salman und Morolf,3703,0.108,D0,"Spielmannsepik, sogenannte (veraltet)",Höf
 SAT,Salman und Morolf,244,0.107,D0,"Spielmannsepik, sogenannte (veraltet)",Höfischer Roman|Großepik,Großepik,herkunft,Großepik,Großepik,eindeutig,
 SAX,Seifrits Alexander,7204,0.076,D0,Alexanderroman,Antikenroman,Großepik,herkunft,Großepik,Großepik,eindeutig,
 SBE,Der begrabene Ehemann,156,0.038,D0,Schwank|Märe,Scherzdichtung|Erzählende Kurzform,Kurzdichtung|Lyrik,herkunft,Kurzdichtung|Lyrik,Kurzdichtung,vorrang,
-SBF,Flugschrift Donnerstein,57,1.0,D1,Flugblatt,Mediale Sonderform,Mediale Sonderform,herkunft,,,pruefen,ja
+SBF,Flugschrift Donnerstein,57,1.0,D1,Flugblatt,Mediale Sonderform,Mediale Sonderform,herkunft,,,weggelassen,ja
 SBK,Der Schalk und die beiden Könige,138,1.0,D1,Bîspel,Erzählende Kurzform,Kurzdichtung,herkunft,Kurzdichtung,Kurzdichtung,eindeutig,
 SBV,Ein Sohn beißt dem Vater die Nase ab,108,1.0,D1,Bîspel,Erzählende Kurzform,Kurzdichtung,herkunft,Kurzdichtung,Kurzdichtung,eindeutig,
 SDG,Lyrik des von Glier,370,0.041,D0,Minnesang,Lyrik,Lyrik,herkunft,Lyrik,Lyrik,eindeutig,
