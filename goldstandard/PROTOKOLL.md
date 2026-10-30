@@ -1,6 +1,6 @@
 # WSD-Goldstandard: Protokoll v2
 
-**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-30: Abschnitte 1, 2, 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.1, 9.2, 12 und Abweichungslog A15 bis A28 ergänzt oder geändert), noch nicht eingefroren.
+**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-30: Abschnitte 1, 2, 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.1, 9.2, 12 und Abweichungslog A15 bis A29 ergänzt oder geändert), noch nicht eingefroren.
 **Verantwortlich:** Julia Hintersteiner. Zweiter Annotator: Alan van Beek.
 **Vorgänger:** präregistriertes Evaluationsprotokoll vom 2026-04-24, wiederherstellbar mit
 `git show 873322658^:docs/features/034-wenzelsbibel-annotation.md` (Abschnitt „Pre-registered evaluation protocol").
@@ -549,7 +549,8 @@ Auf der Sense-Ebene werden berichtet:
     trotzdem einen Sense wählt, wird gesondert berichtet.
   - **Ungültige LLM-Antworten:** unparsbar, Sense-ID außerhalb des Menüs, ID eines anderen
     Lemmas oder mehrere IDs, die nicht als `MEHRERE` ausgewiesen sind (Status `SENSE` mit
-    mehreren IDs; eine als `MEHRERE` ausgewiesene Antwort ist gültig, A23). Sie werden als eigene Kategorie gezählt und berichtet und
+    mehreren IDs; eine als `MEHRERE` ausgewiesene Antwort ist gültig, A23) und `MEHRERE` mit nur
+    einer ID (wie bei den Menschen verlangt `MEHRERE` mindestens zwei, Abschnitt 6; A29). Sie werden als eigene Kategorie gezählt und berichtet und
     im primären gepaarten Vergleich als falsch gewertet; ein Ausschluss bräche die Paarung, weil MFS
     nie ungültig antwortet. Das LLM antwortet mit Kartennummer oder Sense-ID; die Sense-ID wird
     direkt aus der Nummer abgeleitet, nicht über Textabgleich (der Textabgleich bei Meconi et al.
@@ -642,6 +643,7 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 | A26 | Freeze 2, LLM-Konfiguration (Abschnitt 4.10): Modell und Version, Prompt, Temperatur, Anzahl der Läufe | Zusätzlich: API-Zugang mit exakter Snapshot-ID, Abfragedatum, maximale Antwortlänge, alle Sampling-Parameter ausdrücklich (Temperatur, top_p, top_k), Kartenformat und Kontextumfang, Sprachumfang laut Modellkarte; Angaben im Artikeltext | Ohne diese Angaben sind Läufe nicht reproduzierbar; Weboberflächen wechseln Modelle und verbergen System-Prompts (Scholger & Bleier 2026; Yae et al. 2025; Basile et al. 2025; Belege aus nicht gegengelesenen KI-Zusammenfassungen). `PROMPT-LOG.md` protokolliert Modell, Parameter und Zeitpunkt schon. Vorschlag V8 vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
 | A27 | Darbietung für das LLM (Abschnitt 4.10): „ob das LLM dieselben Karten sieht wie die Menschen“ offen | Grundsatz: gleiche Darbietung für Mensch und LLM. Das LLM sieht dieselbe pro Item gemischte Kartenreihenfolge, protokolliert; Zusatzinformation (Werktitel, Notizen an Senses, Sprachstufe, Epoche) ist für beide gleich. Was konkret auf die Karte kommt, bleibt offener Punkt 4 | Gemischte Optionen senken die Werte, Positionsverzerrung ist beschrieben (Meconi et al. 2025, S. 33902; Yang et al. 2024, S. 21; Belege aus nicht gegengelesenen KI-Zusammenfassungen). Trifft die Verzerrung nur eine Seite, hängt der Vergleich an ihr. Vorschläge V11 und V12 vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
 | A28 | Pilot-Pool (Abschnitt 4.2): Entwicklung der LLM-Konfiguration (A17) | Am Pilot-Pool darf zusätzlich eine Kontrollbedingung ohne Kontext (nur Lemma und Karten) laufen; nur im Pilot | Zeigt, wie viel das LLM aus den Karten allein errät (Matusch 2025, Tab. 4.6; Deutung der KI-Zusammenfassung, nicht der Arbeit). Vorschlag V13 vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
+| A29 | `MEHRERE`-Antwort des LLM mit nur einer ID (Abschnitt 9.2): nicht geregelt (offen nach A23) | Gilt als ungültige Antwort (eigene Kategorie, im primären gepaarten Vergleich falsch, wie A18) | Wie bei den Menschen verlangt `MEHRERE` mindestens zwei Sense-IDs (Abschnitt 6); dieselben Optionen für Mensch und LLM (A23). Entscheidung Julia Hintersteiner, 2026-10-30 („ok ja wie bei den menschen passt“ auf den Vorschlag der Hauptsitzung, eine solche Antwort als ungültig zu werten) | 2026-10-30 |
 
 ## 12. Offene Punkte
 
