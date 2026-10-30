@@ -1,6 +1,6 @@
 # WSD-Goldstandard: Protokoll v2
 
-**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-28: 9.2 und Abweichungslog A14 ergänzt), noch nicht eingefroren.
+**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-30: Abschnitte 3, 4.2, 4.10, 9.2 und Abweichungslog A15 bis A18 ergänzt), noch nicht eingefroren.
 **Verantwortlich:** Julia Hintersteiner. Zweiter Annotator: Alan van Beek.
 **Vorgänger:** präregistriertes Evaluationsprotokoll vom 2026-04-24, wiederherstellbar mit
 `git show 873322658^:docs/features/034-wenzelsbibel-annotation.md` (Abschnitt „Pre-registered evaluation protocol").
@@ -125,6 +125,13 @@ realistisch, wird aber benannt.
    Gemessen am 2026-10-08: 126 Senses ohne Zeiger (Anzahl der betroffenen Lemmata noch zu zählen).
 4. Lemmata mit disjunkten Token-`@pos`-Werten (Verdacht auf Lemmatisierungsfehler), wie in
    `goldstandard-test.py`. In der Teilmenge der 190 vollständig annotierten Texte: 763 Lemmata.
+   **Vorläufig:** Ein Wortartwechsel zwischen Lemma und Beleg kann gewollt sein, etwa beim
+   substantivierten Infinitiv oder substantivierten Adjektiv. ReM führt nominalisierte Infinitive
+   als `NA` mit Lemma-Wortart `VVINF` (Ganslmayer & Schwarz 2021, S. 164), und HiTS wertet die
+   Abweichung zwischen Lemma- und Beleg-Wortart als Information, nicht als Fehler (Dipper et al.
+   2013, S. 92 bis 95). Vor Freeze 1 wird an einer Stichprobe der betroffenen Lemmata geprüft, wie
+   viele davon echte Lemmatisierungsfehler sind; bis dahin gilt der Ausschluss als vorläufig.
+   Größe und Auswahlregel der Stichprobe sind offen (Abschnitt 12, Punkt 13).
 
 ## 4. Stichprobendesign
 
@@ -149,11 +156,19 @@ und einer skeptischen Zweitmeinung. Zahlen sind vorläufig: gemessen auf dem Kor
 |---|---|---|
 | Hauptstichprobe | 36 Zellen × 10 = 360 Items, 1 Token pro Paar aus Lemma und Wortart | primäres Schätzziel, Agreement, Schwierigkeitsfaktoren |
 | Lemma-Panel | 30 Paare aus Lemma und Wortart × 5 Tokens = 150 Items | Lemma- gegen Kontextschwierigkeit, Sense-Abdeckung und Silberqualität pro Lemma |
-| Pilot-Pool | ca. 100 Items, Lemmata disjunkt zu Haupt- und Panelstichprobe | Pilotrunden (Abschnitt 7), Schätzung des Anteils diskordanter Paare |
+| Pilot-Pool | ca. 100 Items, Lemmata disjunkt zu Haupt- und Panelstichprobe | Pilotrunden (Abschnitt 7), Schätzung des Anteils diskordanter Paare, Entwicklung der LLM-Konfiguration (siehe unten) |
 
 Zusammen ca. 510 Items für die Hauptrunde. Die Panel-Lemmata kommen in der Hauptstichprobe nicht
 vor. Pilot-Lemmata sind disjunkt, damit Besprechungen im Pilot nicht auf dieselben Lemmata in der
 Hauptrunde durchschlagen.
+
+**Entwicklungsdaten für das LLM:** Prompt-Wortlaut, Antwortformat, Few-shot-Beispiele (Anzahl und
+Herkunft) und jeder Formatvergleich werden nur am Pilot-Pool gewählt, nie an der Haupt- oder
+Panelstichprobe. Few-shot-Beispiele aus Silber enthalten keine Tokens der Stichproben. Wirkungen
+von Prompt-Überarbeitungen werden nur an Items berichtet, die beim Überarbeiten nicht gesehen
+wurden. Der Artikel sagt das ausdrücklich. Begründung: Die Prompt-Formulierung verschiebt die
+Werte im Mittel um etwa 5 Punkte zwischen bestem und schlechtestem Prompt, und Meconi et al.
+(2025, S. 33900) wählen den Prompt an einer eigenen Entwicklungsmenge, nicht an den Testdaten.
 
 ### 4.3 Zellen der Hauptstichprobe
 
@@ -255,6 +270,15 @@ Inklusionswahrscheinlichkeit.
 - **Freeze 2, vor der Hauptrunde:** Richtlinien, Pilotschwelle, Agreement-Maße, Bewertungsregeln
   (Abschnitt 9.2), MFS-Definition, LLM-Konfiguration (Modell und Version, Prompt, Temperatur,
   Anzahl der Läufe pro Item, ob das LLM dieselben Karten sieht wie die Menschen), endgültiges N.
+  Bei mehreren Läufen pro Item wird in Freeze 2 festgelegt, was als LLM-Vorhersage gilt: ein
+  vorab bestimmter Lauf, die Mehrheit mit Gleichstandsregel oder die Verteilung (welche, entscheidet
+  Julia in Freeze 2). Die Übereinstimmung zwischen den Läufen wird als eigenes Ergebnis berichtet
+  (Mittelwert und Streuung). Begründung: Eine Mehrheit über mehrere Läufe ist selbst ein Ensemble
+  (Chen et al. 2025, S. 5), und der McNemar-Test verglich dann ein Ensemble mit einer
+  Einzelbaseline. Vorlagen gehen auseinander: mindestens fünf Läufe bei Temperatur 0,7 mit
+  Konsistenz als Konfidenz (Pangakis & Wolken 2025, S. 1474 Fn. 12, S. 1475) gegen greedy decoding
+  mit einem Lauf (Basile et al. 2025, S. 5). „Deterministisch bei Temperatur 0“ ist eine
+  Behauptung, keine Zusage (Campesato 2024, S. 218).
 
 ## 5. Darstellung des Inventars: Vergabe der Begriffsgruppen
 
@@ -411,6 +435,14 @@ Auf der Sense-Ebene werden berichtet:
     einer der Gold-Senses ist. Items mit `KEINE_PASST`, `LEMMA_FALSCH`, `KONTEXT_UNZUREICHEND` oder
     `TEXT_DEFEKT` gehen nicht in die Genauigkeit ein; wie oft das LLM bei ihnen abstiniert oder
     trotzdem einen Sense wählt, wird gesondert berichtet.
+  - **Ungültige LLM-Antworten:** unparsbar, Sense-ID außerhalb des Menüs, ID eines anderen
+    Lemmas oder mehrere IDs bei `SENSE`. Sie werden als eigene Kategorie gezählt und berichtet und
+    im primären gepaarten Vergleich als falsch gewertet; ein Ausschluss bräche die Paarung, weil MFS
+    nie ungültig antwortet. Das LLM antwortet mit Kartennummer oder Sense-ID; die Sense-ID wird
+    direkt aus der Nummer abgeleitet, nicht über Textabgleich (der Textabgleich bei Meconi et al.
+    2025, S. 33898 bis 33899, ist bei kurzen, ähnlichen Begriffsnamen unsicher). Strutz (2026,
+    S. 4 bis 6, 16) setzt Wohlgeformtheit ebenfalls als Tor vor die inhaltliche Bewertung. Eine
+    gültige Ausweichantwort (Abstinenz) ist keine ungültige Antwort und fällt nicht hierunter.
   - **Einwand gegen die `MEHRERE`-Regel und Sensitivität:** Die Primärregel entspricht Henrichs
     Option (iii), „to score a system already as correct if it assigns only one of the multiple
     senses“. Henrich verwirft sie, weil sie „slightly higher evaluation results than would be
@@ -472,6 +504,10 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 | A12 | (keine Abweichung vom Design) Quellenangabe in Abschnitt 2 | Quellenangabe zu Hinkelmanns & Zeppezauer-Wachauer (2023) berichtigt: gedruckte S. 180, wörtliches Zitat, Übertragung auf Bedeutungen als Lesart gekennzeichnet; Prüfstatus ○ → ✔ | Vorher stand dort, die Quelle belege die Anbindung von Bedeutungen an Typen; im Original steht nur „linguistische Annotationen“ (POS, Phrasen- und Satzstrukturen). Entscheidung Julia Hintersteiner, 2026-10-23 | 2026-10-23 |
 | A13 | (keine Abweichung von der Regel) Begründung der Obergrenze pro Text (Abschnitt 4.4, Punkt 4): „Vorbild: ReM nimmt große Texte nur in Ausschnitten auf“ | Begründung nur über den Klumpeneffekt; ReM nicht mehr als Vorbild genannt. Regel unverändert (3 Items pro Text) | Falsch gelesen: Die 20.000 Tokens sind in eReM eine Untergrenze für einige Großtexte (Klein & Dipper 2016, S. 4); das Raster aus 50-Jahres-Abschnitten, Sprachräumen und Textart gilt für MiGraKo (S. 3), eReM ist „kein strukturiertes Korpus“ (S. 5); eine Obergrenze pro Text formuliert das Handbuch nicht. Entscheidung Julia Hintersteiner, 2026-10-28. Gleiche Korrektur in LITERATUR-STICHPROBE.md | 2026-10-28 |
 | A14 | Bewertungsregel bei `MEHRERE` (Abschnitt 9.2): „richtig, wenn einer der Gold-Senses getroffen“ | Regel unverändert; zwei Sensitivitätsauswertungen ergänzt: Teilwertung mit Dice-Koeffizient und Genauigkeit ohne `MEHRERE`-Items, jeweils für LLM und MFS; Anteil der `MEHRERE`-Items wird berichtet | Henrich (2015, S. 151 bis 152) verwirft diese Regel (Option iii), weil sie die Ergebnisse leicht überschätze, und hält Teilwertung für fairer. Präregistrierte Primärregel bleibt stabil, der Einwand wird beantwortet statt übergangen. Entscheidung Julia Hintersteiner, 2026-10-28 | 2026-10-28 |
+| A15 | Ausschluss 4 (Abschnitt 3): Lemmata mit disjunkten Token-`@pos`-Werten werden als „Verdacht auf Lemmatisierungsfehler“ ausgeschlossen | Ausschluss gilt als vorläufig; Begründung ergänzt, dass Wortartwechsel gewollt sein können (substantivierter Infinitiv, substantiviertes Adjektiv); vor Freeze 1 Stichprobe der betroffenen Lemmata auf echte Lemmatisierungsfehler; verknüpft mit offenem Punkt 13 | ReM führt nominalisierte Infinitive als `NA` mit `VVINF` als Lemma-Wortart (Ganslmayer & Schwarz 2021, S. 164), HiTS wertet die Abweichung als Information (Dipper et al. 2013, S. 92 bis 95). Vorschlag V5 aus der Literaturauswertung vom 2026-10-30; Belege aus nicht gegengelesenen KI-Zusammenfassungen. Entscheidung Julia Hintersteiner, 2026-10-30. Größe und Regel der Stichprobe offen | 2026-10-30 |
+| A16 | Mehrere Läufe pro Item (Abschnitt 4.10): im Protokoll nur „Anzahl der Läufe pro Item“ | Freeze 2 legt fest, was als LLM-Vorhersage gilt (vorab bestimmter Lauf, Mehrheit mit Gleichstandsregel oder Verteilung); Übereinstimmung zwischen den Läufen wird als eigenes Ergebnis berichtet (Mittelwert, Streuung) | Mehrheit ist ein Ensemble, McNemar verglich sonst Ensemble gegen Einzelbaseline; Temperatur 0 ist keine Zusage für Determinismus (Chen et al. 2025, S. 5; Pangakis & Wolken 2025, S. 1474 Fn. 12, S. 1475; Basile et al. 2025, S. 5; Campesato 2024, S. 218). Vorschlag V9 aus der Literaturauswertung vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30; welche Aggregationsregel gilt, entscheidet sie in Freeze 2 | 2026-10-30 |
+| A17 | Zweck des Pilot-Pools (Abschnitt 4.2): Pilotrunden, Schätzung diskordanter Paare | Zweck erweitert: Prompt-Wortlaut, Antwortformat, Few-shot-Beispiele und Formatvergleiche nur am Pilot-Pool gewählt; Few-shot-Beispiele aus Silber ohne Stichproben-Tokens; Wirkungen von Prompt-Überarbeitungen nur an ungesehenen Items berichtet | Trennung von Entwicklungs- und Testdaten; Prompt-Formulierung streut im Mittel um etwa 5 Punkte (Meconi et al. 2025, S. 33900). Vorschlag V10 aus der Literaturauswertung vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
+| A18 | Bewertungsregeln (Abschnitt 9.2): ungültige LLM-Antworten nicht geregelt | Ungültige Antworten (unparsbar, ID außerhalb des Menüs, ID eines anderen Lemmas, mehrere IDs bei `SENSE`) als eigene Kategorie berichtet, im primären gepaarten Vergleich als falsch gewertet; Antwort als Kartennummer oder Sense-ID, Sense-ID direkt aus der Nummer abgeleitet | Ein Ausschluss bräche die Paarung, weil MFS nie ungültig antwortet; Textabgleich ist bei kurzen, ähnlichen Begriffsnamen unsicher (Strutz 2026, S. 4 bis 6, 16; Meconi et al. 2025, S. 33898 bis 33899). Vorschlag V25 aus der Literaturauswertung vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
 
 ## 12. Offene Punkte
 
