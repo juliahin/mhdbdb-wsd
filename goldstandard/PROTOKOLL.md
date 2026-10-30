@@ -1,6 +1,6 @@
 # WSD-Goldstandard: Protokoll v2
 
-**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-30: Abschnitte 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.2, 12 und Abweichungslog A15 bis A21 ergänzt oder geändert), noch nicht eingefroren.
+**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-30: Abschnitte 1, 2, 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.1, 9.2, 12 und Abweichungslog A15 bis A28 ergänzt oder geändert), noch nicht eingefroren.
 **Verantwortlich:** Julia Hintersteiner. Zweiter Annotator: Alan van Beek.
 **Vorgänger:** präregistriertes Evaluationsprotokoll vom 2026-04-24, wiederherstellbar mit
 `git show 873322658^:docs/features/034-wenzelsbibel-annotation.md` (Abschnitt „Pre-registered evaluation protocol").
@@ -25,14 +25,19 @@ Nebenfragen, die das Design ohne Mehraufwand mitbeantwortet:
 - Wie verlässlich ist die bestehende MHDBDB-Bedeutungsannotation (Silber), gemessen am neuen Gold?
 - Wie oft passt keine Bedeutung des Inventars? Das ist ein Befund über das Begriffssystem (#63).
 
+Nicht Teil dieses Protokolls: Ein Vergleich der LLM-Ergebnisse mit einem Encoder-Modell ist als
+späterer, eigener Schritt geplant (Julia Hintersteiner, 2026-10-30). Eine Encoder-Konfiguration wird
+hier deshalb nicht festgeschrieben.
+
 ## 2. Begriffe
 
 | Begriff | Bedeutung hier |
 |---|---|
 | **Gold** | Bedeutungszuweisung, die für dieses Protokoll von zwei Annotator:innen unabhängig, blind und unter dokumentierten Richtlinien erhoben und danach adjudiziert wurde. |
-| **Silber** | Die bestehende `@ana`-Annotation im Korpus. Sie stammt von Menschen, aber es ist nicht dokumentiert, von wem, wann und nach welchen Richtlinien. Deshalb kann sie nicht als Gold gelten. |
+| **Silber** | Die bestehende `@ana`-Annotation im Korpus. Sie stammt von Menschen, aber es ist nicht dokumentiert, von wem, wann und nach welchen Richtlinien. Deshalb kann sie nicht als Gold gelten. „Silber" heißt hier also menschlich und undokumentiert, nicht „automatisch annotiert" wie in der Literatur zu Named Entity Recognition und Entity Linking. Ausnahme sind die monosemen Lemmata, deren `@ana` automatisch vergeben ist (`knowledge/data.md`, B2). |
 | **Inventar** | Die `<sense>`-Einträge eines Lemmas in `authority-files/lexicon.xml`. Ein Sense ist ausschließlich durch seine Begriffszeiger (`<ptr target="concepts.xml#…">`) bestimmt, die auf das geprüfte Begriffssystem der MHDBDB verweisen. |
 | **Begriffsgruppe** | Die Menge der Begriffe, auf die ein Sense zeigt. Sie ist das, was Annotator:innen als „Bedeutung" sehen. |
+| **Polysemie** | Zahl der Senses eines Lemmas im Inventar (Abschnitt 4.3), ohne Unterscheidung von Homonymie und Polysemie. Ob die MHDBDB Homographen als eigene Lemmata oder als Senses eines Lemmas führt, ist als Regel nicht gestützt (`knowledge/data.md`, B15). Zur Unterscheidung in der Literatur: Kortmann 2020 (noch nicht beschafft, ungeprüft). |
 
 **Was über Silber bekannt ist:** Hinkelmanns & Zeppezauer-Wachauer (2023, S. 180) schreiben,
 linguistische Annotationen (Beispiele dort: POS, Phrasen- und Satzstrukturen) sollten künftig
@@ -63,7 +68,14 @@ so bestimmt (entschieden am 2026-10-16):
 
 Ohne Schritt 2 fielen 3.654 polyseme Lemmata mit 920.011 Tokens heraus, darunter zentrale
 Wörter wie *guot*: mehr als die ganze übrige Zielmenge. Ein Lemma kann so in mehreren Wortarten
-vorkommen; Einheit der Schichtung ist daher das Paar aus Lemma und Wortart. Gemessen am
+vorkommen; Einheit der Schichtung ist daher das Paar aus Lemma und Wortart. Die Schichtungsvariable
+„Wortart" mischt dabei zwei Ebenen: die Lemma-Wortart aus `lexicon.xml` (Schritt 1) und die
+Beleg-Wortart des Tokens (Schritt 2). Bei Lemmata wie *guot* kann die Beleg-Wortart von der
+Bedeutung abhängen, denn HiTS nennt *guot* mit ‘Besitz’ als Kennzeichen der substantivischen
+Lesart (Dipper et al. 2013, S. 92 bis 95, 107; Schiller et al. 1999, S. 12, 24, 57; Belege aus
+nicht gegengelesenen KI-Zusammenfassungen). Die Token-Wortart ist dann kein von der Bedeutung
+unabhängiges Merkmal, vor allem bei Paaren aus Schritt 2. Die Hauptauswertung wird deshalb auch
+nach der Herkunft der Wortart aufgeschlüsselt (Abschnitt 9.1, Punkt 6; A25). Gemessen am
 2026-10-16 (ohne WZB, Ausschlussliste vom 2026-10-08): 930.645 Tokens über Schritt 1, 503.625 über
 Schritt 2, zusammen **1.434.270 Tokens** in 5.132 Paaren aus Lemma und Wortart (4.797 Lemmata);
 409.893 Tokens bleiben wegen mehrdeutigem Token-`@pos` draußen. Diese Zahl enthielt Ausschluss 4
@@ -72,8 +84,10 @@ Schritt 2, zusammen **1.434.270 Tokens** in 5.132 Paaren aus Lemma und Wortart (
 (nachgemessen am 2026-10-30 mit `verschmelzungen/wirkung.py`, ohne WZB und SBF); die Schritte 1 und 2 sind
 seitdem nicht neu gemessen. Ausschluss 5 (unten) ist in diesen Zahlen noch nicht abgezogen. Präpositionen und Adverbien sind
 bewusst nicht enthalten: Ihre Senses sind in der MHDBDB funktional-grammatisch (z. B. *in* mit
-drei Senses), eine andere Aufgabe als lexikalische WSD, und sie fehlen auch in den
-Vergleichsdatensätzen. Polyseme PRP-Lemmata mit eindeutiger Lexikon-Wortart: 6 Lemmata, 53.333
+drei Senses), eine andere Aufgabe als lexikalische WSD. Präpositionen fehlen auch in den
+englischen Vergleichsdatensätzen (Raganato et al. 2017, S. 101, Tab. 3); Adverbien sind dort
+enthalten (etwa in Senseval-2), diese Stütze gilt also nur für die Präpositionen (Beleg aus einer
+nicht gegengelesenen KI-Zusammenfassung; A24). Polyseme PRP-Lemmata mit eindeutiger Lexikon-Wortart: 6 Lemmata, 53.333
 Tokens; ADV: 94 Lemmata, 29.475 Tokens.
 
 **Silber ist eine Eigenschaft des Textes, nicht des Tokens.** In teilweise annotierten Texten
@@ -151,7 +165,9 @@ realistisch, wird aber benannt.
      vorkommende Token-Wortart enthält.
    - **Prüfstichprobe:** Statt der Stichprobe von Lemmata aus A15 werden ca. 30 markierte Tokens
      von Hand eingeordnet (Lemmatisierungsfehler, Substantivierung, Tagfehler). Das Ergebnis geht
-     ins Datasheet. Auswahlregel der 30 ist offen (Abschnitt 12, Punkt 13).
+     ins Datasheet. Auswahlregel (entschieden am 2026-10-30, A22): einfache Zufallsauswahl von 30 aus
+     den markierten Tokens mit festem, vorab notiertem Seed (Vorschlag 20261030; der Seed wird bei
+     der Ziehung im Skript festgehalten). Die Ziehung ist noch nicht gemacht.
 
 5. **Verschmelzungen** (Klise und Kontraktion wie *sîhez*, *stoufes*, *enwellen*, *zedienest*;
    entschieden am 2026-10-30, A21). Sie tragen im Lexikon das volle Bedeutungsmenü des Grundworts samt
@@ -240,6 +256,11 @@ wurden. Der Artikel sagt das ausdrücklich. Begründung: Die Prompt-Formulierung
 Werte im Mittel um etwa 5 Punkte zwischen bestem und schlechtestem Prompt, und Meconi et al.
 (2025, S. 33900) wählen den Prompt an einer eigenen Entwicklungsmenge, nicht an den Testdaten.
 
+**Kontrollbedingung ohne Kontext (nur im Pilot, A28):** Am Pilot-Pool kann eine Bedingung ohne
+Kontext (nur Lemma und Karten) laufen, um zu sehen, wie viel das LLM aus den Karten allein errät.
+Anlass ist eine Deutung der KI-Zusammenfassung zu Matusch (2025, Tab. 4.6), nicht die Aussage der
+Arbeit. In Haupt- und Panelstichprobe gibt es diese Bedingung nicht.
+
 ### 4.3 Zellen der Hauptstichprobe
 
 36 Zellen = **Polysemie** × **Wortart** × **Frequenzband**:
@@ -276,8 +297,11 @@ Besetzung am 2026-10-16: Jede Zelle hat mindestens 16 Paare (kleinste: 3 ADJ >20
 4. **Obergrenze pro Text:** höchstens 3 Items aus einem Text über alle Komponenten (bestätigt am 2026-10-16);
    **Ausnahme Historiografie: höchstens 5** (entschieden am 2026-10-30, A20), weil 13 Texte × 3 = 39
    Items den Zielanteil von etwa 48 Items nicht erreichen. Ist die Grenze
-   erreicht, wird in Stufe 2 neu gezogen. Die Grenze hält den Klumpeneffekt klein (Gale, Church & Yarowsky 1992; All-Words-Sets als
-   Klumpenstichproben, Raganato et al. 2017). Ein Vorbild im ReM gibt es dafür nicht: Das
+   erreicht, wird in Stufe 2 neu gezogen. Die Grenze hält den Klumpeneffekt klein (Gale, Church & Yarowsky 1992). Dass die
+   All-Words-Sets des englischen Standardrahmens aus wenigen Dokumenten bestehen (3 bis 13) und
+   ihre MFS-Werte streuen (54,5 bis 67,1), belegen Raganato et al. (2017, Tab. 1 und 2; aus einer
+   nicht gegengelesenen KI-Zusammenfassung); die Deutung als Klumpenstichproben ist unsere eigene,
+   die Arbeit spricht nicht so (A24). Ein Vorbild im ReM gibt es dafür nicht: Das
    Handbuch (Klein & Dipper 2016, S. 4) kennt für eReM nur eine Untergrenze von 20.000 Tokens
    bei einigen Großtexten; nach 50-Jahres-Abschnitten, Sprachräumen und Textart strukturiert
    ist MiGraKo (S. 3), nicht eReM (S. 5).
@@ -346,6 +370,16 @@ Inklusionswahrscheinlichkeit.
 - **Freeze 2, vor der Hauptrunde:** Richtlinien, Pilotschwelle, Agreement-Maße, Bewertungsregeln
   (Abschnitt 9.2), MFS-Definition, LLM-Konfiguration (Modell und Version, Prompt, Temperatur,
   Anzahl der Läufe pro Item, ob das LLM dieselben Karten sieht wie die Menschen), endgültiges N.
+  Die Konfiguration umfasst zusätzlich (A26): Zugang über die API mit exakter Snapshot-ID (keine
+  Weboberfläche), Abfragedatum, maximale Antwortlänge, alle Sampling-Parameter ausdrücklich gesetzt
+  (Temperatur, top_p, top_k) statt Standardwerten, Kartenformat und Kontextumfang für das LLM und
+  den im Modellkarten-Text erklärten Sprachumfang. Der Artikel nennt diese Angaben im Text, nicht
+  nur in Abbildungen. Der Prompt-Wortlaut wird am Pilot-Pool gewählt (Abschnitt 4.2, A17) und in
+  Freeze 2 festgeschrieben, einschließlich der Anweisung, wie `MEHRERE` zu beantworten ist
+  (Abschnitt 9.2, A23). Das LLM sieht dieselbe pro Item gemischte Kartenreihenfolge wie die
+  Menschen, und diese Reihenfolge wird für das LLM ebenso protokolliert (A27). Zusatzinformation
+  auf Karte und im Kontext (Werktitel, Notizen an Senses, Nennung von Sprachstufe und Epoche im
+  Prompt) ist für Mensch und LLM gleich; was konkret gezeigt wird, bleibt offener Punkt 4 (A27).
   Bei mehreren Läufen pro Item wird in Freeze 2 festgelegt, was als LLM-Vorhersage gilt: ein
   vorab bestimmter Lauf, die Mehrheit mit Gleichstandsregel oder die Verteilung (welche, entscheidet
   Julia in Freeze 2). Die Übereinstimmung zwischen den Läufen wird als eigenes Ergebnis berichtet
@@ -488,7 +522,8 @@ Auf der Sense-Ebene werden berichtet:
    bei Untergruppen von ca. 120 Items etwa ±0,11 bis ±0,18 (eigene Rechnung mit der
    Großstichproben-Näherung, nachgerechnet am 2026-10-08).
 6. **Aufschlüsselung** nach Polysemiegrad, Wortart, Frequenzband, Domäne, Obergattungsgruppe und
-   angegebener Sicherheit, jeweils mit Intervall.
+   angegebener Sicherheit, jeweils mit Intervall. Die Hauptauswertung wird zusätzlich nach der
+   Herkunft der Wortart aufgeschlüsselt (Lexikon oder Token, Abschnitt 3; A25).
 7. **Zwei Ebenen des Begriffssystems:** zusätzlich die Übereinstimmung, wenn jeder Sense auf die
    Oberbegriffe seiner Begriffe abgebildet wird. Die Granularität ist der stärkste bekannte
    Einflussfaktor auf WSD-Übereinstimmung (Ng et al. 1999; Hovy et al. 2006). Das grobe Maß wird
@@ -508,25 +543,38 @@ Auf der Sense-Ebene werden berichtet:
     wird sekundär ausgewertet. Der Test läuft über alle Items.
   - **Bewertungsregeln (vor Freeze 2 festgeschrieben):** Primäre Auswertungsmenge sind Items mit
     Gold-Status `SENSE` oder `MEHRERE`. Bei `MEHRERE` zählt eine Vorhersage als richtig, wenn sie
-    einer der Gold-Senses ist. Items mit `KEINE_PASST`, `LEMMA_FALSCH`, `KONTEXT_UNZUREICHEND` oder
+    einer der Gold-Senses ist (für Antworten mit mehreren IDs gilt der Punkt „Antworten mit
+    `MEHRERE`" unten). Items mit `KEINE_PASST`, `LEMMA_FALSCH`, `KONTEXT_UNZUREICHEND` oder
     `TEXT_DEFEKT` gehen nicht in die Genauigkeit ein; wie oft das LLM bei ihnen abstiniert oder
     trotzdem einen Sense wählt, wird gesondert berichtet.
   - **Ungültige LLM-Antworten:** unparsbar, Sense-ID außerhalb des Menüs, ID eines anderen
-    Lemmas oder mehrere IDs bei `SENSE`. Sie werden als eigene Kategorie gezählt und berichtet und
+    Lemmas oder mehrere IDs, die nicht als `MEHRERE` ausgewiesen sind (Status `SENSE` mit
+    mehreren IDs; eine als `MEHRERE` ausgewiesene Antwort ist gültig, A23). Sie werden als eigene Kategorie gezählt und berichtet und
     im primären gepaarten Vergleich als falsch gewertet; ein Ausschluss bräche die Paarung, weil MFS
     nie ungültig antwortet. Das LLM antwortet mit Kartennummer oder Sense-ID; die Sense-ID wird
     direkt aus der Nummer abgeleitet, nicht über Textabgleich (der Textabgleich bei Meconi et al.
     2025, S. 33898 bis 33899, ist bei kurzen, ähnlichen Begriffsnamen unsicher). Strutz (2026,
     S. 4 bis 6, 16) setzt Wohlgeformtheit ebenfalls als Tor vor die inhaltliche Bewertung. Eine
     gültige Ausweichantwort (Abstinenz) ist keine ungültige Antwort und fällt nicht hierunter.
+  - **Antworten mit `MEHRERE` (entschieden am 2026-10-30, A23):** Das LLM darf mit `MEHRERE`
+    und mehreren Sense-IDs antworten, hat also dieselben Optionen wie die Menschen (Prinzip des
+    „Alternative Annotator Test", Calderon et al. 2025). Eine solche Antwort ist nur richtig, wenn
+    jede genannte ID im Gold steht; bei einem Item mit Gold-Status `SENSE` ist sie damit falsch.
+    Grund: Die Regel „richtig, wenn einer der Gold-Senses getroffen" würde bei einer Mengenantwort
+    das Absichern belohnen, und die MFS-Baseline nennt immer genau einen Sense, sodass der
+    McNemar-Test sonst teils das Antwortformat misst. Eine einzelne vorhergesagte ID wird weiter
+    nach der Primärregel bewertet (richtig, wenn sie zu den Gold-Senses gehört). Der Anteil der
+    `MEHRERE`-Antworten des LLM wird berichtet. Der genaue Prompt-Wortlaut wird in Freeze 2
+    festgelegt, gewählt am Pilot-Pool (Abschnitt 4.2, A17).
   - **Einwand gegen die `MEHRERE`-Regel und Sensitivität:** Die Primärregel entspricht Henrichs
     Option (iii), „to score a system already as correct if it assigns only one of the multiple
     senses“. Henrich verwirft sie, weil sie „slightly higher evaluation results than would be
     genuinely correct“ erbrächte, und hält Teilwertung (Option i) für fairer (Henrich 2015,
     S. 151 bis 152). Die präregistrierte Primärregel bleibt stabil; zusätzlich werden zwei
     Sensitivitätsauswertungen berichtet: (a) Teilwertung mit dem Dice-Koeffizienten zwischen der
-    Menge der Gold-Senses G und der vorhergesagten Menge (bei genau einem vorhergesagten Sense
-    2/(|G|+1) bei Treffer, sonst 0; Henrich nutzt Dice nach Véronis 1998); (b) Genauigkeit ohne
+    Menge der Gold-Senses G und der tatsächlich vorhergesagten Menge P (2·|G∩P|/(|G|+|P|); bei
+    genau einem vorhergesagten Sense 2/(|G|+1) bei Treffer, sonst 0; Henrich nutzt Dice nach
+    Véronis 1998); (b) Genauigkeit ohne
     die `MEHRERE`-Items (Henrichs Option ii). Beides gilt für LLM und MFS-Baseline gleichermaßen,
     damit der gepaarte Vergleich gepaart bleibt. Der Anteil der `MEHRERE`-Items an der
     Auswertungsmenge wird berichtet.
@@ -587,6 +635,13 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 | A19 | Ausschluss 4 (Abschnitt 3): Lemmata mit disjunkten Token-`@pos`-Werten ausgeschlossen (A15: vorläufig) | Ausschluss gestrichen; stattdessen Markierung `pos_abweichend` im Manifest, Tokens bleiben in der Grundgesamtheit; echte Lemmatisierungsfehler fängt `LEMMA_FALSCH`; Prüfstichprobe wird zu ca. 30 von Hand eingeordneten markierten Tokens, Ergebnis ins Datasheet. Löst A15 ab (A15 bleibt als Zwischenstand stehen) | Der Ausschluss verzerrt nach Frequenz (betroffene Lemmata: 0,7 % im Band 1–3, 9,2 % im Band >200; Messung der Hauptsitzung, übernommen) und trifft Wortartwechsel, die gewollt sein können. Die Markierung betrifft 226 Tokens (0,02 %). Die Grundgesamtheit 1.434.270 enthielt Ausschluss 4 nie, ihre Zahl ändert sich dadurch nicht. Entscheidung Julia Hintersteiner, 2026-10-30 („ja das hier 1. den ausschluss streichen und durch eine markierung ersetzen“) | 2026-10-30 |
 | A20 | Obergrenze pro Text (Abschnitt 4.4, Punkt 4): höchstens 3 Items, ohne Ausnahme | Ausnahme Historiografie: höchstens 5 Items pro Text | 13 Texte × 3 = 39 Items erreichen den Zielanteil von etwa 48 Items nicht; mit 5 sind höchstens 65 möglich. Ohne Grenze hätte OVG grob 45 % der Gruppe, mit 5 höchstens etwa 10 % (grobe Wasserstandsrechnung der Hauptsitzung mit proportionaler Verteilung, keine Ziehungssimulation). Gleichzeitig entschieden: Gattungstabelle (OBERGATTUNGEN.md, Abschnitt 5) mit SBF weggelassen, HZU2, HZU und HNI zu Fach- und Rechtsliteratur, BAR (Umsetzung der Hauptsitzung nach Julias Antwort) zur Großepik, APO bleibt Historiografie. Entscheidung Julia Hintersteiner, 2026-10-30 („Historiografie: dann 5 pro Text“) | 2026-10-30 |
 | A21 | Grundgesamtheit (Abschnitt 3): Verschmelzungen (Klise, Kontraktionen) wie jedes andere Lemma enthalten | Neuer Ausschluss 5: Verschmelzungen werden auf Lemmaebene aus der Grundgesamtheit genommen (Regel in `verschmelzungen.py`); Formen auf en- (Bestandteil `niht`) werden mit ausgeschlossen | Verschmelzungen tragen das volle Bedeutungsmenü des Grundworts samt Typlisten, oft bei einem Beleg (B15). Betroffen: 1.788 Tokens (0,12 %) aus 98 Lemmata, davon 1.662 Tokens aus 48 en-Lemmata (nachgemessen). Prüfrunden: Präzision 36/36 in Runde 2, 1 von 39 übersehen unter Einträgen mit Funktionswort (Urteile eines Agenten, nicht gegengelesen). Die MHDBDB führt die en-Lemmata selbst als NEG; einige echte ent-Verben gehen verloren. Entscheidung Julia Hintersteiner, 2026-10-30 („ok zu verschmelzungen: ja die nehmen wir raus“; zu den Formen auf en-: „Alle ausschließen (Empf.)“) | 2026-10-30 |
+| A22 | Auswahlregel für die ca. 30 von Hand einzuordnenden Tokens mit Markierung `pos_abweichend` (Abschnitt 3, Ausschluss 4; A19): offen | Einfache Zufallsauswahl von 30 aus den markierten Tokens (226 nach Messung der Hauptsitzung, übernommen) mit festem, vorab notiertem Seed (Vorschlag 20261030; der Seed wird bei der Ziehung im Skript festgehalten) | Einfachste Regel ohne eigene Schichtung; die Ziehung ist noch nicht gemacht. Entscheidung Julia Hintersteiner, 2026-10-30 („ja passt“ auf den Vorschlag der Hauptsitzung) | 2026-10-30 |
+| A23 | LLM-Antworten mit mehreren Sense-IDs (Abschnitt 9.2): „mehrere IDs bei `SENSE`“ ungültig (A18); Bewertung bei `MEHRERE`: „richtig, wenn einer der Gold-Senses getroffen“ (A14) | Das LLM darf mit `MEHRERE` und mehreren IDs antworten; so ausgewiesen ist die Antwort gültig und nur richtig, wenn jede genannte ID im Gold steht (bei Gold-Status `SENSE` also falsch). Eine einzelne ID wird weiter nach der Primärregel bewertet. Die Dice-Sensitivität aus A14 nutzt die tatsächlich vorhergesagte Menge; der Anteil der `MEHRERE`-Antworten wird berichtet. A18 bleibt bestehen und wird nur präzisiert: ungültig sind mehrere IDs ohne Ausweis als `MEHRERE`. Der Prompt-Wortlaut folgt in Freeze 2 | Die Regel „einer der Gold-Senses“ belohnte bei einer Mengenantwort das Absichern. Die MFS-Baseline nennt immer genau einen Sense, sonst misst der McNemar-Test teils das Antwortformat. Das LLM hat dieselben Optionen wie die Menschen (Alternative Annotator Test, Calderon et al. 2025). Verworfen: Bewertung nach exakter Menge; primär genau eine ID mit `MEHRERE` nur sekundär. Entscheidung Julia Hintersteiner, 2026-10-30 (Wahl „Ja, alle IDs im Gold“) | 2026-10-30 |
+| A24 | (keine Abweichung von der Regel) Begründungen in Abschnitt 3 („Präpositionen und Adverbien … fehlen auch in den Vergleichsdatensätzen“) und Abschnitt 4.4, Punkt 4 („All-Words-Sets als Klumpenstichproben, Raganato et al. 2017“) | Abschnitt 3: Stütze nur noch für die Präpositionen; Adverbien sind in den englischen Datensätzen enthalten. Abschnitt 4.4: Raganato et al. nur für die Dokumentzahlen und die Streuung der MFS angeführt, die Deutung als Klumpenstichprobe als eigene gekennzeichnet. Ausschluss von PRP und ADV und Obergrenze pro Text unverändert | Raganato et al. (2017, S. 101, Tab. 1 bis 3) nennen 3 / 3 / 3 / 13 / 4 Dokumente und enthalten Adverbien (346 Instanzen in der Verkettung), sprechen aber nirgends von Klumpenstichproben oder dokumentabhängiger MFS. Vorschläge V4 und V7 aus der Literaturauswertung vom 2026-10-30; Belege aus nicht gegengelesenen KI-Zusammenfassungen. Gleiche Korrektur in LITERATUR-STICHPROBE.md (Prüfstatus ○ für „MFS hängt vom Dokument ab“, Navigli et al. 2007 nicht geprüft). Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
+| A25 | Aufschlüsselung der Auswertung (Abschnitt 9.1, Punkt 6): Polysemiegrad, Wortart, Frequenzband, Domäne, Obergattungsgruppe, Sicherheit | Zusätzlich nach Herkunft der Wortart (Lexikon oder Token); in Abschnitt 3 festgehalten, dass die Schichtungsvariable „Wortart“ Lemma- und Beleg-Wortart mischt | Die Beleg-Wortart kann von der Bedeutung abhängen (HiTS zu *guot*, Dipper et al. 2013, S. 92 bis 95, 107). Das Manifest führt die Herkunft schon (Abschnitt 4.9). Vorschlag V6 vom 2026-10-30; Belege aus nicht gegengelesenen KI-Zusammenfassungen. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
+| A26 | Freeze 2, LLM-Konfiguration (Abschnitt 4.10): Modell und Version, Prompt, Temperatur, Anzahl der Läufe | Zusätzlich: API-Zugang mit exakter Snapshot-ID, Abfragedatum, maximale Antwortlänge, alle Sampling-Parameter ausdrücklich (Temperatur, top_p, top_k), Kartenformat und Kontextumfang, Sprachumfang laut Modellkarte; Angaben im Artikeltext | Ohne diese Angaben sind Läufe nicht reproduzierbar; Weboberflächen wechseln Modelle und verbergen System-Prompts (Scholger & Bleier 2026; Yae et al. 2025; Basile et al. 2025; Belege aus nicht gegengelesenen KI-Zusammenfassungen). `PROMPT-LOG.md` protokolliert Modell, Parameter und Zeitpunkt schon. Vorschlag V8 vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
+| A27 | Darbietung für das LLM (Abschnitt 4.10): „ob das LLM dieselben Karten sieht wie die Menschen“ offen | Grundsatz: gleiche Darbietung für Mensch und LLM. Das LLM sieht dieselbe pro Item gemischte Kartenreihenfolge, protokolliert; Zusatzinformation (Werktitel, Notizen an Senses, Sprachstufe, Epoche) ist für beide gleich. Was konkret auf die Karte kommt, bleibt offener Punkt 4 | Gemischte Optionen senken die Werte, Positionsverzerrung ist beschrieben (Meconi et al. 2025, S. 33902; Yang et al. 2024, S. 21; Belege aus nicht gegengelesenen KI-Zusammenfassungen). Trifft die Verzerrung nur eine Seite, hängt der Vergleich an ihr. Vorschläge V11 und V12 vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
+| A28 | Pilot-Pool (Abschnitt 4.2): Entwicklung der LLM-Konfiguration (A17) | Am Pilot-Pool darf zusätzlich eine Kontrollbedingung ohne Kontext (nur Lemma und Karten) laufen; nur im Pilot | Zeigt, wie viel das LLM aus den Karten allein errät (Matusch 2025, Tab. 4.6; Deutung der KI-Zusammenfassung, nicht der Arbeit). Vorschlag V13 vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
 
 ## 12. Offene Punkte
 
@@ -603,7 +658,7 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 10. ~~Obergrenze an Tokens pro Text~~: 3, bestätigt am 2026-10-16 (Abschnitt 4.4).
 11. **Schwelle für das Ende des Pilots** (Vorschlag α ≥ 0,80, Untergrenze 0,67) vor dem Pilot festlegen.
 12. **Grobe Ebene des Begriffssystems** für die Zwei-Ebenen-Auswertung festlegen (welche Oberbegriffsstufe).
-13. **Ausschlüsse 2 und 3** (Abschnitt 3) auf die neue Wortartregel und das ganze Korpus umrechnen. Ausschluss 4 entfällt (A19); offen bleibt die Auswahlregel für die ca. 30 von Hand einzuordnenden Tokens mit Markierung `pos_abweichend`.
+13. **Ausschlüsse 2 und 3** (Abschnitt 3) auf die neue Wortartregel und das ganze Korpus umrechnen. Ausschluss 4 entfällt (A19); die Auswahlregel für die ca. 30 von Hand einzuordnenden Tokens mit Markierung `pos_abweichend` ist entschieden (einfache Zufallsauswahl, A22), die Ziehung selbst steht aus.
 14. **Einwilligung von Alan** zu Protokollierung und Veröffentlichung (DMP, Abschnitt 4).
 15. **Privates Repository** anlegen und eine zweite Sicherungskopie festlegen (DMP, Abschnitt 3).
 16. **Verschmelzungen (Ausschluss 5):** Urteile beider Prüfrunden von Julia gegenlesen lassen; Verschmelzungen ohne verlinkte Bestandteile sind nicht erfasst und nicht gemessen (Abschnitt 3, Einschränkung).

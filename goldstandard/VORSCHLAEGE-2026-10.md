@@ -3,7 +3,7 @@
 **Datum:** 2026-10-30
 **Grundlage:** die Abschnitte „Bezug zur Dissertation“ der Zusammenfassungen vom 28./29.10.2026 in `literatur/zusammenfassungen/` und die Abschlussberichte der fünf Läufe der Welle 1 (nicht archiviert, nur in der Sitzung vom 2026-10-29). Abgeglichen mit `goldstandard/PROTOKOLL.md` (Stand 2026-10-28, A1 bis A14, §12), `LITERATUR-STICHPROBE.md`, `LITERATUR-IAA.md`, `PROMPT-LOG.md`, `DMP.md` und `knowledge/data.md`, alle auf Commit `973c001a7`.
 
-**Entscheidungsstand:** Jede Zeile ist ein Vorschlag, über den Julia entscheidet. Entschieden bisher (2026-10-30): V5, V9, V10 und V25 übernommen, eingetragen als A15 bis A18 in `PROTOKOLL.md`. Alle übrigen sind offen.
+**Entscheidungsstand:** Jede Zeile ist ein Vorschlag, über den Julia entscheidet. Entschieden wird in Paketen zu je zehn Vorschlägen. Entschieden bisher (2026-10-30): V5, V9, V10 und V25 übernommen (A15 bis A18 in `PROTOKOLL.md`); **Paket 1** (V1 bis V13 ohne V5, V9, V10): V2, V3, V4, V6, V7, V8, V11, V12 und V13 übernommen (A24 bis A28 in `PROTOKOLL.md`, V2 und V3 als Begriffsklärung in Abschnitt 2 ohne eigene A-Zeile), V1 nicht übernommen. Alle übrigen sind offen.
 
 **Frage F1 (Homographen)** ist inzwischen gemessen: `knowledge/data.md`, B15. Die Vermutung bei V2, die MHDBDB führe Homographen meist als Senses eines Lemmas, ist dort als Regel nicht gestützt.
 
@@ -28,32 +28,36 @@
 
 ### §1 Forschungsfrage
 
-**V1** Ausdrücklich entscheiden und im Protokoll festhalten, ob ein Encoder-Vergleich (z. B. GHisBERT-Einbettungen oder ein feinabgestimmtes Modell) über die Forschungsfrage hinaus vorgesehen ist; falls ja, dessen Konfiguration wie die LLM-Konfiguration in Freeze 2 festschreiben.
+**V1** (nicht übernommen, 2026-10-30) Ausdrücklich entscheiden und im Protokoll festhalten, ob ein Encoder-Vergleich (z. B. GHisBERT-Einbettungen oder ein feinabgestimmtes Modell) über die Forschungsfrage hinaus vorgesehen ist; falls ja, dessen Konfiguration wie die LLM-Konfiguration in Freeze 2 festschreiben.
 - Begründung: Mehrere Zusammenfassungen nennen ihn als mögliche Baseline; die Werke zeigen zugleich, dass Konfiguration, Seeds und Daten das Ergebnis tragen und dass für Mhd. kaum Trainingsdaten vorliegen (nur ReM mit 2,3 Mio. Wörtern, Silber unbekannter Qualität).
 - Quellen: Beck & Köllner 2023, S. 36, 38, 41, Tab. 1; Devlin et al. 2019, S. 4176, 4183 bis 4184; Liu et al. 2019, S. 4, 7 bis 8; Manjavacas & Fonteyn 2022a, S. 4, 15; Manjavacas & Fonteyn 2022b, S. 124 bis 128; Iacobacci et al. 2016, S. 898.
 - Status: neu (§1 nennt nur LLM gegen MFS; keine Entscheidung zu Encodern).
 - Gewicht: niedrig (außerhalb der Forschungsfrage, solange nicht beschlossen).
+- **Entscheidung 2026-10-30: nicht übernommen.** Julia Hintersteiner: „denn es wird in einem weiteren schritt die ergebnisse der llm-disambiguierung mit denjeniger eines encoder-modells verglichen, das ist aber in der zukunft“. Der Encoder-Vergleich ist ein späterer, eigener Schritt außerhalb dieses Protokolls; ein Satz dazu steht in `PROTOKOLL.md` §1, keine A-Zeile.
 
 ### §2 Begriffe
 
-**V2** In §2 (Begriffstabelle) oder §4.3 einen Satz ergänzen, dass „Polysemie“ hier die Zahl der Senses im Inventar meint, ohne Homonymie und Polysemie zu unterscheiden; dafür Kortmann 2020 selbst zitieren, nicht Köhnlein.
+**V2** (übernommen, §2 Begriffstabelle, ohne A-Zeile) In §2 (Begriffstabelle) oder §4.3 einen Satz ergänzen, dass „Polysemie“ hier die Zahl der Senses im Inventar meint, ohne Homonymie und Polysemie zu unterscheiden; dafür Kortmann 2020 selbst zitieren, nicht Köhnlein.
 - Begründung: Die Literatur trennt Homonymie (verschiedene Lexeme) von Polysemie; ob die MHDBDB Homographen als eigene Lemmata oder als Senses eines Lemmas führt, entscheidet, was die Polysemiestufen 2 / 3 / 4+ messen (siehe Frage F1, die erste Zählung spricht für das Zweite).
 - Quellen: Köhnlein 2025, S. 33 bis 35 (PDF 34 bis 36); Telljohann et al. 2017, S. 34 (PDF 35); Ganslmayer & Schwarz 2021 (Beitrag Dipper), S. 165, Anm. 12.
-- Status: neu. **Verweis korrigiert:** Die Zusammenfassung nennt „Protokoll 2 und 4.3“; definiert ist „Polysemie“ nur in §4.3, §2 enthält keinen Eintrag dazu.
+- Status: neu. **Verweis korrigiert:** Die Zusammenfassung nennt „Protokoll 2 und 4.3“; definiert ist „Polysemie“ nur in §4.3, §2 enthielt keinen Eintrag dazu.
+- **Entscheidung 2026-10-30: übernommen** als Eintrag „Polysemie“ in der Begriffstabelle (§2). Kortmann 2020 ist dort als nicht beschafft und ungeprüft genannt. Die Vermutung zu Homographen steht als „nicht als Regel gestützt“ (B15), nicht wie hier in der Begründung.
 - Gewicht: mittel.
 
-**V3** Im Datasheet (oder in der Begriffstabelle §2) klarstellen, dass „Silber“ hier eine menschliche, undokumentierte Annotation meint und nicht „automatisch annotiert“ wie in der NER- und Entity-Linking-Literatur; zugleich festhalten, dass monosemes Silber automatisch vergeben ist (B2).
+**V3** (übernommen, §2 Begriffstabelle, ohne A-Zeile) Im Datasheet (oder in der Begriffstabelle §2) klarstellen, dass „Silber“ hier eine menschliche, undokumentierte Annotation meint und nicht „automatisch annotiert“ wie in der NER- und Entity-Linking-Literatur; zugleich festhalten, dass monosemes Silber automatisch vergeben ist (B2).
 - Begründung: Leser:innen aus NER/EL verbinden „Silber“ mit automatischer Annotation; das Protokoll verwendet den Begriff anders, sachlich begründet.
 - Quellen: Matusch 2025, S. 33 (Definition dort ohne Quelle, daher nicht als Beleg zitieren); Vergleichsfälle Henrich et al. 2012 (WebCAGe), S. 390 bis 394; Tittel & Chiarcos 2018, S. 62.
 - Status: neu.
 - Gewicht: mittel.
+- **Entscheidung 2026-10-30: übernommen** in der Zeile „Silber“ der Begriffstabelle (§2), mit dem Verweis auf B2.
 
 ### §3 Grundgesamtheit und Ausschlüsse
 
-**V4** Den Satz „Präpositionen und Adverbien … fehlen auch in den Vergleichsdatensätzen“ auf Präpositionen beschränken oder die gemeinten Datensätze nennen.
+**V4** (übernommen, A24) Den Satz „Präpositionen und Adverbien … fehlen auch in den Vergleichsdatensätzen“ auf Präpositionen beschränken oder die gemeinten Datensätze nennen.
 - Begründung: Im englischen Standardrahmen sind Adverbien enthalten (Senseval-2; 346 Adverb-Instanzen in der Verkettung), Präpositionen nicht. Für den Ausschluss der Präpositionen gibt es zusätzliche Stützen.
 - Quellen: Raganato et al. 2017, S. 101, Tab. 3 (S. 105), Tab. 4; Stützen: Manjavacas & Fonteyn 2022a, S. 9 (Inhalts- gegen Funktionswörter; zu Adverbien nichts); Miller 1995, S. 40.
 - Status: neu; die Ausschlussentscheidung vom 2026-10-16 bleibt unberührt, nur die Begründung ist sachlich falsch.
+- **Entscheidung 2026-10-30: übernommen** (A24), Stütze auf die Präpositionen beschränkt.
 - Gewicht: mittel.
 
 **V5** Ausschluss 4 (Lemmata mit disjunkten Token-`@pos`-Werten) überprüfen: Begründung ergänzen, dass Wortartwechsel gewollt sein können (substantivierte Infinitive, substantivierte Adjektive), und vor Freeze 1 an einer Stichprobe der betroffenen Lemmata prüfen, wie viele echte Lemmatisierungsfehler sind.
@@ -62,26 +66,29 @@
 - Status: neu; berührt offenen Punkt 13 (Ausschlüsse 2 bis 4 umrechnen), der ohnehin vor Freeze 1 ansteht.
 - Gewicht: **hoch** (Grundgesamtheit, Freeze 1).
 
-**V6** In der Begründung der Wortartregel (§3) festhalten, dass die Schichtungsvariable „Wortart“ zwei Ebenen mischt (Lemma-Wortart aus Schritt 1, Beleg-Wortart aus Schritt 2) und dass die Beleg-Wortart bei Lemmata wie *guot* von der Bedeutung abhängen kann; erwägen, die Hauptauswertung nach Herkunft der Wortart aufzuschlüsseln.
+**V6** (übernommen, A25) In der Begründung der Wortartregel (§3) festhalten, dass die Schichtungsvariable „Wortart“ zwei Ebenen mischt (Lemma-Wortart aus Schritt 1, Beleg-Wortart aus Schritt 2) und dass die Beleg-Wortart bei Lemmata wie *guot* von der Bedeutung abhängen kann; erwägen, die Hauptauswertung nach Herkunft der Wortart aufzuschlüsseln.
 - Begründung: HiTS und STTS entscheiden einige Wortartgrenzen ausdrücklich über die Semantik; HiTS nennt *guot* mit ‘Besitz’ als Kennzeichen der substantivischen Lesart. Dann ist die Token-Wortart kein von der Bedeutung unabhängiges Merkmal, vor allem bei Paaren aus Schritt 2.
 - Quellen: Dipper et al. 2013, S. 92 bis 95, 105, 107, 128; Schiller et al. 1999, S. 12, 24, 57; Ide & Véronis 1998, S. 3 bis 4, 25 (Stütze für Lemma × Wortart).
 - Status: teilweise umgesetzt: Das Manifest führt die Herkunft der Wortart mit (§4.9). Neu sind der Satz in §3 und die Aufschlüsselung.
+- **Entscheidung 2026-10-30: übernommen** (A25), einschließlich der Aufschlüsselung der Hauptauswertung nach Herkunft der Wortart (§9.1, Punkt 6).
 - Gewicht: mittel.
 
 ### §4.4 Ziehung
 
-**V7** In §4.4, Punkt 4 „All-Words-Sets als Klumpenstichproben, Raganato et al. 2017“ als eigene Deutung kennzeichnen; gleiche Korrektur in `LITERATUR-STICHPROBE.md`, Zeile „All-Words-Sets …“: Raganato nur für die Dokumentzahlen und die Streuung der MFS zwischen Datensätzen anführen, „MFS hängt vom Dokument ab“ am zweiten Beleg (Navigli et al. 2007) prüfen oder streichen, Prüfstatus für diesen Teil ○ statt ✔. Optional als deutscher Beleg für den Klumpeneffekt WebCAGe ergänzen.
+**V7** (übernommen, A24) In §4.4, Punkt 4 „All-Words-Sets als Klumpenstichproben, Raganato et al. 2017“ als eigene Deutung kennzeichnen; gleiche Korrektur in `LITERATUR-STICHPROBE.md`, Zeile „All-Words-Sets …“: Raganato nur für die Dokumentzahlen und die Streuung der MFS zwischen Datensätzen anführen, „MFS hängt vom Dokument ab“ am zweiten Beleg (Navigli et al. 2007) prüfen oder streichen, Prüfstatus für diesen Teil ○ statt ✔. Optional als deutscher Beleg für den Klumpeneffekt WebCAGe ergänzen.
 - Begründung: Raganato et al. nennen 3 / 3 / 3 / 13 / 4 Dokumente, sprechen aber nirgends von Klumpenstichproben oder dokumentabhängiger MFS; belegt ist nur die Streuung der MFS je Datensatz (54,5 bis 67,1). WebCAGe misst „one sense per discourse“ mit 95,62 bis 99,96 % (Prüfweg nicht beschrieben).
 - Quellen: Raganato et al. 2017, Tab. 1 (S. 102), S. 101 bis 105, Tab. 2 (S. 105); Henrich et al. 2012, S. 390 (PDF 4); Welle-1-Bericht Raganato/Bevilacqua, Abschnitt 2 und 4.
 - Status: neu. A13 hat in demselben Punkt nur die ReM-Begründung korrigiert; der Raganato-Teil steht noch unverändert.
+- **Entscheidung 2026-10-30: übernommen** (A24) in `PROTOKOLL.md` §4.4 und in `LITERATUR-STICHPROBE.md`; die optionale Ergänzung von WebCAGe als deutschem Beleg ist nicht eingetragen (gehört zu V42).
 - Gewicht: mittel.
 
 ### §4.10 Freeze 2 (LLM-Konfiguration)
 
-**V8** Die Liste für Freeze 2 erweitern um: Zugang über API mit exakter Snapshot-ID (keine Weboberfläche), Abfragedatum, maximale Antwortlänge, alle Sampling-Parameter ausdrücklich gesetzt (Temperatur, top_p, top_k) statt Standardwerten, Kartenformat und Kontextumfang für das LLM, im Modellkarten-Text erklärter Sprachumfang; im Artikel diese Angaben im Text nennen, nicht nur in Abbildungen.
+**V8** (übernommen, A26) Die Liste für Freeze 2 erweitern um: Zugang über API mit exakter Snapshot-ID (keine Weboberfläche), Abfragedatum, maximale Antwortlänge, alle Sampling-Parameter ausdrücklich gesetzt (Temperatur, top_p, top_k) statt Standardwerten, Kartenformat und Kontextumfang für das LLM, im Modellkarten-Text erklärter Sprachumfang; im Artikel diese Angaben im Text nennen, nicht nur in Abbildungen.
 - Begründung: Die Werke zeigen, was fehlt, wenn diese Angaben fehlen (Standardtemperatur, kein Datum, ein Lauf, Längendeckel nicht berichtet), und dass die Weboberfläche Modelle wechselt, System-Prompts verbirgt und keine identischen Ausgaben liefert.
 - Quellen: Scholger & Bleier 2026, Abs. 2, 5 bis 7, 40; Yae et al. 2025, PDF-S. 6 bis 7, 14; Basile et al. 2025, S. 5; Meconi et al. 2025, S. 33909; Campesato 2024, S. 168 bis 170, 218; Köhnlein 2025, S. 12, 49, 67, 87 (PDF 13, 50, 68, 88); Strutz 2026, S. 10, 17; Matusch 2025, Tab. 4.6; Jannidis et al. 2025, S. 4, 8, 19 Fn. 20; Steller 2024, S. 4; Gengnagel et al. 2024, S. 4.
 - Status: teilweise umgesetzt: `PROMPT-LOG.md` Ebene A protokolliert `modell` (Snapshot), `parameter` (Temperatur, max. Tokens, Seed, alle weiteren) und `zeitpunkt`. Neu ist, diese Werte in §4.10 als Freeze-Gegenstand zu nennen und API-Zugang, Kartenformat und Modellkarte aufzunehmen.
+- **Entscheidung 2026-10-30: übernommen** (A26).
 - Gewicht: mittel.
 
 **V9** Vor Freeze 2 festlegen, was bei mehreren Läufen pro Item als Vorhersage des LLM gilt (ein vorab bestimmter Lauf, Mehrheit mit Regel für Gleichstand, oder Verteilung), und die Übereinstimmung zwischen Läufen als eigenes Ergebnis berichten (Mittelwert und Streuung, nicht nur einen Wert).
@@ -96,23 +103,26 @@
 - Status: neu. §4.2 nennt als Zweck des Pilot-Pools nur Pilotrunden der Menschen und die Schätzung diskordanter Paare.
 - Gewicht: **hoch** (Trennung von Entwicklungs- und Testdaten).
 
-**V11** In Freeze 2 festhalten, dass das LLM dieselbe pro Item gemischte Kartenreihenfolge sieht wie die Menschen und dass sie für das LLM ebenso protokolliert wird.
+**V11** (übernommen, A27) In Freeze 2 festhalten, dass das LLM dieselbe pro Item gemischte Kartenreihenfolge sieht wie die Menschen und dass sie für das LLM ebenso protokolliert wird.
 - Begründung: Gemischte Optionen senken die Werte (bei einem kleinen Modell F1 von 56,3 auf 40,4), position bias und majority label bias sind beschrieben; trifft die Verzerrung nur eine Seite, hängt der Vergleich an ihr.
 - Quellen: Meconi et al. 2025, S. 33902, Tab. 5; Yang et al. 2024, S. 21; An et al. 2024, S. 2, 8 (nur lange Kontexte); Köhnlein 2025, Tab. 8, S. 79.
 - Status: neu; §5, Punkt 5 regelt das Mischen nur für die Annotationsoberfläche, §4.10 führt „ob das LLM dieselben Karten sieht“ als offen.
+- **Entscheidung 2026-10-30: übernommen** (A27).
 - Gewicht: mittel.
 
-**V12** Zusatzinformation auf Karte und im Kontext (Werktitel, KZW-Notizen an Senses, Nennung von Sprachstufe und Epoche im Prompt) für Mensch und LLM gleich und bewusst festlegen.
+**V12** (übernommen, A27) Zusatzinformation auf Karte und im Kontext (Werktitel, KZW-Notizen an Senses, Nennung von Sprachstufe und Epoche im Prompt) für Mensch und LLM gleich und bewusst festlegen.
 - Begründung: Modelle behandeln jede Information im Prompt als relevant; was auf der Karte steht, wirkt auf die Entscheidung.
 - Quellen: Jannidis et al. 2025, S. 12, 15, 19; Gengnagel et al. 2024, S. 2 (Grounding).
 - Status: offen in §12, Punkt 4 (Werktitel) und `knowledge/data.md` B13 (Notizen, „gleiche Karten für beide“); neu ist nur die Nennung von Sprachstufe und Epoche.
+- **Entscheidung 2026-10-30: übernommen als Grundsatz** (gleiche Zusatzinformation für Mensch und LLM, A27); was konkret auf die Karte kommt, bleibt offener Punkt 4 in `PROTOKOLL.md` §12.
 - Gewicht: mittel.
 
-**V13** Am Pilot-Pool eine Kontrollbedingung ohne Kontext (nur Lemma und Karten) erwägen, um zu sehen, wie viel das LLM aus den Karten allein errät.
+**V13** (übernommen, A28) Am Pilot-Pool eine Kontrollbedingung ohne Kontext (nur Lemma und Karten) erwägen, um zu sehen, wie viel das LLM aus den Karten allein errät.
 - Begründung: Bei den stärksten Modellen bringt der Kontextabsatz nichts, was auf Entscheidung aus Name und Beschreibung allein deutet (Deutung der Zusammenfassung, nicht der Arbeit).
 - Quellen: Matusch 2025, Tab. 4.6.
 - Status: neu (Vorschlag der Zusammenfassung, nicht aus der Quelle).
 - Gewicht: niedrig.
+- **Entscheidung 2026-10-30: übernommen, nur im Pilot** (A28).
 
 **V14** Bei Wahl eines geschlossenen, kommerziellen Modells die eingeschränkte Reproduzierbarkeit als Limitation nennen und die Wahl im Artikel begründen (auch gegen ein quelloffenes Modell).
 - Begründung: Ein über eine Anbieter-API genutztes Modell kann weder geteilt noch eingefroren werden; Trainingsdaten sind unbekannt (Kontamination, §10). Das Prompt-Log ersetzt die fehlende Reproduzierbarkeit nur teilweise.
@@ -386,7 +396,7 @@
 ## E. Abgleich mit dem Protokoll: Auffälligkeiten
 
 - **Abschnittsverweise:** Von rund 40 stichprobenartig geprüften Verweisen passen fast alle. Falsch oder schief sind: „Protokoll 12“ für Grenzen der Evaluation (Ide & Véronis; §12 sind offene Punkte, V46); „Protokoll 4.9 … (Unsicherheit)“ (Pangakis & Wolken; §4.9 ist das Manifest, gemeint ist §9.1, Punkt 5); „PROTOKOLL §5 und §7 (doppelte Annotation)“ (Manjavacas & Fonteyn 2022b; §5 ist die Kartendarstellung, gemeint sind §7 und A5); „Protokoll 7, Schritt 6“ als Ort für LLM-Fehlercodes (Strutz, Manjavacas 2022a; die Ursachencodes gelten menschlichen Abweichungen, V28); „Protokoll 2 … Polysemie“ (Köhnlein; definiert nur in §4.3, V2).
-- **Sachlich falsche Protokollaussagen:** §3 „Adverbien fehlen in den Vergleichsdatensätzen“ (V4); §4.4, Punkt 4 Raganato als Beleg für Klumpenstichproben, nach A13 noch übrig (V7).
+- **Sachlich falsche Protokollaussagen:** §3 „Adverbien fehlen in den Vergleichsdatensätzen“ (V4); §4.4, Punkt 4 Raganato als Beleg für Klumpenstichproben, nach A13 noch übrig (V7). Beides ist seit dem 2026-10-30 korrigiert (A24).
 - **Spannungen mit Entscheidungen oder Befunden:** „Karten ohne Glossen“ (V16) gegen B13 (94 KZW-Notizen); Ausschluss 4 als „Verdacht“ formuliert, aber als harter Ausschluss angewandt (V5); `PROMPT-LOG.md` verweist für den zählenden Lauf auf das Protokoll, das ihn noch nicht festlegt (V9). Unabhängig von den Zusammenfassungen: `knowledge/data.md` B8 und §4, Punkt 5 erwägen, Rückfall-Items aus dem primären Vergleich zu nehmen, während §9.2 sagt „Der Test läuft über alle Items“; diese Entscheidung ist offen.
 - **Kein Vorschlag widerspricht A1 bis A14.** Mehrere stützen A14 (Basile, Meconi, Strutz, Ristic) oder A13 nur mittelbar; keiner verlangt, eine Primärregel zu ändern.
 

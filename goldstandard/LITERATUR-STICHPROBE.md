@@ -1,6 +1,6 @@
 # Literatur: Stichprobendesign für den WSD-Goldstandard
 
-**Stand:** 2026-10-28 (Zeile ReM korrigiert; sonst 2026-10-16). Recherchiert von einem Recherche-Agenten (Claude Code), dazu eine skeptische
+**Stand:** 2026-10-30 (Zeile Raganato korrigiert, Prüfstatus gesenkt; Zeile ReM 2026-10-28; sonst 2026-10-16). Recherchiert von einem Recherche-Agenten (Claude Code), dazu eine skeptische
 Zweitmeinung zum Entwurf. Ergänzt [LITERATUR-IAA.md](LITERATUR-IAA.md).
 
 **Prüfstatus:** ✔ = Volltext oder Verlagsseite vom Agenten gelesen, ○ = nur bibliografisch oder
@@ -13,7 +13,7 @@ am 2026-10-16). Vor dem Zitieren jede Angabe am Original prüfen.
 |---|---|---|
 | Zwei Modelle für WSD-Gold: „textual" (alle Inhaltswörter eines Textes) und „lexical" (erst Wortarten-Typen ziehen, dann Belege). Für Evaluation das lexikalische Modell, geschichtet nach **Wortart × Korpusfrequenz × Polysemie**; im Beispiel 4 × 4 Bänder, mindestens 10 Typen pro Zelle. Auch monoseme Wörter mitziehen. | Kilgarriff 1998 ✔ | Direkter Vorläufer der 36-Zellen-Idee; zitieren |
 | Senseval wählte Lemmata über ein Frequenz × Polysemie-Raster, „nicht nach Laune des Experimentators"; 80 bis 400 Belege pro Lemma. Senseval-2: 75 + 15n + 6m Belege pro Wort. | Kilgarriff & Rosenzweig 2000 ✔; Kilgarriff 2001 ✔ | Klassische Lexical-Sample-Sets haben viele Belege pro Lemma, wir haben 1 |
-| All-Words-Sets sind Klumpenstichproben aus wenigen Dokumenten (3 bis 13); MFS hängt vom Dokument ab. | Raganato et al. 2017 ✔; Navigli et al. 2007 ✔ | Textklumpen ernst nehmen; Obergrenze pro Text |
+| Die All-Words-Sets des englischen Standardrahmens bestehen aus wenigen Dokumenten (3 bis 13), und ihre MFS-Werte streuen je Datensatz (54,5 bis 67,1). Die Deutung als Klumpenstichproben, bei denen MFS vom Dokument abhängt, ist unsere eigene; Raganato et al. sprechen nicht so (A24 im Protokoll). | Raganato et al. 2017 ✔ (nur Dokumentzahlen und Streuung der MFS, aus einer nicht gegengelesenen KI-Zusammenfassung); „MFS hängt vom Dokument ab“: Navigli et al. 2007 ○ (nicht geprüft) | Textklumpen ernst nehmen; Obergrenze pro Text |
 | Geschichtete Schätzung, proportionale, Neyman- und gleiche Allokation; gleiche Allokation ist am besten für Vergleiche, am schlechtesten für die Gesamtschätzung. | Cochran 1977 ○; Lohr ○ | Konflikt der Ziele benennen |
 | Potenzallokation n_h ∝ X_h^q; q = 0 gleich, q = 1 proportional, q = 0,5 Quadratwurzel. | Bankier 1988 ○ (Formel nach Keto & Pahkinen 2017 ✔) | Begründung der Gattungsquote |
 | Designeffekt durch ungleiche Gewichte: deff_w = 1 + CV²(w), n_eff = n / deff_w. Klumpeneffekt: deff_c ≈ 1 + (m̄ − 1)ρ. | Kish 1965, 1992 ○; Gabler, Haeder & Lahiri 1999 ○ | Gewichtete Zahl nur mit n_eff berichten |

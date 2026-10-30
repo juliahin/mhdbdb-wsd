@@ -8,7 +8,7 @@ Projektkern.
 
 | Ebene | Datei | Stand |
 |---|---|---|
-| 1. Protokoll mit Abweichungslog gegenüber der Präregistrierung | [PROTOKOLL.md](PROTOKOLL.md) | Entwurf 2026-10-08, ergänzt 2026-10-30 (A21) |
+| 1. Protokoll mit Abweichungslog gegenüber der Präregistrierung | [PROTOKOLL.md](PROTOKOLL.md) | Entwurf 2026-10-08, ergänzt 2026-10-30 (A28) |
 | 1a. Literatur zu Inter-Annotator-Agreement (mit Prüfstatus) | [LITERATUR-IAA.md](LITERATUR-IAA.md) | 2026-10-28 |
 | 1b. Literatur zum Stichprobendesign | [LITERATUR-STICHPROBE.md](LITERATUR-STICHPROBE.md) | 2026-10-16 |
 | 1c. Datenmanagementplan (Science Europe / FWF) | [DMP.md](DMP.md) | Entwurf 2026-10-16 |
