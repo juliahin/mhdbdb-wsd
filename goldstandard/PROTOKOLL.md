@@ -1,6 +1,6 @@
 # WSD-Goldstandard: Protokoll v2
 
-**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-30: Abschnitte 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.2, 12 und Abweichungslog A15 bis A20 ergänzt oder geändert), noch nicht eingefroren.
+**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-30: Abschnitte 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.2, 12 und Abweichungslog A15 bis A21 ergänzt oder geändert), noch nicht eingefroren.
 **Verantwortlich:** Julia Hintersteiner. Zweiter Annotator: Alan van Beek.
 **Vorgänger:** präregistriertes Evaluationsprotokoll vom 2026-04-24, wiederherstellbar mit
 `git show 873322658^:docs/features/034-wenzelsbibel-annotation.md` (Abschnitt „Pre-registered evaluation protocol").
@@ -68,8 +68,9 @@ vorkommen; Einheit der Schichtung ist daher das Paar aus Lemma und Wortart. Geme
 Schritt 2, zusammen **1.434.270 Tokens** in 5.132 Paaren aus Lemma und Wortart (4.797 Lemmata);
 409.893 Tokens bleiben wegen mehrdeutigem Token-`@pos` draußen. Diese Zahl enthielt Ausschluss 4
 (unten) nie. Ohne den Text SBF (weggelassen, Abschnitt 4.8) sind es 1.434.213 Tokens (Stand
-2026-10-30, `obergattungen/zusammenfassung.json`); die übrigen Zahlen dieses Absatzes
-(Paare, Lemmata, Schritte 1 und 2) sind seitdem nicht neu gemessen. Präpositionen und Adverbien sind
+2026-10-30, `obergattungen/zusammenfassung.json`) in weiterhin 5.132 Paaren und 4.797 Lemmata
+(nachgemessen am 2026-10-30 mit `verschmelzungen/wirkung.py`, ohne WZB und SBF); die Schritte 1 und 2 sind
+seitdem nicht neu gemessen. Ausschluss 5 (unten) ist in diesen Zahlen noch nicht abgezogen. Präpositionen und Adverbien sind
 bewusst nicht enthalten: Ihre Senses sind in der MHDBDB funktional-grammatisch (z. B. *in* mit
 drei Senses), eine andere Aufgabe als lexikalische WSD, und sie fehlen auch in den
 Vergleichsdatensätzen. Polyseme PRP-Lemmata mit eindeutiger Lexikon-Wortart: 6 Lemmata, 53.333
@@ -151,6 +152,56 @@ realistisch, wird aber benannt.
    - **Prüfstichprobe:** Statt der Stichprobe von Lemmata aus A15 werden ca. 30 markierte Tokens
      von Hand eingeordnet (Lemmatisierungsfehler, Substantivierung, Tagfehler). Das Ergebnis geht
      ins Datasheet. Auswahlregel der 30 ist offen (Abschnitt 12, Punkt 13).
+
+5. **Verschmelzungen** (Klise und Kontraktion wie *sîhez*, *stoufes*, *enwellen*, *zedienest*;
+   entschieden am 2026-10-30, A21). Sie tragen im Lexikon das volle Bedeutungsmenü des Grundworts samt
+   Typlisten, oft bei einem einzigen Beleg (`knowledge/data.md`, B15). Ausgeschlossen wird auf
+   **Lemmaebene**: Alle Tokens eines erfassten Lemmas fallen aus der Grundgesamtheit.
+   - **Regel** ([`verschmelzungen.py`](verschmelzungen.py), Docstring maßgeblich): Erkennung über die
+     verlinkten Bestandteile in `<etym type="morphological">` des Lexikons. Gründe: P (ein Bestandteil
+     ist ein Pronomen), A (ein Bestandteil ist ein Artikel, nicht Numerale), N (Bestandteil
+     `niht` und die Form beginnt mit en- oder n-, nicht mit ent-), Z (Bestandteil `zuo` und die Form
+     beginnt mit z, nicht mit zuo oder zu, außer zun-), U (Bestandteil `und` und die Form endet auf
+     -unde oder -und). Die Verlinkung gilt nur zusammen mit diesen Formbedingungen (siehe
+     Einschränkung unten).
+   - **Formen auf en-** (Entscheidung Julia Hintersteiner, 2026-10-30, auf die Frage „Wie sollen diese
+     en-Formen im Goldstandard behandelt werden?“: „Alle ausschließen (Empf.)“): Die MHDBDB führt
+     diese Lemmata selbst mit Wortart NEG. Einige echte ent-Verben gehen dadurch verloren; dafür
+     gelangt kein kopiertes Grundwort-Menü in die Stichprobe. Verworfen: Drinlassen (`LEMMA_FALSCH`
+     fängt es) und Markieren statt Ausschließen.
+   - **Zählung** (`python goldstandard/verschmelzungen.py`, nachgemessen am 2026-10-30, HEAD
+     `6d5369e55`): 43.710 Einträge, 3.673 Treffer, davon 1.728 mit mindestens zwei Bedeutungen. Nach
+     Grund (mehrere möglich): P 2.009, N 789, A 635, Z 708, U 2. N mit Form auf en-: 776 Einträge, davon
+     431 mit mindestens zwei Bedeutungen (Messung der Hauptsitzung, Ad-hoc-Abfrage ohne Skript,
+     übernommen, nicht nachgemessen).
+   - **Wirkung auf die Grundgesamtheit** (`python goldstandard/verschmelzungen/wirkung.py`,
+     nachgemessen am 2026-10-30, Abgrenzung wie `obergattungen_entwurf.py`, ohne WZB und SBF):
+     Von 1.434.213 Tokens in 5.132 Paaren und 4.797 Lemmata entfallen 1.788 Tokens (0,12 %) auf 98
+     Lemmata (98 Paare); 1.662 Tokens aus 48 Lemmata davon sind en-Formen. Nach Band (Belege in der
+     Grundgesamtheit) 1–3 / 4–20 / 21–200 / >200: 79 / 14 / 4 / 1. Das eine Lemma im Band >200 ist
+     *enwizzen* mit 1.411 Tokens. Abgeleitet (Subtraktion, nicht gesondert gemessen): Nach Ausschluss 5
+     bleiben 1.432.425 Tokens in 5.034 Paaren und 4.699 Lemmata.
+   - **Prüfrunde 1** (Seed 20261030, Regel vor dem Nachschärfen; `verschmelzungen/runde1-*`; Urteilszahlen
+     aus Schlüssel und Urteilsdatei ausgezählt am 2026-10-30): je 40 Treffer und 40 Nicht-Treffer mit
+     Funktionswort unter den Bestandteilen, nur Einträge mit mindestens zwei Bedeutungen, blind
+     eingeordnet durch einen Agenten (`quellen`, Lexer über Wörterbuchnetz) als V (Verschmelzung), K
+     (keine) oder U (unklar). Treffer: 37 V, 1 K (*entliden*, Präfix ent-), 2 U (*envâhen*,
+     *binnendes*). Nicht-Treffer: 3 V (*zungevüege*, *zunguot*, *klagendunde*), 35 K, 2 U. Danach
+     wurden N (ent- ausgenommen), Z (zun- erfasst) und U (neu) nachgeschärft.
+   - **Prüfrunde 2** (Seed 20261031, endgültige Regel, 80 neue Einträge ohne die aus Runde 1;
+     `verschmelzungen/runde2-*`; reproduzierbar mit `python goldstandard/verschmelzungen/runde2_ziehen.py`,
+     das Liste und Schlüssel byte-gleich neu erzeugt, geprüft am 2026-10-30;
+     Grundmengen 1.686 Treffer und 1.313 Nicht-Treffer; Urteilszahlen aus Schlüssel und Urteilsdatei ausgezählt): Treffer 36 V, 0 K, 4 U
+     (*enrüemen*, *enrâten*, *enschüten*, *enleiten*: Lexer führt je ein ent-Stichwort, nur der Beleg
+     entscheidet). Nicht-Treffer 1 V (*alunguot*, al + unguot, Grenzfall Gradadverb), 38 K, 1 U
+     (*inlant*). Wilson-Intervalle (95 %, nachgerechnet am 2026-10-30): Präzision 36/36 = 90,4 bis
+     100 %; mit U als falsch gezählt 36/40 = 76,9 bis 96,0 %; übersehen 1/39 = 0,5 bis 13,2 %. Durch die
+     Entscheidung zu en- zählen die vier en-Fälle als gewollte Treffer.
+   - **Einschränkung:** Übersehene Verschmelzungen sind nur unter Einträgen mit einem Funktionswort
+     unter den Bestandteilen gemessen. Verschmelzungen ohne verlinkte Bestandteile findet die Regel
+     nicht, und die Stichprobe sieht sie nicht. Die Urteile beider Runden stammen von einem Agenten und
+     sind nicht von Julia gegengelesen. Die Bestandteile im Lexikon sind als Merkmal unzuverlässig
+     (`knowledge/data.md`, B16).
 
 ## 4. Stichprobendesign
 
@@ -535,6 +586,7 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 | A18 | Bewertungsregeln (Abschnitt 9.2): ungültige LLM-Antworten nicht geregelt | Ungültige Antworten (unparsbar, ID außerhalb des Menüs, ID eines anderen Lemmas, mehrere IDs bei `SENSE`) als eigene Kategorie berichtet, im primären gepaarten Vergleich als falsch gewertet; Antwort als Kartennummer oder Sense-ID, Sense-ID direkt aus der Nummer abgeleitet | Ein Ausschluss bräche die Paarung, weil MFS nie ungültig antwortet; Textabgleich ist bei kurzen, ähnlichen Begriffsnamen unsicher (Strutz 2026, S. 4 bis 6, 16; Meconi et al. 2025, S. 33898 bis 33899). Vorschlag V25 aus der Literaturauswertung vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
 | A19 | Ausschluss 4 (Abschnitt 3): Lemmata mit disjunkten Token-`@pos`-Werten ausgeschlossen (A15: vorläufig) | Ausschluss gestrichen; stattdessen Markierung `pos_abweichend` im Manifest, Tokens bleiben in der Grundgesamtheit; echte Lemmatisierungsfehler fängt `LEMMA_FALSCH`; Prüfstichprobe wird zu ca. 30 von Hand eingeordneten markierten Tokens, Ergebnis ins Datasheet. Löst A15 ab (A15 bleibt als Zwischenstand stehen) | Der Ausschluss verzerrt nach Frequenz (betroffene Lemmata: 0,7 % im Band 1–3, 9,2 % im Band >200; Messung der Hauptsitzung, übernommen) und trifft Wortartwechsel, die gewollt sein können. Die Markierung betrifft 226 Tokens (0,02 %). Die Grundgesamtheit 1.434.270 enthielt Ausschluss 4 nie, ihre Zahl ändert sich dadurch nicht. Entscheidung Julia Hintersteiner, 2026-10-30 („ja das hier 1. den ausschluss streichen und durch eine markierung ersetzen“) | 2026-10-30 |
 | A20 | Obergrenze pro Text (Abschnitt 4.4, Punkt 4): höchstens 3 Items, ohne Ausnahme | Ausnahme Historiografie: höchstens 5 Items pro Text | 13 Texte × 3 = 39 Items erreichen den Zielanteil von etwa 48 Items nicht; mit 5 sind höchstens 65 möglich. Ohne Grenze hätte OVG grob 45 % der Gruppe, mit 5 höchstens etwa 10 % (grobe Wasserstandsrechnung der Hauptsitzung mit proportionaler Verteilung, keine Ziehungssimulation). Gleichzeitig entschieden: Gattungstabelle (OBERGATTUNGEN.md, Abschnitt 5) mit SBF weggelassen, HZU2, HZU und HNI zu Fach- und Rechtsliteratur, BAR (Umsetzung der Hauptsitzung nach Julias Antwort) zur Großepik, APO bleibt Historiografie. Entscheidung Julia Hintersteiner, 2026-10-30 („Historiografie: dann 5 pro Text“) | 2026-10-30 |
+| A21 | Grundgesamtheit (Abschnitt 3): Verschmelzungen (Klise, Kontraktionen) wie jedes andere Lemma enthalten | Neuer Ausschluss 5: Verschmelzungen werden auf Lemmaebene aus der Grundgesamtheit genommen (Regel in `verschmelzungen.py`); Formen auf en- (Bestandteil `niht`) werden mit ausgeschlossen | Verschmelzungen tragen das volle Bedeutungsmenü des Grundworts samt Typlisten, oft bei einem Beleg (B15). Betroffen: 1.788 Tokens (0,12 %) aus 98 Lemmata, davon 1.662 Tokens aus 48 en-Lemmata (nachgemessen). Prüfrunden: Präzision 36/36 in Runde 2, 1 von 39 übersehen unter Einträgen mit Funktionswort (Urteile eines Agenten, nicht gegengelesen). Die MHDBDB führt die en-Lemmata selbst als NEG; einige echte ent-Verben gehen verloren. Entscheidung Julia Hintersteiner, 2026-10-30 („ok zu verschmelzungen: ja die nehmen wir raus“; zu den Formen auf en-: „Alle ausschließen (Empf.)“) | 2026-10-30 |
 
 ## 12. Offene Punkte
 
@@ -554,3 +606,4 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 13. **Ausschlüsse 2 und 3** (Abschnitt 3) auf die neue Wortartregel und das ganze Korpus umrechnen. Ausschluss 4 entfällt (A19); offen bleibt die Auswahlregel für die ca. 30 von Hand einzuordnenden Tokens mit Markierung `pos_abweichend`.
 14. **Einwilligung von Alan** zu Protokollierung und Veröffentlichung (DMP, Abschnitt 4).
 15. **Privates Repository** anlegen und eine zweite Sicherungskopie festlegen (DMP, Abschnitt 3).
+16. **Verschmelzungen (Ausschluss 5):** Urteile beider Prüfrunden von Julia gegenlesen lassen; Verschmelzungen ohne verlinkte Bestandteile sind nicht erfasst und nicht gemessen (Abschnitt 3, Einschränkung).
