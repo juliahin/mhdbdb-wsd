@@ -1,6 +1,6 @@
 # Meconi et al. 2025: Do Large Language Models Understand Word Senses?
 
-**Datei:** `pdf/Meconi-etal-2025-LLMs-Word-Senses-EMNLP.pdf` (Verlagsfassung, ACL Anthology, nur lokal); daneben `pdf/Meconi-etal-2025-LLMs-Word-Senses.pdf` (arXiv v1)
+**Datei:** `pdf/Meconi-etal-2025-LLMs-Word-Senses.pdf` (Verlagsfassung, ACL Anthology, nur lokal). Bis 2026-11-12 lag unter diesem Namen arXiv v1, die Verlagsfassung daneben als `-EMNLP.pdf` (und diese Zusammenfassung unter `-EMNLP.md`); seither nur noch die Verlagsfassung (Julias Entscheidung). Die Abschnitte zur arXiv-Fassung unten bleiben als Vergleichsbefund stehen.
 **Prüfstatus:** KI-Zusammenfassung aus dem Volltext, von Julia nicht gegengelesen
 <!-- später: „von Julia gegengelesen am JJJJ-MM-TT" -->
 **Stand:** 2026-10-29, Verlagsfassung vollständig gelesen (20 Seiten, mit Anhängen), Tabellen 3 bis 7 und 21 am Seitenbild geprüft; beide Fassungen wortweise an der Textebene verglichen; Bibliografie an der ACL Anthology und arXiv geprüft. In beiden PDFs keine Markierungen von Julia.
