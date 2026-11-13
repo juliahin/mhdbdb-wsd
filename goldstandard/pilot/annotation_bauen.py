@@ -4,6 +4,10 @@ Annotationsdatei für eine Person und eine Pilotrunde bauen (Protokoll, Abschnit
 Aufruf aus dem Repo-Wurzelverzeichnis:
     python goldstandard/pilot/annotation_bauen.py --kennung julia --runde 0
     python goldstandard/pilot/annotation_bauen.py --kennung alan --runde 0
+    python goldstandard/pilot/annotation_bauen.py --kennung alan --runde 0 --ablauf direkt   (ohne eigene Lesart)
+
+Ablauf "lesart-zuerst" (Standard im Pilot, Protokoll A31): pro Beleg zuerst eine eigene Lesart, erst dann die Karten.
+"direkt": Karten sofort; nur für die Hauptrunde, falls Julia nach dem Pilot so entscheidet, und für den Browsertest.
 
 Liest manifest-pilot.json und items-pilot.json (aus pilot_ziehen.py) und prüft, dass items-pilot.json
 die Prüfsumme aus dem Manifest hat. Pro Person eine eigene Datei mit fest eingetragener Kennung
@@ -28,11 +32,12 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 HIER = Path(__file__).resolve().parent
 KENNUNGEN = ("julia", "alan")
-RICHTLINIEN = "Kurzanleitung v0.1 vom 2026-11-13"
+RICHTLINIEN = "Kurzanleitung v0.2 vom 2026-11-13"
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--kennung", required=True, choices=KENNUNGEN)
 ap.add_argument("--runde", type=int, required=True)
+ap.add_argument("--ablauf", choices=("lesart-zuerst", "direkt"), default="lesart-zuerst")
 args = ap.parse_args()
 
 
@@ -68,12 +73,13 @@ werkzeug = sha(Path(__file__).read_bytes() + vorlage.encode("utf-8"))[:12]
 daten = {"meta": {"kennung": args.kennung, "runde": args.runde, "korpus_commit": man["korpus_commit"],
                   "manifest_sha256": sha(man_roh), "richtlinien": RICHTLINIEN, "werkzeug": werkzeug,
                   "gebaut": date.today().isoformat(), "seed": seed,
+                  "ablauf": args.ablauf, "lesart_zuerst": args.ablauf == "lesart-zuerst",
                   "itemreihenfolge": f"{seed}-{args.kennung}-runde{args.runde}",
                   "kartenreihenfolge": f"{seed}-{args.kennung}-<item>"},
          "items": items}
 # Fingerprint nur über Inhalt und Herkunft, nicht über Baudatum und Werkzeug: Ein Neubau mit denselben
 # Daten findet den Browserstand wieder und nimmt Sicherungen aus der ausgelieferten Datei an.
-basis = {k: daten["meta"][k] for k in ("kennung", "runde", "korpus_commit", "manifest_sha256", "seed")}
+basis = {k: daten["meta"][k] for k in ("kennung", "runde", "korpus_commit", "manifest_sha256", "seed", "ablauf")}
 daten["fingerprint"] = sha(json.dumps({"meta": basis, "items": items}, ensure_ascii=False, sort_keys=True).encode("utf-8"))
 
 eingebettet = json.dumps(daten, ensure_ascii=False).replace("<", "\\u003c")
@@ -86,7 +92,7 @@ assert not re.search(r"<(script|link)[^>]+(src|href)=", html), "externe Ressourc
 assert chr(0x2014) not in html, "Gedankenstrich in sichtbarem HTML"
 assert html.count("__DATEN__") == 0
 
-ziel = HIER / "bau" / f"annotation-{args.kennung}-runde{args.runde}.html"
+ziel = HIER / "bau" / f"annotation-{args.kennung}-runde{args.runde}{'' if args.ablauf == 'lesart-zuerst' else '-direkt'}.html"
 ziel.parent.mkdir(exist_ok=True)
 ziel.write_text(html, encoding="utf-8")
 print(f"{ziel.relative_to(HIER.parents[1])}: {len(items)} Items, Fingerprint {daten['fingerprint'][:12]}, Werkzeug {werkzeug}")

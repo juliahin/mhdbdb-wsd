@@ -1,5 +1,6 @@
 // Browsertest der gebauten Annotationsdateien (Protokoll, Abschnitte 6 und 8).
-// Aufruf aus dem Repo-Wurzelverzeichnis, nach annotation_bauen.py für julia und alan:
+// Aufruf aus dem Repo-Wurzelverzeichnis, nach annotation_bauen.py für julia und alan, je einmal ohne und einmal
+// mit --ablauf direkt (die bestehenden Prüfungen laufen auf "direkt", der Block "Eigene Lesart" auf der Standarddatei):
 //     node goldstandard/pilot/test_annotation.mjs [chromium|msedge|chrome|firefox|webkit]
 // Ohne Argument Chromium. msedge und chrome nutzen die installierten Browser, webkit steht für Safari.
 // Firefox: Die zwei Prüfungen mit Eingaben in eine Seite, die nicht vorne ist, scheitern, weil Firefox dort weder
@@ -13,7 +14,8 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 
-const DATEI = n => resolve(`goldstandard/pilot/bau/annotation-${n}-runde0.html`);
+const DATEI = n => resolve(`goldstandard/pilot/bau/annotation-${n}-runde0-direkt.html`);
+const DATEI_L = n => resolve(`goldstandard/pilot/bau/annotation-${n}-runde0.html`);
 let fehler = 0;
 const ok = (b, text) => { console.log((b ? "ok    " : "FEHLER") + "  " + text); if (!b) fehler++; };
 
@@ -21,6 +23,9 @@ const quelle = readFileSync(DATEI("julia"), "utf8");
 const daten = JSON.parse(quelle.match(/<script id="daten" type="application\/json">([\s\S]*?)<\/script>/)[1]);
 ok(!/"ana"|#type_|lemmaRef|meaningRef|"pos"|"wortart"/.test(JSON.stringify(daten)), "keine Silber- oder Token-Attribute und keine Wortart im eingebetteten JSON");
 ok(daten.meta.kennung === "julia", "Kennung fest eingetragen");
+const datenL = JSON.parse(readFileSync(DATEI_L("julia"), "utf8").match(/<script id="daten" type="application\/json">([\s\S]*?)<\/script>/)[1]);
+ok(!/"ana"|#type_|lemmaRef|meaningRef|"pos"|"wortart"/.test(JSON.stringify(datenL)) && datenL.meta.lesart_zuerst === true, "Datei mit eigener Lesart: blind, Ablauf lesart-zuerst");
+ok(datenL.fingerprint !== daten.fingerprint, "Ablauf geht in den Fingerprint ein");
 const alan = JSON.parse(readFileSync(DATEI("alan"), "utf8").match(/<script id="daten" type="application\/json">([\s\S]*?)<\/script>/)[1]);
 ok(JSON.stringify(daten.items.map(i => i.item).sort()) === JSON.stringify(alan.items.map(i => i.item).sort()), "beide Personen haben dieselben Items");
 ok(daten.items.map(i => i.item).join() !== alan.items.map(i => i.item).join(), "Itemreihenfolge pro Person verschieden");
@@ -279,6 +284,45 @@ await p3.goto(pathToFileURL(DATEI("alan")).href);
 await p3.setInputFiles("#importFile", await dl.path());
 await p3.waitForTimeout(300);
 ok(meldung.includes("gehört nicht"), "fremder Export abgelehnt");
+
+// Eigene Lesart vor den Karten (Protokoll A31, Ablauf lesart-zuerst)
+const pl = await (await browser.newContext({ acceptDownloads: true })).newPage();
+pl.on("pageerror", e => js.push("Lesart: " + e));
+await pl.goto(pathToFileURL(DATEI_L("julia")).href);
+ok(await pl.locator("input[name=karte]").count() === 0 && await pl.locator("input[name=status]").count() === 0, "Lesart: Karten und Status verdeckt");
+ok(await pl.isDisabled("#btnAufdecken"), "Lesart: „Karten zeigen“ ohne Text gesperrt");
+await pl.fill("#paraphrase", "Lesart eins");
+ok(await pl.isEnabled("#btnAufdecken"), "Lesart: mit Text freigegeben");
+await pl.click("#btnKontext");
+ok(await pl.inputValue("#paraphrase") === "Lesart eins", "Lesart: Entwurf übersteht „Mehr Kontext“");
+await pl.click("#btnWeiter"); await pl.click("#btnZurueck");
+ok(await pl.inputValue("#paraphrase") === "Lesart eins", "Lesart: Entwurf übersteht Itemwechsel");
+const vorAuf = await protokoll(pl);
+ok(!vorAuf.some(e => e.wert === "Lesart eins"), "Lesart: Entwurf vor dem Aufdecken nicht protokolliert");
+await pl.click("#btnAufdecken");
+ok(await pl.locator("input[name=karte]").count() > 0 && await pl.locator("#paraphrase").count() === 0, "Lesart: nach dem Aufdecken Karten sichtbar, Feld weg");
+ok((await pl.locator(".lesart").textContent()).includes("Lesart eins"), "Lesart: wird über den Karten angezeigt");
+const auf = (await protokoll(pl)).filter(e => e.aktion === "karten_aufgedeckt");
+ok(auf.length === 1 && auf[0].wert === "Lesart eins" && auf[0].item === datenL.items[0].item, "Lesart: Aufdecken mit Text protokolliert");
+await pl.evaluate(() => {                                         // späteres zweites Aufdecken (z. B. veralteter Tab)
+  const k = Object.keys(localStorage).find(x => x.startsWith("wsd-pilot:")), g = JSON.parse(localStorage.getItem(k));
+  g.ereignisse.push({id: "fremd-lesart", ms: Date.now() + 1000, zeit: "2026-11-13T00:00:00.000+01:00", item: aktuell,
+    aktion: "karten_aufgedeckt", wert: "Lesart zwei", kartenreihenfolge: ITEM[aktuell].karten.map(x => x.sense), kontext_erweitert: false});
+  localStorage.setItem(k, JSON.stringify(g));
+});
+await pl.reload();
+ok(await pl.evaluate(() => A[D.items[0].item].lesart) === "Lesart eins", "Lesart: die erste Aufdeckung gilt, nach Neuladen fest");
+await pl.locator("input[name=karte]").first().check();
+await pl.check("input[name=status][value=SENSE]");
+await pl.check("input[name=sicherheit][value=sicher]");
+await pl.click("#btnFest");
+ok((await pl.locator("#fortschritt").textContent()).startsWith("1 von 15") && await pl.locator("#paraphrase").count() === 1, "Lesart: Festhalten, nächster Beleg wieder verdeckt");
+const [dlL] = await Promise.all([pl.waitForEvent("download"), pl.click("#btnExport")]);
+const expL = JSON.parse(readFileSync(await dlL.path(), "utf8"));
+const iL = expL.items.find(i => i.item === datenL.items[0].item);
+ok(iL.lesart === "Lesart eins" && iL.aufgedeckt === true && iL.festgehalten === true && expL.meta.ablauf === "lesart-zuerst", "Lesart: Export enthält Lesart und Ablauf");
+ok(!(await pl.locator("#anleitung").textContent()).includes("undefined") && (await pl.locator(".nur-lesart").count()) > 0, "Lesart: Anleitungsschritt vorhanden");
+ok(await page.locator(".nur-lesart").count() === 0, "Ablauf direkt: kein Lesart-Schritt in der Anleitung");
 
 ok(js.length === 0, "keine JavaScript-Fehler" + (js.length ? ": " + js.join(" | ") : ""));
 ok(netz.length === 0, "keine Netzanfragen" + (netz.length ? ": " + netz.join(" ") : ""));

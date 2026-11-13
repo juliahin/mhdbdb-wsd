@@ -39,6 +39,8 @@ section.card{background:var(--paper);border:1px solid var(--line);border-radius:
 .context mark{background:var(--mark);color:var(--ink);padding:0 3px;border-radius:3px;font-weight:bold}
 .context .erg{color:var(--muted);font-style:italic}
 .lemma{font:1.3rem Georgia,serif}
+.lesart{background:var(--soft);border-left:4px solid var(--accent);padding:8px 12px;border-radius:6px}
+#paraphrase{min-height:60px}
 fieldset{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
 legend{font-weight:600;padding:0 6px}
 .status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
@@ -75,11 +77,12 @@ td,th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertic
 <h1 id="titel"></h1>
 <p class="meta" id="metazeile"></p>
 <details id="anleitung">
-<summary>Kurzanleitung v0.1 (bitte vor dem ersten Beleg lesen)</summary>
+<summary id="anleitungTitel">Kurzanleitung (bitte vor dem ersten Beleg lesen)</summary>
 <p><strong>Worum es geht.</strong> In jedem Beleg ist ein Wort gelb markiert. Gesucht ist die Bedeutung, die dieses Wort an genau dieser Stelle hat.</p>
 <p><strong>So geht es, Schritt für Schritt:</strong></p>
 <ol>
 <li>Den Text lesen. Reicht er nicht, „Mehr Kontext“ klicken.</li>
+<li class="nur-lesart">In eigenen Worten kurz notieren, was das markierte Wort hier bedeutet. Ein paar Wörter genügen, auch „unklar“ ist eine Antwort. Dann „Karten zeigen“ klicken. Die eigene Lesart lässt sich danach nicht mehr ändern. Sie wird nicht als richtig oder falsch bewertet.</li>
 <li>Die Karten darunter ansehen. Jede Karte ist eine mögliche Bedeutung des Lemmas, beschrieben durch Begriffe aus dem MHDBDB-Begriffssystem. Die kleine graue Zeile über einem Begriff zeigt, wo er im Begriffssystem steht. <span class="eigen-tag">nur hier</span> heißt: Dieser Begriff steht nur auf dieser Karte und unterscheidet sie von den anderen.</li>
 <li>Die passende Karte anklicken. Passen mehrere gleich gut, alle passenden anklicken.</li>
 <li>Den Status wählen (siehe Tabelle).</li>
@@ -106,7 +109,7 @@ td,th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertic
 <li>Gezeigt werden zwei Verse vor und nach der Stelle (Prosa: etwa 20 Wörter), mit „Mehr Kontext“ acht Verse (Prosa: etwa 80 Wörter).</li>
 </ul>
 <p><strong>Hilfsmittel (Vorschlag).</strong> Erlaubt sind Wörterbücher wie Lexer oder BMZ; bitte im Kommentar vermerken, wenn eines den Ausschlag gegeben hat. Nicht erlaubt: die Belege auf der MHDBDB-Website oder im Repository nachschlagen (dort stehen schon Bedeutungszuordnungen) und KI-Werkzeuge. Die Belege bis zur Auswertung nicht miteinander besprechen. Die Datei nur in einem Browser-Tab öffnen.</p>
-<p><strong>Was aufgezeichnet wird.</strong> Die Datei speichert jede Eingabe mit Uhrzeit, außerdem, wann ein Beleg geöffnet und verlassen wurde (also wie lange er offen war), ob „Mehr Kontext“ benutzt wurde, wann der Browser-Tab im Hintergrund war und in welcher Reihenfolge die Karten gezeigt wurden. Das dient nur der Auswertung dieser Annotation. Es wird nichts ins Internet geschickt; die Daten verlassen den Rechner nur über „Ergebnis als JSON sichern“.</p>
+<p><strong>Was aufgezeichnet wird.</strong> Die Datei speichert jede Eingabe mit Uhrzeit<span class="nur-lesart"> (auch die eigene Lesart)</span>, außerdem, wann ein Beleg geöffnet und verlassen wurde (also wie lange er offen war), ob „Mehr Kontext“ benutzt wurde, wann der Browser-Tab im Hintergrund war und in welcher Reihenfolge die Karten gezeigt wurden. Das dient nur der Auswertung dieser Annotation. Es wird nichts ins Internet geschickt; die Daten verlassen den Rechner nur über „Ergebnis als JSON sichern“.</p>
 </details>
 </header>
 <div class="toolbar"><div class="in">
@@ -144,6 +147,10 @@ const STATUS = [
 ];
 const SICHER = [["sicher", "sicher"], ["eher_sicher", "eher sicher"], ["unsicher", "unsicher"]];
 const ITEM = Object.fromEntries(D.items.map(i => [i.item, i]));
+// Ablauf "lesart-zuerst" (Protokoll A31): Karten erst nach einer eigenen Lesart. Der Entwurf der Lesart lebt nur in
+// dieser Sitzung (lesartEntwurf) und wird erst mit "Karten zeigen" protokolliert; danach ist er fest.
+const LESART = !!D.meta.lesart_zuerst;
+const lesartEntwurf = {};
 
 // Das Ereignisprotokoll E ist die einzige Quelle; die Antworten A werden daraus abgeleitet (Protokoll, Abschnitt 8).
 // Mehrere Tabs und Importe vereinigen ihre Protokolle über die Ereignis-ID, es wird nie etwas entfernt.
@@ -154,12 +161,13 @@ let seq = 0, E = [], speicherOk = null;
 const A = Object.fromEntries(D.items.map(i => [i.item, {}]));
 function ableiten() {
   for (const id in A) Object.assign(A[id], {status: null, senses: [], begriffe: [], sicherheit: null, kommentar: "",
-    festgehalten: false, festgehalten_um: null});
+    festgehalten: false, festgehalten_um: null, aufgedeckt: false, aufgedeckt_um: null, lesart: null});
   for (const e of E) {
     const a = A[e.item];
     if (!a) continue;
     if (AENDERUNG[e.aktion]) { a[AENDERUNG[e.aktion]] = e.wert; a.festgehalten = false; a.festgehalten_um = null; }
     else if (e.aktion === "festgehalten") { a.festgehalten = true; a.festgehalten_um = e.zeit; }
+    else if (e.aktion === "karten_aufgedeckt" && !a.aufgedeckt) { a.aufgedeckt = true; a.aufgedeckt_um = e.zeit; a.lesart = e.wert; }
   }
 }
 function vereinigen(liste) {
@@ -214,7 +222,7 @@ function log(aktion, wert) {
     wert: wert === undefined ? null : wert, kartenreihenfolge: it ? it.karten.map(k => k.sense) : null, kontext_erweitert: erweitert});
 }
 function betrifftAktuell(neu) {
-  return neu.some(e => e.item === aktuell && (AENDERUNG[e.aktion] || e.aktion === "festgehalten"));
+  return neu.some(e => e.item === aktuell && (AENDERUNG[e.aktion] || e.aktion === "festgehalten" || e.aktion === "karten_aufgedeckt"));
 }
 // Kommentar: Ein offener Entwurf besteht genau dann, wenn seit der letzten Speicherung getippt wurde
 // (Merker entwurfOffen, mit dem Beleg, zu dem er gehört). Er wird nach einer Tipppause, am Anfang der Handler für
@@ -244,7 +252,7 @@ function aendern(feld, wert, aktion) {
 }
 function zustandText(a) {
   if (a.festgehalten) return ["fest", "festgehalten"];
-  if (a.status || a.sicherheit || a.senses.length || a.kommentar) return ["entwurf", "Entwurf"];
+  if (a.status || a.sicherheit || a.senses.length || a.kommentar || a.aufgedeckt) return ["entwurf", "Entwurf"];
   return ["", "offen"];
 }
 function liste() {
@@ -298,12 +306,26 @@ function zeichne() {
   const begriffe = [];
   it.karten.forEach(k => k.begriffe.forEach(b => { if (!begriffe.some(x => x.id === b.id)) begriffe.push(b); }));
   const wahl = !a.status || a.status === "SENSE" || a.status === "MEHRERE";
-  document.getElementById("main").innerHTML =
-    "<section class=\"card\"><div class=\"eyebrow\">Beleg " + (n + 1) + " von " + D.items.length + " · " + esc(it.werk) + " (" + esc(it.sigle) + ") · " + ort + "</div>" +
+  const kopf = "<section class=\"card\"><div class=\"eyebrow\">Beleg " + (n + 1) + " von " + D.items.length + " · " + esc(it.werk) + " (" + esc(it.sigle) + ") · " + ort + "</div>" +
     "<p>Lemma <span class=\"lemma\">" + esc(it.orth) + "</span> · Form im Text: <strong>" + esc(it.form) + "</strong></p>" +
     "<div class=\"context\" id=\"kontext\">" + kontextHtml(erweitert ? it.erweitert : it.kontext) + "</div>" +
-    "<div class=\"actions\"><button id=\"btnKontext\">" + (erweitert ? "Weniger Kontext" : "Mehr Kontext") + "</button></div></section>" +
-    "<section class=\"card\"><h2>Bedeutungen</h2>" + (wahl ? "" : "<p class=\"meta\">Bei diesem Status wird keine Karte gewählt.</p>") +
+    "<div class=\"actions\"><button id=\"btnKontext\">" + (erweitert ? "Weniger Kontext" : "Mehr Kontext") + "</button></div></section>";
+  if (LESART && !a.aufgedeckt) {
+    const t = lesartEntwurf[aktuell] || "";
+    document.getElementById("main").innerHTML = kopf +
+      "<section class=\"card\"><h2><label for=\"paraphrase\">Eigene Lesart</label></h2>" +
+      "<p class=\"meta\">Bevor die Bedeutungen erscheinen: in eigenen Worten kurz notieren, was das markierte Wort hier bedeutet. Nach „Karten zeigen“ ist der Text nicht mehr änderbar.</p>" +
+      "<textarea id=\"paraphrase\">" + esc(t) + "</textarea>" +
+      "<div class=\"actions\"><button id=\"btnZurueck\"" + (n === 0 ? " disabled" : "") + ">Voriger Beleg</button>" +
+      "<button id=\"btnAufdecken\" class=\"primary\"" + (t.trim().length < 2 ? " disabled" : "") + ">Karten zeigen</button>" +
+      "<button id=\"btnWeiter\"" + (n === D.items.length - 1 ? " disabled" : "") + ">Nächster Beleg</button>" +
+      "<span class=\"zustand\" id=\"zustand\"></span></div></section>";
+    bindenVerdeckt(); zustand();
+    return;
+  }
+  document.getElementById("main").innerHTML = kopf +
+    "<section class=\"card\">" + (LESART ? "<p class=\"lesart\"><strong>Eigene Lesart:</strong> " + esc(a.lesart) + "</p>" : "") +
+    "<h2>Bedeutungen</h2>" + (wahl ? "" : "<p class=\"meta\">Bei diesem Status wird keine Karte gewählt.</p>") +
     "<div class=\"karten\">" + it.karten.map((k, i) => {
       const g = a.senses.includes(k.sense);
       return "<div class=\"karte" + (g ? " gewaehlt" : "") + "\"><h3><label><input type=\"checkbox\" name=\"karte\" value=\"" + esc(k.sense) + "\"" +
@@ -330,6 +352,20 @@ function zeichne() {
 function zustand() {
   const a = A[aktuell], el = document.getElementById("zustand");
   if (el) el.textContent = a.festgehalten ? "festgehalten um " + a.festgehalten_um.slice(11, 16) : zustandText(a)[1];
+}
+function bindenVerdeckt() {
+  const p = document.getElementById("paraphrase"), knopf = document.getElementById("btnAufdecken");
+  p.oninput = () => { lesartEntwurf[aktuell] = p.value; knopf.disabled = p.value.trim().length < 2; };
+  document.getElementById("btnKontext").onclick = () => { erweitert = !erweitert; log(erweitert ? "kontext_erweitert" : "kontext_reduziert"); speichern(); zeichne(); };
+  knopf.onclick = () => {
+    const t = p.value.trim();
+    if (t.length < 2 || A[aktuell].aufgedeckt) return;
+    log("karten_aufgedeckt", t);
+    delete lesartEntwurf[aktuell];
+    speichern(); liste(); zeichne();
+  };
+  document.getElementById("btnZurueck").onclick = () => { const n = D.items.indexOf(ITEM[aktuell]); if (n > 0) oeffne(D.items[n - 1].item); };
+  document.getElementById("btnWeiter").onclick = () => { const n = D.items.indexOf(ITEM[aktuell]); if (n < D.items.length - 1) oeffne(D.items[n + 1].item); };
 }
 function binden() {
   const a = A[aktuell];
@@ -372,6 +408,7 @@ function binden() {
   document.getElementById("btnWeiter").onclick = () => { const n = D.items.indexOf(ITEM[aktuell]); if (n < D.items.length - 1) oeffne(D.items[n + 1].item); };
 }
 function pruefe(a) {
+  if (LESART && !a.aufgedeckt) return "Bitte zuerst die eigene Lesart notieren und „Karten zeigen“ klicken.";
   if (!a.status) return "Bitte einen Status wählen.";
   if (a.status === "SENSE" && a.senses.length !== 1) return "Bei „Eine Bedeutung passt“ bitte genau eine Karte wählen.";
   if (a.status === "MEHRERE" && a.senses.length < 2) return "Bei „Mehrere passen“ bitte mindestens zwei Karten wählen.";
@@ -411,6 +448,8 @@ function importieren(datei) {
   r.readAsText(datei);
 }
 document.getElementById("titel").textContent = "Pilot, Runde " + D.meta.runde + ": " + D.items.length + " Belege";
+if (!LESART) document.querySelectorAll(".nur-lesart").forEach(e => e.remove());
+document.getElementById("anleitungTitel").textContent = D.meta.richtlinien + " (bitte vor dem ersten Beleg lesen)";
 document.getElementById("metazeile").textContent = "Annotationsdatei für Kennung „" + D.meta.kennung + "“ · " + D.meta.richtlinien;
 document.getElementById("herkunft").textContent = "Korpus-Commit " + D.meta.korpus_commit.slice(0, 9) + " · Manifest " + D.meta.manifest_sha256.slice(0, 12) +
   " · Werkzeug " + D.meta.werkzeug + " · gebaut am " + D.meta.gebaut + " · Fingerprint " + D.fingerprint.slice(0, 12);
