@@ -203,8 +203,8 @@ function betrifftAktuell(neu) {
   return neu.some(e => e.item === aktuell && (AENDERUNG[e.aktion] || e.aktion === "festgehalten"));
 }
 // Kommentar: Ein offener Entwurf besteht genau dann, wenn seit der letzten Speicherung getippt wurde
-// (Merker entwurfOffen, mit dem Beleg, zu dem er gehört). Er wird nach einer Tipppause, in zeichne() vor jedem
-// Neuzeichnen, vor jedem Itemwechsel, beim Festhalten, beim Export und beim Verlassen des Tabs festgeschrieben.
+// (Merker entwurfOffen, mit dem Beleg, zu dem er gehört). Er wird nach einer Tipppause, am Anfang jedes
+// Bedien-Handlers (damit Reihenfolge und Kontextmerker stimmen), in zeichne() vor jedem Neuzeichnen, vor jedem Itemwechsel, beim Festhalten, beim Export und beim Verlassen des Tabs festgeschrieben.
 // Ein Entwurf wird nie wiederhergestellt. Nicht auf "change" verlassen: Chromium vergleicht dort mit dem Wert beim
 // Fokussieren, nicht mit dem zuletzt gespeicherten.
 let entwurfOffen = false, entwurfItem = null, entwurfUhr = null;
@@ -318,8 +318,9 @@ function zustand() {
 }
 function binden() {
   const a = A[aktuell];
-  document.getElementById("btnKontext").onclick = () => { erweitert = !erweitert; log(erweitert ? "kontext_erweitert" : "kontext_reduziert"); speichern(); zeichne(); };
+  document.getElementById("btnKontext").onclick = () => { kommentarSichern(); erweitert = !erweitert; log(erweitert ? "kontext_erweitert" : "kontext_reduziert"); speichern(); zeichne(); };
   document.querySelectorAll("input[name=status]").forEach(r => r.onchange = () => {
+    kommentarSichern();
     const neu = r.value, alt = a.status;
     if (!(neu === "SENSE" || neu === "MEHRERE") && a.senses.length) aendern("senses", [], "karten_geleert");
     if (neu === "SENSE" && a.senses.length > 1) aendern("senses", [], "karten_geleert");
@@ -328,15 +329,17 @@ function binden() {
     zeichne();
   });
   document.querySelectorAll("input[name=karte]").forEach(c => c.onchange = () => {
+    kommentarSichern();
     let s = a.status === "SENSE" ? (c.checked ? [c.value] : []) :
       (c.checked ? a.senses.concat([c.value]) : a.senses.filter(x => x !== c.value));
     aendern("senses", s, "karten");
     zeichne();
   });
   document.querySelectorAll("input[name=begriff]").forEach(c => c.onchange = () => {
+    kommentarSichern();
     aendern("begriffe", c.checked ? a.begriffe.concat([c.value]) : a.begriffe.filter(x => x !== c.value), "begriffe");
   });
-  document.querySelectorAll("input[name=sicherheit]").forEach(r => r.onchange = () => aendern("sicherheit", r.value));
+  document.querySelectorAll("input[name=sicherheit]").forEach(r => r.onchange = () => { kommentarSichern(); aendern("sicherheit", r.value); });
   const k = document.getElementById("kommentar");
   k.oninput = () => { entwurfOffen = true; entwurfItem = aktuell; clearTimeout(entwurfUhr); entwurfUhr = setTimeout(kommentarSichern, 800); };
   k.onchange = kommentarSichern;

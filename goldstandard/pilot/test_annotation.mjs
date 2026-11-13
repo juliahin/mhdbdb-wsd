@@ -163,6 +163,11 @@ for (const [name, klick] of [["Mehr Kontext", () => page.click("#btnKontext")],
   await page.keyboard.press("Backspace");                          // zurück auf den Wert beim Fokussieren
   await klick();
   ok(await kommentarA() === vorher && await page.inputValue("#kommentar") === vorher, name + ": Rückkorrektur bleibt erhalten");
+  const ev6 = await protokoll(page), it6 = await page.evaluate(() => aktuell);
+  const letzterK = ev6.filter(e => e.item === it6 && e.aktion === "kommentar").pop();
+  const ausloeser = ev6.findIndex(e => e.item === it6 && e.ms > letzterK.ms && (e.aktion === "kontext_erweitert" || e.aktion === "kontext_reduziert" || e.aktion === "status"));
+  ok(letzterK.kontext_erweitert === false && ausloeser !== -1, name + ": Kommentar vor der Aktion protokolliert, mit dem Kontext beim Schreiben");
+  if (name === "Mehr Kontext") await page.click("#btnKontext");     // wieder reduzieren, damit der nächste Ablauf gleich startet
 }
 
 // Uhrversatz: Sicherung von einem Rechner, dessen Uhr 10 Minuten vorgeht (Review Runde 2, Befund 1)
