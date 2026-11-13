@@ -1,6 +1,6 @@
 # WSD-Goldstandard: Protokoll v2
 
-**Status:** Entwurf vom 2026-10-08 (Stand 2026-10-30: Abschnitte 1, 2, 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.1, 9.2, 12 und Abweichungslog A15 bis A29 ergänzt oder geändert), noch nicht eingefroren.
+**Status:** Entwurf vom 2026-10-08 (Stand 2026-11-12: Abschnitte 1, 2, 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.1, 9.2, 12 und Abweichungslog A15 bis A30 ergänzt oder geändert; Korpusstand für den ganzen Goldstandard festgelegt, Pilotdesign vorläufig), noch nicht eingefroren.
 **Verantwortlich:** Julia Hintersteiner. Zweiter Annotator: Alan van Beek.
 **Vorgänger:** präregistriertes Evaluationsprotokoll vom 2026-04-24, wiederherstellbar mit
 `git show 873322658^:docs/features/034-wenzelsbibel-annotation.md` (Abschnitt „Pre-registered evaluation protocol").
@@ -219,6 +219,31 @@ realistisch, wird aber benannt.
      sind nicht von Julia gegengelesen. Die Bestandteile im Lexikon sind als Merkmal unzuverlässig
      (`knowledge/data.md`, B16).
 
+**Neumessung auf dem festgelegten Korpusstand** (2026-11-12). Korpusstand für Pilot und ganzen
+Goldstandard: Upstream `a938559dc` vom 2026-10-14; der Fork-Korpus ist byte-gleich mit diesem
+Stand, ein Upstream-Merge vorher findet nicht statt (Entscheidung Julia Hintersteiner, 2026-11-12,
+Antwort „Stand 14.10. (Empf.)“; Gegenoption „Erst Upstream mergen“: laut `git diff --stat` der
+Hauptsitzung 136 Upstream-Commits weiter, 86 Korpus- und Normdatendateien geändert, darunter
+`lexicon.xml` und `concepts.xml`; übernommen, nicht nachgemessen). Die alten Zahlen oben bleiben
+als Messungen ihres Datums stehen. Die neuen stammen aus zwei Läufen der Hauptsitzung auf HEAD
+`be8b91fc3`:
+
+- **Ausschluss 1** (`ausschluss_nachmigration.py`, Ergebnis aus `ausschluss/zusammenfassung.json`
+  gelesen am 2026-11-12): 7.545.802 lemmatisierte Tokens, 157.724 ausgeschlossen (WZB 142.412, Lemma
+  oder Sense geändert 15.312), 34.336 nur markiert.
+- **Grundgesamtheit und Ausschlüsse 1, 2, 3, 5** (`pilot/pilot_ziehen.py`, Zählungen aus
+  `pilot/manifest-pilot.json`, Feld `zaehlungen`, gelesen am 2026-11-12): Basis (Lemma mit mindestens
+  zwei Senses, Wortartregel, ohne WZB und SBF) 1.447.811 Tokens. Davon fallen heraus: Ausschluss 1
+  13.781, Ausschluss 5 1.788, Ausschluss 2 1.215 (22 Lemmata), Ausschluss 3 0 Tokens (2 Lemmata im
+  Lexikon). Tokens mit mehreren `@lemmaRef`: 0. **Grundgesamtheit 1.431.027 Tokens** in 5.025 Paaren,
+  4.690 Lemmata und 665 Texten; D1 202 Texte mit 140.276 Tokens.
+- **Markierungen** in der Grundgesamtheit: `pos_abweichend` 185 Tokens, nur-`@pos` markiert 6.534.
+  Die 185 weichen von den 226 oben ab (Messung vom 2026-10-30): dort fehlten die Ausschlüsse 2 und 5
+  und galt die alte Ausschlussliste, und das Skript zählt nur Tokens mit nicht leerem `@pos`. Die
+  Abgrenzungen wurden nicht gegeneinander abgeglichen.
+- Die Läufe selbst sind hier nicht wiederholt (je 3 bis 4 Minuten, sie überschreiben Dateien);
+  gelesen wurden die Ergebnisdateien.
+
 ## 4. Stichprobendesign
 
 Festgelegt am 2026-10-16 nach einer Literaturrecherche ([LITERATUR-STICHPROBE.md](LITERATUR-STICHPROBE.md))
@@ -246,7 +271,10 @@ und einer skeptischen Zweitmeinung. Zahlen sind vorläufig: gemessen auf dem Kor
 
 Zusammen ca. 510 Items für die Hauptrunde. Die Panel-Lemmata kommen in der Hauptstichprobe nicht
 vor. Pilot-Lemmata sind disjunkt, damit Besprechungen im Pilot nicht auf dieselben Lemmata in der
-Hauptrunde durchschlagen.
+Hauptrunde durchschlagen. Der Pool wird nach dem Verfahren der Hauptstichprobe im Kleinen gezogen
+(Entwurf, Julias Bestätigung steht aus, A30); er hat dann 108 statt „ca. 100“ Items, weil 36 Zellen × 3.
+Gezogen und eingefroren wird der ganze Pool am 2026-11-12 (Entscheidung Julia Hintersteiner,
+Antwort „Ganzen Pool, 15 morgen (Empf.)“), 15 Items davon gehen in Runde 0 am 2026-11-13.
 
 **Entwicklungsdaten für das LLM:** Prompt-Wortlaut, Antwortformat, Few-shot-Beispiele (Anzahl und
 Herkunft) und jeder Formatvergleich werden nur am Pilot-Pool gewählt, nie an der Haupt- oder
@@ -644,6 +672,7 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 | A27 | Darbietung für das LLM (Abschnitt 4.10): „ob das LLM dieselben Karten sieht wie die Menschen“ offen | Grundsatz: gleiche Darbietung für Mensch und LLM. Das LLM sieht dieselbe pro Item gemischte Kartenreihenfolge, protokolliert; Zusatzinformation (Werktitel, Notizen an Senses, Sprachstufe, Epoche) ist für beide gleich. Was konkret auf die Karte kommt, bleibt offener Punkt 4 | Gemischte Optionen senken die Werte, Positionsverzerrung ist beschrieben (Meconi et al. 2025, S. 33902; Yang et al. 2024, S. 21; Belege aus nicht gegengelesenen KI-Zusammenfassungen). Trifft die Verzerrung nur eine Seite, hängt der Vergleich an ihr. Vorschläge V11 und V12 vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
 | A28 | Pilot-Pool (Abschnitt 4.2): Entwicklung der LLM-Konfiguration (A17) | Am Pilot-Pool darf zusätzlich eine Kontrollbedingung ohne Kontext (nur Lemma und Karten) laufen; nur im Pilot | Zeigt, wie viel das LLM aus den Karten allein errät (Matusch 2025, Tab. 4.6; Deutung der KI-Zusammenfassung, nicht der Arbeit). Vorschlag V13 vom 2026-10-30. Entscheidung Julia Hintersteiner, 2026-10-30 | 2026-10-30 |
 | A29 | `MEHRERE`-Antwort des LLM mit nur einer ID (Abschnitt 9.2): nicht geregelt (offen nach A23) | Gilt als ungültige Antwort (eigene Kategorie, im primären gepaarten Vergleich falsch, wie A18) | Wie bei den Menschen verlangt `MEHRERE` mindestens zwei Sense-IDs (Abschnitt 6); dieselben Optionen für Mensch und LLM (A23). Entscheidung Julia Hintersteiner, 2026-10-30 („ok ja wie bei den menschen passt“ auf den Vorschlag der Hauptsitzung, eine solche Antwort als ungültig zu werten) | 2026-10-30 |
+| A30 | Pilot-Pool (Abschnitt 4.2): „ca. 100 Items, Lemmata disjunkt“, Ziehungsverfahren nicht festgelegt | **Vorläufig, Bestätigung durch Julia Hintersteiner ausstehend:** 36 Zellen × 3 = 108 Items, je Zelle 1 aus D1 (sonst D0) und 2 aus D0; Stufe 1 Paar aus Lemma und Wortart gleich wahrscheinlich, jedes Lemma höchstens einmal; Stufe 2 Token mit Gewicht T_G^(-1/2); Obergrenze 3 pro Text (Historiografie 5) nur innerhalb des Pools; Seed 20261112. Runde 0: 15 Items, einfache Zufallsauswahl (Seed „20261112-runde0“). Alle 108 Pool-Lemmata werden bei der späteren Ziehung von Haupt- und Panelstichprobe ausgeschlossen, in jeder Wortart. Erweiterter Kontext 8 Verse bzw. 80 Tokens je Seite. Hilfsmittelregel der Kurzanleitung v0 (Wörterbücher wie Lexer und BMZ erlaubt und im Kommentar zu vermerken; nicht erlaubt: MHDBDB-Website und Repository, KI-Werkzeuge; Belege bis zur Auswertung nicht besprechen) | Das Hauptverfahren (Abschnitt 4.4) im Kleinen, damit der Pilot dieselben Zellen berührt; 108 statt „ca. 100“ durch 36 × 3. Gezogen (Skript `pilot/pilot_ziehen.py`, Manifest `pilot/manifest-pilot.json`, nachgelesen am 2026-11-12): 108 Items aus 69 Texten, 36 aus D1 ohne D1-Ersatz, höchstens 5 Items aus einem Text, Kontext Vers 81 und Prosa 27; Gruppen Großepik 34, Lyrik 22, Geistliche Literatur 16, Kurzdichtung 12, Historiografie 12, Lehrdichtung 6, Fach- und Rechtsliteratur 6. Zweimal gezogen (vor und nach einer Darstellungskorrektur), laut Hauptsitzung identische Items (übernommen, nicht nachgemessen). Die Größe des erweiterten Kontexts hat die Hauptsitzung gewählt; Julia hat nur den Standardausschnitt bestätigt (offener Punkt 4). Die Hilfsmittelregel ist ein Vorschlag der Hauptsitzung. Entschieden von Julia sind nur die Punkte in Abschnitt 4.2 (ganzer Pool, 15 Items für Runde 0) und Abschnitt 12 (Punkte 4 und 18) | 2026-11-12 |
 
 ## 12. Offene Punkte
 
@@ -651,16 +680,18 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 2. **Dritte Person** für die Prüfung der Adjudikation (Abschnitt 7, Schritt 6), z. B. KZW?
    Und wer adjudiziert selbst: Julia und Alan gemeinsam im Gespräch, oder die dritte Person?
 3. **Pilotgröße** und Alans Zeitbudget (bestimmt, ob ca. 510 Items realistisch sind).
-4. **Kontextausschnitt:** Wie viele Verse bzw. Zeilen standardmäßig, wie viele erweitert? Werktitel zeigen?
+4. **Kontextausschnitt:** Standard entschieden am 2026-11-12 (Julia Hintersteiner: „ja der kontext passt“, auf den Vorschlag 2 Verse davor und danach, bei Prosa ±20 Tokens, erweiterbar, mit Werktitel). **Offen:** Größe des erweiterten Kontexts (Entwurf der Hauptsitzung: 8 Verse bzw. 80 Tokens je Seite, nicht bestätigt, A30).
 5. ~~Ausschlussliste der LLM-berührten Tokens bauen~~: erledigt am 2026-10-08, Regel bestätigt am 2026-10-16 (Abschnitt 3, Punkt 1).
-6. **Korpusstand fürs Einfrieren:** vorher mit dem Upstream-`main` abgleichen, dann Commit festlegen.
+6. ~~Korpusstand fürs Einfrieren~~: entschieden am 2026-11-12, Upstream `a938559dc` vom 2026-10-14 für Pilot und ganzen Goldstandard, kein Upstream-Merge vorher (Julia Hintersteiner, Abschnitt 3, Neumessung).
 7. **Teststärke:** grob gerechnet (Abschnitt 4.7); Anteil diskordanter Paare im Pilot schätzen, dann N vor Freeze 2 bestätigen.
 8. ~~Obergattungsgruppen prüfen und festlegen~~: entschieden am 2026-10-30 ([OBERGATTUNGEN.md](OBERGATTUNGEN.md), Abschnitt 5; Abschnitt 4.8).
 9. **Datierung und Vers/Prosa:** Sollen sie als weitere Ausgleichsmerkmale dienen? Dann braucht es eine manuelle Zuordnung pro Text (z. B. Jahrhundert über den Handschriftencensus, bei 323 Werken verlinkt).
 10. ~~Obergrenze an Tokens pro Text~~: 3, bestätigt am 2026-10-16 (Abschnitt 4.4).
 11. **Schwelle für das Ende des Pilots** (Vorschlag α ≥ 0,80, Untergrenze 0,67) vor dem Pilot festlegen.
 12. **Grobe Ebene des Begriffssystems** für die Zwei-Ebenen-Auswertung festlegen (welche Oberbegriffsstufe).
-13. **Ausschlüsse 2 und 3** (Abschnitt 3) auf die neue Wortartregel und das ganze Korpus umrechnen. Ausschluss 4 entfällt (A19); die Auswahlregel für die ca. 30 von Hand einzuordnenden Tokens mit Markierung `pos_abweichend` ist entschieden (einfache Zufallsauswahl, A22), die Ziehung selbst steht aus.
+13. **Ausschlüsse 2 und 3** (Abschnitt 3) auf die neue Wortartregel und das ganze Korpus umrechnen. Ausschluss 4 entfällt (A19); die Auswahlregel für die ca. 30 von Hand einzuordnenden Tokens mit Markierung `pos_abweichend` ist entschieden (einfache Zufallsauswahl, A22), die Ziehung selbst steht aus. **Teilstand 2026-11-12:** Ausschlüsse 2 und 3 sind auf das ganze Korpus (Stand `a938559dc`) umgerechnet (Abschnitt 3, Neumessung: 22 Lemmata mit 1.215 Tokens, 2 Lemmata mit 0 Tokens); die Ziehung der 30 Tokens steht weiter aus.
 14. **Einwilligung von Alan** zu Protokollierung und Veröffentlichung (DMP, Abschnitt 4).
 15. **Privates Repository** anlegen und eine zweite Sicherungskopie festlegen (DMP, Abschnitt 3).
 16. **Verschmelzungen (Ausschluss 5):** Urteile beider Prüfrunden von Julia gegenlesen lassen; Verschmelzungen ohne verlinkte Bestandteile sind nicht erfasst und nicht gemessen (Abschnitt 3, Einschränkung).
+17. **Bestätigung des Pilotdesigns und der Hilfsmittelregel** (A30): 108 Items, Zellen, Ausschluss der Pool-Lemmata aus Haupt- und Panelstichprobe, Größe des erweiterten Kontexts, Wortlaut der Kurzanleitung v0 mit ihrer Hilfsmittelregel. Von Julia noch nicht bestätigt, Kurzanleitung noch nicht gegengelesen.
+18. ~~Pilotinterface~~: entschieden am 2026-11-12 (Julia Hintersteiner, Antworten im Fragedialog; betrifft `INTERFACE-BESTAND.md`, Abschnitt 5, Punkte 1, 3, 4): Ein Beleg gilt erst nach Klick auf „Festhalten“ als entschieden, eine Änderung danach setzt zurück („festhalten ja“); einen Zustand „geprüft, bleibt offen“ gibt es nicht („nein“); die Belege für die Runde werden zufällig ausgewählt („zufällig“). Runde 0 wird unabhängig annotiert, jede Person für sich („jede person für sich, deswegen auch das interface für die überprüfung“). Julia versteht unter „Disambiguieren“ den menschlichen Goldstandard (Julia und Alan); die LLM-Disambiguierung kommt später bzw. parallel. Das Pilotinterface wird als HTML-Datei pro Person gebaut (Kennungen `julia` und `alan`, `pilot/annotation_bauen.py`).

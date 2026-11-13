@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WSD-Goldstandard Pilot</title>
+<style>
+:root{--bg:#f7f5f0;--paper:#fff;--ink:#1f1d1a;--muted:#6b665d;--line:#d8d2c6;--accent:#7a3b12;--soft:#f1ebe0;--mark:#ffe08a;--ok:#2f6b3a;--warn:#9a2b1d;--focus:#1b5fb4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1917;--paper:#24221f;--ink:#ece7de;--muted:#a49d90;--line:#45413a;--accent:#e0a070;--soft:#2e2b26;--mark:#6b5410;--ok:#7fc48b;--warn:#f08a7a;--focus:#7fb2ff}}
+:root[data-theme="dark"]{--bg:#1a1917;--paper:#24221f;--ink:#ece7de;--muted:#a49d90;--line:#45413a;--accent:#e0a070;--soft:#2e2b26;--mark:#6b5410;--ok:#7fc48b;--warn:#f08a7a;--focus:#7fb2ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:18px 24px 8px;max-width:1200px;margin:0 auto}
+h1{font-size:1.4rem;margin:0 0 4px}
+h2{font-size:1.1rem;margin:0 0 8px}
+.eyebrow{font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.meta{font-size:.85rem;color:var(--muted)}
+button{font:inherit;padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] button.primary{color:#1a1917}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.primary{color:#1a1917}}
+button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.toolbar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 24px}
+.toolbar .in{max-width:1200px;margin:0 auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toolbar .status{margin-left:auto;font-size:.9rem;color:var(--muted)}
+.layout{max-width:1200px;margin:16px auto;padding:0 24px;display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px}
+nav ol{list-style:none;margin:0;padding:0}
+nav li button{width:100%;text-align:left;margin:0 0 4px;display:flex;justify-content:space-between;gap:6px}
+nav li button[aria-current="true"]{border-color:var(--accent);border-width:2px}
+.badge{font-size:.75rem;padding:0 6px;border-radius:9px;background:var(--soft);color:var(--muted)}
+.badge.fest{background:var(--ok);color:var(--paper)}
+.badge.entwurf{background:var(--mark);color:var(--ink)}
+section.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:16px}
+.context{font:1.15rem/1.7 Georgia,"Times New Roman",serif;background:var(--soft);padding:12px 16px;border-radius:8px}
+.context .zeile{display:grid;grid-template-columns:3.5em 1fr;gap:8px}
+.context .strophe{margin-top:.8em}
+.context .vn{font:.75rem system-ui,sans-serif;color:var(--muted);text-align:right;padding-top:.45em}
+.context mark{background:var(--mark);color:var(--ink);padding:0 3px;border-radius:3px;font-weight:bold}
+.context .erg{color:var(--muted);font-style:italic}
+.lemma{font:1.3rem Georgia,serif}
+fieldset{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
+legend{font-weight:600;padding:0 6px}
+.status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
+.status-grid label,.sicher label{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border-radius:6px;cursor:pointer}
+.status-grid label:hover,.sicher label:hover{background:var(--soft)}
+.status-grid small{display:block;color:var(--muted)}
+.karten{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.karte{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--paper)}
+.karte.gewaehlt{border:2px solid var(--accent);background:var(--soft)}
+.karte h3{font-size:1rem;margin:0 0 6px;display:flex;gap:8px;align-items:center}
+.karte ul{margin:0;padding-left:1.1em}
+.karte li{margin:3px 0}
+.pfad{display:block;font-size:.78rem;color:var(--muted)}
+.eigen{font-weight:600}
+.eigen-tag{font-size:.7rem;border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:0 5px;margin-left:4px;white-space:nowrap}
+textarea{width:100%;min-height:70px;font:inherit;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}
+.sicher{display:flex;gap:10px;flex-wrap:wrap}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.fehler{color:var(--warn);font-weight:600}
+.zustand{font-size:.9rem;color:var(--muted)}
+details{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 16px;margin:10px 0}
+details summary{cursor:pointer;font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+td,th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+.rueckgabe{border:2px solid var(--accent);border-radius:10px;padding:14px 18px;background:var(--soft)}
+.begriffwahl{columns:2;column-gap:20px}
+.begriffwahl label{display:block;break-inside:avoid;margin:2px 0}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.begriffwahl{columns:1}}
+</style>
+</head>
+<body>
+<header>
+<div class="eyebrow">MHDBDB · WSD-Goldstandard · Pilot</div>
+<h1 id="titel"></h1>
+<p class="meta" id="metazeile"></p>
+<details id="anleitung">
+<summary>Kurzanleitung v0 (bitte vor dem ersten Beleg lesen)</summary>
+<p><strong>Aufgabe.</strong> Im Kontext ist ein Wort gelb hervorgehoben. Darüber steht sein Lemma. Zu entscheiden ist, welche Bedeutung dieses Lemmas an der Stelle vorliegt. Jede Bedeutung ist eine Karte mit den Begriffen, die das MHDBDB-Begriffssystem ihr zuordnet. Klein und grau steht über jedem Begriff sein Pfad zu den Oberbegriffen. Begriffe mit der Marke <span class="eigen-tag">nur hier</span> kommen nur auf dieser einen Karte vor und unterscheiden sie von den übrigen.</p>
+<p>Die Reihenfolge der Karten ist für jeden Beleg zufällig gemischt. Die Nummern sagen nichts über Häufigkeit oder Rang.</p>
+<p><strong>Status.</strong> Jeder Beleg endet mit genau einem Status:</p>
+<table>
+<tr><th>Status</th><th>Wann</th><th>Pflicht</th></tr>
+<tr><td>Eine Bedeutung passt</td><td>genau eine Karte trifft die Stelle</td><td>eine Karte wählen</td></tr>
+<tr><td>Mehrere passen</td><td>zwei oder mehr Karten passen gleichermaßen, die Stelle entscheidet nicht zwischen ihnen</td><td>mindestens zwei Karten wählen</td></tr>
+<tr><td>Keine passt</td><td>keine Karte trifft die Stelle</td><td>Kommentar empfohlen; passende Begriffe aus den Karten können angekreuzt werden</td></tr>
+<tr><td>Lemma falsch</td><td>das Wort gehört nicht zu diesem Lemma</td><td>Kommentar, wenn möglich mit dem richtigen Lemma</td></tr>
+<tr><td>Kontext reicht nicht</td><td>auch der erweiterte Kontext entscheidet nicht</td><td>keine</td></tr>
+<tr><td>Text defekt</td><td>Wort oder Transkription ist beschädigt</td><td>Kommentar</td></tr>
+</table>
+<p><strong>Sicherheit.</strong> Bei jedem Beleg anzugeben: sicher, eher sicher oder unsicher. „Unsicher“ ist kein eigener Status; auch eine unsichere Entscheidung bleibt eine Entscheidung.</p>
+<p><strong>Kontext.</strong> Gezeigt werden zwei Verse davor und danach (Prosa: etwa 20 Wörter). „Mehr Kontext“ zeigt acht Verse (Prosa: etwa 80 Wörter). Das ist jederzeit erlaubt und wird mitprotokolliert.</p>
+<p><strong>Festhalten.</strong> Ein Beleg gilt erst als entschieden, wenn „Festhalten“ geklickt ist. Wer danach etwas ändert, setzt den Beleg auf „Entwurf“ zurück und muss erneut festhalten. Nichts ist vorausgewählt.</p>
+<p><strong>Hilfsmittel (Vorschlag v0).</strong> Gedruckte und digitale Wörterbücher (etwa Lexer, BMZ) sind erlaubt; bitte im Kommentar vermerken, wenn eines entschieden hat. Nicht erlaubt: die Belege auf der MHDBDB-Website oder im Repository nachschlagen, weil dort bestehende Bedeutungszuordnungen sichtbar sind, und KI-Werkzeuge. Die Belege bis zur Auswertung bitte nicht miteinander besprechen.</p>
+<p><strong>Protokoll.</strong> Diese Datei zeichnet jede Aktion mit Zeitpunkt auf: gewählter Status und Karten, Sicherheit, Kommentare, Kontexterweiterung, gezeigte Kartenreihenfolge und Verweildauer pro Beleg. Das Protokoll dient nur der Auswertung dieser Annotation. Die Datei sendet nichts ins Netz; Daten verlassen den Rechner nur über den Export.</p>
+</details>
+</header>
+<div class="toolbar"><div class="in">
+<button id="btnAnleitung">Anleitung</button>
+<button id="btnExport" class="primary">Ergebnis als JSON sichern</button>
+<button id="btnImport">Gesicherten Stand laden</button>
+<input id="importFile" type="file" accept=".json,application/json" hidden>
+<button id="btnTheme" aria-pressed="false">Dunkelmodus</button>
+<span class="status"><span id="fortschritt"></span> · <span id="speicher" role="status"></span></span>
+</div></div>
+<div class="layout">
+<nav aria-label="Belege"><ol id="liste"></ol></nav>
+<main id="main" tabindex="-1"></main>
+</div>
+<div class="layout" style="display:block">
+<section class="rueckgabe">
+<h2>Rückgabe</h2>
+<p>Am Ende (oder für einen Zwischenstand) „Ergebnis als JSON sichern“ klicken. Die Datei landet im Download-Ordner. Bitte direkt an Julia schicken, per Mail oder Drive, <strong>nicht</strong> über GitHub: Die Labels bleiben bis zur Publikation privat.</p>
+<p>Zum Weiterarbeiten an einem anderen Rechner diese Seite öffnen und „Gesicherten Stand laden“ wählen. Der Browser speichert zusätzlich automatisch, wenn er darf; verlassen kann man sich nur auf die JSON-Datei.</p>
+<p class="meta" id="herkunft"></p>
+</section>
+</div>
+<script id="daten" type="application/json">__DATEN__</script>
+<script>
+"use strict";
+const D = JSON.parse(document.getElementById("daten").textContent);
+const KEY = "wsd-pilot:" + D.fingerprint;
+const STATUS = [
+  ["SENSE", "Eine Bedeutung passt", "genau eine Karte wählen"],
+  ["MEHRERE", "Mehrere passen", "mindestens zwei Karten wählen"],
+  ["KEINE_PASST", "Keine passt", "Kommentar empfohlen"],
+  ["LEMMA_FALSCH", "Lemma falsch", "Kommentar Pflicht"],
+  ["KONTEXT_UNZUREICHEND", "Kontext reicht nicht", "auch erweitert nicht entscheidbar"],
+  ["TEXT_DEFEKT", "Text defekt", "Kommentar Pflicht"]
+];
+const SICHER = [["sicher", "sicher"], ["eher_sicher", "eher sicher"], ["unsicher", "unsicher"]];
+const ITEM = Object.fromEntries(D.items.map(i => [i.item, i]));
+
+// Das Ereignisprotokoll E ist die einzige Quelle; die Antworten A werden daraus abgeleitet (Protokoll, Abschnitt 8).
+// Mehrere Tabs und Importe vereinigen ihre Protokolle über die Ereignis-ID, es wird nie etwas entfernt.
+const TAB = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+const AENDERUNG = {status: "status", karten: "senses", karten_geleert: "senses", begriffe: "begriffe",
+  begriffe_geleert: "begriffe", sicherheit: "sicherheit", kommentar: "kommentar"};
+let seq = 0, E = [], speicherOk = null;
+const A = Object.fromEntries(D.items.map(i => [i.item, {}]));
+function ableiten() {
+  for (const id in A) Object.assign(A[id], {status: null, senses: [], begriffe: [], sicherheit: null, kommentar: "",
+    festgehalten: false, festgehalten_um: null});
+  for (const e of E) {
+    const a = A[e.item];
+    if (!a) continue;
+    if (AENDERUNG[e.aktion]) { a[AENDERUNG[e.aktion]] = e.wert; a.festgehalten = false; a.festgehalten_um = null; }
+    else if (e.aktion === "festgehalten") { a.festgehalten = true; a.festgehalten_um = e.zeit; }
+  }
+}
+function vereinigen(liste) {
+  const ids = new Set(E.map(e => e.id));
+  const neu = [];
+  for (const e of liste || []) if (e && e.id && !ids.has(e.id)) { E.push(e); ids.add(e.id); neu.push(e); }
+  if (neu.length) E.sort((x, y) => x.ms - y.ms || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
+  return neu;
+}
+function gespeichert() {
+  try {
+    const roh = localStorage.getItem(KEY);
+    speicherOk = true;
+    if (!roh) return [];
+    const g = JSON.parse(roh);
+    return g.fingerprint === D.fingerprint && g.kennung === D.meta.kennung && Array.isArray(g.ereignisse) ? g.ereignisse : [];
+  } catch (e) { speicherOk = false; return []; }
+}
+vereinigen(gespeichert());
+ableiten();
+
+let aktuell = null, seit = null, erweitert = false;
+
+function iso(d) {
+  d = d || new Date();
+  const p = n => String(Math.floor(Math.abs(n))).padStart(2, "0");
+  const o = -d.getTimezoneOffset();
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes()) +
+    ":" + p(d.getSeconds()) + "." + String(d.getMilliseconds()).padStart(3, "0") + (o >= 0 ? "+" : "-") + p(o / 60) + ":" + p(o % 60);
+}
+function speichern() {
+  const fremd = vereinigen(gespeichert());
+  ableiten();
+  try {
+    localStorage.setItem(KEY, JSON.stringify({schema: "wsd-goldstandard-pilot-annotation-v2", fingerprint: D.fingerprint,
+      kennung: D.meta.kennung, ereignisse: E}));
+    speicherOk = true;
+  } catch (e) { speicherOk = false; }
+  zeigeSpeicher();
+  return fremd;
+}
+function zeigeSpeicher() {
+  const el = document.getElementById("speicher");
+  el.textContent = speicherOk ? "im Browser gespeichert (" + E.length + " Einträge im Protokoll)"
+    : "Speichern im Browser nicht möglich: bitte regelmäßig als JSON sichern";
+}
+function log(aktion, wert) {
+  const it = aktuell ? ITEM[aktuell] : null, d = new Date();
+  // ms ordnet das Protokoll und ist monoton (nie kleiner als das letzte Ereignis); zeit ist die echte Uhrzeit
+  const ms = Math.max(d.getTime(), E.length ? E[E.length - 1].ms + 1 : 0);
+  E.push({id: TAB + "-" + String(++seq).padStart(6, "0"), ms: ms, zeit: iso(d), item: aktuell, aktion: aktion,
+    wert: wert === undefined ? null : wert, kartenreihenfolge: it ? it.karten.map(k => k.sense) : null, kontext_erweitert: erweitert});
+}
+function betrifftAktuell(neu) {
+  return neu.some(e => e.item === aktuell && (AENDERUNG[e.aktion] || e.aktion === "festgehalten"));
+}
+function neuZeichnen() {
+  const k = document.getElementById("kommentar");
+  const entwurf = k && k.value !== A[aktuell].kommentar ? k.value : null;
+  zeichne();
+  if (entwurf !== null) document.getElementById("kommentar").value = entwurf;
+}
+function aendern(feld, wert, aktion) {
+  if (A[aktuell].festgehalten) log("festhalten_aufgehoben", feld);
+  log(aktion || feld, wert);
+  if (betrifftAktuell(speichern())) neuZeichnen();
+  liste(); zustand();
+}
+function zustandText(a) {
+  if (a.festgehalten) return ["fest", "festgehalten"];
+  if (a.status || a.sicherheit || a.senses.length || a.kommentar) return ["entwurf", "Entwurf"];
+  return ["", "offen"];
+}
+function liste() {
+  const ol = document.getElementById("liste"); ol.innerHTML = "";
+  D.items.forEach((it, n) => {
+    const li = document.createElement("li"), b = document.createElement("button");
+    const [cls, txt] = zustandText(A[it.item]);
+    b.innerHTML = "<span>Beleg " + (n + 1) + "</span><span class=\"badge " + cls + "\">" + txt + "</span>";
+    b.setAttribute("aria-current", it.item === aktuell ? "true" : "false");
+    b.onclick = () => oeffne(it.item);
+    li.appendChild(b); ol.appendChild(li);
+  });
+  const fest = D.items.filter(i => A[i.item].festgehalten).length;
+  document.getElementById("fortschritt").textContent = fest + " von " + D.items.length + " festgehalten";
+}
+function verlasse() {
+  if (aktuell && seit) log("verlassen", Math.round(performance.now() - seit));
+  seit = null;
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;"})[c]); }
+function kontextHtml(zeilen) {
+  return zeilen.map(z => {
+    let h = "", vorher = null;
+    z.w.forEach(w => {
+      const ohne = !h || (w.pc && w.j === "left") || (vorher && vorher.j === "right");
+      let t = esc(w.t);
+      if (w.erg) t = "<span class=\"erg\" title=\"ergänzt\">" + t + "</span>";
+      if (w.ziel) t = "<mark>" + t + "</mark>";
+      h += (ohne ? "" : " ") + t; vorher = w;
+    });
+    return "<div class=\"zeile" + (z.strophe ? " strophe" : "") + "\"><span class=\"vn\">" + esc(z.n) + "</span><span>" + h + "</span></div>";
+  }).join("");
+}
+function oeffne(id) {
+  verlasse();
+  aktuell = id; erweitert = false; seit = performance.now();
+  log("geoeffnet");
+  speichern(); zeichne(); liste();
+  document.getElementById("main").focus({preventScroll: true});
+  window.scrollTo({top: 0});
+}
+function zeichne() {
+  const it = ITEM[aktuell], a = A[aktuell], n = D.items.indexOf(it);
+  const ort = it.art === "vers" && it.vers ? "Vers " + esc(it.vers) : (it.art === "vers" ? "Vers" : "Prosa");
+  const begriffe = [];
+  it.karten.forEach(k => k.begriffe.forEach(b => { if (!begriffe.some(x => x.id === b.id)) begriffe.push(b); }));
+  const wahl = a.status === "SENSE" || a.status === "MEHRERE";
+  document.getElementById("main").innerHTML =
+    "<section class=\"card\"><div class=\"eyebrow\">Beleg " + (n + 1) + " von " + D.items.length + " · " + esc(it.werk) + " (" + esc(it.sigle) + ") · " + ort + "</div>" +
+    "<p>Lemma <span class=\"lemma\">" + esc(it.orth) + "</span> · Form im Text: <strong>" + esc(it.form) + "</strong></p>" +
+    "<div class=\"context\" id=\"kontext\">" + kontextHtml(erweitert ? it.erweitert : it.kontext) + "</div>" +
+    "<div class=\"actions\"><button id=\"btnKontext\">" + (erweitert ? "Weniger Kontext" : "Mehr Kontext") + "</button></div></section>" +
+    "<section class=\"card\"><fieldset><legend>Status</legend><div class=\"status-grid\">" +
+    STATUS.map(([k, t, h]) => "<label><input type=\"radio\" name=\"status\" value=\"" + k + "\"" + (a.status === k ? " checked" : "") + "><span>" + t + "<small>" + h + "</small></span></label>").join("") +
+    "</div></fieldset>" +
+    "<h2>Bedeutungen</h2>" + (wahl ? "" : "<p class=\"meta\">Karten werden wählbar, sobald „Eine Bedeutung passt“ oder „Mehrere passen“ gewählt ist.</p>") +
+    "<div class=\"karten\">" + it.karten.map((k, i) => {
+      const g = a.senses.includes(k.sense);
+      return "<div class=\"karte" + (g ? " gewaehlt" : "") + "\"><h3><label><input type=\"" + (a.status === "SENSE" ? "radio" : "checkbox") + "\" name=\"karte\" value=\"" + esc(k.sense) + "\"" +
+        (g ? " checked" : "") + (wahl ? "" : " disabled") + "> Bedeutung " + (i + 1) + "</label></h3><ul>" +
+        k.begriffe.map(b => "<li><span class=\"pfad\">" + esc(b.pfad.join(" › ")) + "</span><span class=\"" + (b.eigen ? "eigen" : "") + "\">" + esc(b.term) + "</span>" +
+          (b.eigen ? "<span class=\"eigen-tag\">nur hier</span>" : "") + "</li>").join("") + "</ul></div>";
+    }).join("") + "</div>" +
+    (a.status === "KEINE_PASST" ? "<fieldset><legend>Welche Begriffe passen? (freiwillig)</legend><div class=\"begriffwahl\">" +
+      begriffe.map(b => "<label><input type=\"checkbox\" name=\"begriff\" value=\"" + esc(b.id) + "\"" + (a.begriffe.includes(b.id) ? " checked" : "") + "> " + esc(b.term) + "</label>").join("") +
+      "</div></fieldset>" : "") +
+    "<fieldset><legend>Sicherheit</legend><div class=\"sicher\">" +
+    SICHER.map(([k, t]) => "<label><input type=\"radio\" name=\"sicherheit\" value=\"" + k + "\"" + (a.sicherheit === k ? " checked" : "") + "> " + t + "</label>").join("") +
+    "</div></fieldset>" +
+    "<label for=\"kommentar\"><strong>Kommentar</strong></label><textarea id=\"kommentar\">" + esc(a.kommentar) + "</textarea>" +
+    "<div class=\"actions\"><button id=\"btnZurueck\"" + (n === 0 ? " disabled" : "") + ">Voriger Beleg</button>" +
+    "<button id=\"btnFest\" class=\"primary\">Festhalten</button>" +
+    "<button id=\"btnWeiter\"" + (n === D.items.length - 1 ? " disabled" : "") + ">Nächster Beleg</button>" +
+    "<span class=\"zustand\" id=\"zustand\"></span></div><p class=\"fehler\" id=\"fehler\" role=\"alert\"></p></section>";
+  binden(); zustand();
+}
+function zustand() {
+  const a = A[aktuell], el = document.getElementById("zustand");
+  if (el) el.textContent = a.festgehalten ? "festgehalten um " + a.festgehalten_um.slice(11, 16) : zustandText(a)[1];
+}
+function binden() {
+  const a = A[aktuell];
+  document.getElementById("btnKontext").onclick = () => { erweitert = !erweitert; log(erweitert ? "kontext_erweitert" : "kontext_reduziert"); speichern(); zeichne(); };
+  document.querySelectorAll("input[name=status]").forEach(r => r.onchange = () => {
+    const neu = r.value, alt = a.status;
+    if (!(neu === "SENSE" || neu === "MEHRERE") && a.senses.length) aendern("senses", [], "karten_geleert");
+    if (neu === "SENSE" && a.senses.length > 1) aendern("senses", [], "karten_geleert");
+    if (neu !== "KEINE_PASST" && a.begriffe.length) aendern("begriffe", [], "begriffe_geleert");
+    if (neu !== alt) aendern("status", neu);
+    zeichne();
+  });
+  document.querySelectorAll("input[name=karte]").forEach(c => c.onchange = () => {
+    let s = a.status === "SENSE" ? (c.checked ? [c.value] : []) :
+      (c.checked ? a.senses.concat([c.value]) : a.senses.filter(x => x !== c.value));
+    aendern("senses", s, "karten");
+    zeichne();
+  });
+  document.querySelectorAll("input[name=begriff]").forEach(c => c.onchange = () => {
+    aendern("begriffe", c.checked ? a.begriffe.concat([c.value]) : a.begriffe.filter(x => x !== c.value), "begriffe");
+  });
+  document.querySelectorAll("input[name=sicherheit]").forEach(r => r.onchange = () => aendern("sicherheit", r.value));
+  const k = document.getElementById("kommentar");
+  k.onchange = () => { if (k.value !== a.kommentar) aendern("kommentar", k.value); };
+  document.getElementById("btnFest").onclick = () => {
+    if (k.value !== a.kommentar) aendern("kommentar", k.value);
+    const f = pruefe(a);
+    document.getElementById("fehler").textContent = f;
+    if (f) { log("festhalten_abgelehnt", f); speichern(); return; }
+    log("festgehalten", {status: a.status, senses: a.senses, begriffe: a.begriffe, sicherheit: a.sicherheit, kommentar: a.kommentar});
+    speichern(); liste(); zustand();
+    const n = D.items.indexOf(ITEM[aktuell]);
+    if (n < D.items.length - 1) oeffne(D.items[n + 1].item);
+  };
+  document.getElementById("btnZurueck").onclick = () => { const n = D.items.indexOf(ITEM[aktuell]); if (n > 0) oeffne(D.items[n - 1].item); };
+  document.getElementById("btnWeiter").onclick = () => { const n = D.items.indexOf(ITEM[aktuell]); if (n < D.items.length - 1) oeffne(D.items[n + 1].item); };
+}
+function pruefe(a) {
+  if (!a.status) return "Bitte einen Status wählen.";
+  if (a.status === "SENSE" && a.senses.length !== 1) return "Bei „Eine Bedeutung passt“ bitte genau eine Karte wählen.";
+  if (a.status === "MEHRERE" && a.senses.length < 2) return "Bei „Mehrere passen“ bitte mindestens zwei Karten wählen.";
+  if ((a.status === "LEMMA_FALSCH" || a.status === "TEXT_DEFEKT") && !a.kommentar.trim()) return "Bei diesem Status ist ein Kommentar Pflicht.";
+  if (!a.sicherheit) return "Bitte die Sicherheit angeben.";
+  return "";
+}
+function exportieren() {
+  verlasse(); if (aktuell) seit = performance.now();
+  log("exportiert"); speichern();
+  const aus = {schema: "wsd-goldstandard-pilot-export-v1", meta: D.meta, fingerprint: D.fingerprint, exportiert_um: iso(),
+    items: D.items.map(i => Object.assign({item: i.item, xml_id: i.xml_id, lemma: i.lemma, kartenreihenfolge: i.karten.map(k => k.sense)}, A[i.item])),
+    ereignisse: E};
+  const blob = new Blob([JSON.stringify(aus, null, 1)], {type: "application/json"});
+  const a = document.createElement("a"), z = iso().replace(/[-:]/g, "").slice(0, 13);
+  a.href = URL.createObjectURL(blob); a.download = "wsd-pilot-runde" + D.meta.runde + "-" + D.meta.kennung + "-" + z + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function importieren(datei) {
+  const r = new FileReader();
+  r.onload = () => {
+    let g;
+    try { g = JSON.parse(r.result); } catch (e) { alert("Die Datei ist kein lesbares JSON."); return; }
+    if (g.schema !== "wsd-goldstandard-pilot-export-v1" || g.fingerprint !== D.fingerprint || !g.meta ||
+        g.meta.kennung !== D.meta.kennung || g.meta.manifest_sha256 !== D.meta.manifest_sha256) {
+      alert("Diese Datei gehört nicht zu dieser Annotationsdatei (andere Person, Runde oder anderer Datenstand). Nichts wurde geladen.");
+      return;
+    }
+    if (!Array.isArray(g.ereignisse)) { alert("Die Datei enthält kein Protokoll. Nichts wurde geladen."); return; }
+    if (!confirm("Gesicherten Stand vom " + String(g.exportiert_um).slice(0, 16).replace("T", " ") + " laden? Er wird mit dem Stand in diesem Browser zusammengeführt; es wird nichts gelöscht.")) return;
+    const neu = vereinigen(g.ereignisse);
+    log("importiert", {exportiert_um: g.exportiert_um, neue_eintraege: neu.length}); speichern(); liste(); neuZeichnen();
+  };
+  r.readAsText(datei);
+}
+document.getElementById("titel").textContent = "Pilot, Runde " + D.meta.runde + ": " + D.items.length + " Belege";
+document.getElementById("metazeile").textContent = "Annotationsdatei für Kennung „" + D.meta.kennung + "“ · " + D.meta.richtlinien;
+document.getElementById("herkunft").textContent = "Korpus-Commit " + D.meta.korpus_commit.slice(0, 9) + " · Manifest " + D.meta.manifest_sha256.slice(0, 12) +
+  " · Werkzeug " + D.meta.werkzeug + " · gebaut am " + D.meta.gebaut + " · Fingerprint " + D.fingerprint.slice(0, 12);
+document.getElementById("btnAnleitung").onclick = () => { const d = document.getElementById("anleitung"); d.open = !d.open; if (d.open) d.scrollIntoView(); };
+document.getElementById("btnExport").onclick = exportieren;
+document.getElementById("btnImport").onclick = () => document.getElementById("importFile").click();
+document.getElementById("importFile").onchange = e => { if (e.target.files[0]) importieren(e.target.files[0]); e.target.value = ""; };
+document.getElementById("btnTheme").onclick = () => {
+  const r = document.documentElement, dunkel = r.dataset.theme !== "dark";
+  r.dataset.theme = dunkel ? "dark" : "light"; document.getElementById("btnTheme").setAttribute("aria-pressed", String(dunkel));
+  try { localStorage.setItem("wsd-pilot-theme", r.dataset.theme); } catch (e) {}
+};
+try { const t = localStorage.getItem("wsd-pilot-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+window.addEventListener("pagehide", () => { verlasse(); speichern(); });
+window.addEventListener("storage", ev => {
+  if (ev.key !== KEY) return;
+  const neu = vereinigen(gespeichert());
+  if (!neu.length) return;
+  ableiten(); liste(); zeigeSpeicher();
+  if (aktuell && betrifftAktuell(neu)) neuZeichnen(); else zustand();
+});
+document.addEventListener("visibilitychange", () => { if (aktuell) { log(document.hidden ? "tab_verborgen" : "tab_sichtbar"); speichern(); } });
+if (!E.length) document.getElementById("anleitung").open = true;
+oeffne(D.items[0].item);
+</script>
+</body>
+</html>

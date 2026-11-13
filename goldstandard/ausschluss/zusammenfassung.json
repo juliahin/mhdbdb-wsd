@@ -1,25 +1,26 @@
 {
   "baseline_commit": "0422429fc",
-  "head_commit": "f6fbebf855067dbc9a5feabadf56f94d807ca224",
+  "head_commit": "be8b91fc3095d9c34a0ded24e0a6e90651910639",
   "tei_mit_lokalen_aenderungen": false,
-  "tokens_lemmatisiert_heute": 7545732,
+  "tokens_lemmatisiert_heute": 7545802,
   "ausgeschlossene_texte": {
-    "WZB.tei.xml": 142330
+    "WZB.tei.xml": 142412
   },
-  "ausgeschlossen": 157459,
+  "ausgeschlossen": 157724,
   "nur_markiert": 34336,
   "nach_grund": {
-    "neuer_text": 142330,
+    "neuer_text": 142412,
     "neue_id": 0,
-    "lemma_oder_sense": 15129,
+    "lemma_oder_sense": 15312,
     "nur_pos": 34336
   },
   "geaendert_nach_feldern": {
     "pos": 34336,
-    "lemmaRef+pos": 15090,
-    "lemmaRef+ana+pos": 24,
+    "lemmaRef+pos": 15091,
+    "lemmaRef+ana+pos": 183,
+    "ana": 22,
     "lemmaRef+ana": 14,
-    "ana": 1
+    "lemmaRef": 2
   },
   "herkunft_ingest_lauf": {
     "369-stat": 7836,
@@ -36,52 +37,52 @@
     "375-waeren-ausweitung": 12,
     "216-fro3": 3
   },
-  "geaendert_ohne_ingest_log": 34175,
-  "texte_mit_ausschluessen": 405,
+  "geaendert_ohne_ingest_log": 34358,
+  "texte_mit_ausschluessen": 409,
   "groesste_texte_ausschluss": [
     [
       "OVG.tei.xml",
-      873
+      874
     ],
     [
       "TRO.tei.xml",
-      582
+      587
     ],
     [
       "RVBR.tei.xml",
-      509
+      511
     ],
     [
       "GWTK.tei.xml",
-      482
+      483
     ],
     [
       "MR1.tei.xml",
-      381
+      382
     ],
     [
       "REN.tei.xml",
-      361
+      365
     ],
     [
       "JEW.tei.xml",
-      346
+      347
     ],
     [
       "AXU.tei.xml",
-      335
+      342
     ],
     [
       "PL1.tei.xml",
-      329
+      333
     ],
     [
       "FLG1.tei.xml",
-      298
+      302
     ],
     [
       "WVO.tei.xml",
-      284
+      286
     ],
     [
       "CRO.tei.xml",
@@ -92,12 +93,12 @@
       253
     ],
     [
-      "BVSN.tei.xml",
-      231
+      "WUT.tei.xml",
+      245
     ],
     [
-      "ADP.tei.xml",
-      227
+      "BVSN.tei.xml",
+      231
     ]
   ],
   "nur_pos_nach_text": [
