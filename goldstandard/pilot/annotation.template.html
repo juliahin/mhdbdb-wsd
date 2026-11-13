@@ -202,11 +202,24 @@ function log(aktion, wert) {
 function betrifftAktuell(neu) {
   return neu.some(e => e.item === aktuell && (AENDERUNG[e.aktion] || e.aktion === "festgehalten"));
 }
+// Kommentar: Ein offener Entwurf besteht genau dann, wenn seit der letzten Speicherung getippt wurde
+// (Merker entwurfOffen, mit dem Beleg, zu dem er gehört). Er wird nach einer Tipppause, in zeichne() vor jedem
+// Neuzeichnen, vor jedem Itemwechsel, beim Festhalten, beim Export und beim Verlassen des Tabs festgeschrieben.
+// Ein Entwurf wird nie wiederhergestellt. Nicht auf "change" verlassen: Chromium vergleicht dort mit dem Wert beim
+// Fokussieren, nicht mit dem zuletzt gespeicherten.
+let entwurfOffen = false, entwurfItem = null, entwurfUhr = null;
+function kommentarSichern() {
+  clearTimeout(entwurfUhr); entwurfUhr = null;
+  const k = document.getElementById("kommentar");
+  const offen = entwurfOffen && entwurfItem === aktuell;
+  entwurfOffen = false;
+  if (offen && k && k.value !== A[aktuell].kommentar) aendern("kommentar", k.value);
+}
 function neuZeichnen() {
   const k = document.getElementById("kommentar");
-  const entwurf = k && k.value !== A[aktuell].kommentar ? k.value : null;
+  const fokus = !!k && document.activeElement === k, auswahl = fokus ? [k.selectionStart, k.selectionEnd] : null;
   zeichne();
-  if (entwurf !== null) document.getElementById("kommentar").value = entwurf;
+  if (fokus) { const n = document.getElementById("kommentar"); n.focus({preventScroll: true}); n.setSelectionRange(auswahl[0], auswahl[1]); }
 }
 function aendern(feld, wert, aktion) {
   if (A[aktuell].festgehalten) log("festhalten_aufgehoben", feld);
@@ -251,6 +264,7 @@ function kontextHtml(zeilen) {
   }).join("");
 }
 function oeffne(id) {
+  kommentarSichern();
   verlasse();
   aktuell = id; erweitert = false; seit = performance.now();
   log("geoeffnet");
@@ -259,6 +273,11 @@ function oeffne(id) {
   window.scrollTo({top: 0});
 }
 function zeichne() {
+  // Offenen Entwurf festschreiben, dann die Handler des alten Felds lösen: Chromium feuert beim Entfernen eines
+  // fokussierten Felds "change"
+  kommentarSichern();
+  const alt = document.getElementById("kommentar");
+  if (alt) { alt.onchange = null; alt.oninput = null; }
   const it = ITEM[aktuell], a = A[aktuell], n = D.items.indexOf(it);
   const ort = it.art === "vers" && it.vers ? "Vers " + esc(it.vers) : (it.art === "vers" ? "Vers" : "Prosa");
   const begriffe = [];
@@ -319,9 +338,10 @@ function binden() {
   });
   document.querySelectorAll("input[name=sicherheit]").forEach(r => r.onchange = () => aendern("sicherheit", r.value));
   const k = document.getElementById("kommentar");
-  k.onchange = () => { if (k.value !== a.kommentar) aendern("kommentar", k.value); };
+  k.oninput = () => { entwurfOffen = true; entwurfItem = aktuell; clearTimeout(entwurfUhr); entwurfUhr = setTimeout(kommentarSichern, 800); };
+  k.onchange = kommentarSichern;
   document.getElementById("btnFest").onclick = () => {
-    if (k.value !== a.kommentar) aendern("kommentar", k.value);
+    kommentarSichern();
     const f = pruefe(a);
     document.getElementById("fehler").textContent = f;
     if (f) { log("festhalten_abgelehnt", f); speichern(); return; }
@@ -342,6 +362,7 @@ function pruefe(a) {
   return "";
 }
 function exportieren() {
+  kommentarSichern();
   verlasse(); if (aktuell) seit = performance.now();
   log("exportiert"); speichern();
   const aus = {schema: "wsd-goldstandard-pilot-export-v1", meta: D.meta, fingerprint: D.fingerprint, exportiert_um: iso(),
@@ -384,7 +405,7 @@ document.getElementById("btnTheme").onclick = () => {
   try { localStorage.setItem("wsd-pilot-theme", r.dataset.theme); } catch (e) {}
 };
 try { const t = localStorage.getItem("wsd-pilot-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
-window.addEventListener("pagehide", () => { verlasse(); speichern(); });
+window.addEventListener("pagehide", () => { kommentarSichern(); verlasse(); speichern(); });
 window.addEventListener("storage", ev => {
   if (ev.key !== KEY) return;
   const neu = vereinigen(gespeichert());
@@ -392,7 +413,11 @@ window.addEventListener("storage", ev => {
   ableiten(); liste(); zeigeSpeicher();
   if (aktuell && betrifftAktuell(neu)) neuZeichnen(); else zustand();
 });
-document.addEventListener("visibilitychange", () => { if (aktuell) { log(document.hidden ? "tab_verborgen" : "tab_sichtbar"); speichern(); } });
+document.addEventListener("visibilitychange", () => {
+  if (!aktuell) return;
+  if (document.hidden) kommentarSichern();
+  log(document.hidden ? "tab_verborgen" : "tab_sichtbar"); speichern();
+});
 if (!E.length) document.getElementById("anleitung").open = true;
 oeffne(D.items[0].item);
 </script>

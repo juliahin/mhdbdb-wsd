@@ -5,8 +5,9 @@
 // Protokoll nur anhängend, Kontexterweiterung protokolliert, Export, Import des eigenen Exports,
 // Ablehnung eines fremden Exports, Seite ohne Netz.
 import { chromium } from "playwright";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 
 const DATEI = n => resolve(`goldstandard/pilot/bau/annotation-${n}-runde0.html`);
@@ -109,7 +110,83 @@ const exp2 = await page.evaluate(() => D.items.map(i => Object.assign({item: i.i
 ok(exp2[1].festgehalten && exp2[1].status === "KONTEXT_UNZUREICHEND", "Festhalten aus Tab A bleibt nach Änderung in Tab B erhalten");
 ok(!exp2[0].festgehalten && exp2[0].status === "SENSE" && exp2[0].sicherheit === "unsicher", "Änderung aus Tab B hebt Festhalten von Beleg 1 auf und bleibt erhalten");
 ok((await page.locator("#fortschritt").textContent()).startsWith("1 von 15"), "Tab A zeigt die Änderung aus Tab B ohne Neuladen");
+// Kommentarentwurf in Tab B übersteht Schreibvorgänge aus Tab A (Review Runde 2, Befund 2)
+await tabB.fill("#kommentar", "halb getippt");                  // Tab B, Beleg 1, Feld nicht verlassen
+await page.locator("nav li button").nth(3).click();             // Tab A öffnet ein anderes Item
+await page.waitForTimeout(300);
+ok(await tabB.inputValue("#kommentar") === "halb getippt", "Entwurf bleibt, wenn ein anderer Tab ein anderes Item öffnet");
+await page.locator("nav li button").first().click();            // Tab A ändert dasselbe Item
+await page.check("input[name=sicherheit][value=eher_sicher]");
+await page.waitForTimeout(300);
+ok(await tabB.inputValue("#kommentar") === "halb getippt", "Entwurf bleibt, wenn ein anderer Tab dasselbe Item ändert");
+ok(await tabB.isChecked("input[name=sicherheit][value=eher_sicher]"), "Tab B zeigt die Änderung aus Tab A");
+ok((await protokoll(page)).filter(e => e.wert === "halb getippt").length === 1, "Entwurf wird genau einmal protokolliert");
+ok(await tabB.evaluate(() => document.activeElement && document.activeElement.id) === "kommentar", "Fokus bleibt beim Neuzeichnen im Kommentarfeld");
+// Entwurf übersteht Verlassen des Felds und Itemwechsel (Review Runde 4, Befund 1)
+await tabB.keyboard.press("Tab");
+await tabB.click("#btnWeiter");
+await tabB.click("#btnZurueck");
+ok(await tabB.inputValue("#kommentar") === "halb getippt", "Entwurf übersteht Verlassen und Itemwechsel");
+// Eigener gespeicherter Kommentar verdrängt keinen neueren fremden (Review Runde 4, Befund 2)
+await tabB.fill("#kommentar", "B1");
+await tabB.locator("#kommentar").blur();
+await page.waitForTimeout(300);
+await page.fill("#kommentar", "A1");
+await page.locator("#kommentar").blur();
+await page.waitForTimeout(300);
+ok(await tabB.inputValue("#kommentar") === "A1", "neuerer Kommentar aus anderem Tab ersetzt den eigenen gespeicherten");
+await tabB.click("#btnFest");
+const nachB = await tabB.evaluate(() => A[D.items[0].item].kommentar);
+ok(nachB === "A1", "Festhalten in Tab B schreibt den eigenen alten Kommentar nicht zurück");
 await tabB.close();
+
+// Kommentar aus einem anderen Tab erscheint im Feld eines Tabs ohne Entwurf (Review Runde 3, Befund 1)
+const tabC = await ctx.newPage();
+tabC.on("pageerror", e => js.push("Tab C: " + e));
+await tabC.goto(pathToFileURL(DATEI("julia")).href);              // Tab C, Beleg 1, kein Entwurf
+await page.fill("#kommentar", "neu aus A");                       // Tab A, Beleg 1
+await page.locator("#kommentar").blur();
+await page.waitForTimeout(300);
+ok(await tabC.inputValue("#kommentar") === "neu aus A", "Kommentar aus anderem Tab erscheint im Feld");
+await tabC.close();
+
+// Rückkorrektur nach automatischer Speicherung geht beim Neuzeichnen nicht verloren (Review Runde 5, Befund 1)
+const kommentarA = async () => page.evaluate(() => A[aktuell].kommentar);
+for (const [name, klick] of [["Mehr Kontext", () => page.click("#btnKontext")],
+                             ["Statuswechsel", () => page.check("input[name=status][value=KEINE_PASST]")]]) {
+  const vorher = await kommentarA();
+  await page.click("#kommentar");
+  await page.keyboard.press("End");
+  await page.keyboard.type("x");
+  await page.waitForTimeout(1100);                                // Tipppause: "…x" wird gespeichert
+  ok(await kommentarA() === vorher + "x", name + ": Tipppause speichert den Entwurf");
+  await page.keyboard.press("Backspace");                          // zurück auf den Wert beim Fokussieren
+  await klick();
+  ok(await kommentarA() === vorher && await page.inputValue("#kommentar") === vorher, name + ": Rückkorrektur bleibt erhalten");
+}
+
+// Uhrversatz: Sicherung von einem Rechner, dessen Uhr 10 Minuten vorgeht (Review Runde 2, Befund 1)
+const versetzt = JSON.parse(readFileSync(await dl.path(), "utf8"));
+versetzt.ereignisse.forEach(e => { e.ms += 600000; });
+const versetztPfad = join(tmpdir(), "wsd-pilot-versetzt.json");
+writeFileSync(versetztPfad, JSON.stringify(versetzt));
+const p4 = await (await browser.newContext()).newPage();
+p4.on("dialog", d => d.accept());
+p4.on("pageerror", e => js.push("Uhrversatz: " + e));
+await p4.goto(pathToFileURL(DATEI("julia")).href);
+await p4.setInputFiles("#importFile", versetztPfad);
+await p4.waitForTimeout(300);
+await p4.check("input[name=sicherheit][value=sicher]");
+await p4.click("#btnFest");                                       // Beleg 1 festgehalten (nach dem Import)
+await p4.locator("nav li button").first().click();
+await p4.check("input[name=sicherheit][value=eher_sicher]");     // danach wieder geändert
+const live = await p4.evaluate(() => ({f: A[D.items[0].item].festgehalten, s: A[D.items[0].item].sicherheit}));
+await p4.reload();
+const geladen = await p4.evaluate(() => ({f: A[D.items[0].item].festgehalten, s: A[D.items[0].item].sicherheit}));
+ok(!live.f && live.s === "eher_sicher", "Uhrversatz: Änderung nach Import gilt sofort");
+ok(JSON.stringify(live) === JSON.stringify(geladen), "Uhrversatz: nach Neuladen derselbe Stand");
+const ordnung = await protokoll(p4);
+ok(ordnung.every((e, i) => i === 0 || e.ms > ordnung[i - 1].ms || (e.ms === ordnung[i - 1].ms && e.id > ordnung[i - 1].id)), "Protokoll im Speicher nach Sortierzeit geordnet");
 
 // eigener Export lässt sich in einem frischen Browser laden
 const ctx2 = await browser.newContext();
@@ -120,6 +197,21 @@ await p2.setInputFiles("#importFile", await dl.path());
 await p2.waitForTimeout(300);
 const n2 = await p2.evaluate(() => JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k => k.startsWith("wsd-pilot:")))).ereignisse.length);
 ok(n2 > ev.length, "Import übernimmt das Protokoll und hängt an");
+ok(await p2.inputValue("#kommentar") === "Testkommentar", "nach Import zeigt das Feld den importierten Kommentar");
+await p2.click("#btnFest");
+const k2 = await p2.evaluate(() => ({k: A[D.items[0].item].kommentar, f: A[D.items[0].item].festgehalten}));
+ok(k2.k === "Testkommentar" && k2.f, "Festhalten nach Import behält den Kommentar");
+await p2.locator("nav li button").first().click();
+await p2.fill("#kommentar", "lokal");
+await p2.locator("#kommentar").blur();
+const spaeter = JSON.parse(readFileSync(await dl.path(), "utf8"));
+spaeter.ereignisse.push({id: "test-export-1", ms: Date.now() + 60000, zeit: "2099-01-01T00:00:00.000+00:00", item: daten.items[0].item,
+  aktion: "kommentar", wert: "export", kartenreihenfolge: daten.items[0].karten.map(k => k.sense), kontext_erweitert: false});
+const spaeterPfad = join(tmpdir(), "wsd-pilot-spaeter.json");
+writeFileSync(spaeterPfad, JSON.stringify(spaeter));
+await p2.setInputFiles("#importFile", spaeterPfad);
+await p2.waitForTimeout(300);
+ok(await p2.inputValue("#kommentar") === "export", "Import mit neuerem Kommentar ersetzt einen lokal gespeicherten im Feld");
 
 // Export von julia wird in alans Datei abgelehnt
 const p3 = await (await browser.newContext()).newPage();
