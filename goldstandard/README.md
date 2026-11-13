@@ -8,11 +8,11 @@ Projektkern.
 
 | Ebene | Datei | Stand |
 |---|---|---|
-| 1. Protokoll mit Abweichungslog gegenüber der Präregistrierung | [PROTOKOLL.md](PROTOKOLL.md) | Entwurf 2026-10-08, ergänzt 2026-11-12 (A30) |
+| 1. Protokoll mit Abweichungslog gegenüber der Präregistrierung | [PROTOKOLL.md](PROTOKOLL.md) | Entwurf 2026-10-08, ergänzt 2026-11-13 (A31) |
 | 1a. Literatur zu Inter-Annotator-Agreement (mit Prüfstatus) | [LITERATUR-IAA.md](LITERATUR-IAA.md) | 2026-10-28 |
 | 1b. Literatur zum Stichprobendesign | [LITERATUR-STICHPROBE.md](LITERATUR-STICHPROBE.md) | 2026-10-16 |
 | 1c. Datenmanagementplan (Science Europe / FWF) | [DMP.md](DMP.md) | Entwurf 2026-10-16 |
-| 1d. Prompt-Log (Ebene B hier, Ebene A privat) | [PROMPT-LOG.md](PROMPT-LOG.md) | 2026-11-12 |
+| 1d. Prompt-Log (Ebene B hier, Ebene A privat) | [PROMPT-LOG.md](PROMPT-LOG.md) | 2026-11-13 |
 | 1e. Vorschläge aus der Literaturauswertung, zum Entscheiden | [VORSCHLAEGE-2026-10.md](VORSCHLAEGE-2026-10.md) | 2026-10-30 |
 | 1f. Verschmelzungen: Erkennungsregel für Ausschluss 5 (Protokoll, Abschnitt 3) | [verschmelzungen.py](verschmelzungen.py) | 2026-10-30 |
 | 1g. Verschmelzungen: Wirkung auf die Grundgesamtheit | [verschmelzungen/wirkung.py](verschmelzungen/wirkung.py) | 2026-10-30 |
@@ -20,7 +20,7 @@ Projektkern.
 | 1i. Verschmelzungen: Prüflisten, Schlüssel und Urteile beider Runden (Urteile von einem Agenten, nicht gegengelesen) | `verschmelzungen/runde1-*`, `verschmelzungen/runde2-*` (`-pruefliste.md`, `-schluessel.txt`, `-urteile.md`) | 2026-10-30 |
 | 1j. Pilot: Ziehung des Pilot-Pools (schreibt Manifest und Items, Laufzeit einige Minuten) | [pilot/pilot_ziehen.py](pilot/pilot_ziehen.py) | 2026-11-12 |
 | 1k. Pilot: Manifest (Zählungen, Seed, Korpus-Commit, Prüfsummen, Runde 0) und Items (Kontext, Karten) | [pilot/manifest-pilot.json](pilot/manifest-pilot.json), [pilot/items-pilot.json](pilot/items-pilot.json) | 2026-11-12 |
-| 1l. Pilot: Annotationsdatei pro Person (Vorlage, Bauskript, Browsertest); die gebauten HTML-Dateien unter `pilot/bau/` liegen nicht im Repo | [pilot/annotation.template.html](pilot/annotation.template.html), [pilot/annotation_bauen.py](pilot/annotation_bauen.py), [pilot/test_annotation.mjs](pilot/test_annotation.mjs) | 2026-11-12 |
+| 1l. Pilot: Annotationsdatei pro Person (Vorlage, Bauskript, Browsertest); die gebauten HTML-Dateien unter `pilot/bau/` liegen nicht im Repo | [pilot/annotation.template.html](pilot/annotation.template.html), [pilot/annotation_bauen.py](pilot/annotation_bauen.py), [pilot/test_annotation.mjs](pilot/test_annotation.mjs) | 2026-11-13 |
 | 2. Annotationsrichtlinien | `RICHTLINIEN.md` | noch nicht angelegt |
 | 3. Datasheet (Herkunft, Auswahl, Ausschlüsse, Lizenz, bekannte Lücken) | `DATASHEET.md` | noch nicht angelegt |
 | 4. Kontextwissen (Sense-Karten aus dem Begriffssystem, Textmetadaten) | wird generiert | noch nicht angelegt |

@@ -32,7 +32,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 HIER = Path(__file__).resolve().parent
 KENNUNGEN = ("julia", "alan")
-RICHTLINIEN = "Kurzanleitung v0.2 vom 2026-11-13"
+RICHTLINIEN = "Kurzanleitung v0.3 vom 2026-11-13"
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--kennung", required=True, choices=KENNUNGEN)
