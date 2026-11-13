@@ -2,8 +2,8 @@
 // Aufruf aus dem Repo-Wurzelverzeichnis, nach annotation_bauen.py für julia und alan:
 //     node goldstandard/pilot/test_annotation.mjs [chromium|msedge|chrome|firefox|webkit]
 // Ohne Argument Chromium. msedge und chrome nutzen die installierten Browser, webkit steht für Safari.
-// Firefox: Die Prüfungen mit Tastatureingaben in einem zweiten Tab scheitern, weil Playwright dort keine
-// Eingaben zustellt (2026-11-13 gemessen: kein input-Ereignis in keiner der beiden Seiten). Ein Tab: alles grün.
+// Firefox: Die zwei Prüfungen mit Eingaben in eine Seite, die nicht vorne ist, scheitern, weil Firefox dort weder
+// focus noch input zustellt (2026-11-13 gemessen, Review-Runde 8 bestätigt). Ein Tab: alles grün.
 // Prüft am gebauten HTML: Blindheit, feste Kennung, Statusregeln, Festhalten und Rücksetzen,
 // Protokoll nur anhängend, Kontexterweiterung protokolliert, Export, Import des eigenen Exports,
 // Ablehnung eines fremden Exports, Seite ohne Netz.
@@ -267,6 +267,9 @@ await p5.locator("input[name=karte]").nth(1).check();
 await p5.check("input[name=status][value=SENSE]");
 await p5.click("#btnFest");
 ok((await p5.locator("#fehler").textContent()).includes("genau eine"), "zwei Karten und „Eine Bedeutung passt“: Festhalten abgelehnt");
+const zweite = await p5.locator("input[name=karte]:checked").nth(1).getAttribute("value");
+await p5.locator(`input[name=karte][value="${zweite}"]`).uncheck();
+ok(await p5.locator("input[name=karte]:checked").count() === 1, "Abwählen einer von zwei Karten bei „Eine Bedeutung passt“ lässt die andere stehen");
 
 // Export von julia wird in alans Datei abgelehnt
 const p3 = await (await browser.newContext()).newPage();

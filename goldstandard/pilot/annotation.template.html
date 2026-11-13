@@ -94,9 +94,10 @@ td,th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertic
 <tr><td>Mehrere passen</td><td>zwei oder mehr Karten passen gleich gut, und die Stelle lässt keine Entscheidung zu</td><td>mindestens zwei Karten angeklickt</td></tr>
 <tr><td>Keine passt</td><td>keine Karte passt</td><td>am besten ein Kommentar; passende Begriffe können angekreuzt werden</td></tr>
 <tr><td>Lemma falsch</td><td>das Wort gehört gar nicht zu diesem Lemma</td><td>ein Kommentar, wenn möglich mit dem richtigen Lemma</td></tr>
-<tr><td>Kontext reicht nicht</td><td>es ist auch mit mehr Kontext nicht zu entscheiden</td><td>nichts</td></tr>
-<tr><td>Text defekt</td><td>Wort oder Text ist beschädigt</td><td>ein Kommentar</td></tr>
+<tr><td>Kontext reicht nicht</td><td>es ist auch mit mehr Kontext nicht zu entscheiden</td><td>nichts weiter</td></tr>
+<tr><td>Text defekt</td><td>Wort oder Transkription ist beschädigt</td><td>ein Kommentar</td></tr>
 </table>
+<p>Bei jedem Status ist außerdem die Sicherheit anzugeben.</p>
 <p><strong>Gut zu wissen.</strong></p>
 <ul>
 <li>Die Karten stehen bei jedem Beleg in zufälliger Reihenfolge. Die Nummer sagt nichts darüber, wie häufig oder wichtig eine Bedeutung ist.</li>
@@ -105,7 +106,7 @@ td,th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertic
 <li>Gezeigt werden zwei Verse vor und nach der Stelle (Prosa: etwa 20 Wörter), mit „Mehr Kontext“ acht Verse (Prosa: etwa 80 Wörter).</li>
 </ul>
 <p><strong>Hilfsmittel (Vorschlag).</strong> Erlaubt sind Wörterbücher wie Lexer oder BMZ; bitte im Kommentar vermerken, wenn eines den Ausschlag gegeben hat. Nicht erlaubt: die Belege auf der MHDBDB-Website oder im Repository nachschlagen (dort stehen schon Bedeutungszuordnungen) und KI-Werkzeuge. Die Belege bis zur Auswertung nicht miteinander besprechen. Die Datei nur in einem Browser-Tab öffnen.</p>
-<p><strong>Was aufgezeichnet wird.</strong> Die Datei speichert jede Eingabe mit Uhrzeit, außerdem, wie lange ein Beleg offen war und ob „Mehr Kontext“ benutzt wurde. Das dient nur der Auswertung dieser Annotation. Es wird nichts ins Internet geschickt; die Daten verlassen den Rechner nur über „Ergebnis als JSON sichern“.</p>
+<p><strong>Was aufgezeichnet wird.</strong> Die Datei speichert jede Eingabe mit Uhrzeit, außerdem, wann ein Beleg geöffnet und verlassen wurde (also wie lange er offen war), ob „Mehr Kontext“ benutzt wurde, wann der Browser-Tab im Hintergrund war und in welcher Reihenfolge die Karten gezeigt wurden. Das dient nur der Auswertung dieser Annotation. Es wird nichts ins Internet geschickt; die Daten verlassen den Rechner nur über „Ergebnis als JSON sichern“.</p>
 </details>
 </header>
 <div class="toolbar"><div class="in">
@@ -343,7 +344,7 @@ function binden() {
   });
   document.querySelectorAll("input[name=karte]").forEach(c => c.onchange = () => {
     kommentarSichern();
-    let s = a.status === "SENSE" ? (c.checked ? [c.value] : []) :
+    let s = a.status === "SENSE" ? (c.checked ? [c.value] : a.senses.filter(x => x !== c.value)) :
       (c.checked ? a.senses.concat([c.value]) : a.senses.filter(x => x !== c.value));
     aendern("senses", s, "karten");
     zeichne();
