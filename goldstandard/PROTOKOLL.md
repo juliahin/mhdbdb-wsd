@@ -1,6 +1,6 @@
 # WSD-Goldstandard: Protokoll v2
 
-**Status:** Entwurf vom 2026-10-08 (Stand 2026-11-13: A31 ergänzt, offener Punkt 17 teilweise erledigt (Hilfsmittelregel, Kurzanleitung v0.3); Stand 2026-11-12: Abschnitte 1, 2, 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.1, 9.2, 12 und Abweichungslog A15 bis A30 ergänzt oder geändert; Korpusstand für den ganzen Goldstandard festgelegt, Pilotdesign vorläufig), noch nicht eingefroren.
+**Status:** Entwurf vom 2026-10-08 (Stand 2026-11-13: A31 und A32 ergänzt, Abschnitt 7 (Stoppregel des Pilots, dritte Person), offene Punkte 2, 3 und 17 teilweise und 11 ganz erledigt (Hilfsmittelregel, Kurzanleitung v0.3); Stand 2026-11-12: Abschnitte 1, 2, 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.1, 9.2, 12 und Abweichungslog A15 bis A30 ergänzt oder geändert; Korpusstand für den ganzen Goldstandard festgelegt, Pilotdesign vorläufig), noch nicht eingefroren.
 **Verantwortlich:** Julia Hintersteiner. Zweiter Annotator: Alan van Beek.
 **Vorgänger:** präregistriertes Evaluationsprotokoll vom 2026-04-24, wiederherstellbar mit
 `git show 873322658^:docs/features/034-wenzelsbibel-annotation.md` (Abschnitt „Pre-registered evaluation protocol").
@@ -485,8 +485,23 @@ Hovy et al. 2006; Belege in [LITERATUR-IAA.md](LITERATUR-IAA.md)).
 2. **Pilot:** ca. 50 Items **außerhalb** der Hauptstichprobe, von beiden blind annotiert.
    Übereinstimmung und Konfusionsmatrix rechnen, Abweichungen besprechen, Richtlinien und
    Oberfläche nachschärfen. Mit **frischen** Items wiederholen, bis eine vorab festgelegte Schwelle
-   erreicht ist (Vorschlag: α ≥ 0,80, Untergrenze 0,67 nach Krippendorff; OntoNotes verlangte
-   90 % Rohübereinstimmung). Pilotitems gehen weder in den berichteten IAA-Wert noch ins Gold.
+   erreicht ist (OntoNotes verlangte 90 % Rohübereinstimmung). Pilotitems gehen weder in den
+   berichteten IAA-Wert noch ins Gold.
+   **Rundengröße und Stoppregel (A32, entschieden 2026-11-13):** Nach Runde 0 (15 Items, ohne
+   Schwelle) Runden zu je 25 frischen Items aus dem Pilot-Pool; bei 108 Items reicht der Pool für
+   drei solche Runden (90 Items), 18 bleiben Reserve. Gemessen wird pro Runde auf den 25 Items,
+   bevor Abweichungen besprochen werden, mit Krippendorffs α nominal auf dem ganzen Label (Status
+   und Menge der gewählten Karten, exakt). Ergebnis einer Runde:
+   - α ≥ 0,80: Richtlinien einfrieren, Hauptrunde.
+   - 0,67 ≤ α < 0,80: nachschärfen, nächste Runde; nach der letzten Poolrunde trotzdem einfrieren
+     und als Einschränkung berichten.
+   - α < 0,67 nach der letzten Poolrunde: keine Hauptrunde; das Instrument ändern (gröbere Senses
+     oder andere Darbietung) und neue Pilotitems ziehen.
+   Weil jedes Lemma eigene Sense-IDs hat, schätzt α den Zufall aus fast nie zusammenfallenden
+   Labels und liegt damit nahe an der Rohübereinstimmung; die Schwelle ist entsprechend zu lesen.
+   Bei 25 Items ist ein einzelner Wert unsicher (bei 80 % Übereinstimmung 95 %-Wilson-Intervall
+   etwa 61 bis 91 %). Die Schwelle entscheidet, wann das Nachschärfen endet, nicht ob das Gold
+   brauchbar ist.
 3. **Einfrieren:** Richtlinien mit Versionsnummer und Prüfsumme; Schwelle, Maße und
    Auswertungsplan werden vor der Hauptrunde festgeschrieben.
 4. **Hauptrunde:** beide annotieren alle Items unabhängig und blind. Die Itemreihenfolge wird pro
@@ -504,6 +519,8 @@ Hovy et al. 2006; Belege in [LITERATUR-IAA.md](LITERATUR-IAA.md)).
      implizites Wissen die Übereinstimmung aufblähen. Eine dritte Person prüft deshalb mindestens
      eine Zufallsauswahl von 10 bis 20 % der Adjudikationen sowie **alle** Fälle, in denen Julias
      Label übernommen wurde. Die Doppelrolle wird in der Publikation als Limitation genannt.
+     Vorgesehen ist KZW (Entscheidung Julia Hintersteiner, 2026-11-13, A32); sie ist noch nicht
+     angefragt.
    - `MEHRERE` darf als Mehrfachlabel ins Gold eingehen, wo die Richtlinien es zulassen.
 7. **Alles bleibt erhalten:** Labels vor der Adjudikation, Sicherheitsangaben, Ereignisprotokolle,
    Richtlinienversionen (Prabhakaran et al. 2021; Plank 2022: Abweichung ist oft Signal).
@@ -682,13 +699,13 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 | A29 | `MEHRERE`-Antwort des LLM mit nur einer ID (Abschnitt 9.2): nicht geregelt (offen nach A23) | Gilt als ungültige Antwort (eigene Kategorie, im primären gepaarten Vergleich falsch, wie A18) | Wie bei den Menschen verlangt `MEHRERE` mindestens zwei Sense-IDs (Abschnitt 6); dieselben Optionen für Mensch und LLM (A23). Entscheidung Julia Hintersteiner, 2026-10-30 („ok ja wie bei den menschen passt“ auf den Vorschlag der Hauptsitzung, eine solche Antwort als ungültig zu werten) | 2026-10-30 |
 | A30 | Pilot-Pool (Abschnitt 4.2): „ca. 100 Items, Lemmata disjunkt“, Ziehungsverfahren nicht festgelegt | **Vorläufig, Bestätigung durch Julia Hintersteiner ausstehend:** 36 Zellen × 3 = 108 Items, je Zelle 1 aus D1 (sonst D0) und 2 aus D0; Stufe 1 Paar aus Lemma und Wortart gleich wahrscheinlich, jedes Lemma höchstens einmal; Stufe 2 Token mit Gewicht T_G^(-1/2); Obergrenze 3 pro Text (Historiografie 5) nur innerhalb des Pools; Seed 20261112. Runde 0: 15 Items, einfache Zufallsauswahl (Seed „20261112-runde0“). Alle 108 Pool-Lemmata werden bei der späteren Ziehung von Haupt- und Panelstichprobe ausgeschlossen, in jeder Wortart. Erweiterter Kontext 8 Verse bzw. 80 Tokens je Seite. Hilfsmittelregel der Kurzanleitung v0 (Wörterbücher wie Lexer und BMZ erlaubt und im Kommentar zu vermerken; nicht erlaubt: MHDBDB-Website und Repository, KI-Werkzeuge; Belege bis zur Auswertung nicht besprechen) | Das Hauptverfahren (Abschnitt 4.4) im Kleinen, damit der Pilot dieselben Zellen berührt; 108 statt „ca. 100“ durch 36 × 3. Gezogen (Skript `pilot/pilot_ziehen.py`, Manifest `pilot/manifest-pilot.json`, nachgelesen am 2026-11-12): 108 Items aus 69 Texten, 36 aus D1 ohne D1-Ersatz, höchstens 5 Items aus einem Text, Kontext Vers 81 und Prosa 27; Gruppen Großepik 34, Lyrik 22, Geistliche Literatur 16, Kurzdichtung 12, Historiografie 12, Lehrdichtung 6, Fach- und Rechtsliteratur 6. Zweimal gezogen (vor und nach einer Darstellungskorrektur), laut Hauptsitzung identische Items (übernommen, nicht nachgemessen). Die Größe des erweiterten Kontexts hat die Hauptsitzung gewählt; Julia hat nur den Standardausschnitt bestätigt (offener Punkt 4). Die Hilfsmittelregel ist ein Vorschlag der Hauptsitzung. Entschieden von Julia sind nur die Punkte in Abschnitt 4.2 (ganzer Pool, 15 Items für Runde 0) und Abschnitt 12 (Punkte 4 und 18) | 2026-11-12 |
 | A31 | Annotation im Pilot (Abschnitte 6 und 7): bisher direkt am Inventar, d. h. Karten sofort sichtbar | **Vorschlag und Entscheidung getrennt.** Entschieden (Julia Hintersteiner, 2026-11-13): im Pilot zuerst eine eigene Lesart bei verdeckten Karten, dann die Kartenwahl („B im Pilot, Runde 0 auf morgen verschieben“); Runde 0 verschoben vom 2026-11-13 auf 2026-11-14. Als Grundlage mit vorgeschlagen von der Hauptsitzung, von Julia nur mit „B im Pilot“ wörtlich bestätigt (Weg A): die Inventarbindung im Protokoll offen benennen (Gold ist relativ zum MHDBDB-Inventar; die Übereinstimmung misst die Reproduzierbarkeit des Instruments aus Richtlinien, Inventar und Darstellung, nicht Wahrheit; „unabhängig“ heißt blind gegeneinander und gegenüber Silber und LLM). Nicht entschieden: B in der Hauptrunde (nach dem Pilot, Julia); Weg C (inventarfreie Aufgabe, Bedeutungsnähe von Belegpaaren wie DURel, Erk et al. 2013) als Kandidat für später (Beitrag V). Umsetzung `pilot/annotation.template.html` mit Ablauf `lesart-zuerst` als Standard, `--ablauf direkt` baubar, Kurzanleitung v0.2; zusätzlich auf Wunsch Julias (2026-11-13) Karten oberhalb des Status, auch ohne Status wählbar, Kurzanleitung leichter formuliert (v0.1) | Julia, 2026-11-13: „wenn ich bedeutungen vorgebe zum lemma ist das nicht schon beeinflussung? es geht ja darum einen unabhängigen goldstandard aus einem inter-annotator-agreement zu erstellen nicht?“. Die Vorgabe des Inventars kann die Lesart lenken (Ankereffekt); der Lesart-Schritt macht diesen Einfluss messbar und stützt die These aus dem Exposé zur Inventarabhängigkeit. Literaturprüfung noch offen (Kilgarriff 1997, Literatur zum Ankereffekt vorgegebener Antwortoptionen; bisher nicht in `literatur/`), deshalb keine Literaturbegründung. Umsetzung in Commits `c66cbaaab`, `55619c861`, `4c6213cb5`; Browsertest 80 Prüfungen, Chromium, Edge, Chrome, WebKit 80/80, Firefox 78/80 (zwei Prüfungen mit Eingaben in einen Tab im Hintergrund), laut Hauptsitzung (übernommen, nicht nachgemessen). A30 (vorläufig) bleibt unverändert; Runde-0-Termin dort überholt durch A31 | 2026-11-13 |
+| A32 | Pilot (Abschnitt 7, Schritt 2): ca. 50 Items, Schwelle nur als Vorschlag (α ≥ 0,80, Untergrenze 0,67); dritte Person offen (Abschnitt 12, Punkt 2) | Runden zu 25 frischen Items nach Runde 0; Stoppregel mit drei Bereichen (α ≥ 0,80 einfrieren; 0,67 bis unter 0,80 nachschärfen, nach der letzten Poolrunde trotzdem einfrieren und als Einschränkung berichten; unter 0,67 nach der letzten Poolrunde keine Hauptrunde, Instrument ändern, neue Pilotitems); gemessen pro Runde vor jeder Besprechung mit α nominal auf dem ganzen Label; Runde 0 ohne Schwelle; dritte Person: KZW vorgesehen, noch nicht angefragt | Schwelle vor Runde 0 festgelegt, damit sie nicht nach dem ersten Ergebnis angepasst wird. Der Pool (108) trägt Runde 0 und drei Runden zu 25. α nominal ist für die Stoppregel die strengere Wahl; das berichtete Hauptmaß der Übereinstimmung bleibt α mit MASI-Distanz (Abschnitt 9, A8), die Hauptsitzung hatte A8 beim Vorschlag übersehen und „ganzes Label exakt als Hauptmaß“ genannt, gemeint ist hier nur das Maß der Stoppregel. Wilson-Intervall für 80 % bei 25 Items von der Hauptsitzung gerechnet (etwa 61 bis 91 %). Entscheidung Julia Hintersteiner, 2026-11-13 („ok dann 25 je runde“; „die dritte person ist katharina“; „ja die schwelle passt so“ auf das Schema der Hauptsitzung) | 2026-11-13 |
 
 ## 12. Offene Punkte
 
 1. ~~Silber-Aufteilung je Zelle~~: entschieden am 2026-10-16, Domäne D1 mit 30 % (Abschnitt 4.4).
-2. **Dritte Person** für die Prüfung der Adjudikation (Abschnitt 7, Schritt 6), z. B. KZW?
-   Und wer adjudiziert selbst: Julia und Alan gemeinsam im Gespräch, oder die dritte Person?
-3. **Pilotgröße** und Alans Zeitbudget (bestimmt, ob ca. 510 Items realistisch sind).
+2. **Dritte Person** für die Prüfung der Adjudikation (Abschnitt 7, Schritt 6): **Teilstand 2026-11-13:** vorgesehen ist KZW (A32), Anfrage und Zusage stehen aus. **Offen:** wer adjudiziert selbst, Julia und Alan gemeinsam im Gespräch oder die dritte Person?
+3. **Pilotgröße** und Alans Zeitbudget (bestimmt, ob ca. 510 Items realistisch sind). **Teilstand 2026-11-13:** Rundengröße 25 Items nach Runde 0 (A32); Alans Zeitbudget offen.
 4. **Kontextausschnitt:** Standard entschieden am 2026-11-12 (Julia Hintersteiner: „ja der kontext passt“, auf den Vorschlag 2 Verse davor und danach, bei Prosa ±20 Tokens, erweiterbar, mit Werktitel). **Offen:** Größe des erweiterten Kontexts (Entwurf der Hauptsitzung: 8 Verse bzw. 80 Tokens je Seite, nicht bestätigt, A30).
 5. ~~Ausschlussliste der LLM-berührten Tokens bauen~~: erledigt am 2026-10-08, Regel bestätigt am 2026-10-16 (Abschnitt 3, Punkt 1).
 6. ~~Korpusstand fürs Einfrieren~~: entschieden am 2026-11-12, Upstream `a938559dc` vom 2026-10-14 für Pilot und ganzen Goldstandard, kein Upstream-Merge vorher (Julia Hintersteiner, Abschnitt 3, Neumessung).
@@ -696,7 +713,7 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 8. ~~Obergattungsgruppen prüfen und festlegen~~: entschieden am 2026-10-30 ([OBERGATTUNGEN.md](OBERGATTUNGEN.md), Abschnitt 5; Abschnitt 4.8).
 9. **Datierung und Vers/Prosa:** Sollen sie als weitere Ausgleichsmerkmale dienen? Dann braucht es eine manuelle Zuordnung pro Text (z. B. Jahrhundert über den Handschriftencensus, bei 323 Werken verlinkt).
 10. ~~Obergrenze an Tokens pro Text~~: 3, bestätigt am 2026-10-16 (Abschnitt 4.4).
-11. **Schwelle für das Ende des Pilots** (Vorschlag α ≥ 0,80, Untergrenze 0,67) vor dem Pilot festlegen.
+11. ~~Schwelle für das Ende des Pilots~~: entschieden am 2026-11-13, vor Runde 0 (A32, Abschnitt 7, Schritt 2).
 12. **Grobe Ebene des Begriffssystems** für die Zwei-Ebenen-Auswertung festlegen (welche Oberbegriffsstufe).
 13. **Ausschlüsse 2 und 3** (Abschnitt 3) auf die neue Wortartregel und das ganze Korpus umrechnen. Ausschluss 4 entfällt (A19); die Auswahlregel für die ca. 30 von Hand einzuordnenden Tokens mit Markierung `pos_abweichend` ist entschieden (einfache Zufallsauswahl, A22), die Ziehung selbst steht aus. **Teilstand 2026-11-12:** Ausschlüsse 2 und 3 sind auf das ganze Korpus (Stand `a938559dc`) umgerechnet (Abschnitt 3, Neumessung: 22 Lemmata mit 1.215 Tokens, 2 Lemmata mit 0 Tokens); die Ziehung der 30 Tokens steht weiter aus.
 14. **Einwilligung von Alan** zu Protokollierung und Veröffentlichung (DMP, Abschnitt 4).
