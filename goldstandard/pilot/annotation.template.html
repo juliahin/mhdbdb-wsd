@@ -75,24 +75,37 @@ td,th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertic
 <h1 id="titel"></h1>
 <p class="meta" id="metazeile"></p>
 <details id="anleitung">
-<summary>Kurzanleitung v0 (bitte vor dem ersten Beleg lesen)</summary>
-<p><strong>Aufgabe.</strong> Im Kontext ist ein Wort gelb hervorgehoben. Darüber steht sein Lemma. Zu entscheiden ist, welche Bedeutung dieses Lemmas an der Stelle vorliegt. Jede Bedeutung ist eine Karte mit den Begriffen, die das MHDBDB-Begriffssystem ihr zuordnet. Klein und grau steht über jedem Begriff sein Pfad zu den Oberbegriffen. Begriffe mit der Marke <span class="eigen-tag">nur hier</span> kommen nur auf dieser einen Karte vor und unterscheiden sie von den übrigen.</p>
-<p>Die Reihenfolge der Karten ist für jeden Beleg zufällig gemischt. Die Nummern sagen nichts über Häufigkeit oder Rang.</p>
-<p><strong>Status.</strong> Jeder Beleg endet mit genau einem Status:</p>
+<summary>Kurzanleitung v0.1 (bitte vor dem ersten Beleg lesen)</summary>
+<p><strong>Worum es geht.</strong> In jedem Beleg ist ein Wort gelb markiert. Gesucht ist die Bedeutung, die dieses Wort an genau dieser Stelle hat.</p>
+<p><strong>So geht es, Schritt für Schritt:</strong></p>
+<ol>
+<li>Den Text lesen. Reicht er nicht, „Mehr Kontext“ klicken.</li>
+<li>Die Karten darunter ansehen. Jede Karte ist eine mögliche Bedeutung des Lemmas, beschrieben durch Begriffe aus dem MHDBDB-Begriffssystem. Die kleine graue Zeile über einem Begriff zeigt, wo er im Begriffssystem steht. <span class="eigen-tag">nur hier</span> heißt: Dieser Begriff steht nur auf dieser Karte und unterscheidet sie von den anderen.</li>
+<li>Die passende Karte anklicken. Passen mehrere gleich gut, alle passenden anklicken.</li>
+<li>Den Status wählen (siehe Tabelle).</li>
+<li>Angeben, wie sicher die Entscheidung ist.</li>
+<li>Bei Bedarf einen Kommentar schreiben.</li>
+<li>„Festhalten“ klicken. Erst dann gilt der Beleg als erledigt, und der nächste öffnet sich.</li>
+</ol>
+<p><strong>Die Status:</strong></p>
 <table>
-<tr><th>Status</th><th>Wann</th><th>Pflicht</th></tr>
-<tr><td>Eine Bedeutung passt</td><td>genau eine Karte trifft die Stelle</td><td>eine Karte wählen</td></tr>
-<tr><td>Mehrere passen</td><td>zwei oder mehr Karten passen gleichermaßen, die Stelle entscheidet nicht zwischen ihnen</td><td>mindestens zwei Karten wählen</td></tr>
-<tr><td>Keine passt</td><td>keine Karte trifft die Stelle</td><td>Kommentar empfohlen; passende Begriffe aus den Karten können angekreuzt werden</td></tr>
-<tr><td>Lemma falsch</td><td>das Wort gehört nicht zu diesem Lemma</td><td>Kommentar, wenn möglich mit dem richtigen Lemma</td></tr>
-<tr><td>Kontext reicht nicht</td><td>auch der erweiterte Kontext entscheidet nicht</td><td>keine</td></tr>
-<tr><td>Text defekt</td><td>Wort oder Transkription ist beschädigt</td><td>Kommentar</td></tr>
+<tr><th>Status</th><th>wählen, wenn …</th><th>dazu nötig</th></tr>
+<tr><td>Eine Bedeutung passt</td><td>genau eine Karte passt</td><td>eine Karte angeklickt</td></tr>
+<tr><td>Mehrere passen</td><td>zwei oder mehr Karten passen gleich gut, und die Stelle lässt keine Entscheidung zu</td><td>mindestens zwei Karten angeklickt</td></tr>
+<tr><td>Keine passt</td><td>keine Karte passt</td><td>am besten ein Kommentar; passende Begriffe können angekreuzt werden</td></tr>
+<tr><td>Lemma falsch</td><td>das Wort gehört gar nicht zu diesem Lemma</td><td>ein Kommentar, wenn möglich mit dem richtigen Lemma</td></tr>
+<tr><td>Kontext reicht nicht</td><td>es ist auch mit mehr Kontext nicht zu entscheiden</td><td>nichts</td></tr>
+<tr><td>Text defekt</td><td>Wort oder Text ist beschädigt</td><td>ein Kommentar</td></tr>
 </table>
-<p><strong>Sicherheit.</strong> Bei jedem Beleg anzugeben: sicher, eher sicher oder unsicher. „Unsicher“ ist kein eigener Status; auch eine unsichere Entscheidung bleibt eine Entscheidung.</p>
-<p><strong>Kontext.</strong> Gezeigt werden zwei Verse davor und danach (Prosa: etwa 20 Wörter). „Mehr Kontext“ zeigt acht Verse (Prosa: etwa 80 Wörter). Das ist jederzeit erlaubt und wird mitprotokolliert.</p>
-<p><strong>Festhalten.</strong> Ein Beleg gilt erst als entschieden, wenn „Festhalten“ geklickt ist. Wer danach etwas ändert, setzt den Beleg auf „Entwurf“ zurück und muss erneut festhalten. Nichts ist vorausgewählt.</p>
-<p><strong>Hilfsmittel (Vorschlag v0).</strong> Gedruckte und digitale Wörterbücher (etwa Lexer, BMZ) sind erlaubt; bitte im Kommentar vermerken, wenn eines entschieden hat. Nicht erlaubt: die Belege auf der MHDBDB-Website oder im Repository nachschlagen, weil dort bestehende Bedeutungszuordnungen sichtbar sind, und KI-Werkzeuge. Die Belege bis zur Auswertung bitte nicht miteinander besprechen.</p>
-<p><strong>Protokoll.</strong> Diese Datei zeichnet jede Aktion mit Zeitpunkt auf: gewählter Status und Karten, Sicherheit, Kommentare, Kontexterweiterung, gezeigte Kartenreihenfolge und Verweildauer pro Beleg. Das Protokoll dient nur der Auswertung dieser Annotation. Die Datei sendet nichts ins Netz; Daten verlassen den Rechner nur über den Export.</p>
+<p><strong>Gut zu wissen.</strong></p>
+<ul>
+<li>Die Karten stehen bei jedem Beleg in zufälliger Reihenfolge. Die Nummer sagt nichts darüber, wie häufig oder wichtig eine Bedeutung ist.</li>
+<li>„Unsicher“ ist erlaubt und bleibt trotzdem eine Entscheidung.</li>
+<li>Nichts ist vorausgewählt. Wer nach dem Festhalten etwas ändert, muss erneut festhalten.</li>
+<li>Gezeigt werden zwei Verse vor und nach der Stelle (Prosa: etwa 20 Wörter), mit „Mehr Kontext“ acht Verse (Prosa: etwa 80 Wörter).</li>
+</ul>
+<p><strong>Hilfsmittel (Vorschlag).</strong> Erlaubt sind Wörterbücher wie Lexer oder BMZ; bitte im Kommentar vermerken, wenn eines den Ausschlag gegeben hat. Nicht erlaubt: die Belege auf der MHDBDB-Website oder im Repository nachschlagen (dort stehen schon Bedeutungszuordnungen) und KI-Werkzeuge. Die Belege bis zur Auswertung nicht miteinander besprechen. Die Datei nur in einem Browser-Tab öffnen.</p>
+<p><strong>Was aufgezeichnet wird.</strong> Die Datei speichert jede Eingabe mit Uhrzeit, außerdem, wie lange ein Beleg offen war und ob „Mehr Kontext“ benutzt wurde. Das dient nur der Auswertung dieser Annotation. Es wird nichts ins Internet geschickt; die Daten verlassen den Rechner nur über „Ergebnis als JSON sichern“.</p>
 </details>
 </header>
 <div class="toolbar"><div class="in">
@@ -121,8 +134,8 @@ td,th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertic
 const D = JSON.parse(document.getElementById("daten").textContent);
 const KEY = "wsd-pilot:" + D.fingerprint;
 const STATUS = [
-  ["SENSE", "Eine Bedeutung passt", "genau eine Karte wählen"],
-  ["MEHRERE", "Mehrere passen", "mindestens zwei Karten wählen"],
+  ["SENSE", "Eine Bedeutung passt", "genau eine Karte oben angeklickt"],
+  ["MEHRERE", "Mehrere passen", "mindestens zwei Karten oben angeklickt"],
   ["KEINE_PASST", "Keine passt", "Kommentar empfohlen"],
   ["LEMMA_FALSCH", "Lemma falsch", "Kommentar Pflicht"],
   ["KONTEXT_UNZUREICHEND", "Kontext reicht nicht", "auch erweitert nicht entscheidbar"],
@@ -203,8 +216,9 @@ function betrifftAktuell(neu) {
   return neu.some(e => e.item === aktuell && (AENDERUNG[e.aktion] || e.aktion === "festgehalten"));
 }
 // Kommentar: Ein offener Entwurf besteht genau dann, wenn seit der letzten Speicherung getippt wurde
-// (Merker entwurfOffen, mit dem Beleg, zu dem er gehört). Er wird nach einer Tipppause, am Anfang jedes
-// Bedien-Handlers (damit Reihenfolge und Kontextmerker stimmen), in zeichne() vor jedem Neuzeichnen, vor jedem Itemwechsel, beim Festhalten, beim Export und beim Verlassen des Tabs festgeschrieben.
+// (Merker entwurfOffen, mit dem Beleg, zu dem er gehört). Er wird nach einer Tipppause, am Anfang der Handler für
+// Kontext, Status, Karten, Begriffe, Sicherheit und Import (damit Reihenfolge und Kontextmerker stimmen), in zeichne()
+// vor jedem Neuzeichnen, vor jedem Itemwechsel, beim Festhalten, beim Export und beim Verlassen des Tabs festgeschrieben.
 // Ein Entwurf wird nie wiederhergestellt. Nicht auf "change" verlassen: Chromium vergleicht dort mit dem Wert beim
 // Fokussieren, nicht mit dem zuletzt gespeicherten.
 let entwurfOffen = false, entwurfItem = null, entwurfUhr = null;
@@ -282,23 +296,23 @@ function zeichne() {
   const ort = it.art === "vers" && it.vers ? "Vers " + esc(it.vers) : (it.art === "vers" ? "Vers" : "Prosa");
   const begriffe = [];
   it.karten.forEach(k => k.begriffe.forEach(b => { if (!begriffe.some(x => x.id === b.id)) begriffe.push(b); }));
-  const wahl = a.status === "SENSE" || a.status === "MEHRERE";
+  const wahl = !a.status || a.status === "SENSE" || a.status === "MEHRERE";
   document.getElementById("main").innerHTML =
     "<section class=\"card\"><div class=\"eyebrow\">Beleg " + (n + 1) + " von " + D.items.length + " · " + esc(it.werk) + " (" + esc(it.sigle) + ") · " + ort + "</div>" +
     "<p>Lemma <span class=\"lemma\">" + esc(it.orth) + "</span> · Form im Text: <strong>" + esc(it.form) + "</strong></p>" +
     "<div class=\"context\" id=\"kontext\">" + kontextHtml(erweitert ? it.erweitert : it.kontext) + "</div>" +
     "<div class=\"actions\"><button id=\"btnKontext\">" + (erweitert ? "Weniger Kontext" : "Mehr Kontext") + "</button></div></section>" +
-    "<section class=\"card\"><fieldset><legend>Status</legend><div class=\"status-grid\">" +
-    STATUS.map(([k, t, h]) => "<label><input type=\"radio\" name=\"status\" value=\"" + k + "\"" + (a.status === k ? " checked" : "") + "><span>" + t + "<small>" + h + "</small></span></label>").join("") +
-    "</div></fieldset>" +
-    "<h2>Bedeutungen</h2>" + (wahl ? "" : "<p class=\"meta\">Karten werden wählbar, sobald „Eine Bedeutung passt“ oder „Mehrere passen“ gewählt ist.</p>") +
+    "<section class=\"card\"><h2>Bedeutungen</h2>" + (wahl ? "" : "<p class=\"meta\">Bei diesem Status wird keine Karte gewählt.</p>") +
     "<div class=\"karten\">" + it.karten.map((k, i) => {
       const g = a.senses.includes(k.sense);
-      return "<div class=\"karte" + (g ? " gewaehlt" : "") + "\"><h3><label><input type=\"" + (a.status === "SENSE" ? "radio" : "checkbox") + "\" name=\"karte\" value=\"" + esc(k.sense) + "\"" +
+      return "<div class=\"karte" + (g ? " gewaehlt" : "") + "\"><h3><label><input type=\"checkbox\" name=\"karte\" value=\"" + esc(k.sense) + "\"" +
         (g ? " checked" : "") + (wahl ? "" : " disabled") + "> Bedeutung " + (i + 1) + "</label></h3><ul>" +
         k.begriffe.map(b => "<li><span class=\"pfad\">" + esc(b.pfad.join(" › ")) + "</span><span class=\"" + (b.eigen ? "eigen" : "") + "\">" + esc(b.term) + "</span>" +
           (b.eigen ? "<span class=\"eigen-tag\">nur hier</span>" : "") + "</li>").join("") + "</ul></div>";
     }).join("") + "</div>" +
+    "<fieldset><legend>Status</legend><div class=\"status-grid\">" +
+    STATUS.map(([k, t, h]) => "<label><input type=\"radio\" name=\"status\" value=\"" + k + "\"" + (a.status === k ? " checked" : "") + "><span>" + t + "<small>" + h + "</small></span></label>").join("") +
+    "</div></fieldset>" +
     (a.status === "KEINE_PASST" ? "<fieldset><legend>Welche Begriffe passen? (freiwillig)</legend><div class=\"begriffwahl\">" +
       begriffe.map(b => "<label><input type=\"checkbox\" name=\"begriff\" value=\"" + esc(b.id) + "\"" + (a.begriffe.includes(b.id) ? " checked" : "") + "> " + esc(b.term) + "</label>").join("") +
       "</div></fieldset>" : "") +
@@ -323,7 +337,6 @@ function binden() {
     kommentarSichern();
     const neu = r.value, alt = a.status;
     if (!(neu === "SENSE" || neu === "MEHRERE") && a.senses.length) aendern("senses", [], "karten_geleert");
-    if (neu === "SENSE" && a.senses.length > 1) aendern("senses", [], "karten_geleert");
     if (neu !== "KEINE_PASST" && a.begriffe.length) aendern("begriffe", [], "begriffe_geleert");
     if (neu !== alt) aendern("status", neu);
     zeichne();
@@ -338,8 +351,9 @@ function binden() {
   document.querySelectorAll("input[name=begriff]").forEach(c => c.onchange = () => {
     kommentarSichern();
     aendern("begriffe", c.checked ? a.begriffe.concat([c.value]) : a.begriffe.filter(x => x !== c.value), "begriffe");
+    if (!c.isConnected) zeichne();   // das Sichern hat fremde Ereignisse geholt und neu gezeichnet: Anzeige nachziehen
   });
-  document.querySelectorAll("input[name=sicherheit]").forEach(r => r.onchange = () => { kommentarSichern(); aendern("sicherheit", r.value); });
+  document.querySelectorAll("input[name=sicherheit]").forEach(r => r.onchange = () => { kommentarSichern(); aendern("sicherheit", r.value); if (!r.isConnected) zeichne(); });
   const k = document.getElementById("kommentar");
   k.oninput = () => { entwurfOffen = true; entwurfItem = aktuell; clearTimeout(entwurfUhr); entwurfUhr = setTimeout(kommentarSichern, 800); };
   k.onchange = kommentarSichern;
@@ -380,6 +394,7 @@ function exportieren() {
 function importieren(datei) {
   const r = new FileReader();
   r.onload = () => {
+    kommentarSichern();
     let g;
     try { g = JSON.parse(r.result); } catch (e) { alert("Die Datei ist kein lesbares JSON."); return; }
     if (g.schema !== "wsd-goldstandard-pilot-export-v1" || g.fingerprint !== D.fingerprint || !g.meta ||

@@ -1,10 +1,13 @@
 // Browsertest der gebauten Annotationsdateien (Protokoll, Abschnitte 6 und 8).
 // Aufruf aus dem Repo-Wurzelverzeichnis, nach annotation_bauen.py für julia und alan:
-//     node goldstandard/pilot/test_annotation.mjs
+//     node goldstandard/pilot/test_annotation.mjs [chromium|msedge|chrome|firefox|webkit]
+// Ohne Argument Chromium. msedge und chrome nutzen die installierten Browser, webkit steht für Safari.
+// Firefox: Die Prüfungen mit Tastatureingaben in einem zweiten Tab scheitern, weil Playwright dort keine
+// Eingaben zustellt (2026-11-13 gemessen: kein input-Ereignis in keiner der beiden Seiten). Ein Tab: alles grün.
 // Prüft am gebauten HTML: Blindheit, feste Kennung, Statusregeln, Festhalten und Rücksetzen,
 // Protokoll nur anhängend, Kontexterweiterung protokolliert, Export, Import des eigenen Exports,
 // Ablehnung eines fremden Exports, Seite ohne Netz.
-import { chromium } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -22,7 +25,10 @@ const alan = JSON.parse(readFileSync(DATEI("alan"), "utf8").match(/<script id="d
 ok(JSON.stringify(daten.items.map(i => i.item).sort()) === JSON.stringify(alan.items.map(i => i.item).sort()), "beide Personen haben dieselben Items");
 ok(daten.items.map(i => i.item).join() !== alan.items.map(i => i.item).join(), "Itemreihenfolge pro Person verschieden");
 
-const browser = await chromium.launch();
+const BROWSER = process.argv[2] || "chromium";
+const browser = BROWSER === "firefox" ? await firefox.launch() : BROWSER === "webkit" ? await webkit.launch()
+  : await chromium.launch(BROWSER === "chromium" ? {} : {channel: BROWSER});
+console.log("Browser: " + BROWSER + " " + browser.version());
 const ctx = await browser.newContext({ acceptDownloads: true });
 const netz = [];
 ctx.on("request", r => { if (!r.url().startsWith("file:") && !r.url().startsWith("blob:") && !r.url().startsWith("data:")) netz.push(r.url()); });
@@ -33,7 +39,9 @@ await page.goto(pathToFileURL(DATEI("julia")).href);
 
 ok((await page.locator("#fortschritt").textContent()).startsWith("0 von 15"), "Start: nichts festgehalten");
 ok(await page.locator("input[name=status]:checked").count() === 0, "kein Status vorausgewählt");
-ok(await page.locator("input[name=karte]:not([disabled])").count() === 0, "Karten ohne Status nicht wählbar");
+ok(await page.locator("input[name=karte]:not([disabled])").count() > 0 && await page.locator("input[name=karte]:checked").count() === 0, "Karten ohne Status wählbar, keine vorausgewählt");
+const reihenfolge = await page.evaluate(() => { const m = document.getElementById("main").innerHTML; return [m.indexOf("Bedeutungen"), m.indexOf("<legend>Status")]; });
+ok(reihenfolge[0] > -1 && reihenfolge[0] < reihenfolge[1], "Karten stehen über dem Status");
 
 await page.click("#btnFest");
 ok((await page.locator("#fehler").textContent()).includes("Status"), "Festhalten ohne Status abgelehnt");
@@ -170,6 +178,29 @@ for (const [name, klick] of [["Mehr Kontext", () => page.click("#btnKontext")],
   if (name === "Mehr Kontext") await page.click("#btnKontext");     // wieder reduzieren, damit der nächste Ablauf gleich startet
 }
 
+// Sicherheit und Begriffe: Holt das Sichern fremde Ereignisse zum Beleg, bleibt die Anzeige richtig (Review Runde 7, Befund 1)
+const einschleusen = async wert => page.evaluate(w => {          // fremdes Ereignis, dessen storage-Ereignis noch aussteht
+  const k = Object.keys(localStorage).find(x => x.startsWith("wsd-pilot:")), g = JSON.parse(localStorage.getItem(k));
+  g.ereignisse.push({id: "fremd-" + w, ms: Date.now(), zeit: "2026-11-13T00:00:00.000+01:00", item: aktuell, aktion: "kommentar",
+    wert: w, kartenreihenfolge: ITEM[aktuell].karten.map(x => x.sense), kontext_erweitert: false});
+  localStorage.setItem(k, JSON.stringify(g));
+}, wert);
+const entwurfMitPause = async () => {
+  await page.click("#kommentar"); await page.keyboard.press("End"); await page.keyboard.type("y");
+  await page.waitForTimeout(1100); await page.keyboard.press("Backspace");
+};
+await entwurfMitPause();
+await einschleusen("fremd1");
+await page.check("input[name=sicherheit][value=unsicher]");
+ok(await page.isChecked("input[name=sicherheit][value=unsicher]") && await page.evaluate(() => A[aktuell].sicherheit) === "unsicher", "Sicherheit nach fremdem Ereignis beim Sichern richtig angezeigt");
+await page.check("input[name=status][value=KEINE_PASST]").catch(() => {});
+await entwurfMitPause();
+await einschleusen("fremd2");
+const begriff = page.locator("input[name=begriff]").first();
+await begriff.check();
+const bstand = await page.evaluate(() => A[aktuell].begriffe);
+ok(await page.locator("input[name=begriff]").first().isChecked() && bstand.length === 1, "Begriff nach fremdem Ereignis beim Sichern richtig angezeigt, kein doppelter Eintrag");
+
 // Uhrversatz: Sicherung von einem Rechner, dessen Uhr 10 Minuten vorgeht (Review Runde 2, Befund 1)
 const versetzt = JSON.parse(readFileSync(await dl.path(), "utf8"));
 versetzt.ereignisse.forEach(e => { e.ms += 600000; });
@@ -217,6 +248,25 @@ writeFileSync(spaeterPfad, JSON.stringify(spaeter));
 await p2.setInputFiles("#importFile", spaeterPfad);
 await p2.waitForTimeout(300);
 ok(await p2.inputValue("#kommentar") === "export", "Import mit neuerem Kommentar ersetzt einen lokal gespeicherten im Feld");
+
+// Erst Karte, dann Status: der Ablauf der Kurzanleitung v0.1
+const p5 = await (await browser.newContext()).newPage();
+p5.on("pageerror", e => js.push("Karte zuerst: " + e));
+await p5.goto(pathToFileURL(DATEI("julia")).href);
+await p5.locator("input[name=karte]").first().check();
+await p5.check("input[name=status][value=SENSE]");
+ok(await p5.locator("input[name=karte]:checked").count() === 1, "Karte bleibt nach Statuswahl gewählt");
+await p5.locator("input[name=karte]").nth(1).check();
+ok(await p5.locator("input[name=karte]:checked").count() === 1, "bei „Eine Bedeutung passt“ ersetzt eine neue Karte die alte");
+await p5.check("input[name=sicherheit][value=sicher]");
+await p5.click("#btnFest");
+ok((await p5.locator("#fortschritt").textContent()).startsWith("1 von 15"), "Karte vor Status gewählt, Festhalten gelingt");
+await p5.check("input[name=status][value=MEHRERE]");
+await p5.locator("input[name=karte]").nth(0).check();
+await p5.locator("input[name=karte]").nth(1).check();
+await p5.check("input[name=status][value=SENSE]");
+await p5.click("#btnFest");
+ok((await p5.locator("#fehler").textContent()).includes("genau eine"), "zwei Karten und „Eine Bedeutung passt“: Festhalten abgelehnt");
 
 // Export von julia wird in alans Datei abgelehnt
 const p3 = await (await browser.newContext()).newPage();
