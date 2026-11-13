@@ -33,3 +33,5 @@ Verdichtet 14.10.2026.
 **EOL- und Attribut-Proben ohne den Arbeitsbaum**
 - Probeklon im Scratchpad: `git clone --shared --no-checkout --branch main <repo> <scratch>/<eigener Name>`, dann `sparse-checkout set --no-cone .gitattributes <datei>` **ohne führenden Slash** (Git Bash macht aus `/.gitattributes` einen Pfad unter `C:/Program Files/Git/`) und `sparse-checkout reapply`. `config core.autocrlf false` + `core.eol lf` simuliert Linux.
 - Ein `git status` M bei leerem `git diff` ist eine Größenabweichung zwischen Index-Stat und Datei (`git ls-files -s --debug`); `git add` oder `git restore` löst es. `git ls-files --eol <datei>` zeigt, was im Baum liegt. `rnc2rng` schreibt unter Windows CRLF, unter Linux LF.
+
+**Stand pinnen (Lehre 2026-11-12, mhdbdb-wsd):** `git stash create` nie in einer Kette mit `tee /dev/stderr` o. ä. aufrufen: seine Zeile ging dort verloren, und die erste Hash-Zeile sah aus wie die Stash-Kennung (`git diff <id>` am Ende: `bad object`). Jedes Pinning-Kommando in einen eigenen Aufruf und die Zeilenzahl gegen die Dateizahl halten. Ging die Kennung verloren: Blob-Hashes der Dateien gegen die `index a..b`-Zeile des Diffs vom Anfang halten.
