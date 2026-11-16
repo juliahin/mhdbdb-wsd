@@ -14,6 +14,7 @@ Projektkern.
 | 1c. Datenmanagementplan (Science Europe / FWF) | [DMP.md](DMP.md) | Entwurf 2026-10-16 |
 | 1d. Prompt-Log (Ebene B hier, Ebene A privat) | [PROMPT-LOG.md](PROMPT-LOG.md) | 2026-11-13 |
 | 1e. Vorschläge aus der Literaturauswertung, zum Entscheiden | [VORSCHLAEGE-2026-10.md](VORSCHLAEGE-2026-10.md) | 2026-10-30 |
+| 1e'. Vorschläge aus den Zusammenfassungen vom November (42 Werke), zum Entscheiden | [VORSCHLAEGE-2026-11.md](VORSCHLAEGE-2026-11.md) | 2026-11-16 |
 | 1f. Verschmelzungen: Erkennungsregel für Ausschluss 5 (Protokoll, Abschnitt 3) | [verschmelzungen.py](verschmelzungen.py) | 2026-10-30 |
 | 1g. Verschmelzungen: Wirkung auf die Grundgesamtheit | [verschmelzungen/wirkung.py](verschmelzungen/wirkung.py) | 2026-10-30 |
 | 1h. Verschmelzungen: Ziehung der Prüfrunde 2 (reproduziert Liste und Schlüssel) | [verschmelzungen/runde2_ziehen.py](verschmelzungen/runde2_ziehen.py) | 2026-10-30 |

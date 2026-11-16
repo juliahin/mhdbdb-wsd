@@ -950,3 +950,601 @@
   url     = {https://repositum.tuwien.at/handle/20.500.12708/216545},
   note    = {Betreuung: Gábor Recski. Titelblatt datiert 4. Mai 2025; DataCite: eingereicht 2025-05, Supervisor Recski, 69 Seiten; reposiTUm: Institut E194 Information Systems Engineering, In Copyright (abgerufen 2026-10-29)}
 }
+
+@inproceedings{gale1992estimating,
+  author    = {Gale, William and Church, Kenneth Ward and Yarowsky, David},
+  title     = {Estimating Upper and Lower Bounds on the Performance of Word-Sense Disambiguation Programs},
+  booktitle = {30th Annual Meeting of the {Association} for {Computational} {Linguistics}},
+  pages     = {249--256},
+  publisher = {Association for Computational Linguistics},
+  address   = {Newark, Delaware, USA},
+  year      = {1992},
+  month     = jun,
+  doi       = {10.3115/981967.981999},
+  url       = {https://aclanthology.org/P92-1032/},
+  note      = {CC BY-NC-SA 3.0 (ACL Anthology). Angaben aus BibTeX der Anthology und Crossref, DOI aufgelöst 2026-11-13; in Sekundärquellen teils „1992a“, teils „1992b“}
+}
+
+@inproceedings{gale1992one,
+  author    = {Gale, William A. and Church, Kenneth W. and Yarowsky, David},
+  title     = {One Sense Per Discourse},
+  booktitle = {Speech and Natural Language: Proceedings of a Workshop Held at Harriman, {New} {York}, {February} 23-26, 1992},
+  pages     = {233--237},
+  publisher = {Association for Computational Linguistics},
+  year      = {1992},
+  doi       = {10.3115/1075527.1075579},
+  url       = {https://aclanthology.org/H92-1045/},
+  note      = {CC BY-NC-SA 3.0 (ACL Anthology). Seiten an den gedruckten Seitenzahlen des PDFs (Anthology ohne Seiten, Crossref nur Anfangsseite 233); DOI aufgelöst 2026-11-13}
+}
+
+@article{kilgarriff1998gold,
+  author  = {Kilgarriff, Adam},
+  title   = {Gold standard datasets for evaluating word sense disambiguation programs},
+  journal = {Computer Speech \& Language},
+  volume  = {12},
+  number  = {4},
+  pages   = {453--472},
+  year    = {1998},
+  month   = oct,
+  doi     = {10.1006/csla.1998.0108},
+  note    = {Heft, Seiten und Monat laut Crossref (DOI aufgelöst 2026-11-13). Lokal liegt nur der ITRI-Report ITRI-98-08, August 1998 (https://www.kilgarriff.co.uk/Publications/1998-K-CompSL.pdf), dessen Deckblatt „12 (3)“ nennt; Seitenangaben aus dem Report gelten nicht für die Zeitschrift}
+}
+
+@inproceedings{kilgarriff2000english,
+  author    = {Kilgarriff, Adam and Rosenzweig, Joseph},
+  title     = {{English} {SENSEVAL}: Report and Results},
+  editor    = {Gavrilidou, M. and Carayannis, G. and Markantonatou, S. and Piperidis, S. and Stainhauer, G.},
+  booktitle = {Proceedings of the Second International Conference on Language Resources and Evaluation ({LREC}'00)},
+  pages     = {1239--1244},
+  publisher = {European Language Resources Association (ELRA)},
+  address   = {Athens, Greece},
+  year      = {2000},
+  month     = may,
+  doi       = {10.63317/56t55g8zw7sm},
+  url       = {https://aclanthology.org/L00-1005/},
+  note      = {Seiten nur laut Deckblatt der Autorenfassung ITRI-00-25 (Crossref ohne Seiten, ELRA-Seite „Pages: N/A“, abgerufen 2026-11-13); Lizenz laut ELRA CC BY-NC 4.0, laut ACL Anthology CC BY-NC-SA 3.0. Langfassung: Framework and Results for English SENSEVAL, Computers and the Humanities 34, 15--48}
+}
+
+@inproceedings{kilgarriff2001english,
+  author    = {Kilgarriff, Adam},
+  title     = {{English} Lexical Sample Task Description},
+  editor    = {Preiss, Judita and Yarowsky, David},
+  booktitle = {Proceedings of {SENSEVAL}-2 Second International Workshop on Evaluating Word Sense Disambiguation Systems},
+  pages     = {17--20},
+  publisher = {Association for Computational Linguistics},
+  address   = {Toulouse, France},
+  year      = {2001},
+  month     = jul,
+  url       = {https://aclanthology.org/S01-1004/},
+  note      = {CC BY-NC-SA 3.0 (ACL Anthology); keine DOI gefunden (Crossref-Suche 2026-11-13); Seiten am PDF bestätigt}
+}
+
+@inproceedings{manjavacas2021macberth,
+  author    = {Manjavacas Arevalo, Enrique and Fonteyn, Lauren},
+  title     = {{MacBERTh}: Development and Evaluation of a Historically Pre-trained Language Model for {English} (1450-1950)},
+  editor    = {Hämäläinen, Mika and Alnajjar, Khalid and Partanen, Niko and Rueter, Jack},
+  booktitle = {Proceedings of the Workshop on Natural Language Processing for Digital Humanities ({NLP4DH})},
+  pages     = {23--36},
+  publisher = {NLP Association of India (NLPAI)},
+  address   = {NIT Silchar, India},
+  year      = {2021},
+  month     = dec,
+  url       = {https://aclanthology.org/2021.nlp4dh-1.4/},
+  note      = {Im PDF als Enrique Manjavacas; co-located with ICON-2021. Die im PDF gedruckte DOI 10.26615/978-952-94-5833-2_004 löst nicht auf (doi.org 404, 2026-11-13), daher nicht angegeben}
+}
+
+@inproceedings{ghinassi2024pivoting,
+  author    = {Ghinassi, Iacopo and Tedeschi, Simone and Marongiu, Paola and Navigli, Roberto and McGillivray, Barbara},
+  title     = {Language Pivoting from Parallel Corpora for Word Sense Disambiguation of Historical Languages: A Case Study on {Latin}},
+  editor    = {Calzolari, Nicoletta and Kan, Min-Yen and Hoste, Veronique and Lenci, Alessandro and Sakti, Sakriani and Xue, Nianwen},
+  booktitle = {Proceedings of the 2024 Joint International Conference on Computational Linguistics, Language Resources and Evaluation ({LREC-COLING} 2024)},
+  pages     = {10073--10084},
+  publisher = {ELRA and ICCL},
+  address   = {Torino, Italia},
+  year      = {2024},
+  month     = may,
+  doi       = {10.63317/5gaz3rzgjarc},
+  url       = {https://aclanthology.org/2024.lrec-main.880/},
+  note      = {CC BY-NC 4.0 (Kopfzeile S. 10073); DOI aufgelöst 2026-11-13}
+}
+
+@inproceedings{ghizzota2025beatus,
+  author    = {Ghizzota, Eleonora and Basile, Pierpaolo and Siciliani, Lucia and Semeraro, Giovanni},
+  title     = {The Meaning of Beatus: Disambiguating {Latin} with Contemporary {AI} Models},
+  editor    = {Bosco, Cristina and Jezek, Elisabetta and Polignano, Marco and Sanguinetti, Manuela},
+  booktitle = {Proceedings of the Eleventh {Italian} Conference on Computational Linguistics ({CLiC-it} 2025)},
+  series    = {CEUR Workshop Proceedings},
+  volume    = {4112},
+  pages     = {469--479},
+  address   = {Cagliari, Italy},
+  year      = {2025},
+  month     = sep,
+  isbn      = {979-12-243-0587-3},
+  url       = {https://ceur-ws.org/Vol-4112/45_main_long.pdf},
+  note      = {CC BY 4.0; keine DOI; Seiten laut ACL Anthology 2025.clicit-1.46, PDF ohne Seitenzahlen; bei CEUR veröffentlicht 2025-11-30}
+}
+
+@inproceedings{ghizzota2026knowledge,
+  author    = {Ghizzota, Eleonora and Marongiu, Paola and Basile, Pierpaolo and Ferilli, Stefano and McGillivray, Barbara},
+  title     = {Linguistic Knowledge Graphs for Sense Prediction: A Case-study on {Latin}},
+  editor    = {Piperidis, Stelios and Bel, Núria and van den Heuvel, Henk and Ide, Nancy and Krek, Simon and Toral, Antonio},
+  booktitle = {Proceedings of the Fifteenth Language Resources and Evaluation Conference ({LREC} 2026)},
+  pages     = {10937--10952},
+  publisher = {ELRA Language Resources Association},
+  address   = {Palma de Mallorca, Spain},
+  year      = {2026},
+  month     = may,
+  doi       = {10.63317/2b2274srsgkf},
+  url       = {https://aclanthology.org/2026.lrec-1.856/},
+  note      = {DOI aufgelöst 2026-11-13; im PDF nur ©ELRA}
+}
+
+@inproceedings{tittel2018rdfa,
+  author    = {Tittel, Sabine and Bermúdez-Sabel, Helena and Chiarcos, Christian},
+  title     = {Using {RDFa} to Link Text and Dictionary Data for {Medieval French}},
+  editor    = {McCrae, John P. and Chiarcos, Christian and Declerck, Thierry and Gracia, Jorge and Klimek, Bettina},
+  booktitle = {Proceedings of the {LREC} 2018 Workshop 6th Workshop on Linked Data in Linguistics: Towards Linguistic Data Science ({LDL}-2018)},
+  pages     = {30--38},
+  publisher = {European Language Resources Association},
+  address   = {Paris},
+  year      = {2018},
+  venue     = {Miyazaki, Japan},
+  eventdate = {2018-05-12},
+  isbn      = {979-10-95546-19-1},
+  url       = {https://iris.unil.ch/handle/iris/33793},
+  note      = {Seiten aus Inhaltsverzeichnis und Kolumnentitel des Bands (Zenodo 10.5281/zenodo.2599900, CC BY 4.0), der dort versehentlich den Text des vorigen Beitrags enthält; Einzel-PDF aus dem Repositorium Lausanne ohne Seitenzahlen. Nicht verwechseln mit tittel2018deaf}
+}
+
+@misc{ihden2015tagset,
+  author       = {Ihden, Sarah and Barteld, Fabian and Dreessen, Katharina and Schröder, Ingrid},
+  title        = {Grammatische Annotation historischer Texte: ein Tagset für das {Mittelniederdeutsche}},
+  howpublished = {Vortragsfolien, 5. Kongress der Internationalen Gesellschaft für Dialektologie des Deutschen (IGDD), „Räume, Grenzen, Übergänge“, Universität Luxemburg, 10.--12. September 2015},
+  year         = {2015},
+  url          = {https://www.slm.uni-hamburg.de/ren/media/pdf/barteld-dreessen-ihden-druckversion-igdd2015-20150908.pdf},
+  note         = {Titelfolie nennt Ihden zuerst; Reihenfolge der übrigen aus der zweispaltigen Anordnung nicht eindeutig (hier spaltenweise). Im Original Gedankenstrich zwischen den Titelteilen. Begutachtete Fassung des Tagsets: Barteld, Ihden, Dreessen & Schröder 2018, LREC, ACL Anthology L18-1622}
+}
+
+@article{artstein2008intercoder,
+  author  = {Artstein, Ron and Poesio, Massimo},
+  title   = {Inter-Coder Agreement for Computational Linguistics},
+  journal = {Computational Linguistics},
+  volume  = {34},
+  number  = {4},
+  pages   = {555--596},
+  year    = {2008},
+  month   = dec,
+  doi     = {10.1162/coli.07-034-R2},
+  url     = {https://aclanthology.org/J08-4004/},
+  note    = {Survey Article (Rubrik über dem Titel; ACL Anthology führt sie im Titel). Crossref und DOI geprüft 2026-11-13; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY-NC-SA 3.0 laut ACL Anthology}
+}
+
+@inproceedings{ng1999case,
+  author    = {Ng, Hwee Tou and Lim, Chung Yong and Foo, Shou King},
+  title     = {A Case Study on Inter-Annotator Agreement for Word Sense Disambiguation},
+  booktitle = {{SIGLEX}99: Standardizing Lexical Resources},
+  pages     = {9--13},
+  year      = {1999},
+  url       = {https://aclanthology.org/W99-0502/},
+  note      = {Keine DOI; Seiten nur aus dem PDF (Anthology ohne Seiten, Ort und Monat), geprüft 2026-11-13; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY-NC-SA 3.0 laut ACL Anthology}
+}
+
+@inproceedings{passonneau2006masi,
+  author    = {Passonneau, Rebecca},
+  title     = {Measuring Agreement on Set-valued Items ({MASI}) for Semantic and Pragmatic Annotation},
+  editor    = {Calzolari, Nicoletta and Choukri, Khalid and Gangemi, Aldo and Maegaard, Bente and Mariani, Joseph and Odijk, Jan and Tapias, Daniel},
+  booktitle = {Proceedings of the Fifth International Conference on Language Resources and Evaluation ({LREC}'06)},
+  pages     = {831--836},
+  publisher = {European Language Resources Association (ELRA)},
+  address   = {Genoa, Italy},
+  year      = {2006},
+  month     = may,
+  url       = {https://aclanthology.org/L06-1392/},
+  note      = {Keine DOI; Seiten aus den Fußzeilen des PDF (Anthology ohne Seiten), geprüft 2026-11-13; lokales PDF byte-gleich mit dem Anthology-PDF; Lizenz nicht festgestellt}
+}
+
+@inproceedings{passonneau2006inter,
+  author    = {Passonneau, Rebecca and Habash, Nizar and Rambow, Owen},
+  title     = {Inter-annotator Agreement on a Multilingual Semantic Annotation Task},
+  editor    = {Calzolari, Nicoletta and Choukri, Khalid and Gangemi, Aldo and Maegaard, Bente and Mariani, Joseph and Odijk, Jan and Tapias, Daniel},
+  booktitle = {Proceedings of the Fifth International Conference on Language Resources and Evaluation ({LREC}'06)},
+  pages     = {1951--1956},
+  publisher = {European Language Resources Association (ELRA)},
+  address   = {Genoa, Italy},
+  year      = {2006},
+  month     = may,
+  url       = {https://aclanthology.org/L06-1391/},
+  note      = {Keine DOI; Seiten aus den Fußzeilen des PDF (Anthology ohne Seiten), geprüft 2026-11-13; lokales PDF byte-gleich mit dem Anthology-PDF; Lizenz nicht festgestellt}
+}
+
+@inproceedings{passonneau2010word,
+  author    = {Passonneau, Rebecca J. and Salleb-Aoussi, Ansaf and Bhardwaj, Vikas and Ide, Nancy},
+  title     = {Word Sense Annotation of Polysemous Words by Multiple Annotators},
+  editor    = {Calzolari, Nicoletta and Choukri, Khalid and Maegaard, Bente and Mariani, Joseph and Odijk, Jan and Piperidis, Stelios and Rosner, Mike and Tapias, Daniel},
+  booktitle = {Proceedings of the Seventh International Conference on Language Resources and Evaluation ({LREC}'10)},
+  pages     = {3244--3249},
+  publisher = {European Language Resources Association (ELRA)},
+  address   = {Valletta, Malta},
+  year      = {2010},
+  month     = may,
+  url       = {https://aclanthology.org/L10-1628/},
+  note      = {Keine DOI; Seiten aus den Fußzeilen des PDF (Anthology ohne Seiten), geprüft 2026-11-13; lokales PDF byte-gleich mit dem Anthology-PDF; Lizenz nicht festgestellt}
+}
+
+@inproceedings{hamp1997germanet,
+  author    = {Hamp, Birgit and Feldweg, Helmut},
+  title     = {{GermaNet} -- a Lexical-Semantic Net for {German}},
+  booktitle = {Proceedings of the {ACL} Workshop Automatic Information Extraction and Building of Lexical Semantic Resources for {NLP} Applications},
+  pages     = {9--15},
+  address   = {Madrid, Spain},
+  year      = {1997},
+  url       = {https://aclanthology.org/W97-0802/},
+  note      = {Keine DOI. Booktitle und Jahr laut ACL Anthology (ohne Seiten, Ort, Herausgeber); Ort Madrid und Bezeichnung als ACL-Workshop laut Seite „Citing GermaNet“ der Universität Tübingen (https://uni-tuebingen.de/en/142823); Seiten gedruckt im PDF; Titel im PDF mit Halbgeviertstrich, Anthology mit Bindestrich (alles geprüft 2026-11-13). Für GermaNet zusammen mit henrich2010germanet zitieren. CC BY-NC-SA 3.0}
+}
+
+@inproceedings{hovy2006ontonotes,
+  author    = {Hovy, Eduard and Marcus, Mitchell and Palmer, Martha and Ramshaw, Lance and Weischedel, Ralph},
+  title     = {{OntoNotes}: The 90\% Solution},
+  editor    = {Moore, Robert C. and Bilmes, Jeff and Chu-Carroll, Jennifer and Sanderson, Mark},
+  booktitle = {Proceedings of the Human Language Technology Conference of the {NAACL}, Companion Volume: Short Papers},
+  pages     = {57--60},
+  publisher = {Association for Computational Linguistics},
+  address   = {New York City, USA},
+  year      = {2006},
+  month     = jun,
+  url       = {https://aclanthology.org/N06-2015/},
+  note      = {Keine DOI; Angaben aus dem BibTeX der ACL Anthology und der Kopfzeile S. 57, geprüft 2026-11-13; CC BY-NC-SA 3.0}
+}
+
+@inproceedings{vial2019sense,
+  author    = {Vial, Lo{\"i}c and Lecouteux, Benjamin and Schwab, Didier},
+  title     = {Sense Vocabulary Compression through the Semantic Knowledge of {WordNet} for Neural Word Sense Disambiguation},
+  editor    = {Vossen, Piek and Fellbaum, Christiane},
+  booktitle = {Proceedings of the 10th Global {Wordnet} Conference},
+  pages     = {108--117},
+  publisher = {Global Wordnet Association},
+  address   = {Wroclaw, Poland},
+  year      = {2019},
+  month     = jul,
+  doi       = {10.18653/v1/2019.gwc-1.14},
+  url       = {https://aclanthology.org/2019.gwc-1.14/},
+  note      = {DOI aufgelöst 2026-11-13; Seiten nur laut ACL Anthology (PDF ohne Seitenzahlen); Preprint arXiv:1905.05677 (nicht geprüft); CC BY 4.0}
+}
+
+@inproceedings{sumanathilaka2024llms,
+  author    = {Sumanathilaka, T. G. D. K. and Micallef, Nicholas and Hough, Julian},
+  title     = {Can {LLMs} assist with Ambiguity? A Quantitative Evaluation of various Large Language Models on Word Sense Disambiguation},
+  editor    = {Mitkov, Ruslan and Ezzini, Saad and Ranasinghe, Tharindu and Ezeani, Ignatius and Khallaf, Nouran and Acarturk, Cengiz and Bradbury, Matthew and El-Haj, Mo and Rayson, Paul},
+  booktitle = {Proceedings of the First International Conference on Natural Language Processing and Artificial Intelligence for Cyber Security},
+  pages     = {97--108},
+  publisher = {International Conference on Natural Language Processing and Artificial Intelligence for Cyber Security},
+  address   = {Lancaster, UK},
+  year      = {2024},
+  month     = jul,
+  url       = {https://aclanthology.org/2024.nlpaics-1.12/},
+  note      = {Keine DOI; Angaben aus dem BibTeX der ACL Anthology und der Kopfzeile S. 97, geprüft 2026-11-13; Preprint arXiv:2411.18337, von Meconi et al. 2025 als 2025 zitiert (Versionen nicht selbst geprüft); CC BY 4.0}
+}
+
+@inproceedings{kibria2024functional,
+  author    = {Kibria, Raihan and Dipta, Sheikh Intiser Uddin and Adnan, Muhammad Abdullah},
+  title     = {On Functional Competence of {LLMs} for Linguistic Disambiguation},
+  editor    = {Barak, Libby and Alikhani, Malihe},
+  booktitle = {Proceedings of the 28th Conference on Computational Natural Language Learning},
+  pages     = {143--160},
+  publisher = {Association for Computational Linguistics},
+  address   = {Miami, FL, USA},
+  year      = {2024},
+  month     = nov,
+  doi       = {10.18653/v1/2024.conll-1.12},
+  url       = {https://aclanthology.org/2024.conll-1.12/},
+  note      = {Titel am PDF geprüft; DOI aufgelöst 2026-11-13; CC BY 4.0}
+}
+
+@article{passonneau2014benefits,
+  author    = {Passonneau, Rebecca J. and Carpenter, Bob},
+  title     = {The Benefits of a Model of Annotation},
+  journal   = {Transactions of the Association for Computational Linguistics},
+  volume    = {2},
+  pages     = {311--326},
+  year      = {2014},
+  publisher = {MIT Press},
+  address   = {Cambridge, MA},
+  doi       = {10.1162/tacl_a_00185},
+  url       = {https://aclanthology.org/Q14-1025/},
+  note      = {Angaben am PDF (S. 311: „Published 10/2014“), Crossref (Dezember 2014) und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; lokales PDF byte-gleich mit dem Anthology-PDF; im PDF ©2014 ACL, laut Anthology-FAQ ACL-Material vor 2016 CC BY-NC-SA 3.0, Verlagsseite MIT Press nicht abrufbar}
+}
+
+@inproceedings{plank2022problem,
+  author    = {Plank, Barbara},
+  title     = {The {``}Problem{''} of Human Label Variation: On Ground Truth in Data, Modeling and Evaluation},
+  editor    = {Goldberg, Yoav and Kozareva, Zornitsa and Zhang, Yue},
+  booktitle = {Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing},
+  pages     = {10671--10682},
+  publisher = {Association for Computational Linguistics},
+  address   = {Abu Dhabi, United Arab Emirates},
+  year      = {2022},
+  month     = dec,
+  doi       = {10.18653/v1/2022.emnlp-main.731},
+  url       = {https://aclanthology.org/2022.emnlp-main.731/},
+  note      = {Angaben am PDF, Crossref und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY 4.0}
+}
+
+@inproceedings{prabhakaran2021releasing,
+  author    = {Prabhakaran, Vinodkumar and Mostafazadeh Davani, Aida and D{\'i}az, Mark},
+  title     = {On Releasing Annotator-Level Labels and Information in Datasets},
+  editor    = {Bonial, Claire and Xue, Nianwen},
+  booktitle = {Proceedings of the Joint 15th Linguistic Annotation Workshop ({LAW}) and 3rd Designing Meaning Representations ({DMR}) Workshop},
+  pages     = {133--138},
+  publisher = {Association for Computational Linguistics},
+  address   = {Punta Cana, Dominican Republic},
+  year      = {2021},
+  month     = nov,
+  doi       = {10.18653/v1/2021.law-1.14},
+  url       = {https://aclanthology.org/2021.law-1.14/},
+  note      = {Angaben am PDF, Crossref und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; Namensform „Díaz“ nach dem PDF, Anthology und Crossref „Diaz“; erste beiden Autor:innen gleichberechtigt; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY 4.0}
+}
+
+@inproceedings{berzak2016anchoring,
+  author    = {Berzak, Yevgeni and Huang, Yan and Barbu, Andrei and Korhonen, Anna and Katz, Boris},
+  title     = {Anchoring and Agreement in Syntactic Annotations},
+  editor    = {Su, Jian and Duh, Kevin and Carreras, Xavier},
+  booktitle = {Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing},
+  pages     = {2215--2224},
+  publisher = {Association for Computational Linguistics},
+  address   = {Austin, Texas},
+  year      = {2016},
+  month     = nov,
+  doi       = {10.18653/v1/D16-1239},
+  url       = {https://aclanthology.org/D16-1239/},
+  note      = {Angaben am PDF, Crossref und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY 4.0 (ACL Anthology, ab 2016)}
+}
+
+@inproceedings{beck2024order,
+  author    = {Beck, Jacob and Eckman, Stephanie and Ma, Bolei and Chew, Rob and Kreuter, Frauke},
+  title     = {Order Effects in Annotation Tasks: Further Evidence of Annotation Sensitivity},
+  editor    = {V{\'a}zquez, Ra{\'u}l and Celikkanat, Hande and Ulmer, Dennis and Tiedemann, J{\"o}rg and Swayamdipta, Swabha and Aziz, Wilker and Plank, Barbara and Baan, Joris and de Marneffe, Marie-Catherine},
+  booktitle = {Proceedings of the 1st Workshop on Uncertainty-Aware {NLP} ({UncertaiNLP} 2024)},
+  pages     = {81--86},
+  publisher = {Association for Computational Linguistics},
+  address   = {St Julians, Malta},
+  year      = {2024},
+  month     = mar,
+  doi       = {10.18653/v1/2024.uncertainlp-1.8},
+  url       = {https://aclanthology.org/2024.uncertainlp-1.8/},
+  note      = {Angaben am PDF, Crossref und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY 4.0}
+}
+
+@article{loureiro2021analysis,
+  author    = {Loureiro, Daniel and Rezaee, Kiamehr and Pilehvar, Mohammad Taher and Camacho-Collados, Jose},
+  title     = {Analysis and Evaluation of Language Models for Word Sense Disambiguation},
+  journal   = {Computational Linguistics},
+  volume    = {47},
+  number    = {2},
+  pages     = {387--443},
+  publisher = {MIT Press},
+  address   = {Cambridge, MA},
+  year      = {2021},
+  month     = jun,
+  doi       = {10.1162/coli_a_00405},
+  url       = {https://aclanthology.org/2021.cl-2.14/},
+  note      = {Angaben am PDF (Kolumnentitel, Seitenzahlen) und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; Crossref führt nur den Online-First-Datensatz (20.05.2021, S. 1--57, ohne Band und Heft); lokales PDF byte-gleich mit dem Anthology-PDF; CC BY-NC-ND 4.0 (PDF S. 387, Crossref)}
+}
+
+@inproceedings{erk2009graded,
+  author    = {Erk, Katrin and McCarthy, Diana},
+  title     = {Graded Word Sense Assignment},
+  editor    = {Koehn, Philipp and Mihalcea, Rada},
+  booktitle = {Proceedings of the 2009 Conference on Empirical Methods in Natural Language Processing},
+  pages     = {440--449},
+  publisher = {Association for Computational Linguistics},
+  address   = {Singapore},
+  year      = {2009},
+  month     = aug,
+  url       = {https://aclanthology.org/D09-1046/},
+  note      = {Angaben am PDF und BibTeX der ACL Anthology geprüft 2026-11-16; keine DOI; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY-NC-SA 3.0 (ACL Anthology, vor 2016)}
+}
+
+@article{erk2013measuring,
+  author    = {Erk, Katrin and McCarthy, Diana and Gaylord, Nicholas},
+  title     = {Measuring Word Meaning in Context},
+  journal   = {Computational Linguistics},
+  volume    = {39},
+  number    = {3},
+  pages     = {511--554},
+  publisher = {MIT Press},
+  address   = {Cambridge, MA},
+  year      = {2013},
+  month     = sep,
+  doi       = {10.1162/COLI_a_00142},
+  url       = {https://aclanthology.org/J13-3003/},
+  note      = {Angaben am PDF, Crossref und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; die im PDF gedruckte DOI 10.1162/COLI_a_000142 (S. 511) löst nicht auf; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY-NC-SA 3.0 (ACL Anthology, vor 2016)}
+}
+
+@inproceedings{schlechtweg2018durel,
+  author    = {Schlechtweg, Dominik and Schulte im Walde, Sabine and Eckmann, Stefanie},
+  title     = {Diachronic Usage Relatedness ({DURel}): A Framework for the Annotation of Lexical Semantic Change},
+  editor    = {Walker, Marilyn and Ji, Heng and Stent, Amanda},
+  booktitle = {Proceedings of the 2018 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 2 (Short Papers)},
+  pages     = {169--174},
+  publisher = {Association for Computational Linguistics},
+  address   = {New Orleans, Louisiana},
+  year      = {2018},
+  month     = jun,
+  doi       = {10.18653/v1/N18-2027},
+  url       = {https://aclanthology.org/N18-2027/},
+  note      = {Angaben am PDF, Crossref und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY 4.0 (ACL Anthology, ab 2016)}
+}
+
+@inproceedings{schlechtweg2020semeval,
+  author    = {Schlechtweg, Dominik and McGillivray, Barbara and Hengchen, Simon and Dubossarsky, Haim and Tahmasebi, Nina},
+  title     = {{SemEval}-2020 Task 1: Unsupervised Lexical Semantic Change Detection},
+  editor    = {Herbelot, Aurelie and Zhu, Xiaodan and Palmer, Alexis and Schneider, Nathan and May, Jonathan and Shutova, Ekaterina},
+  booktitle = {Proceedings of the Fourteenth Workshop on Semantic Evaluation},
+  pages     = {1--23},
+  publisher = {International Committee for Computational Linguistics},
+  address   = {Barcelona (online)},
+  year      = {2020},
+  month     = dec,
+  doi       = {10.18653/v1/2020.semeval-1.1},
+  url       = {https://aclanthology.org/2020.semeval-1.1/},
+  note      = {Angaben am PDF, Crossref und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; vorher als arXiv 2007.11464 verbreitet (nicht geprüft), zitiert wird die begutachtete Fassung; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY 4.0 (PDF S. 1)}
+}
+
+@inproceedings{calderon2025alternative,
+  author    = {Calderon, Nitay and Reichart, Roi and Dror, Rotem},
+  title     = {The Alternative Annotator Test for {LLM}-as-a-Judge: How to Statistically Justify Replacing Human Annotators with {LLMs}},
+  editor    = {Che, Wanxiang and Nabende, Joyce and Shutova, Ekaterina and Pilehvar, Mohammad Taher},
+  booktitle = {Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {16051--16081},
+  publisher = {Association for Computational Linguistics},
+  address   = {Vienna, Austria},
+  year      = {2025},
+  month     = jul,
+  isbn      = {979-8-89176-251-0},
+  doi       = {10.18653/v1/2025.acl-long.782},
+  url       = {https://aclanthology.org/2025.acl-long.782/},
+  note      = {Angaben an PDF S. 16051, Crossref und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY 4.0 laut ACL Anthology}
+}
+
+@inproceedings{hovy2010annotation,
+  author    = {Hovy, Eduard},
+  title     = {Annotation},
+  editor    = {M{\`a}rquez, Llu{\'i}s and Wang, Haifeng},
+  booktitle = {Proceedings of the 48th Annual Meeting of the Association for Computational Linguistics: Tutorial Abstracts},
+  pages     = {4},
+  publisher = {Association for Computational Linguistics},
+  address   = {Uppsala, Sweden},
+  year      = {2010},
+  month     = jul,
+  url       = {https://aclanthology.org/P10-5004/},
+  note      = {Nur das einseitige Tutorial-Abstract, nicht die Folien; als Beleg für Inhalte des Tutorials ungeeignet. Keine DOI gefunden; Angaben am PDF und BibTeX der ACL Anthology geprüft 2026-11-16; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY-NC-SA 3.0 laut ACL Anthology}
+}
+
+@inproceedings{jacovi2023stop,
+  author    = {Jacovi, Alon and Caciularu, Avi and Goldman, Omer and Goldberg, Yoav},
+  title     = {Stop Uploading Test Data in Plain Text: Practical Strategies for Mitigating Data Contamination by Evaluation Benchmarks},
+  editor    = {Bouamor, Houda and Pino, Juan and Bali, Kalika},
+  booktitle = {Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing},
+  pages     = {5075--5084},
+  publisher = {Association for Computational Linguistics},
+  address   = {Singapore},
+  year      = {2023},
+  month     = dec,
+  doi       = {10.18653/v1/2023.emnlp-main.308},
+  url       = {https://aclanthology.org/2023.emnlp-main.308/},
+  note      = {Angaben an PDF S. 5075, Crossref und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; zitiert wird diese Fassung statt arXiv:2305.10160; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY 4.0 laut ACL Anthology}
+}
+
+@inproceedings{sainz2023nlp,
+  author    = {Sainz, Oscar and Campos, Jon Ander and Garc{\'i}a-Ferrero, Iker and Etxaniz, Julen and Lopez de Lacalle, Oier and Agirre, Eneko},
+  title     = {{NLP} Evaluation in trouble: On the Need to Measure {LLM} Data Contamination for each Benchmark},
+  editor    = {Bouamor, Houda and Pino, Juan and Bali, Kalika},
+  booktitle = {Findings of the Association for Computational Linguistics: {EMNLP} 2023},
+  pages     = {10776--10787},
+  publisher = {Association for Computational Linguistics},
+  address   = {Singapore},
+  year      = {2023},
+  month     = dec,
+  doi       = {10.18653/v1/2023.findings-emnlp.722},
+  url       = {https://aclanthology.org/2023.findings-emnlp.722/},
+  note      = {Angaben an PDF S. 10776, Crossref und BibTeX der ACL Anthology geprüft, DOI aufgelöst 2026-11-16; Name „Jon Ander Campos“ nach dem PDF (Anthology und Crossref: „Jon Campos“); zitiert wird diese Fassung statt arXiv:2310.18018; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY 4.0 laut ACL Anthology}
+}
+
+@article{kapoor2023leakage,
+  author  = {Kapoor, Sayash and Narayanan, Arvind},
+  title   = {Leakage and the reproducibility crisis in machine-learning-based science},
+  journal = {Patterns},
+  volume  = {4},
+  number  = {9},
+  eid     = {100804},
+  year    = {2023},
+  month   = sep,
+  doi     = {10.1016/j.patter.2023.100804},
+  url     = {https://doi.org/10.1016/j.patter.2023.100804},
+  license = {CC BY 4.0},
+  note    = {Online 2023-08-04, Heft 2023-09-08 (PMC10499856); Crossref und PDF S. 1 geprüft, DOI aufgelöst 2026-11-16. Preprint: arXiv:2207.07048v1 (2022-07-14, Titel „Leakage and the Reproducibility Crisis in ML-based Science“, andere Zahlen: 20 statt 22 Übersichtsarbeiten, 329 statt 294 Arbeiten)}
+}
+
+@inproceedings{mihalcea2004senseval,
+  author    = {Mihalcea, Rada and Chklovski, Timothy and Kilgarriff, Adam},
+  title     = {The {SENSEVAL}-3 {English} Lexical Sample Task},
+  booktitle = {Proceedings of {SENSEVAL}-3, the Third International Workshop on the Evaluation of Systems for the Semantic Analysis of Text},
+  pages     = {25--28},
+  publisher = {Association for Computational Linguistics},
+  address   = {Barcelona, Spain},
+  year      = {2004},
+  month     = jul,
+  url       = {https://aclanthology.org/W04-0807/},
+  note      = {Keine DOI (Anthology ohne DOI, Crossref-Suche ohne Treffer, 2026-11-16); Seiten nur laut ACL Anthology, das PDF trägt keine Seitenzahlen; Workshop, Ort und Monat auch in der Fußzeile des PDF; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY-NC-SA 3.0 laut ACL Anthology}
+}
+
+@inproceedings{navigli2007semeval,
+  author    = {Navigli, Roberto and Litkowski, Kenneth C. and Hargraves, Orin},
+  title     = {{SemEval}-2007 Task 07: Coarse-Grained {English} All-Words Task},
+  editor    = {Agirre, Eneko and Màrquez, Lluís and Wicentowski, Richard},
+  booktitle = {Proceedings of the Fourth International Workshop on Semantic Evaluations ({SemEval}-2007)},
+  pages     = {30--35},
+  publisher = {Association for Computational Linguistics},
+  address   = {Prague, Czech Republic},
+  year      = {2007},
+  month     = jun,
+  doi       = {10.3115/1621474.1621480},
+  url       = {https://aclanthology.org/S07-1006/},
+  note      = {DOI laut Crossref (Titel dort verkürzt „SemEval-2007 task 07“), aufgelöst auf die ACM Digital Library 2026-11-16; Seiten auch in der Kopfzeile des PDF; lokales PDF byte-gleich mit dem Anthology-PDF; CC BY-NC-SA 3.0 laut ACL Anthology}
+}
+
+@inproceedings{postma2016addressing,
+  author    = {Postma, Marten and Izquierdo, Ruben and Agirre, Eneko and Rigau, German and Vossen, Piek},
+  title     = {Addressing the {MFS} Bias in {WSD} Systems},
+  editor    = {Calzolari, Nicoletta and Choukri, Khalid and Declerck, Thierry and Goggi, Sara and Grobelnik, Marko and Maegaard, Bente and Mariani, Joseph and Mazo, Helene and Moreno, Asuncion and Odijk, Jan and Piperidis, Stelios},
+  booktitle = {Proceedings of the Tenth International Conference on Language Resources and Evaluation ({LREC}'16)},
+  pages     = {1695--1700},
+  publisher = {European Language Resources Association (ELRA)},
+  address   = {Portorož, Slovenia},
+  year      = {2016},
+  month     = may,
+  doi       = {10.63317/2qcfqqj3yifp},
+  url       = {https://aclanthology.org/L16-1268/},
+  license   = {CC BY-NC 4.0},
+  note      = {DOI laut Crossref, aufgelöst auf https://lrec.elra.info/lrec2016-main-268 (2026-11-16); Lizenz laut ELRA-Seite, die ACL Anthology nennt pauschal CC BY 4.0; Seiten auch in den Fußzeilen des PDF; lokales PDF byte-gleich mit dem Anthology-PDF; Titel im PDF „WSD Systems“, in der Anthology „WSD systems“}
+}
+
+@inproceedings{maru2022nibbling,
+  author    = {Maru, Marco and Conia, Simone and Bevilacqua, Michele and Navigli, Roberto},
+  title     = {Nibbling at the Hard Core of {Word} {Sense} {Disambiguation}},
+  editor    = {Muresan, Smaranda and Nakov, Preslav and Villavicencio, Aline},
+  booktitle = {Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {4724--4737},
+  publisher = {Association for Computational Linguistics},
+  address   = {Dublin, Ireland},
+  year      = {2022},
+  month     = may,
+  doi       = {10.18653/v1/2022.acl-long.324},
+  url       = {https://aclanthology.org/2022.acl-long.324/},
+  license   = {CC BY 4.0},
+  note      = {DOI aufgelöst 2026-11-16; Seiten auch in der Kopfzeile des PDF; lokales PDF byte-gleich mit dem Anthology-PDF; Lizenz laut ACL Anthology (ab 2016)}
+}
+
+@article{pasini2021xlwsd,
+  author  = {Pasini, Tommaso and Raganato, Alessandro and Navigli, Roberto},
+  title   = {{XL-WSD}: An Extra-Large and Cross-Lingual Evaluation Framework for Word Sense Disambiguation},
+  journal = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume  = {35},
+  number  = {15},
+  pages   = {13648--13656},
+  year    = {2021},
+  doi     = {10.1609/aaai.v35i15.17609},
+  url     = {https://ojs.aaai.org/index.php/AAAI/article/view/17609},
+  note    = {AAAI-21. Crossref: veröffentlicht 2021-05-18, DOI aufgelöst 2026-11-16; Seiten auch am PDF; im PDF „Copyright 2021, AAAI. All rights reserved“, keine offene Lizenz; Pasini und Raganato gleichberechtigte Erstautoren; Abgleich mit dem Verlags-PDF nicht möglich (AAAI-Seite blockiert automatischen Abruf)}
+}
+
+@inproceedings{resnik1997perspective,
+  author    = {Resnik, Philip and Yarowsky, David},
+  title     = {A Perspective on Word Sense Disambiguation Methods and Their Evaluation},
+  booktitle = {Tagging Text with Lexical Semantics: Why, What, and How?},
+  pages     = {79--86},
+  address   = {Washington, DC},
+  year      = {1997},
+  month     = apr,
+  url       = {https://aclanthology.org/W97-0213/},
+  note      = {SIGLEX-Workshop. Titel und Workshop laut ACL Anthology, Seiten am PDF; Ort, Monat und „SIGLEX“ nur laut Literaturverzeichnis von Henrich 2015 (Anthology ohne diese Angaben); keine DOI gefunden (Crossref-Suche 2026-11-16); lokales PDF byte-gleich mit dem Anthology-PDF; CC BY-NC-SA 3.0 laut ACL Anthology}
+}
