@@ -1,6 +1,6 @@
 # Datenmanagementplan: WSD-Goldstandard MHDBDB
 
-**Status:** Entwurf vom 2026-10-16. Gliederung nach den Kernanforderungen von Science Europe
+**Status:** Entwurf vom 2026-10-16 (Stand 2026-11-16: Canary-String in Abschnitt 5 ohne Literaturzuschreibung). Gliederung nach den Kernanforderungen von Science Europe
 (*Practical Guide to the International Alignment of Research Data Management*), auf denen auch
 die DMP-Vorlage des FWF beruht.
 **Verantwortlich:** Julia Hintersteiner. Bezug: [PROTOKOLL.md](PROTOKOLL.md).
@@ -88,7 +88,7 @@ Rückgabe werden im privaten Repository festgehalten.
   privat, damit sie nicht in Trainingsdaten künftiger LLMs geraten (Sainz et al. 2023).
 - **Mit der Publikation:** Archivierung auf Zenodo mit DOI. Labels verschlüsselt (Passwort in der
   Publikation), Lizenz ohne Weiterverbreitung im Klartext und ohne Trainingsnutzung, dazu ein
-  Canary-String (Jacovi et al. 2023). Mitveröffentlicht werden die Labels vor der Adjudikation
+  Canary-String (eigene Maßnahme ohne Literaturbeleg; Jacovi et al. 2023 und Sainz et al. 2023 erwähnen keinen, Korrektur vom 2026-11-16, A37 im Protokoll). Mitveröffentlicht werden die Labels vor der Adjudikation
   (pseudonymisiert), die Adjudikation mit Ursachencodes und das Prompt-Log Ebene A.
   **[offen]** Verträglichkeit einer Zusatzklausel „keine Trainingsnutzung" mit CC BY-NC-SA klären.
 - **Code:** Skripte im öffentlichen Fork, Release-Stand zusätzlich auf Zenodo.

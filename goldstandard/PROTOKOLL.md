@@ -1,6 +1,6 @@
 # WSD-Goldstandard: Protokoll v2
 
-**Status:** Entwurf vom 2026-10-08 (Stand 2026-11-13: A31 und A32 ergänzt, Abschnitt 7 (Stoppregel des Pilots, dritte Person), offene Punkte 2, 3 und 17 teilweise und 11 ganz erledigt (Hilfsmittelregel, Kurzanleitung v0.3); Stand 2026-11-12: Abschnitte 1, 2, 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.1, 9.2, 12 und Abweichungslog A15 bis A30 ergänzt oder geändert; Korpusstand für den ganzen Goldstandard festgelegt, Pilotdesign vorläufig), noch nicht eingefroren.
+**Status:** Entwurf vom 2026-10-08 (Stand 2026-11-16: A33 bis A38 ergänzt (Entscheidung über `VORSCHLAEGE-2026-11.md`, Teile A und B), Abschnitte 4.2, 4.3, 4.4, 4.10, 6, 7, 9.1, 9.2 und 10 sowie offene Punkte 12, 14, 22 bis 24 geändert; Stand 2026-11-13: A31 und A32 ergänzt, Abschnitt 7 (Stoppregel des Pilots, dritte Person), offene Punkte 2, 3 und 17 teilweise und 11 ganz erledigt (Hilfsmittelregel, Kurzanleitung v0.3); Stand 2026-11-12: Abschnitte 1, 2, 3, 4.2, 4.4, 4.8, 4.9, 4.10, 9.1, 9.2, 12 und Abweichungslog A15 bis A30 ergänzt oder geändert; Korpusstand für den ganzen Goldstandard festgelegt, Pilotdesign vorläufig), noch nicht eingefroren.
 **Verantwortlich:** Julia Hintersteiner. Zweiter Annotator: Alan van Beek.
 **Vorgänger:** präregistriertes Evaluationsprotokoll vom 2026-04-24, wiederherstellbar mit
 `git show 873322658^:docs/features/034-wenzelsbibel-annotation.md` (Abschnitt „Pre-registered evaluation protocol").
@@ -289,6 +289,15 @@ Kontext (nur Lemma und Karten) laufen, um zu sehen, wie viel das LLM aus den Kar
 Anlass ist eine Deutung der KI-Zusammenfassung zu Matusch (2025, Tab. 4.6), nicht die Aussage der
 Arbeit. In Haupt- und Panelstichprobe gibt es diese Bedingung nicht.
 
+**Variante am Pilot-Pool für Freeze 2 (A34):** Am Pilot-Pool kann zusätzlich geprüft werden, ob der
+Oberbegriffspfad auf den Karten dem LLM hilft oder schadet (Karten mit und ohne Pfad für das LLM).
+Anlass: Zusatzkontext aus Hyperonymen schadete bei Ghizzota et al. (2026, Tab. 2) zwei von drei LLMs
+deutlich (Beleg aus einer nicht gegengelesenen KI-Zusammenfassung; dort eine binäre Entscheidung je Sense
+im Lateinischen, also eine andere Aufgabe). Die Variante läuft nur am Pilot-Pool (A17) und wird in
+Freeze 2 festgeschrieben. Für Menschen bleibt der Pfad auf der Karte (Abschnitt 5); eine Karte ohne Pfad
+für das LLM wäre eine Abweichung von der gleichen Darbietung (A27) und gilt nur, wenn Freeze 2 sie
+ausdrücklich so festlegt.
+
 ### 4.3 Zellen der Hauptstichprobe
 
 36 Zellen = **Polysemie** × **Wortart** × **Frequenzband**:
@@ -296,9 +305,18 @@ Arbeit. In Haupt- und Panelstichprobe gibt es diese Bedingung nicht.
 - **Polysemie** = Zahl der Senses im Inventar: 2 / 3 / 4+ (4+ reicht bis 15, Median 5). Inventar
   statt Belegung, weil die Menügröße für alle Lemmata beobachtbar ist, auch ohne Silber, und das
   ist, was Mensch und LLM sehen. Die Zahl der im Silber belegten Senses, der MFS-Anteil und die
-  Sense-Entropie werden pro Item im Manifest mitgeführt, als Kovariaten (Loureiro et al. 2021 und
-  Passonneau et al. 2010 finden die Schiefe aussagekräftiger als die Sense-Zahl). Geschichtet wird
+  Sense-Entropie werden pro Item im Manifest mitgeführt, als Kovariaten (Begründung unten). Geschichtet wird
   nicht nach ihnen, weil sie aus Silber stammen, dessen Qualität selbst gemessen werden soll.
+  Genauer belegt ist davon nur Folgendes (Korrektur vom 2026-11-16, K1 und K11, A38; Belege aus nicht
+  gegengelesenen KI-Zusammenfassungen): Loureiro et al. (2021, S. 407) finden kaum Zusammenhang zwischen
+  der Sense-Zahl und der Leistung von **Systemen**, gemessen an 20 Nomen mit 2 bis 5 groben Senses; die
+  Schiefe des Sense-Verhältnisses vergleichen sie nicht mit der Sense-Zahl, sie zieht überwachte und
+  feinabgestimmte Modelle zum häufigsten Sense (S. 411 bis 413). MFS-Anteil und Entropie bleiben deshalb
+  als Kovariaten, begründet als Faktor für Modellverzerrung. Dass die Entropie die **Schwierigkeit**
+  besser vorhersagt als die Sense-Zahl, zeigen Kilgarriff & Rosenzweig (2000, Abschnitt 5.1;
+  Korrelation mit der Systemleistung −0,510 gegen −0,258); Passonneau et al. (2010) referieren die
+  Entropie nur. Kilgarriff (1998, S. 15 bis 16) schichtet nach Wortart, Frequenz und Polysemie, misst aber
+  keine Schwierigkeit.
 - **Wortart:** NOM / VRB / ADJ nach der Regel in Abschnitt 3.
 - **Frequenzband** = Belege des Paars aus Lemma und Wortart in der Grundgesamtheit, feste Grenzen
   **1–3 / 4–20 / 21–200 / >200** (entschieden am 2026-10-16). Feste Bänder verschieben sich beim
@@ -325,7 +343,13 @@ Besetzung am 2026-10-16: Jede Zelle hat mindestens 16 Paare (kleinste: 3 ADJ >20
 4. **Obergrenze pro Text:** höchstens 3 Items aus einem Text über alle Komponenten (bestätigt am 2026-10-16);
    **Ausnahme Historiografie: höchstens 5** (entschieden am 2026-10-30, A20), weil 13 Texte × 3 = 39
    Items den Zielanteil von etwa 48 Items nicht erreichen. Ist die Grenze
-   erreicht, wird in Stufe 2 neu gezogen. Die Grenze hält den Klumpeneffekt klein (Gale, Church & Yarowsky 1992). Dass die
+   erreicht, wird in Stufe 2 neu gezogen. Die Grenze hält den Klumpeneffekt klein; sie ist über die
+   Abhängigkeit innerhalb eines Textes zu begründen. Gale, Church & Yarowsky (1992, S. 236) belegen
+   dagegen die Klumpung **desselben Wortes** im selben Text (51 von 54 Paaren, 94 %, mit den
+   Einschränkungen: 9 Nomen, Artikel einer Enzyklopädie, fünf Urteilende, darunter die drei Autoren; die
+   96,9 % aus dem ACL-Beitrag derselben Autoren lassen sich aus 54 Paaren nicht bilden). Das stützt
+   „1 Token pro Paar“ und die Panelregel (5 Tokens aus 5 Texten), nicht die Obergrenze pro Text (K2, A38;
+   Beleg aus nicht gegengelesenen KI-Zusammenfassungen). Dass die
    All-Words-Sets des englischen Standardrahmens aus wenigen Dokumenten bestehen (3 bis 13) und
    ihre MFS-Werte streuen (54,5 bis 67,1), belegen Raganato et al. (2017, Tab. 1 und 2; aus einer
    nicht gegengelesenen KI-Zusammenfassung); die Deutung als Klumpenstichproben ist unsere eigene,
@@ -402,7 +426,9 @@ Inklusionswahrscheinlichkeit.
   Weboberfläche), Abfragedatum, maximale Antwortlänge, alle Sampling-Parameter ausdrücklich gesetzt
   (Temperatur, top_p, top_k) statt Standardwerten, Kartenformat und Kontextumfang für das LLM und
   den im Modellkarten-Text erklärten Sprachumfang. Der Artikel nennt diese Angaben im Text, nicht
-  nur in Abbildungen. Der Prompt-Wortlaut wird am Pilot-Pool gewählt (Abschnitt 4.2, A17) und in
+  nur in Abbildungen. Dazu kommt (A37): die Ausschlusszusage des API-Anbieters, dass Eingaben nicht ins
+  Training gehen, mit Datum dokumentiert; schon der erste Aufruf mit Testdaten kompromittiert sie für
+  spätere Modelle desselben Anbieters (Jacovi et al. 2023, S. 5076, 5078). Der Prompt-Wortlaut wird am Pilot-Pool gewählt (Abschnitt 4.2, A17) und in
   Freeze 2 festgeschrieben, einschließlich der Anweisung, wie `MEHRERE` zu beantworten ist
   (Abschnitt 9.2, A23). Das LLM sieht dieselbe pro Item gemischte Kartenreihenfolge wie die
   Menschen, und diese Reihenfolge wird für das LLM ebenso protokolliert (A27). Zusatzinformation
@@ -417,6 +443,8 @@ Inklusionswahrscheinlichkeit.
   Konsistenz als Konfidenz (Pangakis & Wolken 2025, S. 1474 Fn. 12, S. 1475) gegen greedy decoding
   mit einem Lauf (Basile et al. 2025, S. 5). „Deterministisch bei Temperatur 0“ ist eine
   Behauptung, keine Zusage (Campesato 2024, S. 218).
+  **Für Freeze 2 vorgemerkt (A34, A35):** die Variante mit und ohne Oberbegriffspfad für das LLM am
+  Pilot-Pool (Abschnitt 4.2) und drei Sekundärauswertungen (Abschnitt 9.2).
 
 ## 5. Darstellung des Inventars: Vergabe der Begriffsgruppen
 
@@ -472,6 +500,13 @@ Zeitstempel protokolliert (`karten_aufgedeckt`) und ist danach nicht mehr änder
 Aufdeckung, ein Entwurf vor dem Aufdecken wird nicht protokolliert. Danach folgt die Kartenwahl wie oben.
 Über den Ablauf in der Hauptrunde (ganz oder als Teilstichprobe, z. B. Lemma-Panel) entscheidet Julia
 Hintersteiner nach dem Pilot. Der Ablauf `direkt` (Karten sofort) bleibt baubar.
+**Ablaufwechsel zur Hauptrunde (A34):** `lesart-zuerst` und `direkt` sind zwei verschiedene Instrumente,
+denn schon kleine Änderungen am Instrument verschieben Labels (Beck et al. 2024: zwei Fragen auf zwei
+Bildschirme statt einem verschoben die Labelraten um 5 bis 7 Prozentpunkte, S. 81, dort referiert;
+starke Haupteffekte der Bedingung, S. 84; Belege aus einer nicht gegengelesenen KI-Zusammenfassung). Die
+Schwelle der Stoppregel (Abschnitt 7, A32) misst `lesart-zuerst`. Wird für die Hauptrunde ein anderer
+Ablauf gewählt als der des Pilots, gilt das als Abweichung (Eintrag im Abweichungslog) und verlangt
+mindestens eine Pilotrunde im neuen Ablauf.
 
 **Blindheit:** Die Annotationsdatei enthält weder Silber-`@ana` noch LLM-Vorschläge. Die
 Blindheit ist damit technisch gesichert, nicht nur durch eine Anweisung.
@@ -485,7 +520,7 @@ Hovy et al. 2006; Belege in [LITERATUR-IAA.md](LITERATUR-IAA.md)).
 2. **Pilot:** ca. 50 Items **außerhalb** der Hauptstichprobe, von beiden blind annotiert.
    Übereinstimmung und Konfusionsmatrix rechnen, Abweichungen besprechen, Richtlinien und
    Oberfläche nachschärfen. Mit **frischen** Items wiederholen, bis eine vorab festgelegte Schwelle
-   erreicht ist (OntoNotes verlangte 90 % Rohübereinstimmung). Pilotitems gehen weder in den
+   erreicht ist (OntoNotes verlangte 90 %; im Werk steht nur „ITA scores below 90%“ ohne Angabe des Maßes, Hovy et al. 2006, S. 58; K7, A38). Pilotitems gehen weder in den
    berichteten IAA-Wert noch ins Gold.
    **Rundengröße und Stoppregel (A32, entschieden 2026-11-13):** Nach Runde 0 (15 Items, ohne
    Schwelle) Runden zu je 25 frischen Items aus dem Pilot-Pool; bei 108 Items reicht der Pool für
@@ -497,11 +532,28 @@ Hovy et al. 2006; Belege in [LITERATUR-IAA.md](LITERATUR-IAA.md)).
      und als Einschränkung berichten.
    - α < 0,67 nach der letzten Poolrunde: keine Hauptrunde; das Instrument ändern (gröbere Senses
      oder andere Darbietung) und neue Pilotitems ziehen.
+   **Die Schwelle ist eine Projektregel (A34):** Sie folgt nicht aus der Literatur. 0,67 und 0,80 stammen
+   aus der Inhaltsanalyse (Krippendorff 1980, über Carletta 1996; Artstein & Poesio 2008, S. 576),
+   Passonneau et al. (2006, S. 1951) raten im Pilot von absoluten Schwellen ab, und Passonneau (2006,
+   S. 833) ordnet 0,67 als Schwelle für Schlüsse aus codierten Variablen ein. Gestützt wird 0,8 als Maß für
+   die Tragfähigkeit eines WSD-Golds von Kilgarriff (1998, S. 11: κ > 0,8, entsprechend 80 bis 90 %
+   Rohübereinstimmung je nach Sense-Zahl, „critical to the viability of the exercise“). Vorab festgelegt
+   ist sie trotzdem, weil das besser ist als nachträglich.
    Weil jedes Lemma eigene Sense-IDs hat, schätzt α den Zufall aus fast nie zusammenfallenden
-   Labels und liegt damit nahe an der Rohübereinstimmung; die Schwelle ist entsprechend zu lesen.
+   Labels und liegt damit nahe an der Rohübereinstimmung. Für WSD steht das in keinem der gelesenen Werke;
+   den Mechanismus zeigen Artstein & Poesio (2008, S. 586, auch S. 561) an der Diskursdeixis, einer
+   anderen Aufgabe: Die Labels verschiedener Items überschnitten sich kaum, die erwartete Abweichung lag
+   nahe 1, und α war „very close to the complement of the observed disagreement“. Das gepoolte α ist
+   nicht mit WSD-Werten vergleichbar, die den Zufall pro Wort schätzen (Ng et al. 1999: κ 0,317 bei
+   56,7 % Rohübereinstimmung). **In Pilot und Hauptrunde wird die Rohübereinstimmung immer neben α
+   berichtet; Vergleiche mit der Literatur laufen über die Rohübereinstimmung.** Belege aus nicht
+   gegengelesenen KI-Zusammenfassungen.
    Bei 25 Items ist ein einzelner Wert unsicher (bei 80 % Übereinstimmung 95 %-Wilson-Intervall
    etwa 61 bis 91 %). Die Schwelle entscheidet, wann das Nachschärfen endet, nicht ob das Gold
    brauchbar ist.
+   **Auswertung des Pilots (A34):** Die Abweichungen werden pro Lemma festgehalten, nicht nur als
+   Gesamtwert. OntoNotes vergröbert Senses pro Wort, bis die Übereinstimmung erreicht ist (Hovy et al.
+   2006, S. 58, Abb. 1); für den Ausweg „gröbere Senses“ braucht es deshalb die Abweichungen pro Lemma.
 3. **Einfrieren:** Richtlinien mit Versionsnummer und Prüfsumme; Schwelle, Maße und
    Auswertungsplan werden vor der Hauptrunde festgeschrieben.
 4. **Hauptrunde:** beide annotieren alle Items unabhängig und blind. Die Itemreihenfolge wird pro
@@ -511,10 +563,16 @@ Hovy et al. 2006; Belege in [LITERATUR-IAA.md](LITERATUR-IAA.md)).
 5. **Roh-IAA zuerst:** Die Übereinstimmung wird gerechnet und festgehalten, **bevor** irgendeine
    Abweichung besprochen wird.
 6. **Adjudikation:**
-   - **blind:** Die Adjudikation sieht beide Labels, aber nicht, von wem sie stammen.
-   - **Ursachencode pro Abweichung,** angelehnt an Barteld et al. (2015) und um zwei Codes
-     erweitert: Richtlinienlücke, Versehen, echte Textambiguität, Inventarlücke,
-     Editions- oder Normalisierungseffekt.
+   - **blind:** Die Adjudikation sieht beide Labels, aber nicht, von wem sie stammen, und ebenso wenig
+     Silber-`@ana` und LLM-Ausgabe (A36): Vorgaben verankern die Korrektur messbar (Berzak et al. 2016,
+     S. 2219 bis 2220; dort für vorausgefüllte Parserausgaben, hier als Analogie).
+   - **Ursachencode pro Abweichung** nach Ihden et al. (2015, Folien 16, 19; Vortragsfolien, Erstautorin
+     laut Titelfolie, Datei `Barteld-etal-2015-…`, BibTeX-Schlüssel `ihden2015tagset`). Die drei
+     Kategorien der Vorlage werden übernommen: (1) fehlende Regeln, (2) Abweichungen trotz bestehender
+     Regeln (in der Vorlage überwiegend Regelverstöße, daneben Folgefehler und vergessene Annotation),
+     (3) unterschiedliches Textverständnis. **Eigene Erweiterungen, nicht aus der Vorlage:**
+     Inventarlücke, Editions- oder Normalisierungseffekt, echte Textambiguität. Letztere ist in der
+     Vorlage kein Ursachencode, sondern ein Annotationswert (bei uns eher `MEHRERE`).
    - **Dritte Person:** Weil Julia die Richtlinien entworfen hat und zugleich annotiert, kann ihr
      implizites Wissen die Übereinstimmung aufblähen. Eine dritte Person prüft deshalb mindestens
      eine Zufallsauswahl von 10 bis 20 % der Adjudikationen sowie **alle** Fälle, in denen Julias
@@ -523,7 +581,11 @@ Hovy et al. 2006; Belege in [LITERATUR-IAA.md](LITERATUR-IAA.md)).
      angefragt.
    - `MEHRERE` darf als Mehrfachlabel ins Gold eingehen, wo die Richtlinien es zulassen.
 7. **Alles bleibt erhalten:** Labels vor der Adjudikation, Sicherheitsangaben, Ereignisprotokolle,
-   Richtlinienversionen (Prabhakaran et al. 2021; Plank 2022: Abweichung ist oft Signal).
+   Richtlinienversionen (Prabhakaran et al. 2021; Plank 2022: Abweichung ist oft Signal). Veröffentlicht
+   werden die Labels pro Person mit Kennung (Prabhakaran et al. 2021, S. 137: Labels pro Annotator:in,
+   dazu Angaben zur Rekrutierung); die Einwilligung (offener Punkt 14) muss das abdecken. Die Lesarten
+   aus A31 werden als Rohdaten mitveröffentlicht (Plank 2022, S. 10673: Unsicherheitsmarkierungen und
+   Freitext-Begründungen als wertvolle Metadaten) (A36).
 8. **Erst danach** werden Silber und LLM-Ausgabe mit dem Gold verglichen.
 
 ## 8. Nachvollziehbarkeit beim Annotieren
@@ -546,8 +608,8 @@ Für jede Entscheidung muss feststellbar sein: wer, wann, was, auf welcher Grund
 
 ### 9.1 Übereinstimmung zwischen den Annotator:innen
 
-Zwei Ebenen werden getrennt ausgewertet (Artstein & Poesio 2008 verlangen, die Behandlung
-solcher Sonderfälle offenzulegen):
+Zwei Ebenen werden getrennt ausgewertet (Artstein & Poesio 2008, S. 591, verlangen allgemein, die
+Methode offenzulegen; von Ausweichlabels oder fehlenden Werten ist dort nicht die Rede, K5, A38):
 
 - **Statusebene:** Konfusionstabelle über die sechs Status aus Abschnitt 6, mit Häufigkeiten.
 - **Sense-Ebene:** nur Items, bei denen beide `SENSE` oder `MEHRERE` vergeben haben.
@@ -557,17 +619,46 @@ solcher Sonderfälle offenzulegen):
 Auf der Sense-Ebene werden berichtet:
 
 1. **Hauptmaß:** Krippendorffs α mit MASI-Distanz (Passonneau 2006), damit `MEHRERE` als
-   Teilübereinstimmung zählt. Dazu α nominal (Mengen als unteilbare Labels) als untere Schranke.
+   Teilübereinstimmung zählt. Der Abstand ist **d = 1 − J·M** (Passonneau 2006, S. 834 bis 835; ebenso
+   Passonneau et al. 2006, S. 1953; A33). J ist der Jaccard-Koeffizient (Schnitt durch Vereinigung der
+   beiden Mengen), M die Monotonie: 1 bei gleichen Mengen, 2/3 bei Teilmenge, 1/3 bei Schnitt mit zwei
+   nicht leeren Differenzen, 0 bei disjunkten Mengen. Die Einheit ist das Item, die Mengen sind die
+   gewählten Sense-IDs. Typische Fälle (M-Werte und Rechenweg nach der nicht gegengelesenen
+   KI-Zusammenfassung zu Passonneau 2006, Rechnung nachgerechnet):
+
+   | Person 1 | Person 2 | J | M | Abstand 1 − J·M |
+   |---|---|---|---|---|
+   | {s1} | {s1} | 1 | 1 | 0 |
+   | {s1} | {s1, s2} | 1/2 | 2/3 | 2/3 |
+   | {s1, s2} | {s1, s2, s3} | 2/3 | 2/3 | 5/9 |
+   | {s1, s2} | {s2, s3} | 1/3 | 1/3 | 8/9 |
+   | {s1} | {s2} | 0 | 0 | 1 |
+
+   `SENSE` gegen `MEHRERE` mit Überschneidung zählt also nur zu einem Drittel als Übereinstimmung.
+   Artstein & Poesio (2008, S. 584) geben MASI abweichend als Produkt zweier Abstände d_P × d_J an; das
+   ergäbe für {s1} gegen {s1, s2} 1/6 statt 2/3. Festgelegt wird 1 − J·M. Dazu α nominal (Mengen als
+   unteilbare Labels) als **strengere Variante**, nicht als allgemeine untere Schranke: Bei Passonneau
+   (2006, Tab. 1, S. 835) liegt ein gewichtetes α (Jaccard, −0,44) unter dem nominalen (0) (A33).
 2. **Rohübereinstimmung** (exakt und „Überschneidung"). Nur sie ist direkt mit LLM- und
    MFS-Genauigkeit vergleichbar (Kilgarriff 2001).
 3. **Zufallsmodell über Lemmata hinweg:** Jedes Lemma hat sein eigenes Inventar, und pro Lemma
    gibt es meist nur ein Token. Naives Poolen über alle Sense-IDs macht die erwartete
    Übereinstimmung winzig und bläht den Wert auf. Festlegung dieses Protokolls: Die erwartete
    Übereinstimmung wird pro Lemma aus den Sense-Anteilen berechnet und über die Items summiert,
-   κ = (ΣA_o − ΣA_e) / (N − ΣA_e). Für diese Konstruktion haben wir keinen etablierten Standard
-   gefunden; sie wird daher begründet und die gepoolte Variante daneben berichtet.
+   κ = (ΣA_o − ΣA_e) / (N − ΣA_e). Die Aussage, für diese Konstruktion gebe es keinen etablierten
+   Standard, gilt nicht (Korrektur vom 2026-11-16, A33): Veröffentlichte Vorbilder rechnen den Zufall
+   pro Wort, Ng et al. (1999, S. 10: κ pro Wort, ungewichtet gemittelt) und Passonneau et al. (2010,
+   S. 3245, Tab. 1: α pro Wort), allerdings mit vielen Sätzen pro Wort. Das Protokoll übernimmt das
+   Prinzip, nicht das Verfahren, und begründet die Wahl: Das Inventar ist pro Lemma verschieden, ein
+   Zufallsmodell über alle Sense-IDs beschriebe keinen Zufall zwischen Alternativen, die eine
+   Annotator:in je sieht. Die gepoolte Variante wird daneben berichtet. **Einschränkung:** Krippendorffs
+   Stichprobenregel (jede Kategorie so oft, dass mindestens fünf Zufallsübereinstimmungen zu erwarten
+   sind; Artstein & Poesio 2008, S. 575) ist bei meist einem Token pro Lemma und lemmaspezifischen
+   Sense-IDs nicht erfüllbar.
 4. **Prävalenz:** Bei einem dominanten Sense kann allein das Zufallsmodell κ um mehr als 0,2
-   verschieben (Senseval-3: 0,58 gegenüber 0,35 auf denselben Daten; Mihalcea et al. 2004).
+   verschieben (Senseval-3: κ 0,58 gegenüber 0,35; Mihalcea et al. 2004, S. 26). Beide Werte stammen
+   aus dem ganzen OMWE-Bestand (über 350 Wörter), nicht aus dem Testset, und Mikro- und Makro-κ
+   unterscheiden sich in Mittelung und Zufallsmodell zugleich (K15, A38).
    Deshalb werden die Sense-Randverteilungen, die Übereinstimmung getrennt für MFS- und
    Nicht-MFS-Tokens und Gwets AC1 als Kontrollgröße mitberichtet.
 5. **Konfidenzintervalle:** 95 %, per Bootstrap. Gezogen wird nach Clustern (Text), weil Tokens
@@ -580,13 +671,28 @@ Auf der Sense-Ebene werden berichtet:
 7. **Zwei Ebenen des Begriffssystems:** zusätzlich die Übereinstimmung, wenn jeder Sense auf die
    Oberbegriffe seiner Begriffe abgebildet wird. Die Granularität ist der stärkste bekannte
    Einflussfaktor auf WSD-Übereinstimmung (Ng et al. 1999; Hovy et al. 2006). Das grobe Maß wird
-   vorab definiert, nicht nachträglich durch Zusammenlegen gewonnen (Artstein & Poesio 2008).
+   vorab definiert, nicht nachträglich durch Zusammenlegen gewonnen (Artstein & Poesio 2008, S. 588).
+   Für die Vorabberechnung, auf welcher Stufe des Zahlencodes (`knowledge/data.md`, B11) die Senses eines
+   Lemmas zusammenfallen, dient die Regel von Vial et al. (2019, S. 111): jeder Sense wird auf den
+   höchsten Vorfahren abgebildet, der die Senses des Lemmas noch trennt (A33). Als Vorbild für eine grobe
+   Auswertungsebene sind Vial et al. nur bedingt geeignet: Sie sorgen dafür, dass die Senses eines Lemmas
+   **nie** zusammenfallen, und bewerten weiter feinkörnig (S. 110). Besser passen Supersenses (Ciaramita
+   & Altun 2006) und Basic Level Concepts (Izquierdo et al. 2007); beide sind nur nach Vial et al.
+   bekannt und zu beschaffen.
+
+**Einschränkungen (A33):** Zwei Annotierende sind weniger, als Krippendorff empfiehlt (drei oder mehr;
+Artstein & Poesio 2008, S. 575, nach Krippendorff 2004a, Kap. 11). Die dritte Person (Abschnitt 7,
+Schritt 6) prüft die Adjudikation und annotiert nicht mit. Die Stichprobenregel zu Punkt 3 ist nicht
+erfüllbar. Belege dieses Abschnitts aus nicht gegengelesenen KI-Zusammenfassungen.
 
 ### 9.2 Gold, Silber, LLM
 
 - **Jede:r gegen das Gold:** Übereinstimmung jeder Annotator:in mit dem adjudizierten Gold, dazu die
-  Adjudikationsstatistik nach Ursachencode. Hohe Roh-IAA sagt nichts über die Qualität des
-  adjudizierten Golds (Passonneau & Carpenter 2014).
+  Adjudikationsstatistik nach Ursachencode. Nach Passonneau & Carpenter
+  (2014, S. 311 bis 312) ist zufallskorrigierte Übereinstimmung für gute Goldlabels „neither necessary
+  nor sufficient“ und „at best an indirect measure“; von adjudiziertem Gold spricht das Werk nicht
+  (Korrektur vom 2026-11-16, K8, A38; ersetzt die Aussage, hohe Roh-IAA sage nichts über die Qualität des
+  adjudizierten Golds).
 - **Silberqualität:** Genauigkeit von Silber-`@ana` gegen Gold, nur Domäne D1 (Abschnitt 3), mit dem Vorbehalt, dass sie nur die Annotationskampagne dieser Texte beschreibt.
 - **LLM gegen Baseline:** Genauigkeit gegen Gold. Die MFS-Baseline wird aus Silber gelernt,
   **ohne** die Stichproben-Tokens, und auf denselben Gold-Items gemessen. Damit ist der Vergleich
@@ -632,12 +738,25 @@ Auf der Sense-Ebene werden berichtet:
     die `MEHRERE`-Items (Henrichs Option ii). Beides gilt für LLM und MFS-Baseline gleichermaßen,
     damit der gepaarte Vergleich gepaart bleibt. Der Anteil der `MEHRERE`-Items an der
     Auswertungsmenge wird berichtet.
-  - Zusätzlich Macro-Genauigkeit nach Sense und die Genauigkeit auf Nicht-MFS-Items, weil dort die
-    harten Fälle liegen (Maru et al. 2022).
+  - Zusätzlich Macro-Genauigkeit nach Sense und die Genauigkeit auf Nicht-MFS-Items. Bei Maru et al.
+    (2022, Tab. 1 und 2) besteht der „hard core“ (541 Instanzen, die alle sieben Systeme falsch lösen)
+    fast nur aus Nicht-MFS-Instanzen; nicht alle Nicht-MFS-Belege sind aber hart (bestes System 54,2
+    statt 76,4 Macro-F1 auf 2.525 Instanzen; K14, A38). Dort heißt „MFS“ der erste WordNet-Sense; die
+    Festlegung für dieses Protokoll steht aus.
+  - **Abstand zur Baseline (A35):** Die menschliche Rohübereinstimmung und die MFS-Genauigkeit werden auf
+    denselben Items nebeneinander berichtet. Liegen beide nah beieinander, lässt sich kaum ein Verfahren
+    unterscheiden („dynamic range“, Gale et al. 1992, S. 254).
 - **LLM gegen menschliche Annotator:innen:** Zusätzlich zum Vergleich mit dem Gold wird geprüft,
   ob das LLM mit den beiden Menschen so gut übereinstimmt wie diese untereinander (Prinzip des
-  „Alternative Annotator Test", Calderon et al. 2025). Die menschliche IAA ist die Obergrenze,
-  an der LLM-Werte gemessen werden.
+  „Alternative Annotator Test", Calderon et al. 2025). Die menschliche IAA ist ein
+  Referenzwert für LLM-Werte. Als Obergrenze der Aufgabe nennt Kilgarriff (2001, S. 20) die
+  Replizierbarkeit zwischen zwei Teams, nicht die IAA; eine Replizierbarkeitsmessung (ein zweites Paar
+  mit denselben Richtlinien) ist hier nicht vorgesehen und bleibt als Grenze zu nennen (A35).
+- **Sekundärauswertungen, für Freeze 2 vorgemerkt (A35):** (a) LLM und MFS getrennt nach Items, bei
+  denen die beiden Annotierenden vor der Adjudikation übereinstimmten oder abwichen (Plank 2022,
+  S. 10675); (b) nur Items, die beide als „sicher“ und gleich gelabelt haben (Passonneau & Carpenter
+  2014, S. 322); (c) Kontrolle nach Position in der Sitzung (Beck et al. 2024, S. 83). Festgeschrieben
+  wird in Freeze 2.
 - **Zahlenstand zur Einordnung:** Die präregistrierte Baseline lag bei 66,7 %. In-sample aus
   Silber gerechnet ergab `goldstandard-test.py` am 2026-10-08 auf den 190 vollständig annotierten
   Texten 0,744 (tokengewichtet). Beide Werte sind in-sample und daher optimistisch; keiner von
@@ -651,7 +770,9 @@ Auf der Sense-Ebene werden berichtet:
 | Gegenstand | Wo | Öffentlich? |
 |---|---|---|
 | Protokoll, Richtlinien, Datasheet | dieses Verzeichnis | ja |
-| Manifest: Token-IDs, Zellzuordnung, Seed, Korpus-Commit, Prüfsummen von Korpus, `lexicon.xml`, `concepts.xml` | dieses Verzeichnis | ja |
+| Manifest des Pilots (Items mit `xml_id` liegen bereits öffentlich in `pilot/items-pilot.json`) | dieses Verzeichnis | ja |
+| Manifest der Hauptstichprobe: Token-IDs | privat bis zum Ende der LLM-Läufe (A37) | erst danach; vorher nur die Prüfsumme des Manifests |
+| Manifest der Hauptstichprobe ohne Token-IDs: Zellzuordnung, Seed, Korpus-Commit, Prüfsummen von Korpus, `lexicon.xml`, `concepts.xml` | dieses Verzeichnis | ja |
 | Ziehungsskript, Ausschlussskript, `ausschluss/zusammenfassung.json` | dieses Verzeichnis | ja |
 | Token-Liste der Ausschlüsse (`ausschluss/ausschluss-tokens.csv`) | nur lokal, reproduzierbar | nein |
 | Menschliche Labels, Ereignisprotokolle, Adjudikation | privat (Drive oder privates Repo) | erst mit der Publikation, dann Zenodo |
@@ -660,9 +781,20 @@ Grund für die Trennung: Öffentliche Labels können in die Trainingsdaten künf
 die später gegen genau diesen Goldstandard evaluiert werden sollen (Sainz et al. 2023). Die
 mittelhochdeutschen Texte sind ohnehin online; zu schützen sind die Labels.
 
-**Bei der Veröffentlichung** (Jacovi et al. 2023): Labels verschlüsselt ablegen, Passwort in der
-Publikation, Lizenz ohne Weiterverbreitung und ohne Trainingsnutzung, dazu ein Canary-String.
-Die Labels vor der Adjudikation werden mitveröffentlicht.
+**Bei der Veröffentlichung** (Jacovi et al. 2023, EMNLP 2023, S. 5075 bis 5084): Labels verschlüsselt
+ablegen, Passwort in der Publikation, Lizenz ohne Weiterverbreitung und ohne Trainingsnutzung, dazu ein
+Canary-String. Der Canary-String ist eine eigene Maßnahme ohne Literaturbeleg; Jacovi et al. und Sainz
+et al. erwähnen ihn nicht (Korrektur vom 2026-11-16, K9, A37; die frühere Zuschreibung an beide Werke
+entfällt). Sainz et al. (Findings of EMNLP 2023, S. 10776 bis 10787) empfehlen weder Verschlüsselung noch
+Lizenz, sondern verweisen auf Jacovi et al. (S. 10776).
+Die Labels vor der Adjudikation werden mitveröffentlicht, pro Person mit Kennung (Prabhakaran et al.
+2021, S. 137; A36), dazu die Lesarten aus A31 als Rohdaten (A36). **Token-IDs der Hauptstichprobe** bleiben
+bis zum Ende der LLM-Läufe privat, öffentlich ist bis dahin nur die Prüfsumme des Manifests (A37).
+Für die Pilotitems ist das zu spät, denn `pilot/items-pilot.json` liegt mit `xml_id` öffentlich im Fork,
+und darüber ist für die D1-Items das Silber nachschlagbar. Pilotdaten sind Entwicklungsdaten, nicht Gold;
+das Datasheet bekommt dazu einen Hinweis (offener Punkt 24). **Auswertung mit KI-Werkzeugen:**
+Auswertungsskripte geben Labels nie in eine KI-Sitzung aus, nur Kennzahlen; das gilt auch für Claude
+Code (A37).
 
 ## 11. Abweichungslog gegenüber der Präregistrierung vom 2026-04-24
 
@@ -670,7 +802,7 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 |---|---|---|---|---|
 | A1 | Gold = bestehende MHDBDB-Annotation | Gold = neue Doppelannotation, bestehende Annotation = Silber | Herkunft, Zeitpunkt und Richtlinien der Bestandsannotation sind undokumentiert | 2026-10-08 |
 | A2 | Quelle: bereits annotierte Texte ohne WZB | ganzes Korpus, geschichtet nach Silber ja/nein, ohne LLM-berührte Tokens | Mit A1 entfällt der Grund, nur annotierte Texte zu nehmen; der unannotierte Teil ist die eigentliche Zielpopulation | 2026-10-08 |
-| A3 | 6 Zellen mit je ≥ 50 | Hauptstichprobe 36 Zellen × 10 (Polysemie × Wortart × feste Frequenzbänder), 1 Token pro Paar aus Lemma und Wortart; dazu Lemma-Panel 30 × 5 und Pilot-Pool | Frequenz als Schwierigkeitsfaktor (Kilgarriff 1998); Panel trennt Lemma- von Kontextschwierigkeit; Inferenz über ein gemischtes Modell | 2026-10-08, geändert 2026-10-16 |
+| A3 | 6 Zellen mit je ≥ 50 | Hauptstichprobe 36 Zellen × 10 (Polysemie × Wortart × feste Frequenzbänder), 1 Token pro Paar aus Lemma und Wortart; dazu Lemma-Panel 30 × 5 und Pilot-Pool | Frequenz als Schwierigkeitsfaktor (Kilgarriff 1998; **Korrektur vom 2026-11-16, K1: Kilgarriff 1998 schichtet nach Frequenz und Polysemie und misst keine Schwierigkeit, siehe A38**); Panel trennt Lemma- von Kontextschwierigkeit; Inferenz über ein gemischtes Modell | 2026-10-08, geändert 2026-10-16 |
 | A4 | feste Baseline 66,7 %, einseitiger Binomialtest | MFS aus Silber ohne Stichprobe, gepaart auf denselben Items (McNemar) | Feste Baseline ist in-sample und auf anderer Population gerechnet | 2026-10-08 |
 | A5 | Julia blind gegen LLM und Gold | zwei menschliche Annotator:innen (Julia, Alan van Beek) und Adjudikation | Gold braucht gemessene Übereinstimmung zwischen Menschen | 2026-10-08 |
 | A6 | Sense-Wahl, LLM darf `abstain` | Statusliste mit Ausweichlabels und `MEHRERE` | Das Inventar passt nicht immer; erzwungene Wahl brächte Fehlzuordnungen ins Gold | 2026-10-08 |
@@ -699,7 +831,13 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 | A29 | `MEHRERE`-Antwort des LLM mit nur einer ID (Abschnitt 9.2): nicht geregelt (offen nach A23) | Gilt als ungültige Antwort (eigene Kategorie, im primären gepaarten Vergleich falsch, wie A18) | Wie bei den Menschen verlangt `MEHRERE` mindestens zwei Sense-IDs (Abschnitt 6); dieselben Optionen für Mensch und LLM (A23). Entscheidung Julia Hintersteiner, 2026-10-30 („ok ja wie bei den menschen passt“ auf den Vorschlag der Hauptsitzung, eine solche Antwort als ungültig zu werten) | 2026-10-30 |
 | A30 | Pilot-Pool (Abschnitt 4.2): „ca. 100 Items, Lemmata disjunkt“, Ziehungsverfahren nicht festgelegt | **Vorläufig, Bestätigung durch Julia Hintersteiner ausstehend:** 36 Zellen × 3 = 108 Items, je Zelle 1 aus D1 (sonst D0) und 2 aus D0; Stufe 1 Paar aus Lemma und Wortart gleich wahrscheinlich, jedes Lemma höchstens einmal; Stufe 2 Token mit Gewicht T_G^(-1/2); Obergrenze 3 pro Text (Historiografie 5) nur innerhalb des Pools; Seed 20261112. Runde 0: 15 Items, einfache Zufallsauswahl (Seed „20261112-runde0“). Alle 108 Pool-Lemmata werden bei der späteren Ziehung von Haupt- und Panelstichprobe ausgeschlossen, in jeder Wortart. Erweiterter Kontext 8 Verse bzw. 80 Tokens je Seite. Hilfsmittelregel der Kurzanleitung v0 (Wörterbücher wie Lexer und BMZ erlaubt und im Kommentar zu vermerken; nicht erlaubt: MHDBDB-Website und Repository, KI-Werkzeuge; Belege bis zur Auswertung nicht besprechen) | Das Hauptverfahren (Abschnitt 4.4) im Kleinen, damit der Pilot dieselben Zellen berührt; 108 statt „ca. 100“ durch 36 × 3. Gezogen (Skript `pilot/pilot_ziehen.py`, Manifest `pilot/manifest-pilot.json`, nachgelesen am 2026-11-12): 108 Items aus 69 Texten, 36 aus D1 ohne D1-Ersatz, höchstens 5 Items aus einem Text, Kontext Vers 81 und Prosa 27; Gruppen Großepik 34, Lyrik 22, Geistliche Literatur 16, Kurzdichtung 12, Historiografie 12, Lehrdichtung 6, Fach- und Rechtsliteratur 6. Zweimal gezogen (vor und nach einer Darstellungskorrektur), laut Hauptsitzung identische Items (übernommen, nicht nachgemessen). Die Größe des erweiterten Kontexts hat die Hauptsitzung gewählt; Julia hat nur den Standardausschnitt bestätigt (offener Punkt 4). Die Hilfsmittelregel ist ein Vorschlag der Hauptsitzung. Entschieden von Julia sind nur die Punkte in Abschnitt 4.2 (ganzer Pool, 15 Items für Runde 0) und Abschnitt 12 (Punkte 4 und 18) | 2026-11-12 |
 | A31 | Annotation im Pilot (Abschnitte 6 und 7): bisher direkt am Inventar, d. h. Karten sofort sichtbar | **Vorschlag und Entscheidung getrennt.** Entschieden (Julia Hintersteiner, 2026-11-13): im Pilot zuerst eine eigene Lesart bei verdeckten Karten, dann die Kartenwahl („B im Pilot, Runde 0 auf morgen verschieben“); Runde 0 verschoben vom 2026-11-13 auf 2026-11-14. Als Grundlage mit vorgeschlagen von der Hauptsitzung, von Julia nur mit „B im Pilot“ wörtlich bestätigt (Weg A): die Inventarbindung im Protokoll offen benennen (Gold ist relativ zum MHDBDB-Inventar; die Übereinstimmung misst die Reproduzierbarkeit des Instruments aus Richtlinien, Inventar und Darstellung, nicht Wahrheit; „unabhängig“ heißt blind gegeneinander und gegenüber Silber und LLM). Nicht entschieden: B in der Hauptrunde (nach dem Pilot, Julia); Weg C (inventarfreie Aufgabe, Bedeutungsnähe von Belegpaaren wie DURel, Erk et al. 2013) als Kandidat für später (Beitrag V). Umsetzung `pilot/annotation.template.html` mit Ablauf `lesart-zuerst` als Standard, `--ablauf direkt` baubar, Kurzanleitung v0.2; zusätzlich auf Wunsch Julias (2026-11-13) Karten oberhalb des Status, auch ohne Status wählbar, Kurzanleitung leichter formuliert (v0.1) | Julia, 2026-11-13: „wenn ich bedeutungen vorgebe zum lemma ist das nicht schon beeinflussung? es geht ja darum einen unabhängigen goldstandard aus einem inter-annotator-agreement zu erstellen nicht?“. Die Vorgabe des Inventars kann die Lesart lenken (Ankereffekt); der Lesart-Schritt macht diesen Einfluss messbar und stützt die These aus dem Exposé zur Inventarabhängigkeit. Literaturprüfung noch offen (Kilgarriff 1997, Literatur zum Ankereffekt vorgegebener Antwortoptionen; bisher nicht in `literatur/`), deshalb keine Literaturbegründung. Umsetzung in Commits `c66cbaaab`, `55619c861`, `4c6213cb5`; Browsertest 80 Prüfungen, Chromium, Edge, Chrome, WebKit 80/80, Firefox 78/80 (zwei Prüfungen mit Eingaben in einen Tab im Hintergrund), laut Hauptsitzung (übernommen, nicht nachgemessen). A30 (vorläufig) bleibt unverändert; Runde-0-Termin dort überholt durch A31 | 2026-11-13 |
-| A32 | Pilot (Abschnitt 7, Schritt 2): ca. 50 Items, Schwelle nur als Vorschlag (α ≥ 0,80, Untergrenze 0,67); dritte Person offen (Abschnitt 12, Punkt 2) | Runden zu 25 frischen Items nach Runde 0; Stoppregel mit drei Bereichen (α ≥ 0,80 einfrieren; 0,67 bis unter 0,80 nachschärfen, nach der letzten Poolrunde trotzdem einfrieren und als Einschränkung berichten; unter 0,67 nach der letzten Poolrunde keine Hauptrunde, Instrument ändern, neue Pilotitems); gemessen pro Runde vor jeder Besprechung mit α nominal auf dem ganzen Label; Runde 0 ohne Schwelle; dritte Person: KZW vorgesehen, noch nicht angefragt | Schwelle vor Runde 0 festgelegt, damit sie nicht nach dem ersten Ergebnis angepasst wird. Der Pool (108) trägt Runde 0 und drei Runden zu 25. α nominal ist für die Stoppregel die strengere Wahl; das berichtete Hauptmaß der Übereinstimmung bleibt α mit MASI-Distanz (Abschnitt 9, A8), die Hauptsitzung hatte A8 beim Vorschlag übersehen und „ganzes Label exakt als Hauptmaß“ genannt, gemeint ist hier nur das Maß der Stoppregel. Wilson-Intervall für 80 % bei 25 Items von der Hauptsitzung gerechnet (etwa 61 bis 91 %). Entscheidung Julia Hintersteiner, 2026-11-13 („ok dann 25 je runde“; „die dritte person ist katharina“; „ja die schwelle passt so“ auf das Schema der Hauptsitzung) | 2026-11-13 |
+| A32 | Pilot (Abschnitt 7, Schritt 2): ca. 50 Items, Schwelle nur als Vorschlag (α ≥ 0,80, Untergrenze 0,67); dritte Person offen (Abschnitt 12, Punkt 2) | Runden zu 25 frischen Items nach Runde 0; Stoppregel mit drei Bereichen (α ≥ 0,80 einfrieren; 0,67 bis unter 0,80 nachschärfen, nach der letzten Poolrunde trotzdem einfrieren und als Einschränkung berichten; unter 0,67 nach der letzten Poolrunde keine Hauptrunde, Instrument ändern, neue Pilotitems); gemessen pro Runde vor jeder Besprechung mit α nominal auf dem ganzen Label; Runde 0 ohne Schwelle; dritte Person: KZW vorgesehen, noch nicht angefragt | Schwelle vor Runde 0 festgelegt, damit sie nicht nach dem ersten Ergebnis angepasst wird. Der Pool (108) trägt Runde 0 und drei Runden zu 25. α nominal ist für die Stoppregel die strengere Wahl; das berichtete Hauptmaß der Übereinstimmung bleibt α mit MASI-Distanz (Abschnitt 9, A8), die Hauptsitzung hatte A8 beim Vorschlag übersehen und „ganzes Label exakt als Hauptmaß“ genannt, gemeint ist hier nur das Maß der Stoppregel. Wilson-Intervall für 80 % bei 25 Items von der Hauptsitzung gerechnet (etwa 61 bis 91 %). Entscheidung Julia Hintersteiner, 2026-11-13 („ok dann 25 je runde“; „die dritte person ist katharina“; „ja die schwelle passt so“ auf das Schema der Hauptsitzung). **Ergänzung vom 2026-11-16 (V52, V53): Die Schwelle ist eine Projektregel, die nicht aus der Literatur folgt; Begründung „α nahe an der Rohübereinstimmung“ belegt und eingegrenzt, siehe A34** | 2026-11-13 |
+| A33 | Übereinstimmungsmaße (Abschnitt 9.1): „α mit MASI-Distanz (Passonneau 2006)“ ohne Formel; „α nominal als untere Schranke“; für das Zufallsmodell pro Lemma „keinen etablierten Standard gefunden“; Zwei-Ebenen-Auswertung ohne Weg zur groben Ebene; keine Einschränkungen genannt | Abstand als 1 − J·M nach Passonneau 2006 (S. 834 bis 835) ausgeschrieben, mit Tabelle typischer Fälle und dem Hinweis, dass Artstein & Poesio 2008 (S. 584) d_P × d_J geben; α nominal als „strengere Variante“ (Gegenbeispiel Passonneau 2006, Tab. 1); Vorbilder für das Zufallsmodell pro Wort genannt (Ng et al. 1999; Passonneau et al. 2010), Wahl begründet; Einschränkungen: Krippendorffs Stichprobenregel nicht erfüllbar, zwei Annotierende statt drei oder mehr (Artstein & Poesio 2008, S. 575); Zusammenfallstufe der Senses vorab nach der Regel von Vial et al. 2019 aus dem Zahlencode (B11), Vial nur bedingt als Vorbild, Supersenses und Basic Level Concepts zu beschaffen | Für {s1} gegen {s1, s2} ergibt die eine Formel 2/3, die andere 1/6; ohne Festlegung wäre das Hauptmaß nicht reproduzierbar. Belege aus nicht gegengelesenen KI-Zusammenfassungen; Rechenwerte der Tabelle am 2026-11-16 nachgerechnet. V50, V51, V56, V57, V63. Entscheidung Julia Hintersteiner, 2026-11-16 („A wie empfohlen, B alle übernehmen“) | 2026-11-16 |
+| A34 | Pilot und Ablauf (Abschnitte 4.2, 4.10, 6, 7): Schwelle von A32 ohne Herkunft; Begründung „α nahe an der Rohübereinstimmung“ ohne Beleg; keine Regel für einen Ablaufwechsel zur Hauptrunde; Pilot-Auswertung nur als Gesamtwert; OntoNotes „90 % Rohübereinstimmung“ | Schwelle als Projektregel gekennzeichnet (Passonneau et al. 2006, S. 1951 raten im Pilot von absoluten Schwellen ab; Kilgarriff 1998, S. 11 stützt κ > 0,8); Mechanismus mit Artstein & Poesio 2008, S. 586 belegt (Diskursdeixis, andere Aufgabe), gepooltes α nicht mit WSD-Werten pro Wort vergleichbar (Ng et al. 1999); in Pilot und Hauptrunde wird die Rohübereinstimmung immer neben α berichtet, Literaturvergleiche laufen über sie; Ablaufwechsel zur Hauptrunde gilt als Abweichung und verlangt mindestens eine Pilotrunde im neuen Ablauf (Beck et al. 2024); Abweichungen im Pilot pro Lemma festhalten (Hovy et al. 2006); am Pilot-Pool für Freeze 2 Karten mit und ohne Oberbegriffspfad für das LLM (Ghizzota et al. 2026); „Roh“ bei OntoNotes gestrichen | A32 bleibt bestehen. Vorab festgelegt ist besser als nachträglich; die Schwelle ist ehrlich als Projektregel gekennzeichnet. Belege aus nicht gegengelesenen KI-Zusammenfassungen. V52, V53, V60, V62, V66, K7. Entscheidung Julia Hintersteiner, 2026-11-16 („A wie empfohlen, B alle übernehmen“); V61 (monoseme Kontroll-Lemmata) ausdrücklich nicht übernommen | 2026-11-16 |
+| A35 | Auswertung gegen Gold, Silber, LLM (Abschnitt 9.2): menschliche IAA „ist die Obergrenze“; kein Bericht des Abstands zur Baseline; keine Sekundärauswertungen vorgemerkt | Abstand zwischen menschlicher Rohübereinstimmung und MFS auf denselben Items wird berichtet (Gale et al. 1992, S. 254, „dynamic range“); menschliche IAA nur als Referenzwert, Obergrenze ist die Replizierbarkeit zwischen Teams (Kilgarriff 2001, S. 20), fehlende Replizierbarkeitsmessung als Grenze; drei Sekundärauswertungen für Freeze 2 vorgemerkt (nach Übereinstimmung vor der Adjudikation, nur „sicher“ und gleich gelabelte Items, nach Position in der Sitzung; Plank 2022; Passonneau & Carpenter 2014; Beck et al. 2024) | Keine Änderung der Primärregeln. Belege aus nicht gegengelesenen KI-Zusammenfassungen. V54, V55, V70. Entscheidung Julia Hintersteiner, 2026-11-16 („A wie empfohlen, B alle übernehmen“) | 2026-11-16 |
+| A36 | Adjudikation und Veröffentlichung (Abschnitt 7, Schritte 6 und 7): Ursachencodes „angelehnt an Barteld et al. (2015)“ mit fünf Codes; Adjudikation blind nur gegenüber der Herkunft der Labels; Labels vor der Adjudikation mitveröffentlicht | Ursachencodes nach Ihden et al. 2015 mit den drei Kategorien der Vorlage (fehlende Regeln; Abweichungen trotz bestehender Regeln; unterschiedliches Textverständnis); Inventarlücke, Editions- oder Normalisierungseffekt und echte Textambiguität als eigene Erweiterungen gekennzeichnet; Adjudikation auch blind gegenüber Silber und LLM-Ausgabe (Berzak et al. 2016); Labels pro Person mit Kennung veröffentlicht, die Einwilligung (offener Punkt 14) muss das abdecken (Prabhakaran et al. 2021); Lesarten aus A31 als Rohdaten mitveröffentlicht (Plank 2022) | Die bisherigen Codes „Versehen“ und „echte Textambiguität“ passten nicht zur Vorlage (Ihden et al. 2015, Folien 16, 19). Belege aus nicht gegengelesenen KI-Zusammenfassungen. V59, V67, V68, V69. Entscheidung Julia Hintersteiner, 2026-11-16 („A wie empfohlen, B alle übernehmen“) | 2026-11-16 |
+| A37 | Kontamination (Abschnitte 4.10 und 10): Manifest mit Token-IDs öffentlich; Ausschlusszusage der API-Anbieter nicht verlangt; Canary-String Jacovi et al. 2023 zugeschrieben | Token-IDs der Hauptstichprobe bleiben bis zum Ende der LLM-Läufe privat, öffentlich nur die Prüfsumme des Manifests; für den Pilot ein Hinweis im künftigen Datasheet (offener Punkt 24); Freeze 2 dokumentiert die Ausschlusszusage der API-Anbieter mit Datum; Auswertungsskripte geben Labels nie in eine KI-Sitzung aus, nur Kennzahlen (auch Claude Code); Canary-String als eigene Maßnahme ohne Literaturbeleg gekennzeichnet, die Zuschreibung an Jacovi et al. und Sainz et al. (K9) entfällt | Jacovi et al. 2023 (S. 5076 bis 5078) und Sainz et al. 2023 (S. 10777); beide Werke erwähnen keinen Canary-String (Textebene durchsucht). V72, V75, K9. Entscheidung Julia Hintersteiner, 2026-11-16 („A wie empfohlen, B alle übernehmen“); V71, V73, V74, V76 und V77 bleiben offen | 2026-11-16 |
+| A38 | (keine Abweichung von der Regel) Zitatkorrekturen in `PROTOKOLL.md` (Abschnitte 4.3, 4.4, 7, 9.1, 9.2, 10), `LITERATUR-IAA.md`, `LITERATUR-STICHPROBE.md` und `DMP.md` | K1: Kilgarriff 1998 schichtet nach Frequenz und Polysemie (S. 15 bis 16), Schwierigkeit belegt Kilgarriff & Rosenzweig 2000; K2: Gale et al. 1992 stützen „1 Token pro Paar“ und Panelregel, nicht die Obergrenze pro Text (51/54, 94 %); K3: Kilgarriff 1998 empfiehlt das lexikalische Modell nur für explorative Evaluation, „80 bis 400 Belege“ pro Aufgabe; K4 und K6: Zeilen zu Ng et al., Mihalcea et al., Passonneau et al. 2006, Hovy et al. 2006, Ihden et al., Ghinassi et al., Ghizzota et al. und SemEval Latein auf die Quelle begrenzt; K5: Artstein & Poesio S. 591 nur sinngemäß; K7: „Roh“ bei OntoNotes gestrichen; K8: Passonneau & Carpenter nur zu zufallskorrigierter Übereinstimmung; K9: Canary-String; K10: Hovy 2010 trägt die Aussage nicht; K11: Loureiro et al. nur Sense-Zahl und Systemleistung; K12: Erk et al. 2013 mischen zwei Maße, SemEval-2020 nach der begutachteten Fassung; K13: Navigli et al. 2007 Streuung gemessen, Erklärung Vermutung; K14: Maru et al. 2022 Bezugsmengen; K15: Mihalcea et al. 2004 ganzer OMWE-Bestand; K16: Resnik & Yarowsky 1997 nicht Quelle der Dice-Teilwertung | Regeln und Designentscheidungen bleiben unverändert; berichtigt werden nur Zitate und Prüfstatus, geprüft an den nicht gegengelesenen KI-Zusammenfassungen in `literatur/zusammenfassungen/`. Prüfstatus ○ wurde nur dort auf ✔ gehoben, wo die Liste es ausdrücklich vorsah (K4, K8, K12, K13). Entscheidung Julia Hintersteiner, 2026-11-16 („A wie empfohlen, B alle übernehmen“) | 2026-11-16 |
 
 ## 12. Offene Punkte
 
@@ -714,9 +852,9 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 9. **Datierung und Vers/Prosa:** Sollen sie als weitere Ausgleichsmerkmale dienen? Dann braucht es eine manuelle Zuordnung pro Text (z. B. Jahrhundert über den Handschriftencensus, bei 323 Werken verlinkt).
 10. ~~Obergrenze an Tokens pro Text~~: 3, bestätigt am 2026-10-16 (Abschnitt 4.4).
 11. ~~Schwelle für das Ende des Pilots~~: entschieden am 2026-11-13, vor Runde 0 (A32, Abschnitt 7, Schritt 2).
-12. **Grobe Ebene des Begriffssystems** für die Zwei-Ebenen-Auswertung festlegen (welche Oberbegriffsstufe).
+12. **Grobe Ebene des Begriffssystems** für die Zwei-Ebenen-Auswertung festlegen (welche Oberbegriffsstufe). **Teilstand 2026-11-16 (A33):** Die Stufe, auf der die Senses eines Lemmas zusammenfallen, wird vorab nach der Regel von Vial et al. (2019, S. 111) aus dem Zahlencode (B11) berechnet; Supersenses und Basic Level Concepts als Vorbild sind zu beschaffen. Welche Stufe gilt, bleibt offen.
 13. **Ausschlüsse 2 und 3** (Abschnitt 3) auf die neue Wortartregel und das ganze Korpus umrechnen. Ausschluss 4 entfällt (A19); die Auswahlregel für die ca. 30 von Hand einzuordnenden Tokens mit Markierung `pos_abweichend` ist entschieden (einfache Zufallsauswahl, A22), die Ziehung selbst steht aus. **Teilstand 2026-11-12:** Ausschlüsse 2 und 3 sind auf das ganze Korpus (Stand `a938559dc`) umgerechnet (Abschnitt 3, Neumessung: 22 Lemmata mit 1.215 Tokens, 2 Lemmata mit 0 Tokens); die Ziehung der 30 Tokens steht weiter aus.
-14. **Einwilligung von Alan** zu Protokollierung und Veröffentlichung (DMP, Abschnitt 4).
+14. **Einwilligung von Alan** zu Protokollierung und Veröffentlichung (DMP, Abschnitt 4). **Ergänzung 2026-11-16 (A36):** Sie muss die Veröffentlichung der Labels pro Person mit Kennung, der Lesarten und der Labels vor der Adjudikation abdecken.
 15. **Privates Repository** anlegen und eine zweite Sicherungskopie festlegen (DMP, Abschnitt 3).
 16. **Verschmelzungen (Ausschluss 5):** Urteile beider Prüfrunden von Julia gegenlesen lassen; Verschmelzungen ohne verlinkte Bestandteile sind nicht erfasst und nicht gemessen (Abschnitt 3, Einschränkung).
 17. **Bestätigung des Pilotdesigns und der Hilfsmittelregel** (A30): 108 Items, Zellen, Ausschluss der Pool-Lemmata aus Haupt- und Panelstichprobe, Größe des erweiterten Kontexts, Wortlaut der Kurzanleitung v0 mit ihrer Hilfsmittelregel. **Teilstand 2026-11-13:** Julia Hintersteiner hat die Kurzanleitung (v0.2) gegengelesen und die Hilfsmittelregel bestätigt; auf ihre Entscheidung („ja alle vier rein, vorschlag raus“ auf vier Vorschläge der Hauptsitzung) gilt seit 2026-11-13 die Kurzanleitung v0.3: (1) Zusatz „(Vorschlag)“ bei den Hilfsmitteln gestrichen; (2) „Mehrere passen“ neu gefasst als „zwei oder mehr Karten treffen zu, und die Stelle lässt keine Wahl zwischen ihnen zu“, damit es sich von „Kontext reicht nicht“ abhebt; (3) Hinweis, nicht in einem privaten Fenster zu arbeiten und zwischendurch als JSON zu sichern; (4) Erklärung der Sicherheitsstufen (sicher: keine andere Lösung kommt ernsthaft in Frage; eher sicher: eine andere Lösung ist denkbar, aber weniger wahrscheinlich; unsicher: eine andere Lösung wäre ebenso gut möglich). Den Wortlaut von (4) hat die Hauptsitzung nach der Entscheidung formuliert, von Julia noch nicht gegengelesen. Browsertest nach dem Neubau 80 von 80 Prüfungen bestanden (Chromium, Hauptsitzung). Weiter offen: 108 Items, Zellen, Ausschluss der Pool-Lemmata, Größe des erweiterten Kontexts.
@@ -724,4 +862,6 @@ Die Labels vor der Adjudikation werden mitveröffentlicht.
 19. **Darbietung für das LLM (A27, A31):** Soll das LLM im Pilot ebenfalls zuerst eine eigene Lesart formulieren und dann wählen („gleiche Darbietung für Mensch und LLM“)? Offen, gehört in Freeze 2.
 20. **Auswertung der Lesarten (A31):** Wie sie ausgewertet werden (z. B. Zuordnung der Lesart zu einer Karte durch eine dritte Person blind, Anteil „Lesart passt zu keiner Karte“, Abweichung zwischen Lesart und gewählter Karte), ist vor dem Ende des Pilots festzulegen.
 21. **Literaturprüfung durch `quellen`** vor einer Begründung im Protokoll: Kilgarriff 1997 („I don't believe in word senses“) und Literatur zum Ankereffekt vorgegebener Antwortoptionen; bisher nicht in `literatur/`.
-22. **Lesart-Schritt in der Hauptrunde (A31):** ganz, als Teilstichprobe (z. B. Lemma-Panel) oder gar nicht; Entscheidung Julia Hintersteiner nach dem Pilot. Weg C (Bedeutungsnähe von Belegpaaren, DURel) bleibt Kandidat für später (Beitrag V), nicht entschieden.
+22. **Lesart-Schritt in der Hauptrunde (A31):** ganz, als Teilstichprobe (z. B. Lemma-Panel) oder gar nicht; Entscheidung Julia Hintersteiner nach dem Pilot. Weg C (Bedeutungsnähe von Belegpaaren, DURel) bleibt Kandidat für später (Beitrag V), nicht entschieden. **Ergänzung 2026-11-16 (A34):** Ein Wechsel des Ablaufs gegenüber dem Pilot gilt als Abweichung und verlangt mindestens eine Pilotrunde im neuen Ablauf (Abschnitt 6).
+23. **Regel für `MEHRERE` in den Richtlinien (V58):** Bei SENSEVAL waren Mehrfachantworten nur erlaubt, wenn eine Einzelantwort unwahr wäre (Kilgarriff 1998, S. 9); das ist strenger als die Kurzanleitung v0.3. Vergleichswert aus der Rechnung eines Laufs: in SENSEVAL-2 einigten sich etwa 6,8 % der Zweierfälle auf mehr als einen Tag (nicht nachgemessen). Entscheidung nach der Besprechung von Runde 0, nicht vorher (Julia Hintersteiner, 2026-11-16, „A wie empfohlen“).
+24. **Hinweis im künftigen Datasheet zu den Pilotdaten (V72):** `pilot/items-pilot.json` liegt mit `xml_id` öffentlich im Fork, darüber ist für die D1-Items das Silber nachschlagbar; Pilotdaten sind Entwicklungsdaten, nicht Gold. `DATASHEET.md` gibt es noch nicht.
