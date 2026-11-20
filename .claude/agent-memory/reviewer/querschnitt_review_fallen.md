@@ -1,38 +1,49 @@
 ---
 name: querschnitt-review-fallen
-description: Wiederkehrende Denkfallen im Review: #397-Frage, Zwillinge und Kopien, benannte Ausnahmen, tautologische Gates, Laufplan und Auftrag als Behauptung, Fehlerjournal-Ketten
+description: Wiederkehrende Denkfallen im Review
 metadata:
   type: project
 ---
-Verdichtet 14.10.2026. Dieses Memory ist Eingabe, keine Messung: Zahlen daraus vor Gebrauch nachmessen.
-
 **Was der Diff nicht zeigt**
-- #397-Frage: was macht der Fix wahr, woran hing etwas am Gegenteil? Getroffen bei: verengter Thunk -> Werkzeugzustand; neuer Typ -> Wörterbuch-Flip; e() -> markup() -> Textkopie im Export; geteilter Hilfe-Abschnitt -> Deep-Links; gehaltene Waise -> hängender Zeiger; Stempel nur bei Ergebnis -> Rückweg aus „Kein Text ausgewählt" (#539); erster `.gif` im Ordner -> Endungs-Regex der Größenprobe in `textreihen.spec.js` (#93). Auch Schreiber und Kopien suchen; bringt ein Diff einen neuen Dateityp, die Endungslisten der Gates greppen. **Nach dem Erweitern einer Endungsliste prüfen, ob der neue Fall den Zweig erreicht:** in `textreihen.spec.js` verlässt jeder `../`-Pfad die Schleife vor der Größenprobe per `continue`, `svg` im Regex war damit tot.
-- **Das Dokument, das die Änderung motiviert, beschreibt oft das alte Verhalten** (#545). Nach dem Auslöser im Issue greppen (`grep -rn "nicht IDs"`), nicht nur nach dem Bezeichner; generierte Artefakte haben Generator und Byte-Gate.
-- Ein „der Konsistenz halber" mitgeänderter Nachbarzweig (Leer-Guard, Fehlerast) ist der Ort, an dem #397 trifft: unveränderte Geschwistermodule mit derselben Folge durchspielen.
-- **Ein Datenfix, der einen offenen Fall erledigt, lässt `docs/ROADMAP.md` und die Recherche-README unter `ingest/<fall>/` stehen** (#28/#216/#228). Token-, Lemma- und Sense-ID über beide greppen; JOURNAL und Kickoffs sind datiert und zählen nicht.
-- **Eine Änderung an der Lemma-Auflösung (CONTRACTS §C) hat Python-Spiegel, die der Diff nicht anfasst:** `scripts/audit/compare-findebuch-resolution-259.py` `resolve()`, `docs/DATA-MODEL.md` („Stages are mutually exclusive, first match wins"), `docs/DEVELOPMENT.md`. `rg -n "def resolve|stage3|variantCandidates" scripts/`, `rg -i "first match wins|mutually exclusive" docs/`.
-- **Fix an einem Leser eines geänderten Felds: den Suchpfad aus dem Auftrag nicht übernehmen** (#452). Feldleser über `assets/` UND `playground/` greppen, auch nach Strings, in die es eingebaut wird (`rg "\bt\.author|text\.author"`, jeden Treffer in einem Template-String ansehen).
+- #397-Frage: was macht der Fix wahr, woran hing etwas am Gegenteil? Schreiber und Kopien suchen. Neuer Dateityp: Endungslisten der Gates greppen und prüfen, ob der Fall den Zweig erreicht (ein `continue` davor macht ihn tot). Ein „der Konsistenz halber" mitgeänderter Nachbarzweig ist der Ort, an dem #397 trifft.
+- Das Dokument, das die Änderung motiviert, beschreibt oft das alte Verhalten: nach dem Auslöser greppen, nicht nur nach dem Bezeichner.
+- Ein Datenfix, der einen offenen Fall erledigt, lässt `docs/ROADMAP.md` und die README unter `ingest/<fall>/` stehen: die IDs über beide greppen.
+- **Lemma-Auflösung (CONTRACTS §C) hat Spiegel:** `scripts/audit/compare-findebuch-resolution-259.py` `resolve()`, `scripts/audit/measure-stage3-resolution.py`, `docs/DATA-MODEL.md`, Skripttabelle in `docs/DEVELOPMENT.md`, `hilfe-korpussuche.html`, `hilfe-playground.html`, ADR-016 in `docs/DECISIONS.md`. Bei jeder Regeländerung alle greppen, auch nach dem Beispielwort. Korrigiert ein Fix eine Skriptmeldung, die argparse-`help=` daneben mitlesen.
+- Fix an einem Feldleser: über `assets/` UND `playground/` greppen, auch in Template-Strings.
+- Bekommt nur ein Teil der Skripte einen Guard, stimmt der Sammelsatz der Tabelle nicht mehr (`scripts/review/README.md`): je Zeile `grep -c realpath <skript>`.
 
 **Gates und Ausnahmen**
-- Benannte Ausnahme: greift sie an der Bedingung oder am Namen? Am Namen schaltet sie die Prüfung ab.
-- Prüft das Gate den Wert oder nur die Konsistenz zweier Stellen desselben Autors?
+- Benannte Ausnahme: greift sie an der Bedingung oder am Namen? Am Namen schaltet sie die Prüfung ab. Prüft das Gate den Wert oder nur zwei Stellen desselben Autors?
 - Vor Klasse A über eine Invariante die Basis mitmessen: hält sie dort nicht, ist es Vorbestand.
-- Zahlen stehen oft mehrfach: nach dem Gate-Lauf `grep -rn` über die alte Zahl; die Zweitzeile neben einem Anker selbst lesen. Dasselbe für ein Pfadmuster, das ein Fix ändert (`temp/seiten/<Name>/` blieb in Runde 2 in einem dritten Agenten stehen, dessen Zeile der Fix selbst verlängert hatte): über alle Agentendefinitionen und READMEs grep, nicht nur über die im Auftrag genannten.
-- Harter Fehler NACH dem ersten Schreibvorgang ist kein Guard: Zeile des `raise SystemExit` gegen die des ersten `write_text` halten (sync_tei_headers; `update-disambig-status-493.py`). Sonde: Kopie mit kaputter Liste, `--apply`, Hash vor/nach.
+- Zahlen stehen oft mehrfach: nach dem Gate-Lauf `grep -rn` über die alte Zahl.
+- Ein nachgetragener Ausnahmesatz erbt den Geltungsbereich seines Absatzes: jedes dort genannte Skript in-process mit kaputter Antwort sondieren.
+- Harter Fehler NACH dem ersten Schreibvorgang ist kein Guard: Zeile des `raise SystemExit` gegen die des ersten `write_text`.
+- Zwei Fälligkeiten mit Vorrang: setzt der Vorrang-Lauf den Marker der anderen Art zurück, ohne deren Prüfung zu leisten?
+- **Assertion gegen die eigene Obermenge** (`expect(teil).toBeLessThanOrEqual(ober)`) kann nicht fehlschlagen, wenn die Teilmenge per Konstruktion darin liegt. Soll sie belegen, dass das Prüfmaterial den Fall enthält, muss sie strikt sein.
 - **Agenten-Aufräumregel „lösche nur, was du selbst angelegt hast":** den Erzeuger des Temporären lesen. `mkdir(exist_ok=True)` plus `open(..., "w")` reicht, damit ein zweiter Lauf am selben Werk stillschweigend in den Ordner des ersten schreibt; dann kann kein Lauf Eigenes von Fremdem unterscheiden, und die Regel löscht Fremdes (Fork `mhdbdb-wsd`, `literatur/seiten.py`, 28.10.). Sonde: Skript zweimal mit verschiedenen Seiten laufen lassen, Ordnerinhalt ansehen. Auch die Agentendefinition auf zwei Sätze prüfen, die sich für genau diesen Fall widersprechen.
 
-**Auftrag, JOURNAL, Threads**
-- Zahlen und Daten im Auftrag stammen oft aus Verdichtungen: im Thread nachlesen (UTC beachten); wachsende Zahlen nur als damals <= jetzt prüfbar. Vorher-Zahlen von der Live-Seite gehören zum dort aufgelösten Lemma (Homograph `arm`). Personennamen gegen contributors.xml.
-- **„Ich habe selbst nachgemessen" im Auftrag wiederholt meine Methode, keine Gegenprobe** (#228). Einen eigenen Vorrundenbefund mit einer ANDEREN Messung prüfen (Kontextausgabe statt Zählung).
-- **Der Laufplan ist Anforderungsquelle und bewegt sich nach dem Abzweig** (`docs/playbooks/kickoffs/<datum>-lauf.md`). `git diff <basis> origin/main` auf den Kickoff zeigt die Pflicht; Allaussagen im Diff gegen den Paragraphen halten. **Auch während der Runde:** vor dem Bericht erneut `git fetch` und `git log <basis>..origin/main -- docs/playbooks/kickoffs/`.
-- **„origin/main hat seither nur X geändert" im Auftrag ist eine Behauptung:** `git log <Basis>..origin/main --stat` selbst. Nach jedem Rebase die Gates (Versionen, `doc-count-audit --check`, Em-Dash) erneut fahren.
-- **Nach einem Rebase zitieren JOURNAL und PR-Body oft den Vor-Rebase-SHA als Prüfstand.** Gegenprobe: `gh api repos/<o>/<r>/commits/<sha>` gibt 422, Kontrollwert ein gepushter SHA desselben Zweigs; den Nachfolger zeigt `git range-diff`.
-- Kickoffs und `docs/JOURNAL.md`-Einträge sind datierte Protokolle: zitieren sie eine inzwischen geänderte CLAUDE.md-Regel, ist das kein Befund. Die `CLAUDE.md` im Session-Kontext kann älter sein als HEAD: jeden Verweis „steht in CLAUDE.md" mit `git grep` auf HEAD messen.
-- **Eine Regel aus einem Issue-Kommentar hat eine zweite Quelle: die Label-Ereignisse der Autorin Sekunden danach** (`gh api .../issues/N/timeline --jq 'select(.event=="labeled" or .event=="unlabeled")'`). #378: KZW schrieb „Julia vorreihen" und setzte `wait:julia` **dazu**, ohne `wait:kzw` zu entfernen; „statt" war damit widerlegt.
-- **Ein Zitat mit „mich"/„ich" gehört dem Sprecher, den der Auftrag nennt.** Eine Paraphrase kann das Pronomen still umhängen; jede Zuschreibung gegen das Pronomen im Wortlaut halten.
+**Prompt, JOURNAL, Threads**
+- Zahlen im Prompt stammen oft aus Verdichtungen: im Thread nachlesen (UTC), wachsende Zahlen nur als damals <= jetzt. Personennamen gegen contributors.xml.
+- „Ich habe selbst nachgemessen" wiederholt meine Methode: eigene Vorrundenbefunde mit einer ANDEREN Messung prüfen.
+- **Der Laufplan (`docs/playbooks/kickoffs/<datum>-lauf.md`) bewegt sich nach dem Abzweig:** `git diff <basis> origin/main` darauf, vor dem Bericht erneut `git fetch`. „origin/main hat seither nur X geändert" selbst per `git log <basis>..origin/main --stat` messen, nach jedem Rebase die Gates erneut.
+- Kickoffs und JOURNAL sind datierte Protokolle, ein Zitat einer später geänderten Regel ist kein Befund. Die `CLAUDE.md` im Session-Kontext kann älter sein als HEAD: per `git grep` messen.
+- **Eine Freigabe aus einem Kickoff ist laufgebunden:** zitiert Regeltext sie als stehende, den Scope im Kickoff nachlesen.
+- Eine Regel aus einem Issue-Kommentar hat eine zweite Quelle, die Label-Ereignisse der Autorin danach (`gh api .../issues/N/timeline`). Label-Vorschläge setzt die Koordination oft Minuten nach dem Commit um, das ist kein Befund an der Datei.
+- Text für eine Datei, die ein paralleler Branch ändert: erst `git diff origin/main...<branch> -- <datei>`.
+- Fix gegen ein nacktes `#N` (Fremd-Issue) auch in der Commit Message des Fixes nachprüfen: `git log --format=%B <basis>..HEAD | grep -n -E '(^|[^/a-z0-9])#[0-9]+'`, Treffer mit `gh issue view N --repo <dieses>` gegenhalten.
+- Eine Belegzeile, die ein Zitat findet, belegt das Zitat: bei einer Verdichtung den Primärkommentar öffnen. Antwortet eine neue Fundstelle auf einen Zuschreibungsbefund, die ganze zitierte Tabelle lesen, nicht nur die genannten Zeilen, und `git grep` über Kickoffs nach Gegenfällen.
+- **Textvorschlag eines Menschen „wörtlich übernehmen":** Wortlaut UND Absatzfolge prüfen (Kommentar per `gh api repos/<o>/<r>/issues/comments/<id> --jq .body`, an Leerzeilen splitten, Whitespace normalisieren, `find()`-Reihenfolge im Seitentext). `meta description`/`og:description` behalten oft den alten Wortlaut.
+- **Lizenz- oder Freigabesatz mit Belegzeile „zitiert X wörtlich"**: Thread per `--json comments` ziehen und nach `freigeg|Nachnutz|Lizenz` über ALLE Kommentare suchen (Python mit `PYTHONIOENCODING=utf-8`). Am 19.11.2026 (#262) stand im genannten Kommentar kein Zitat mehr: KZW hatte es am Vorabend selbst herausgelöscht. Fehlt ein Zitat, die Edit-History lesen (`gh api graphql`, `userContentEdits { editedAt editor { login } diff }` auf die `node_id` des Kommentars): ein vom Menschen entferntes Zitat ist kein Beleg mehr und wird nicht zurückgeholt.
+- **Ball-Rückgabe:** jede Bedingungsverzweigung im Plan gegen den Thread halten (hat KZW X schon bestätigt?). Eine ihr zur Wahl gestellte Option ist nach einer Gegenfrage nicht gewählt.
+- „Seit <Entscheidungsdatum> ist X" in einem Fix-PR datiert den Zustand auf die Entscheidung, nicht auf den Merge: gegen `git show origin/main:<datei>` halten.
+
+**Prüfmaterial für KZW**
+- „Handarbeit", „Handurteil", „manuell" heißen für die Leserin „ein Mensch hat es gelesen". Bei Agenten-Urteilen `grep -n -i "hand\|manuell"` über README, Docstrings, Spalten (Umbruch „von\nHand").
+- Workflow-Agenten flicken Eingaben in place, bevor das Skript läuft, das „jede Korrektur meldet" (#603): Job-Verzeichnis nach `fix*.py`/`korr*.py` listen.
+- Eine vorgefilterte Spalte sagt nichts über das Weggefilterte: am rohen `@ana` im TEI messen, nicht an einer TSV desselben Vorlaufs.
+- **Eine Liste, die „vollständig" zu KZW soll, aber nur ab einer Heuristik-Threshold ausgibt**, an der verworfenen Menge prüfen: feste Formeln greppen (`alpha et o`, `et cetera`), dazu die Form des Zielworts selbst. Gegenrichtung: eine Handliste „eindeutig lateinischer" Formen, die vor dem Score entscheidet, je Form an allen Kontexten lesen (`leo` unter `lewe` ist mhd.).
+- CSVs für KZW unter `ingest/foreign-lang/` haben `utf-8-sig` und `;`: eine neue Liste dort mit den Geschwistern vergleichen.
 
 **Fehlerjournal**
-- `claude-code-setup/hooks/lehren-zaehlen.py` parst dieses Journal nicht (Format `### N. Rot:`): Ketten von Hand über den Absatz „Die Lehre, die nicht gegriffen hat". Nummern werden je Spur vorab reserviert: Sprünge sind kein Befund. Kette messen: `grep -n -o "Die letzte Zeile zu dieser Lehre ist Eintrag [0-9]*"`, rückwärts folgen; der Satz kann umbrochen sein.
-- Aussetzung statt Mechanismus: `wiederholte-fehler.md` verlangt den Satz in der betroffenen Regel (`grep -i ausgesetzt rules/<regel>.md rules/belege/<regel>.md`). **Eine fehlende Aussetzung ist nicht automatisch eine Lücke** (für `mengen.md` entschied `claude-code-setup` #66, keine zu schreiben): vorher `gh issue view 53 66 64 --repo chsteiner/claude-code-setup --json body,comments`. Die „Rot N" in dessen #66 sind Kommentare in dessen #29, nicht Einträge dieses Journals; gezählt wird je Projekt.
-- `hooks/mengenaussagen.sh` proben: JSON `{"tool_name":"Write","tool_input":{"file_path":"C:/x/n.md","content":"<Satz>"}}` per `printf` auf stdin, `MENGEN_LOG=<scratch>.jsonl`, `formen` lesen.
+- `claude-code-setup/hooks/lehren-zaehlen.py` liest dieses Journal seit dem 19.11.2026 (Format `### Fehler N (rot), …`, chsteiner/claude-code-setup#151; `--ohne-ausgang fehlerjournal.md`), ordnet aber 50 von 106 keiner Gruppe zu (Stand 19.11.2026, Liste im Output unter „Nicht zugeordnet“, drei Gründe: 34 „kein Lehren-Absatz“ (1–6, 8–35), 8 mit `CLAUDE.md`, die er kennt, aber als mehrdeutig führt (Abhilfe ist eine Gruppe im Rückverweis, kein Eintrag in `DATEI_ZU_LEHRE`), 8 „keine bekannte Fundstelle“, etwa `docs/DATA-MODEL.md`, ein Skill oder „Eintrag N“). Für diese Ketten weiter von Hand per `grep -n -o "Die letzte Zeile zu dieser Lehre ist Eintrag [0-9]*"`, rückwärts, Umbruch beachten. Nummernsprünge (je Task reserviert) sind kein Befund.
+- Ein Kettenpointer, der sich „ungeprüft" nennt, ist eine Behauptung. Ab der dritten Zeile zu einer Lesson ist der Mechanismus fällig, „künftig X" ist keine Aussetzung. Eine Aussetzung steht als Satz in der Regel (`grep -i ausgesetzt rules/<regel>.md rules/belege/<regel>.md`), eine fehlende ist nicht automatisch eine Lücke (für `mengen.md` entschied `claude-code-setup` #66 dagegen, vorher #53, #64, #66 lesen).

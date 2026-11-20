@@ -1,6 +1,6 @@
 # Roadmap
 
-Strategic priorities for the MHDBDB TEI Repository. Last full pass 2026-10-05; the #28 and #216 lines updated 2026-10-09.
+Strategic priorities for the MHDBDB TEI Repository. Last full pass 2026-10-05; the #28 and #216 lines updated 2026-10-09; the lines on #58, #251, #93, #123, #404, #406, #228 and #369 updated 2026-10-19; the lines on #58, #63, #93, #109 and #139 updated 2026-10-20 (doc check); the #216 line updated 2026-11-09 (doc check, numbers).
 
 See [Issue #44](https://github.com/DigitalHumanitiesCraft/mhdbdb-tei-only/issues/44) for the full triage matrix with per-issue status.
 
@@ -24,10 +24,13 @@ them are decisions plus a few named repairs.**
   `stät`, `stát` still carry no `@lemmaRef`, in 13 files. They are the 17 cases
   KZW left open and the 2 that would need a new lemma, and both groups sit with
   her. #371 stays open for her acceptance.
-- `minne` (#216) applied 5,435 tokens and held back 1,547. What is still ours
-  is listed in the thread, among it the NAM lemma "Minne", the repair case
-  `MR2_27022210102100_5` (`SAX_24200_4` was fixed on 2026-10-09), the WVV address cases, the
-  `GWTK` suspects and a rule for POS-TAGSET.md.
+- `minne` (#216) applied 5,435 tokens and held back 1,547. The NAM lemma
+  "Minne" (`lemma_79830`, 321 tokens in 55 texts, the seven WVV address cases
+  among them), the repair case `MR2_27022210102100_5` and the rule in
+  POS-TAGSET.md §8 followed on 2026-11-08 with #691. Still open: four reading
+  cases with KZW, the three *minne* after *frô* in RVBR (held back by #691; the
+  *frô* tokens themselves carry `lemma_7260` since 2026-09-07) and the `GWTK`
+  suspects.
 - Series 3 (`sere`, `not`, `nam`, `leit` and the rest of the list from PR #210)
   does not start while two series wait on editorial feedback.
 
@@ -42,9 +45,11 @@ One is done: the unattested sense copies at `engebrechen` and `gebrechenhaft`
 1.9.21. The other is still ours: the list of Latin attestations for layer A.
 
 **Some tickets carry no work of ours any more, only an acceptance or one
-answer:** #251 has a released check path since 2026-09-23 and one design
-question. #58 has its count fixed (#436) and waits on KZW's choice of form for
-clicking through to the attestations (a, b or c, asked 2026-09-23). #193 was
+answer:** #251 and #58 had their remaining work merged on 2026-10-18 (#619
+shows the selected word forms for #251; #619, #630 and #633 changed the
+document search cards for #58); #251 waits on Julia's acceptance, Julia accepted #58 on 2026-10-19, and each has one
+question to KZW: for #251 whether the counter question of 2026-07-30 can be
+dropped, for #58 where the link to the full text sits on the card. #193 was
 closed on 2026-10-05 with release v1.1.0.
 
 **Redundancy in the TEI headers is generated rather than maintained since
@@ -53,13 +58,12 @@ and `scripts/sync/sync_tei_headers.py --works --check` gates the mirror in
 `data-integrity.yml`; on 2026-10-05 it reported 667 of 667 files in agreement.
 The contract is [CONTRACTS §F.4](CONTRACTS.md#f4-work-identity-worksxml-leads-the-tei-header-mirrors).
 `mwb-sigle` stayed header-owned, because the MWB assigns its sigles per
-manuscript redaction while `works.xml` knows identifiers per work only; the
-model question behind that is #404.
+manuscript redaction while `works.xml` knows identifiers per work only; #404
+decided on 2026-10-09 to keep it that way.
 
-**What sorts KZW's share is #406**, a triage by how much a single decision
-releases. It was rebuilt on 2026-09-21 after KZW rejected the previous version
-for listing answered questions as her backlog, and refreshed on 2026-10-05 with
-an addendum after all threads involved had been read in full.
+**What lies with KZW is generated at the top of #44** since 2026-10-09, with
+each open question as a link. The hand-kept triage #406 that stood here before
+was closed that day.
 
 ## Next: pings to people
 
@@ -77,7 +81,7 @@ carry a label:
   ParzivAI is the nearest answer and interesting for both sides. State of play in
   [RESEARCH.md → Downstream Reuse and Related Projects](RESEARCH.md#downstream-reuse-and-related-projects)
 
-## Frozen until December 2026
+## Frozen
 
 **#27** (POS workflow) and **#18** (multi-lemma plus PoS search) are
 `auto:frozen`. KZW set the next pass over the undifferentiated CNJ tokens for
@@ -87,18 +91,18 @@ compound tag. Nobody owes anything on either until
 then. Until 2026-10-05 #18 stood here as a decision cluster, which it has not
 been since its relabelling on 2026-09-23.
 
+**#63** (update of the concept system) is `auto:frozen` until 2027-05-01, the start of the character project whose work package 4 is the revision of the concept system (2026-10-10). The gaps from #498 and #423 stay noted in the issue.
+
 ## Future: needs design, or waiting for a trigger
 
 | # | What | Key question |
 |---|------|-------------|
 | #92 | ARITHMETIC ingest: stage 0 is built and the six manuscripts are converted in `ingest/ari/`, the schema extension (PD-001) is on `main` | Carina's metadata per manuscript, open since 2026-05-16 |
-| #139 | ingest the CoReMA corpus: pilot of five cookbooks (Bs1, GR1, H2, M11, W1) as proposed by Helmut Klug; H2 has no published recipe objects | a joint session with Chris |
+| #139 | ingest the CoReMA corpus: pilot of Bs1, GR1, M11 and W1 as proposed by Helmut Klug; H2 left the pilot on 2026-10-09 (no recipe objects on GAMS) | which cookbook replaces H2 and whether the `COR_*` sigles stay, in a joint session with Chris |
 | #141 | Borte ingest: task 0 (the borte.md metadata template) is delivered in the issue | Alan's metadata; scheduled after #139 |
 | #118 | language stages in the TEI headers: the two first-ranked sources of the concept are empty (no header dating, only print years in `works.xml`), the virgule marks 16 texts as a calibration set | KZW's four format and threshold questions; then it is a procurement project |
-| #123 | „König vom Odenwald": the text is already in the corpus as `KVO` (Olt 1988) | does KZW want the Schröder 1900 edition as well? Asked 2026-09-23 |
-| #63 | update of the concept system: Julia is planning the WSD gold standard, gaps from #498 and #423 are noted | scope (Julia) |
-| #93 | moving the text series typology: the tree view was split off as #361; the move itself means six content areas, a co-author outside the team and two vocabularies that disagree | which vocabulary state holds, and how to involve Marco Heiles |
-| #109 | FWF single project (deep corpus analysis, NER pipeline, phonetic rhyme analysis, visualizations): proposal by KZW, small budget, max. 50 % external funds | a scope note for the proposal text |
+| #93 | moving the text series typology: the subsite is live since 2026-10-13 (#555) on the SKOS state, without a reconciliation against `genres.xml` (KZW, 2026-10-08); the footer logo followed on 2026-10-18 (#624) | none left in the thread: KZW allowed the logos, start image and screenshots on 2026-10-13, Julia accepted the footer logo on 2026-10-19; whether the ticket can close |
+| #109 | FWF single project (deep corpus analysis, NER pipeline, phonetic rhyme analysis, visualizations): proposal by KZW, small budget, max. 50 % external funds | whether the proposal has been submitted and still needs technical clarifications from us (asked 2026-10-09) |
 
 **Index size and a splitting strategy** stands here without an issue number, and
 that is deliberate: the budget question of #111 is **decided and gated**, and the
@@ -133,7 +137,7 @@ journal-archive.md under 2026-07-08, 2026-07-09, 2026-07-29 and 2026-07-31.
 
 1. **TEI model consolidation done** – the target model (#32) is fully implemented, the #32 follow-up is complete at 17/17 (P1-5 with 3 context-specific enum patterns for `idno/@type`, plus the WZB shelfmark, the stage 1 PI cleanup, the CI push trigger). Both schemas written (`mhdbdb.rnc`, `mhdbdb-authority.rnc`), all 667 corpus + 8 authority files validated. Target models: [TEI-MODEL.md](TEI-MODEL.md) + [TEI-MODEL-AUTH-FILES.md](TEI-MODEL-AUTH-FILES.md). Architecture Decision Record: [ADR-013 "Data Consolidation Before Schema Relaxation"](DECISIONS.md#adr-013-data-consolidation-before-schema-relaxation).
 
-2. **TEI data quality** – the structural fixes of the first half of 2026 (#23, #26, #30, #85, #110) and the Wenzelsbibel ingest (#34) are closed. The active workstreams are the content-word homograph series (#216, #369 with #371), corpus cleanup tickets such as #228, #252, #390 and #470, and the ingests waiting in the table above (#92, #139, #141).
+2. **TEI data quality** – the structural fixes of the first half of 2026 (#23, #26, #30, #85, #110) and the Wenzelsbibel ingest (#34) are closed. The active workstreams are the content-word homograph series (#216, and #371 after `stat` #369 was closed on 2026-10-10), corpus cleanup tickets such as #252, #390 and #470, and the ingests waiting in the table above (#92, #139, #141).
 
 3. **Playground TEI text analysis** – release 1 (#87 to #90) was closed on 2026-05-11, and the concept distribution of release 2 is live (`concept-distribution.js`, see FEATURES.md). Release 3 (POS shares) depends on #27 and is frozen with it.
 

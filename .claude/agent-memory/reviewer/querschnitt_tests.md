@@ -1,35 +1,30 @@
 ---
 name: querschnitt-tests
-description: Tests im Review: Einzelspec via run-tests.js, --reporter-Falle, report.json, Port-Konflikt, Proben ohne Spec, Locator-Fallen, Tailwind, warmer Worker-Context (#488), Warte-Fallen
+description: Playwright, run-tests.js, Proben ohne Spec, Tailwind, Layout
 metadata:
   type: project
 ---
-Verdichtet 14.10.2026.
-
-**Läufe**
-- Einzelspec: `node scripts/run-tests.js <spec>` (startet Server selbst, VERDICT TEILLAUF), `npm test -- <spec...>` oder `-- --grep "<titel>"`. Worktree ohne cd: `npm.cmd --prefix <worktree> test -- a.spec.js`. Ergebnis ist die VERDICT-Zeile.
-- `--reporter` auf der CLI ersetzt die Reporter der Config: kein report.json, `VERDICT: KEIN ERGEBNIS`, Exit 2, obwohl alles grün.
-- `testing/test-results/report.json` wird von jedem Einzellauf überschrieben und fehlt, solange `npm test` läuft; **auch `npx playwright test --list -c testing/playwright.config.js` überschreibt sie.** Vor jedem `--list` oder Einzellauf `stats` des Aufrufers in eine Scratch-Datei kopieren; `node scripts/run-tests.js --list` zählt ohne Server. `config.workers` ist das Maximum, die tatsächliche Zahl steht in `config.metadata.actualWorkers`.
-- **Port 8080:** frei? `curl -s -o /dev/null -w "%{http_code}" localhost:8080/...` (000 = frei); welcher Baum? `curl .../<seite> | grep -c '<String aus dem Diff>'`. Bedient ein fremder Baum :8080, endet run-tests.js mit `KEIN ERGEBNIS`; Abhilfe `MHDBDB_TEST_PORT=<port>`.
-- **Flaky ist rot, auch bei grünem Retry** (`failOnFlakyTests: true`). Ein TEILLAUF GRUEN ersetzt den Volllauf nicht; „npm test grün" heißt VOLLLAUF GRUEN.
-- **Einzelspec auf einer Kopie, ohne den Worktree zu berühren:** `git archive HEAD -- assets data korpus.html index.html includes package.json package-lock.json scripts testing authority-files 404.html | tar -x -C <kopie>`, nur die gebrauchten TEI-Dateien per `git show <rev>:tei/X.tei.xml`; node_modules per `cmd //c mklink //J` (danach `cmd //c rmdir` auf die Junction). Dann `MHDBDB_TEST_PORT=8097 node scripts/run-tests.js <spec>`; parallele Specs: je ein Port.
-- **Basis gegen Fix, zwei Stände:** je Stand eine Kopie wie oben (Port 8097/8098), Einzeltest mit `MHDBDB_TEST_PORT=<port>` und `-g "<titel>" --workers=1 --retries=0`. **Nach einem roten Lauf kehrt `npx playwright test` nicht zurück:** der HTML-Reporter (`open: on-failure`) wartet; vorab `PLAYWRIGHT_HTML_OPEN=never` setzen oder `report.json` lesen und den Prozess beenden.
+**Runs**
+- Einzelspec: `node scripts/run-tests.js <spec>` (startet den Server, VERDICT TEILLAUF) oder `npm test -- <spec...>`, `-- --grep "<titel>"`. Worktree ohne cd: `npm.cmd --prefix <worktree> test -- a.spec.js`. Ergebnis ist die VERDICT-Zeile. Flaky ist rot (`failOnFlakyTests: true`), TEILLAUF GRUEN ersetzt den Volllauf nicht.
+- `--reporter` auf der CLI ergibt `VERDICT: KEIN ERGEBNIS` (docs/INDEX.md).
+- `testing/test-results/report.json` überschreibt jeder Einzellauf, auch `npx playwright test --list -c testing/playwright.config.js`: vorher `stats` des Callers sichern. `node scripts/run-tests.js --list` zählt ohne Server.
+- **Port 8080:** frei? `curl -s -o /dev/null -w "%{http_code}" localhost:8080/...` (000 = frei). Welcher Baum? Seite holen und einen String aus dem Diff greppen. Fremder Baum auf :8080 gibt `KEIN ERGEBNIS`: `MHDBDB_TEST_PORT=<port>`.
+- **Spec auf einer Kopie:** `git archive HEAD -- assets data korpus.html index.html includes package.json package-lock.json scripts testing authority-files 404.html | tar -x -C <kopie>`, nötige TEI per `git show`, node_modules per `cmd //c mklink //J` (danach `cmd //c rmdir`), eigener Port je Spec.
+- „Kein Test deckt Seite X ab" belegt ein Grep nach dem Seitennamen nicht: `vendor.spec.js` (`htmlFiles`) läuft über jede `.html` außer `tei/`, `data/`, `.claude/` u. a. Gegenprobe `rg -n readdirSync testing/tests`.
 
 **Proben ohne Spec**
-- Playwright: `.mjs` in $TEMP, `import { chromium } from 'file:///C:/.../node_modules/playwright/index.mjs'` (ohne `file:///` ERR_UNSUPPORTED_ESM_URL_SCHEME), `page.evaluate` auf `window.playground.ui.<tool>.state`. Echter Klick statt `dispatchEvent`. Bei belegtem 8080 startet die `.mjs` selbst `http-server` auf 8097, pollt bis 200, `server.kill()` im `finally`. Ausgabe in eine Datei, `| tail` frisst die ersten Datensätze.
-- Reader-Spec ohne Browser (Playwright gesperrt, #390): `#readingBody.textContent` aus dem TEI nachbauen (Vorlage `tei-text-reader.js`), die Spec-Regexes mit `\p{L}` -> `[^\W\d_]` in Python `re`. Auf Basis UND HEAD fahren: nur wenn die Negativ-Regex auf der Basis greift, unterscheidet der Test etwas.
-- Nach `page.fill('#ldQuery', …)` fängt das Autocomplete-Dropdown den `page.click('#ldSearchBtn')` ab; Knopf per `page.evaluate(b => document.getElementById(b).click(), …)` auslösen.
+- `.mjs` in Temp, `import { chromium } from 'file:///C:/.../node_modules/playwright/index.mjs'` (ohne `file:///` ERR_UNSUPPORTED_ESM_URL_SCHEME), `page.evaluate` auf `window.playground.ui.<tool>.state`, echter Klick statt `dispatchEvent`. Bei belegtem 8080 eigenen `http-server` starten, `server.kill()` im `finally`. Output in eine Datei.
+- **Natives `<select>`:** headless prüft nur die Typeahead im geschlossenen Zustand (`focus` + `keyboard.type`), das aufgeklappte Popup ist nicht erreichbar. Rendert der `change`-Handler das Formular neu, verliert das Select nach dem ersten Buchstaben den Fokus.
+- Mutation ohne Baum: `page.route('**/<pfad>.js', ...)` mit `r.fetch()` und `r.fulfill({ response, body })`, Body per String-Ersatz, Trefferzahl je Ersatz ausgeben (mehrzeilige Anker verfehlen still).
+- **CSS-Zustände je Revision:** `git show <rev>:<css>`, `page.setContent`, Hover/Active per CDP `CSS.forcePseudoState`, dann `getComputedStyle`. `(pointer: coarse)` matcht unter `hasTouch: true` nur bis zum ersten `cdp.detach()`: je Revision ein frischer Kontext, `matchMedia` mit ausgeben. `forcePseudoState` wirkt nur auf den einen Knoten (`:has(.kopf:hover)` am Kind und an der Karte getrennt erzwingen).
+- Reader-Spec ohne Browser: `#readingBody.textContent` aus dem TEI nachbauen, `\p{L}` -> `[^\W\d_]`. Auf Basis UND HEAD fahren: nur wenn die Negativ-Regex auf der Basis greift, trennt der Test.
 
-**Locator-Fallen:** ID-Grep reicht nicht, Textlocator (`button:has-text("...")`) mitsuchen und auf der Basis gegen das HTML greppen (kann dort schon tot sein). Ein `isVisible()`-Guard wird nach Verstecken nie mehr wahr: Test bleibt grün und tut nichts.
+**Locator- und Warte-Fallen**
+- ID-Grep reicht nicht, Textlocatoren (`button:has-text("...")`) mitsuchen und auf der Basis gegen das HTML greppen. Ein `isVisible()`-Guard wird nach Verstecken nie mehr wahr: grün, tut nichts. String-`hasText` ist Teilstring, nur `/^…$/` trennt.
+- Ein Test „Textwechsel setzt X zurück" mit `page.goto` prüft nichts: neues Dokument, jeder JS-Zustand ist ohnehin weg. In-App-Wechsel im Reader: `window._mhdbdbApp.teiReader.openReadingView(id, {}, window._mhdbdbApp.elements)` oder ein `.sigle-link` (#655). Die `.sigle-link` stehen im eingeklappten `#readingMetadata`, nicht in `.reading-header` (korpus.html).
+- **Flaky `waitForFunction` nach Reader-Öffnen:** Playwright 1.55 wertet das Prädikat beim ersten Call synchron aus (`node_modules/playwright-core/lib/server/frames.js` `next()`), rAF erst nach `false`. Ein synchron gesetzter Zustand scheitert also am belegten Main-Thread, nicht am Poll. Messbar ohne Lauf: CI-Artefakt `report.json` (Dauer je Versuch) und `trace.zip` des Retry (`test.trace`, before/after je `callId`): im Nachtlauf 44282052200 brauchte das Teardown-`localStorage.clear()` 9,3 s. Kein `actionTimeout` in der Config: Calls ohne `timeout` binden nur am Testbudget.
+- `waitForLoadState('networkidle')` nach dem ersten networkidle ist ein No-op. Feste `waitForTimeout` sind bei Großtexten (`minne`) als Negativprobe nicht trennscharf. `url().includes('/tei/')` trifft auch `playground/js/ui/tei/*.js`.
 
-**Tailwind**
-- `tailwind-output.css` ist committet, kein Gate, kein Workflow baut CSS. Frische: `npx tailwindcss -i assets/css/tailwind-input.css -o $TEMP/x.css --minify`, `cmp`.
-- **Klasse im minifizierten CSS nicht mit `rg -c` zählen (Ein-Zeilen-Datei) und nicht mit `\.klasse\{`:** das verfehlt gruppierte Selektoren `.a,.b{` (`.flex-shrink-0,.shrink-0{flex-shrink:0}`, Tailwind 3.4.19). Tragfähig: `grep -o '[.,]klasse[,{]' assets/css/tailwind-output.css | wc -l`; Mengendifferenz: `grep -o "}[^{}]*{" x.css | sed 's/^}//;s/{$//' | tr ',' '\n' | sort -u` je Datei, dann `comm`. Nur die Mengendifferenz trägt.
+**Tailwind:** `tailwind-output.css` ist committet, kein Gate baut sie. Frische: `npx tailwindcss -i assets/css/tailwind-input.css -o <temp>/x.css --minify`, `cmp`. Klassen im minifizierten CSS mit `grep -o '[.,]klasse[,{]' ... | wc -l` zählen, nicht `rg -c` (eine Zeile) oder `\.klasse\{` (verfehlt Gruppen). Jede neue Klasse im Diff einzeln zählen, auch wenn der Prompt „keine neuen Klassen" sagt (#585: eine fehlte, der Frischbau unterschied sich um genau sie).
 
-**Warmer Worker-Context (#488, `testing/warm-page.js`, Playwright 1.55.1, bei Update neu prüfen)**
-- Der Worker-Context erbt `use` und Timeout 0 (`actionTimeout || 0`) ohne eigenes Merging; nach einem Fehlschlag läuft der Retry kalt. Der Teardown-`localStorage.clear()` deckt `mhdbdb-results-view` und `mhdbdb-playground-section-<panel>`; kein Service Worker. Neue Opt-in-Specs auf Storage-Asserts, `page.route` und `context`-Fixture greppen (`grep -rl warm-page testing/tests`). Zwei Volläufe streuen um ~30 s.
-
-**Warte-Fallen (Playwright 1.55.1, #564 D3)**
-- `page.waitForLoadState('networkidle')` nach dem ersten networkidle der Seite ist ein No-op und ersetzt keine feste Frist nach einem Klick.
-- `beforeAll`/`afterAll` laufen mit `project.timeout`; ihre Zeit fehlt in `result.duration` und der Dauertabelle von run-tests.js. Request-Zähler mit `url().includes('/tei/')` trifft auch `playground/js/ui/tei/*.js`.
-- **Korpusladen blockiert den Hauptthread einmal am Stück** (kalter Context ~10 bis 12 s, warmer ~3 s); `#fileBrowserSection` wird im selben synchronen Block sichtbar (playground-main.js 276 bis 288), eine 5-s-Frist davor kann in den Block fallen. Der Log „locator resolved to visible" vor einem Timeout heißt „Roundtrips im Block hängen geblieben", nicht „Element unsichtbar". **Die Longtask-API meldet den Block nicht**; messen mit rAF-Lücken (>100 ms) plus Wrapper um `JSON.parse`/`window.pako.ungzip`/`window.playground.populateFileBrowser`.
+**Layout-Proben (#585):** Basis-HTML per `page.route('**/korpus.html', r => r.fulfill({body: <git show origin/main:korpus.html>}))`, Selektor über einen Anker, den die Basis schon hat. Zeilen eines Flex-Labels über `Range.getClientRects()` je Textknoten zählen, nicht über die Höhe. Schriftproxy für den Linux-Nachtlauf: `body *{font-family:Verdana !important}` per `addStyleTag`, nur an einer Stelle geeicht.

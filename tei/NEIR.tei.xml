@@ -152,6 +152,9 @@
       <change when="2026-09-23" who="#editor">#252 zweiter Durchgang: 10 Stellen des Auslassungsmusters ( caesura ) innerhalb einer Zeile mit Wortlaut auf &lt;gap reason="lost"/&gt; migriert, nach der Freigabe von KZW vom 22.09.2026. Nur das Muster ersetzt, umliegender Text sowie Satz- und Redezeichen unverändert.</change>
       <change when="2026-10-06" who="#editor">#252: 1 wortloser Vers mit vollständigem Auslassungsmuster ( caesura ) und einem weiteren Zeichen auf &lt;gap reason="lost"/&gt; migriert, nach der Freigabe von KZW vom 02.10.2026. Das Zeichen daneben unverändert.</change>
       <change when="2026-10-08" who="#editor">#493: Angabe zur semantischen Disambiguierung in encodingDesc/normalization ergänzt (19510 von 19533 lemmatisierten Tokens tragen einen Begriff in @ana). Vorher: &#34;&#34;</change>
+      <change when="2026-10-18" who="#editor">#602 naschen: 1 Token mit @ana auf lemma_57919_sense_93122 (Essen) gesetzt.</change>
+      <change when="2026-10-18" who="#editor">#554 trûbe: 1 Token (Adjektiv trüebe 1, Verb trüeben 0) von lemma_15282 umgehaengt, @ana entfaellt.</change>
+      <change when="2026-11-08" who="#editor">#216 Frau Minne: 1 Token auf das Namenlemma lexicon.xml#lemma_79830 (Minne, NAM) gesetzt (1 von lemma_4130 umgehängt). Regel: unmittelbar vorangehendes Token mit lemma_7260, Form ohne -n (Entscheidung chsteiner und K. Zeppezauer-Wachauer 2026-08-31, Umsetzung 2026-11-08; Provenienz-Log: ingest/pos-disambig/216-minne-nam/).</change>
     </revisionDesc>
   </teiHeader>
   <text>
@@ -2331,7 +2334,7 @@
             </l>
             <l n="7">
               <w xml:id="NEIR_307070_0" lemmaRef="lexicon.xml#lemma_7260" pos="NOM" ana="lexicon.xml#lemma_7260_sense_11763" corresp="variants.xml#type_26000">vrowe</w>
-              <w xml:id="NEIR_307070_1" lemmaRef="lexicon.xml#lemma_4130" pos="NOM" ana="lexicon.xml#lemma_4130_sense_6485" corresp="variants.xml#type_14385">minne</w>
+              <w xml:id="NEIR_307070_1" lemmaRef="lexicon.xml#lemma_79830" pos="NAM" ana="lexicon.xml#lemma_79830_sense_119201" corresp="variants.xml#type_372866">minne</w>
               <pc xml:id="NEIR_307070_2" join="left">,</pc>
               <w xml:id="NEIR_307070_3" lemmaRef="lexicon.xml#lemma_1242" pos="POS" ana="lexicon.xml#lemma_1242_sense_1958" corresp="variants.xml#type_66952">din</w>
               <w xml:id="NEIR_307070_4" lemmaRef="lexicon.xml#lemma_2325" pos="NOM" ana="lexicon.xml#lemma_2325_sense_3721" corresp="variants.xml#type_7856">gewalt</w>
@@ -9595,7 +9598,7 @@
               <w xml:id="NEIR_1607110_7" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3507">der</w>
               <w xml:id="NEIR_1607110_8" lemmaRef="lexicon.xml#lemma_1545" pos="NOM" ana="lexicon.xml#lemma_1545_sense_2397" corresp="variants.xml#type_5165">erde</w>
               <w xml:id="NEIR_1607110_9" lemmaRef="lexicon.xml#lemma_4238" pos="VRB VEM" ana="lexicon.xml#lemma_4238_sense_6631" corresp="variants.xml#type_278696">muzzen</w>
-              <w xml:id="NEIR_1607110_10" lemmaRef="lexicon.xml#lemma_57919" pos="VRB" corresp="variants.xml#type_310733">naschen</w>
+              <w xml:id="NEIR_1607110_10" lemmaRef="lexicon.xml#lemma_57919" pos="VRB" ana="lexicon.xml#lemma_57919_sense_93122" corresp="variants.xml#type_310733">naschen</w>
               <pc xml:id="NEIR_1607110_11" join="left">.</pc>
             </l>
           </lg>
@@ -25639,7 +25642,7 @@
               <w xml:id="NEIR_4201080_1" lemmaRef="lexicon.xml#lemma_1139" pos="ART" ana="lexicon.xml#lemma_1139_sense_1797" corresp="variants.xml#type_3567">di</w>
               <w xml:id="NEIR_4201080_2" lemmaRef="lexicon.xml#lemma_5994" pos="NOM" ana="lexicon.xml#lemma_5994_sense_9496" corresp="variants.xml#type_21152">tage</w>
               <gap reason="lost"/>
-              <w xml:id="NEIR_4201080_6" lemmaRef="lexicon.xml#lemma_15282" pos="NOM" ana="lexicon.xml#lemma_15282_sense_25272" corresp="variants.xml#type_67873">trube</w>
+              <w xml:id="NEIR_4201080_6" lemmaRef="lexicon.xml#lemma_6251" pos="ADJ" corresp="variants.xml#type_372862">trube</w>
               <pc xml:id="NEIR_4201080_7" join="left">.</pc>
             </l>
             <l n="9">

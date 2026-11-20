@@ -13,6 +13,16 @@
     <link rel="icon" type="image/png" href="assets/images/mhdbdb-logo.png">
     <link rel="stylesheet" href="assets/css/shared.css">
     <link rel="stylesheet" href="assets/css/hilfe.css">
+<!-- SEO:START -->
+<link rel="canonical" href="https://dhcraft.org/mhdbdb-tei-only/hilfe-begriffe-finden.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MHDBDB">
+<meta property="og:locale" content="de_AT">
+<meta property="og:title" content="Passende Begriffe finden – MHDBDB Hilfe">
+<meta property="og:description" content="Passende Begriffe im Begriffssystem der MHDBDB finden, wenn das eigene Thema nicht wörtlich vorkommt: mit einer herunterladbaren Datei und einer KI Ihrer Wahl zu Einstiegsbegriffen und Lemmata, nachgeschlagen im Begriffe-Explorer des Playgrounds.">
+<meta property="og:url" content="https://dhcraft.org/mhdbdb-tei-only/hilfe-begriffe-finden.html">
+<meta property="og:image" content="https://dhcraft.org/mhdbdb-tei-only/assets/images/mhdbdb-logo.png">
+<!-- SEO:END -->
 <!-- MATOMO:START -->
 <script>
   (function() {
@@ -216,6 +226,16 @@
                     ins zusätzliche Filterfeld und klicken es an.
                 </li>
                 <li>
+                    <strong>Oder den Links folgen:</strong> Die Datei bittet die KI, zu jedem Begriff
+                    einen Link auszugeben, der den Begriffe-Explorer mit der Kennung schon im Suchfeld öffnet.
+                    Schlägt sie zwei Lemmata vor, die im Text nahe beieinander stehen sollen, startet
+                    ein zweiter Link die Suche nach beiden direkt. Diese Suche lädt beim ersten Mal den
+                    Korpus und braucht etwas Zeit. Über den Ergebnissen steht, nach welchen
+                    Schreibungen gesucht wurde. Das Lemma dazu wählt die Suche selbst; bei gleich
+                    geschriebenen Wörtern kann es ein anderes sein als gemeint. Welche Wörter
+                    gefunden wurden, zeigen die Belege.
+                </li>
+                <li>
                     <strong>Prüfen:</strong> In den Lemma-Details sehen Sie die Begriffe je
                     Bedeutung, in den Belegen die Textstellen selbst. Erst dort zeigt sich, ob ein
                     Vorschlag zu Ihrem Thema passt.
@@ -228,7 +248,9 @@
                     einem Mitbegriff vor (bei <em>Wachsamkeit</em> etwa <em>Aufmerksamkeit</em> mit
                     <em>Kriegswesen</em>), gibt es auf der Website keine UND-Abfrage dafür. Sie schlagen
                     beide Begriffe einzeln nach und suchen in den Lemma-Details nach Bedeutungen, an
-                    denen beide stehen.
+                    denen beide stehen. Der Link für zwei Lemmata ist etwas anderes: Er findet
+                    Textstellen, an denen beide Wörter nahe beieinander stehen, gleich in welcher
+                    Bedeutung.
                 </p>
             </div>
         </section>
@@ -297,7 +319,7 @@
 
         <!-- Stand-Zeile -->
         <p class="hilfe-stand">
-            Stand: September 2026 ·
+            Stand: Oktober 2026 ·
             <a href="https://github.com/DigitalHumanitiesCraft/mhdbdb-tei-only/commits/main/hilfe-begriffe-finden.html" target="_blank" rel="noopener">Änderungen auf GitHub</a>
         </p>
 
@@ -335,7 +357,7 @@
       <img
         src="assets/images/university-logo.png"
         alt="Universität Salzburg"
-        class="h-24 w-auto"
+        class="h-16 w-auto"
       />
       <img
         src="assets/images/clariah-logo.svg"
@@ -392,6 +414,13 @@
             class="hover:text-brand-600 transition"
           >
             Textreihentypologie
+          </a>
+          <span>|</span>
+          <a
+            href="hilfe-publikationen.html"
+            class="hover:text-brand-600 transition"
+          >
+            Publikationen
           </a>
           <span>|</span>
           <a

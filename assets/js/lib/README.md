@@ -55,6 +55,7 @@ Bewusst NICHT geteilt wird die Orchestrierung der drei Stufen: beide Aufrufer ha
 - `isStage3Match(lemmaNormalized, queryNormalized)` → boolean
 - `stage3Distance(lemmaNormalized, queryNormalized)` → number (Längendifferenz, kleiner ist näher)
 - `MIN_LEMMA_PREFIX_LENGTH` → 3 (Mindestlänge nur in der Richtung „Eingabe beginnt mit Lemma")
+- `MIN_STAGE3_COVERAGE` → 0.5 (in derselben Richtung deckt das Lemma mindestens die halbe Eingabe ab, #259)
 
 **Usage:**
 ```javascript
@@ -63,6 +64,7 @@ import { isStage3Match, stage3Distance } from '../../lib/lemma-resolve.js';
 isStage3Match('minnecl', 'minnecl');   // true (Präfix)
 isStage3Match('minneclich', 'minnecl'); // true (Lemma beginnt mit der Eingabe)
 isStage3Match('mi', 'minnecl');         // false (zu kurz für die Rückrichtung)
+isStage3Match('min', 'minnecl');        // false (deckt weniger als die halbe Eingabe ab, #259)
 ```
 
 ### `lemma-id-input.js`
@@ -211,6 +213,38 @@ Zuschreibungsstatus der Werkautoren (#452): welche Autoren zählen (weder Bearbe
 import { authorLineOfText } from '../../lib/attributions.js';
 
 authorLineOfText(text, authorityData.works); // 'Anonym; Konrad von Würzburg (umstritten)'
+```
+
+### `collapsible-text.js`
+Einklappbare lange Texte (#554): ein Text über 600 Zeichen steht zunächst auf sechs Zeilen gekürzt, darunter der Knopf "Weiterlesen" (`aria-expanded`, `aria-controls`); kürzere Texte bleiben unverändert. Die Kürzung ist CSS (`.clamp-collapsed` in `assets/css/shared.css`), ein einziger Click-Listener am Dokument schaltet um. Genutzt für die Lexikonkommentare auf der Lemmaseite und im Lemma-Explorer des Playgrounds.
+
+**Exports:**
+- `COLLAPSE_MIN_CHARS`, `COLLAPSE_LINES`: Schwelle und Zeilenzahl
+- `collapsibleHtml(innerHtml, zeichen)` → HTML, gekürzt mit Knopf oder unverändert
+- `enhanceCollapsibles(root)`: nach dem Einfügen aufrufen, entfernt den Knopf, wo die Kürzung nichts verdeckt
+
+**Usage:**
+```javascript
+import { collapsibleHtml, enhanceCollapsibles } from '../../lib/collapsible-text.js';
+
+container.innerHTML = collapsibleHtml(`<p>${escapeHtml(kommentar)}</p>`, kommentar.length);
+enhanceCollapsibles(container);
+```
+
+### `verse-jump.js`
+Sprungfeld "Zu Vers" der Leseansicht (#655). Zählt auf dem gerenderten Text, ob eine Versnummer allein eindeutig ist (`'plain'`), erst mit dem `@n` des nächsten `div` (`'div'`) oder des nächsten `div` oder `lg` (`'section'`), sonst `null`: dann bleibt das Feld verborgen. Nur von `tei-text-reader.js` genutzt.
+
+**Exports:**
+- `classifyVerses(entries)` → Modus, reine Funktion ohne DOM
+- `buildVerseJumpIndex(root)` → `{ mode, lookup, example }` über `#readingBody`
+- `parseVerseInput(mode, text)` → `{ key, label }` oder `null`
+
+**Usage:**
+```javascript
+import { buildVerseJumpIndex, parseVerseInput } from '../lib/verse-jump.js';
+
+const jump = buildVerseJumpIndex(readingBody);   // ROL: mode 'plain'; PZ: mode 'div'
+const hit = jump.lookup.get(parseVerseInput(jump.mode, '339.26')?.key);
 ```
 
 ## Design Principles

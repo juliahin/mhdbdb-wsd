@@ -60,7 +60,7 @@ Eight authority files – seven content-bearing controlled vocabularies (in the 
 
 All files use namespace `xmlns="http://www.tei-c.org/ns/1.0"`.
 
-#### lexicon.xml (~33 MB, 43,710 entries)
+#### lexicon.xml (~34 MB, 43,712 entries)
 
 ```xml
 <TEI><text><body><div type="lexicon">
@@ -81,7 +81,7 @@ All files use namespace `xmlns="http://www.tei-c.org/ns/1.0"`.
 
 Notes: Multiple `<pos>` per entry possible. Multiple `<sense>` per entry (verb entries often have 2+). `@ana` contains space-separated semantic type references.
 
-#### persons.xml (~74 KB)
+#### persons.xml (~57 KB)
 
 ```xml
 <TEI><text><body><listPerson>
@@ -97,7 +97,7 @@ Notes: Multiple `<pos>` per entry possible. Multiple `<sense>` per entry (verb e
 
 Notes: IDs are numeric (`person_N`) except `person_anonym`. GND and Wikidata are optional.
 
-#### works.xml (~1.4 MB)
+#### works.xml (~1.2 MB)
 
 ```xml
 <TEI><text><body><listBibl>
@@ -166,7 +166,7 @@ Notes: Multiple sigles per work (editions). GND/Wikidata may be full URLs or bar
 | genres.xml | `genre_{hex}` | – (but many broader pointers, polyhierarchical) |
 | names.xml | `name_{numeric}` | `exactMatch`, `closeMatch` → `concepts.xml#...` |
 
-#### variants.xml (~16 MB, 256,961 variant forms)
+#### variants.xml (~18 MB, 256,970 variant forms)
 
 ```xml
 <TEI><text><body><div type="orthographicVariants">
@@ -176,7 +176,7 @@ Notes: Multiple sigles per work (editions). GND/Wikidata may be full URLs or bar
 </div></body></text></TEI>
 ```
 
-Notes: Flat list of variants grouped by lemma cross-reference. Forms preserve MHG diacritics. One entry per lexicon lemma; multiple forms per entry. `@n` (required since the authority schema 1.2.0, #378) is the number of corpus tokens of this type under the entry's lemma, written by `extract-variants.py`. It is the only frequency in the authority layer and the sole input of the candidate ranking (Vorschrift B, ADR-021).
+Notes: Flat list of variants grouped by lemma cross-reference. Forms preserve MHG diacritics. At most one entry per lemma, and only for lemmata with corpus forms (`extract-variants.py` writes them from the corpus); multiple forms per entry. `@n` (required since the authority schema 1.2.0, #378) is the number of corpus tokens of this type under the entry's lemma, written by `extract-variants.py`. It is the only frequency in the authority layer and the sole input of the candidate ranking (Vorschrift B, ADR-021).
 
 ## Pre-Built Index Architecture
 
@@ -245,13 +245,13 @@ The project uses pre-built JSON indexes to avoid runtime XML parsing.
       conceptIds: ["concept_1234"],
       // the three curated fields below exist only where lexicon.xml carries them
       // (#248, authority index 1.7.0; the *RespName fields are resolved from
-      // contributors.xml, #270: comment 1.9.10, definition 1.9.15). As of 2026-08-03 that is a single sense,
-      // lemma_37818 "Abba": one <def> and one <note type="comment">, each with
-      // its @resp. Curation is ongoing, so expect this count to grow.
+      // contributors.xml, #270: comment 1.9.10, definition 1.9.15). As of 2026-10-20:
+      // a comment on 138 senses of 134 lemmata (all but one from #554), a
+      // definition on 2 senses, each with its @resp.
       definition: "...", definitionResp: "contributors.xml#contrib_003", definitionRespName: "Katharina Zeppezauer-Wachauer",
       comment: "...",    commentResp: "contributors.xml#contrib_003", commentRespName: "Katharina Zeppezauer-Wachauer"
     }],
-    // likewise curated, likewise a single lemma as of 2026-08-03: the borrowing
+    // likewise curated, a single lemma (lemma_37818 "Abba") as of 2026-10-20: the borrowing
     // chain from <etym type="borrowing">
     origin: {languages: [{name, code}], attribution: "...", resp: "...", respName: "..."},
     normalized: "brot",
@@ -295,7 +295,7 @@ The project uses pre-built JSON indexes to avoid runtime XML parsing.
     // the value is the first candidate by Vorschrift B (v1.9.18, ADR-021, #378)
   },
 
-  variantCandidates: {               // v1.9.18: only forms with more than one candidate (4,976)
+  variantCandidates: {               // v1.9.18: only forms with more than one candidate
     "hab": ["lemma_2598", "lemma_2593"]   // ranked: corpus tokens of THIS form under the lemma
   },
 
@@ -471,6 +471,18 @@ This is the point where #59 decided differently. The naming index builds **no** 
 
 **No version sync channel**, for the same reason as the naming index: lazy fetch, no IndexedDB cache, no entry in `corpus-loader.js`.
 
+### ONAMA pilot package (#609)
+
+Two plain JSON files under `playground/data/onama/`, both generated from the public ONAMA Turtle file by `scripts/ingest/onama/` (requires `rdflib`, input kept outside the repository) and neither edited by hand. They change nothing in `tei/` or `authority-files/`, and the TEI anchors are only read.
+
+- `anker-abgleich.json`: the anchor comparison, one entry per `onama:TextPassage`. `eingaben` names both input commits (ONAMA corpus, MHDBDB). Each endpoint keeps its original string (`von.original`, `bis.original`) and records whether an exact `xml:id` match exists, the element type, the document index and the word position. A word position counts only `<w>` with a non-empty `@lemmaRef` and text (CONTRACTS.md §B); where an endpoint is not such a word (a `<pc>`, a `<caesura>`, or a `<w>` without `@lemmaRef`), `wortspanne` moves the start to the next and the end to the previous counted word. Status classes, one per passage: `wortanker` (both endpoints are `<w>` in document order), `nichtwort_anker`, `umgekehrt`, `nicht_gefunden`. Statements with `fromToken`/`toToken` on a resource that is not a `TextPassage` (Q67, placeholder `AXU_XXXX`) sit in `ausserhalb`, never in the passages.
+- `argonauten.json`: the explorer package. Top-level keys `meta` (sources and commits, selection criterion, licence block, notes, statistics), `konzepte`, `realisierungen`, `entitaeten`, `funktionen`, `verben`, `sammlungen`, `randfaelle`, `ausgeschlossen`. Identifiers are the ONAMA object ids (`Q1045`), the full source URI is in `uri`; they are not Wikidata ids, and Wikidata and Iconclass equivalences are carried only as stored.
+  - A **realisation** has `art` (`text` or `bild`), `quelle` (`TRO`, `TRY`, `OENB2773`, `REALONLINE`), `zuordnung` (`sammlung`, or `abgeleitet` when no collection is stored and the pictorial realisation is matched by concept and RO label only), `konzepte`, `handlung` (verb ids), `rollen`, `passagen` (text) or `bildlink` (picture), `vorher`/`nachher`/`gleichzeitig` (Fabula order within the excerpt) and `pruefstatus` (precedence `offen` over `abgeleitet` over `geprueft`: `offen` = anchor not found or reversed, text without a passage, picture without a link; `abgeleitet` = no collection stored or at least one passage with `umgerechnet: true`; `geprueft` = the rest, technically checked: collection-based assignment plus, for text, every passage with two counted word anchors in order, for a picture a stored link; never scholarly confirmation). Each entry in `passagen` carries `umgerechnet`, true where an endpoint is not a counted word and `wortspanne` was moved. The explorer applies the same precedence per passage: every passage with `umgerechnet` (`wortanker` or `nichtwort_anker`) shows `abgeleitet` (the `abgeleitet` badge colour) instead of "Anker geprüft" or "Endpunkt ist kein Wort", the latter kept as a small addition for `nichtwort_anker`, and the reading-view link appears only for a passage that is not `umgerechnet`.
+  - A **role** is `{klasse, beteiligte, temporaere_funktionen}` with the explicit `rdf:type` of the role node (no inheritance). `temporaere_funktionen` hang on the role node; the entity's `allgemeine_funktionen` hang on the entity. The two are separate fields on purpose.
+  - Counts are of resources (realisations), never of edges: forward and inverse edges (`next`/`previous`) are one relation.
+- Selection: the concept Q1309 and everything reachable over `onama:narrower`; realisations from the collections TRO (Q271), TRY (Q272) and ÖNB cod. 2773 (Q1155) whose concept lies in that subtree, plus picture realisations without any collection whose concept lies in it and whose label starts with `RO ` (marked `abgeleitet`). Realisations that look relevant but fall outside are listed in `randfaelle` with the reason; they are not taken in.
+- Reuse (ONAMA 2.0): the files are self-describing through `meta`; the reading view needs only `?textId=<sigle>&verseId=<xml:id>`. Licence block as stored: reuse under the MHDBDB licence (Katharina Zeppezauer-Wachauer, 2026-10-15); GitHub corpus and ontology CC BY-SA 4.0, website and parts of the final report CC BY-NC-SA.
+
 ## Data Processing Pipeline
 
 ### Build Scripts
@@ -499,16 +511,16 @@ Three core build scripts:
    - Check cross-references
    - Verify data quality
 
-**Variants regeneration:** `authority-files/variants.xml` is consumed by `build-authority-index.py` but is itself **derived from the corpus** (one `<form xml:id="type_N" n="...">` per orthographic variant, grouped under the lemma it attests; `n` is its token count). Regenerate it with `python scripts/sync/extract-variants.py --apply` (reads current `@lemmaRef` + `@corresp`; xml:id uniqueness by majority vote) whenever the corpus gains new orthographic forms, then rebuild the authority index and bump its version. *Historical note:* the original extractor lived only on the archived `initial-data-wrangling` branch and read the pre-#32 `@wordRef`, so the file silently drifted by 64,287 forms until the maintained generator was added and `variants.xml` regenerated on 2026-05-29 (192,472 → 256,759 forms; #44/#115).
+**Variants regeneration:** `authority-files/variants.xml` is consumed by `build-authority-index.py` but is itself **derived from the corpus** (one `<form xml:id="type_N" n="...">` per orthographic variant, grouped under the lemma it attests; `n` is its token count). Regenerate it with `python scripts/sync/extract-variants.py --apply` (reads current `@lemmaRef` + `@corresp`; xml:id uniqueness by majority vote) whenever the corpus gains new orthographic forms, then rebuild the authority index and bump its version if the rebuild shows a diff (routing table under Data-Change-Lifecycle). *Historical note:* the original extractor lived only on the archived `initial-data-wrangling` branch and read the pre-#32 `@wordRef`, so the file silently drifted by 64,287 forms until the maintained generator was added and `variants.xml` regenerated on 2026-05-29 (192,472 → 256,759 forms; #44/#115).
 
 ### Static JSON API (`api/`)
 
-**Script:** `scripts/build-api.py` (alias: `npm run build:api`, not part of the `npm run build` aggregate)
+**Script:** `scripts/build-api.py` (alias: `npm run build:api`; also run by `npm run build:data`, and with it by `npm run build`)
 
 Third derived layer beside the two indexes. Reads **only** the two pre-built indexes (`data/authority-index.json.gz` + `data/corpus-index.json.gz`), never the XML sources, and emits a static JSON API into `api/` (one file per record except the lemmata; record counts in `api/index.json`), served as plain files by GitHub Pages:
 
 - `api/index.json` – root manifest (collection counts, source index versions)
-- `api/lemmata/index.json` – full lemma records as one bundle (43,710 records, no individual files)
+- `api/lemmata/index.json` – full lemma records as one bundle (43,712 records, no individual files)
 - `api/<coll>/{id}.json` + `api/<coll>/index.json` (summary list) for persons, works, concepts, genres, names, texts (texts stripped of the heavy `words`/`lemmata`/`lineStarts`/`lineEnds` arrays)
 - every emitted file carries `"license": "CC BY-NC-SA 4.0"`; `persons.works` is normalized from comma-string to array
 
@@ -546,7 +558,7 @@ Build properties: deterministic on the #125 principle (no timestamps, compact JS
 | | genres.xml | `//tei:category` (filter ID starts with `genre_`) | Genre entries |
 | | names.xml | `//tei:category` (filter ID starts with `name_`) | Name entries |
 | | (all three) | `.//tei:catDesc//tei:term` (filter `@xml:lang`) | DE/EN labels. For concepts and genres additionally `@type="alternative"` → `altDE`/`altEN`/`altNormalized` (that is what index versions 1.3.0 and 1.5.0 were for). `names.xml` has no such handling: there the last `de` term overwrites the previous one, dormant today because no name category carries more than one |
-| | genres.xml | `./tei:catDesc/tei:ptr[@type="broader"]` *(direct children throughout; the only reader is `build_performance_maps`, not `parse_genres`)* | Genre hierarchy, 3,175 pointers |
+| | genres.xml | `./tei:catDesc/tei:ptr[@type="broader"]` *(direct children throughout; the only reader is `parse_genres`, which reduces them to `parents`, #361)* | Genre hierarchy, 3,175 pointers |
 | | genres.xml | `tei:catDesc/tei:term` *(direct child, first `de` wins)* in `_build_genre_names()` | `work.genres[].text`, the label shown for a genre pointer. Different axis **and** different selection logic from the `.//tei:catDesc//tei:term` row above |
 | | names.xml | `.//tei:ptr[contains(@target,"concepts.xml#")]` | Concept cross-references |
 | | variants.xml | `.//tei:entry` (TEI namespace hard-coded) | Variant groups |
@@ -562,7 +574,7 @@ Build properties: deterministic on the #125 principle (no timestamps, compact JS
 
 #### Curated lexicon fields (#268, since authority index v1.7.0)
 
-The three productions marked „curated" (`etym[@type="borrowing"]`, `def`, `note[@type="comment"]`) are the only ones in the lexicon carrying editorial prose instead of classification. The build writes the corresponding index fields **only where they actually stand in the XML**: empty keys on every lemma entry would inflate index and API for nothing. As of 2026-07-31 exactly one lemma is curated (`lemma_37818` „Abba"), so consumers have to treat the fields as optional, never as a promise per record. Normative: [CONTRACTS.md §G.3](CONTRACTS.md#g3-field-schemas). The `@resp` values land in the index unchanged as `contributors.xml#contrib_N`. Since authority index 1.9.10 (#270, ADR-018) the build also resolves the comment's `@resp` through `contributors.xml` and writes the display name next to it as `sense.commentRespName`; an id it cannot resolve stops the build. Since 1.9.15 it does the same for `definitionResp` (`sense.definitionRespName`) and `origin.resp` (`origin.respName`), with the same stop. `contributors.xml` itself is still not indexed as a collection.
+The three productions marked „curated" (`etym[@type="borrowing"]`, `def`, `note[@type="comment"]`) are the only ones in the lexicon carrying editorial prose instead of classification. The build writes the corresponding index fields **only where they actually stand in the XML**: empty keys on every lemma entry would inflate index and API for nothing. As of 2026-10-20 a comment stands on 134 lemmata, a definition on 2 and an origin on 1, so consumers have to treat the fields as optional, never as a promise per record. Normative: [CONTRACTS.md §G.3](CONTRACTS.md#g3-field-schemas). The `@resp` values land in the index unchanged as `contributors.xml#contrib_N`. Since authority index 1.9.10 (#270, ADR-018) the build also resolves the comment's `@resp` through `contributors.xml` and writes the display name next to it as `sense.commentRespName`; an id it cannot resolve stops the build. Since 1.9.15 it does the same for `definitionResp` (`sense.definitionRespName`) and `origin.resp` (`origin.respName`), with the same stop. `contributors.xml` itself is still not indexed as a collection.
 
 #### Namespace Handling
 
@@ -599,13 +611,13 @@ Scripts for enriching authority files with external data:
    - Transform titles to German Title Case (capitalize words except articles/prepositions)
    - Update works.xml with complete biblStruct elements
    - Three modes: live API, cache, offline
-   - Two named exceptions to "the edition is whatever Zotero says": FLG is assigned by Zotero key (ATWPNQPS) instead of by call number, and FR3 stays at the state of `115c3a01f` until its Zotero item is corrected; both in [CONTRACTS.md F.4a](CONTRACTS.md#f4a-edition-evidence-zotero--worksxml--tei-header)
+   - Two named exceptions to "the edition is whatever Zotero says": FLG is assigned by Zotero key (ATWPNQPS) instead of by call number, and FR3 keeps its `analytic` and `note` from `works.xml` (Zotero has no place for the supplement reference and the acknowledgement); both in [CONTRACTS.md F.4a](CONTRACTS.md#f4a-edition-evidence-zotero--worksxml--tei-header)
 
 2. **`sync_tei_headers.py`** - Propagate authority metadata to TEI headers
    - Read authority file changes (only `works.xml` is implemented; persons, genres and concepts are declared stubs)
    - `--works` writes two things into each header, both by string replacement so that every other byte stays: the mirrored identifiers in the `msIdentifier` (#399) and the edition evidence in the `biblStruct` of the `listBibl` (#486)
    - The `biblStruct` writer changes only the text of changed leaf elements and inserts missing elements; elements that exist only in the header (text-specific additions such as AK, #134) and the order of the children stay as they are
-   - `--works --check` is the gate: every element of the `works.xml` `biblStruct` has to be present in the header (see [CONTRACTS.md F.4a](CONTRACTS.md#f4a-edition-evidence-zotero--worksxml--tei-header))
+   - `--works --check` is the gate: every element of the `works.xml` `biblStruct` has to be present in the header, and an element that exists only in the header has to be listed in `ERLAUBTE_ZUSAETZE` (see [CONTRACTS.md F.4a](CONTRACTS.md#f4a-edition-evidence-zotero--worksxml--tei-header))
    - Maintain intentional redundancy for accessibility
 
 **Title Case Transformation:** Zotero stores titles in sentence case, but German bibliographic style requires Title Case. The script converts automatically:
@@ -629,7 +641,7 @@ Scripts for enriching authority files with external data:
 **Cache strategy:**
 - Authority index: 30-day expiration (reference data)
 - Corpus index: 30-day expiration (corpus data)
-- TEI files: No expiration (user content)
+- TEI files: revalidated against the server on every load (conditional GET, #151); entries are purged after 30 days
 
 ## Data Relationships
 
@@ -657,7 +669,7 @@ All cross-references validated during build:
 
 ### Performance Maps
 
-Three pre-computed maps accelerate common queries:
+Two pre-computed maps accelerate common queries:
 
 **conceptToLemmas:** Find all lemmata for a concept
 - Avoids scanning entire lexicon
@@ -722,15 +734,7 @@ Build scripts perform integrity checks:
 - TEI corpus modified (new orthographic forms)
 - Usually paired with corpus index rebuild
 
-**Rebuild workflow:**
-```bash
-python scripts/sync/extract-variants.py --apply   # regenerate variants.xml from the corpus (#44/#115)
-python scripts/build-authority-index.py
-python scripts/build-corpus-index.py
-python scripts/validate-indices.py
-python scripts/build-api.py                       # static JSON API from the two indexes (#45)
-python scripts/build-begriffshilfe.py             # concept-help download from concepts.xml, lexicon.xml and w/@ana (#498)
-```
+**Rebuild workflow:** the step sequence with every gate is the [Data-Change-Lifecycle](#data-change-lifecycle) below. `npm run build:data` runs its build steps in that order (the chain is spelled out in [DEVELOPMENT.md](DEVELOPMENT.md)).
 
 **Cache invalidation:**
 - Increment version number in build script
@@ -930,17 +934,18 @@ The two checklists below describe the **maximum case**. Not every change needs e
 | `tei/`: `@pos` on a `<w>` carrying a `@lemmaRef` (#462). Condition: the sequence of `<w>` and the `<l>` boundaries stay unchanged | step 5b (`build-lemma-pos.py`), then step 6 (authority index) and step 7 (API), plus step 2 and step 9. The corpus index does not change, so no corpus bump; the authority index gets its bump only if the rebuild shows a diff, which it does as soon as a lemma with several lexicon parts of speech changes its count order or its most frequent part | about 12 s plus about 17 s |
 | `tei/`: `@ana` on `<w>`. Condition: the sequence of `<w>` and the `<l>` boundaries stay unchanged | no index rebuild and no version bump, but step 8 (`build-begriffshilfe.py`, which counts the attestations per sense from `w/@ana`), plus step 2 (schema) and step 9 (cross-ref audit), then commit and push, staging `assets/downloads/mhdbdb-begriffshilfe.md` too | about 25 s |
 | `tei/`: `<l>` boundaries moved, or one of the four header statements changed. No `<w>` added, removed, or changed in wording, `@lemmaRef` or `@corresp` | the corpus checklist without steps 5, 6 and 8 | about 50 s |
-| `tei/`: the stock of `<w>`, their wording, `@lemmaRef` or `@corresp` touched; a file added or removed | the corpus checklist in full (step 8 included: the attestation counts of the Begriffshilfe move with the stock of `<w>`) | about 85 s plus about 25 s |
-| `authority-files/contributors.xml` | the authority checklist except steps 1 and 5, and step 2 (the bump) only if the rebuild shows a diff: since #270 the authority index carries the name of every person a curated statement's `@resp` points at (`sense.commentRespName`, `sense.definitionRespName`, `origin.respName`). A change that touches none of those names leaves the index unchanged, the rebuild shows an empty diff, and then no bump is set (no bump without a change of content, see below) | about 17 s |
+| `tei/`: `@corresp` on `<w>` only (added, removed or retargeted). Condition: the sequence of `<w>`, their wording, `@lemmaRef` and the `<l>` boundaries stay unchanged | step 5 (`extract-variants.py --apply`: `@corresp` is what it reads, including the token counts `form/@n`), then step 6 (authority index) and step 7 (API), plus step 2 and step 9. `build-corpus-index.py` does not read `w/@corresp`, so step 4 and the corpus bump (step 3) are dropped; the authority index gets its bump only if the rebuild shows a diff (see "What `@n` costs" below) | about 23 s plus about 17 s |
+| `tei/`: the stock of `<w>`, their wording or `@lemmaRef` touched; a file added or removed | the corpus checklist in full (step 8 included: the attestation counts of the Begriffshilfe move with the stock of `<w>`) | about 85 s plus about 25 s |
+| `authority-files/contributors.xml` | the authority checklist except steps 1 and 5, and step 2 (the bump) only if the rebuild shows a diff: since #270 the authority index carries the name of every person a curated statement's `@resp` points at (`sense.commentRespName`, `sense.definitionRespName`, `origin.respName`). A change that touches none of those names leaves the index unchanged, the rebuild shows an empty diff, and then no bump is set (no bump without a change of content, see below). One more follow-up step: `python scripts/build-publikationen.py --offline`, because the filter of the Publikationen page assigns entries to team members by the names in this file (`--check` runs in `no-cdn-check.yml`, which now also triggers on this file) | about 17 s |
 | `authority-files/lexicon.xml` or `authority-files/concepts.xml` | the authority checklist in full except step 1, step 5 included: the Begriffshilfe exports `concepts.xml` and counts senses from `lexicon.xml` | about 17 s plus about 25 s |
 | One of the other indexed `authority-files/` (not `works.xml`, `lexicon.xml`, `concepts.xml`) | the authority checklist except steps 1 and 5 | about 17 s |
 | `authority-files/works.xml` | the authority checklist in full except step 5 (`build-begriffshilfe.py` does not read `works.xml`) | about 17 s plus the Zotero run |
 
-The version bump (corpus checklist step 3, authority checklist step 2) is dropped in the rows without a rebuild, and in the `contributors.xml` row when the rebuild shows no diff. Otherwise, as soon as an index is rebuilt, it is mandatory, because the browser invalidates its 30-day cache through the version number alone (#94). Since #154 `scripts/audit/check-index-version-bump.py` catches the forgotten bump: it compares the decompressed index content against the diff base and runs in `data-integrity.yml` deliberately **before** the rebuild step. Two gaps remain: without a determinable diff base (`workflow_dispatch`, a force push) the workflow skips the gate with a `notice`, and it does not cover the version statements in the documentation (TEI-MODEL.md §11, INDEX.md).
+The version bump (corpus checklist step 3, authority checklist step 2) is dropped for every index the row does not rebuild, and for the authority index in the `@pos`, `@corresp` and `contributors.xml` rows when its rebuild shows no diff. Otherwise, as soon as an index is rebuilt, it is mandatory, because the browser invalidates its 30-day cache through the version number alone (#94). Since #154 `scripts/audit/check-index-version-bump.py` catches the forgotten bump: it compares the decompressed index content against the diff base and runs in `data-integrity.yml` deliberately **before** the rebuild step. Two gaps remain: without a determinable diff base (`workflow_dispatch`, a force push) the workflow skips the gate with a `notice`, and it does not cover the version statements in the documentation (TEI-MODEL.md §11, INDEX.md).
 
 The converse also holds: do not set a bump without a change of content. It forces every returning person to reload the index although nothing changed, and no CI notices.
 
-**A version number is a resource two open branches can claim at the same time, and nothing notices.** Before you bump, look at the open pull requests and take the next number above the highest one already claimed there. Neither gate covers this: `check-index-versions.py` checks that the four places agree **within one working state**, and the #154 bump gate checks only that a bump happened at all. Both are green on both sides of a collision. It happened on 2026-09-10: #363 was merged with corpus 4.2.14 and authority 1.9.4 while the open PR #416 had claimed exactly those two numbers in its rebase of 2026-09-09. Cost, measured with `git merge-tree`: eight conflicting files in the older PR, all of them the derived layer plus the version literals (`api/index.json`, `api/lemmata/index.json`, `corpus-loader.js`, both `data/*.json.gz`, `docs/INDEX.md`, `docs/TEI-MODEL.md`, both build scripts), and a renumber plus a full rebuild on someone else's branch. The source data merged cleanly, `lexicon.xml` included, because the two changes sat in different lemmata. The cheap version of the rule: `gh pr list` (or `list_pull_requests`) and one `grep` for `'version':` in the open heads, before the bump and not after.
+**A version number is a resource two open branches can claim at the same time, and nothing notices.** Before you bump, look at the open pull requests and take the next number above the highest one already claimed there. Neither gate covers this: `check-index-versions.py` checks that the five places agree **within one working state**, and the #154 bump gate checks only that a bump happened at all. Both are green on both sides of a collision. It happened on 2026-09-10: #363 was merged with corpus 4.2.14 and authority 1.9.4 while the open PR #416 had claimed exactly those two numbers in its rebase of 2026-09-09. Cost, measured with `git merge-tree`: eight conflicting files in the older PR, all of them the derived layer plus the version literals (`api/index.json`, `api/lemmata/index.json`, `corpus-loader.js`, both `data/*.json.gz`, `docs/INDEX.md`, `docs/TEI-MODEL.md`, both build scripts), and a renumber plus a full rebuild on someone else's branch. The source data merged cleanly, `lexicon.xml` included, because the two changes sat in different lemmata. The cheap version of the rule: `gh pr list` (or `list_pull_requests`) and one `grep` for `'version':` in the open heads, before the bump and not after.
 
 Individual times, measured on 2026-07-31 over 667 corpus files on a Windows laptop with 16 cores, using the default of 8 parallel processes set in #284: `build-corpus-index.py` 46 s, `extract-variants.py --apply` 23 s, `build-authority-index.py` 12 s, `build-api.py` 4 s. Sequentially (`--jobs 1`) it was 184 s, 97 s, 12 s and 4 s, so 297 s in total instead of 85 s. On machines with fewer cores the value lies in between, the default being `min(8, cpu_count)`. Orders of magnitude for planning, not a guarantee. `build-begriffshilfe.py` (single-process pass over all 667 files) took 18 s on 2026-09-29 on the same laptop (second run, files cached); the tables above say about 25 s as a planning value.
 
@@ -950,7 +955,7 @@ A rebuild may be dropped, an inspection may not: `<div>`, `<lg>` and `<pb>` are 
 
 **When in doubt, build.** Since #125 a rebuild from an unchanged source state produces no diff. Overestimating therefore costs waiting time only, underestimating produces silent drift. The table saves time where the case is clear, it does not replace building in a borderline case.
 
-Row 2 against row 3 can be measured instead of guessed: run `extract-variants.py` **without** `--apply` and read the five semantic counters in its output (`added`, `removed`, `form text changed`, `lemma assignment changed`, `token count n changed`). All five at 0 means row 2, provided no corpus file was added or removed: the file count in the header is the sixth condition and does not show up in the counters. The dry run costs the same scan, does not touch `variants.xml` and drops its result as `authority-files/variants.regen.xml`, which must not be committed. Do not decide via `--apply` plus `git status`: the script itself warns against that fallacy at this point, because a byte diff can also come from lxml serialization drift (the local version against the pin in `requirements.txt`) without anything having changed in substance.
+Whether step 5 is needed can be measured instead of guessed: run `extract-variants.py` **without** `--apply` and read the five semantic counters in its output (`added`, `removed`, `form text changed`, `lemma assignment changed`, `token count n changed`). All five at 0 means step 5 can be dropped (and nothing more: the counters see only `<w>` carrying both `@lemmaRef` and `@corresp`, so steps 5b, 6 and 8 still follow the table), provided no corpus file was added or removed: the file count in the header is the sixth condition and does not show up in the counters. The dry run costs the same scan, does not touch `variants.xml` and drops its result as `authority-files/variants.regen.xml`, which must not be committed. Do not decide via `--apply` plus `git status`: the script itself warns against that fallacy at this point, because a byte diff can also come from lxml serialization drift (the local version against the pin in `requirements.txt`) without anything having changed in substance.
 
 **What `@n` costs (#378).** Since `variants.xml` carries the token count per form, every corpus change that adds, removes or re-annotates a `<w>` carrying `@corresp` also changes `variants.xml`: one `<form>` line per type id touched, plus the `<date>` line. Measured on 2026-10-02 by removing one `@corresp` each in three files: 3 lines (`token count n changed: 3`), the other four counters 0. A change that moves k annotated tokens therefore touches at most k lines, and an ingest of a new text touches as many lines as it has distinct types. The first regeneration after `@n` was introduced rewrote all 256,497 `<form>` lines (plus the date line), which is the bulk of the 1.9.18 diff and not a content change. Whether the **authority index** changes is a separate question: only if the new counts change the rank or the set of candidates of an ambiguous form, or a lemma gains its first or loses its last corpus attestation (`noCorpus`); otherwise the rebuild shows an empty diff and no bump is set.
 
@@ -966,11 +971,11 @@ Row 2 against row 3 can be measured instead of guessed: run `extract-variants.py
 | 4 | Corpus index: `python scripts/build-corpus-index.py` (the pre-flight aborts on a dirty tree, otherwise `--allow-dirty`) | search, hit counts, proximity, verse position and the playground analyses go stale; a new text is missing entirely | CI (freshness gate in data-integrity.yml) |
 | 5 | **For new or vanished forms, and for every added, removed or re-annotated `<w>` carrying `@corresp` (it changes `form/@n`, #378):** `python scripts/sync/extract-variants.py --apply` (`variants.xml` is corpus-derived). The same run removes every `#type_N` from `sense/@ana` in `lexicon.xml` whose type the new `variants.xml` no longer carries, so a type that drops out takes its lexicon pointers with it | new word forms do not resolve to their lemma (stage 2 resolution); the lemma page chips are incomplete; `sense/@ana` points at types that do not exist (no build reads it, so nothing else notices) | CI (freshness gate on `variants.xml` and `lexicon.xml`; the cross-ref audit requires 0 orphaned tokens) |
 | 5b | `python scripts/build-lemma-pos.py` (about 12 s; **for every added, removed or re-annotated `<w>` carrying a `@lemmaRef` and for every `@pos` change on such a `<w>`**, #462; it reads `@lemmaRef` and `@pos`, not the indexes, so its place among steps 4 to 5 is free but it has to precede step 6) | `lemma.pos` and `posAll` in the authority index count an outdated corpus; step 6 aborts on a missing file but cannot see a stale one | CI (freshness step in data-integrity.yml, `build-lemma-pos.py --check`) |
-| 6 | After steps 5 and 5b: `python scripts/build-authority-index.py` | the variant map in the index stays stale | CI (freshness gate) |
+| 6 | After steps 5 and 5b: `python scripts/build-authority-index.py` (its pre-flight aborts on uncommitted changes under `authority-files/`, which step 5 usually leaves, so locally `--allow-dirty`) | the variant map in the index stays stale | CI (freshness gate) |
 | 7 | Regenerate the API: `python scripts/build-api.py` (it reads both `data/*.json.gz`, hence after steps 4 and 6; the freshly built, still uncommitted indexes require `--allow-dirty` locally) | the static JSON API under `api/` serves stale or orphaned records | CI (freshness gate in data-integrity.yml) |
 | 8 | Regenerate the Begriffshilfe: `python scripts/build-begriffshilfe.py` (about 25 s; it reads `concepts.xml`, the `sense/ptr` of `lexicon.xml` and `w/@ana`, not the indexes and not `variants.xml`, so its place in the order is free) | the downloadable concept help under `assets/downloads/` carries stale attestation counts or lemmata | CI (freshness gate in data-integrity.yml) |
 | 9 | Cross-ref audit: `python scripts/audit/check-authority-cross-refs.py --check` | dangling refs (lemma or variant not found, empty panels) | CI (in `data-integrity.yml`) |
-| 10 | `python scripts/validate-indices.py` plus `npm test` (needs no permission, see CLAUDE.md) | structural index or frontend regression | manual |
+| 10 | `python scripts/validate-indices.py` plus `npm test` (needs no permission, see CLAUDE.md) | structural index or frontend regression | `validate-indices.py` in CI (`data-integrity.yml`, since #653); `npm test` manual, plus nightly against `main` (`nightly-tests.yml`) |
 | 11 | Commit **the TEI, the built `data/*.json.gz`, `api/`, `assets/downloads/mhdbdb-begriffshilfe.md` and the bumps together**, staging files by name (never `git add -A`, the working dir is shared) | production serves a stale search or an old cache | manual |
 | 12 | Push to main, GitHub Pages deploys statically (~2 to 5 min, no Pages build) | it never reaches production; what is committed is what ships | CI (auto deploy) |
 

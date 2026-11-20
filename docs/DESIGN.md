@@ -158,7 +158,7 @@ Checkbox accent: `accent-color: #3b75d8`.
 
 ## Playground TEI-Analysis Module Pattern
 
-The analysis modules under `playground/js/ui/tei/` share a consistent structure (the router `tei-ui.js`, the modal controller `multi-lemma-search.js` with its export helper `multi-lemma-export.js`, and the shared corpus-selection helper `corpus-scope.js` do not follow the pattern). Anyone adding a new analysis tool should follow it: modules that deviate for no visible reason make the playground feel inconsistent and break conventions the router and the sidebar buttons build on.
+The analysis modules under `playground/js/ui/tei/` share a consistent structure (the router `tei-ui.js`, the modal controller `multi-lemma-search.js` with its export helper `multi-lemma-export.js`, the shared corpus-selection helper `corpus-scope.js`, and `dokument-belege.js`, which lists the attestations behind a document-search card, do not follow the pattern). Anyone adding a new analysis tool should follow it: modules that deviate for no visible reason make the playground feel inconsistent and break conventions the router and the sidebar buttons build on.
 
 **Canonical examples:** `lemma-distribution.js` (#90), `verse-position-search.js` (#47.3), `concept-distribution.js` (#47 R2 + #113 autocomplete), `text-comparison.js` (#108), `cooccurrence-ranking.js` (#107), `rhyme-dictionary.js` (#106), `naming-explorer.js` (#59, deviation: its own lazily fetched index `data/naming-index.json.gz` instead of a corpus thunk).
 
@@ -314,7 +314,7 @@ Do not hash-route: `korpus.html` is a separate site. Plain anchor tags with `tar
 
 ### Performance map against O(N) lookups (text-comparison lesson)
 
-`AuthorityFilesManager.findLemmaById()` is an `Array.find()` over 43,710 lexicon entries (`authorityData.lemmata` from the authority index), so O(N) per call. As long as a module needs the lookup only dozens of times (concept-distribution, lemma-distribution: 30-50 hits for the top-N display) that does not matter. As soon as an `enrichment` iterates over *thousands* of lemmata, the iterations multiply:
+`AuthorityFilesManager.findLemmaById()` is an `Array.find()` over 43,712 lexicon entries (`authorityData.lemmata` from the authority index), so O(N) per call. As long as a module needs the lookup only dozens of times (concept-distribution, lemma-distribution: 30-50 hits for the top-N display) that does not matter. As soon as an `enrichment` iterates over *thousands* of lemmata, the iterations multiply:
 
 ```
 text-comparison PZ vs JT, „Beide": 3,058 lookups × 43,754 ≈ 134 million iterations ≈ 5962ms

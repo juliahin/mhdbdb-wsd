@@ -28,3 +28,33 @@ Von den 27 tierischen Belegen sind **21 Säugetiere** in 15 Texten: Pferd 7, Ele
 - **6 Tierbelege ohne Säugetier:** Hahn `AMI_972_3`, Fisch `FLG1_4135180940_2`, Phönix `TRO_37_4`, Drache `PL3_312606_7`, `VIR_17403_4`, `VIR_30008_4`. Frage: bekommen Vögel, Fische und Fabeltiere ein Konzept, oder bleiben sie ohne?
 - **9 offene Belege:** unklar `HTR_201620_3`, `DRE_177_1`, `DRE_180_1`, `DRE_181_2`; übertragen oder sonstig `NAR_9303540_3`, `NAR_9400900_3`, `ROL_4345_1`, `JSG_410_1`, `IW_5852_4`.
 - **`concept_21104000`** (Natürlicher/Gewaltsamer Tod) hängt an `lemma_1958_sense_3004` und damit auch an Belegen für lebende Körper („fleisch und gebeine“).
+
+## Nachtrag 2026-10-16: KZWs Antworten vom 15.10.2026
+
+Umsetzung: `scripts/ingest/pos-disambig/apply-460-461-rest.py`. Die Spalten `Entscheidung` und `Quelle` in `belege.tsv` tragen die Folge je Token.
+
+- **Vögel und Fische** bekommen je einen Sense mit dem vorhandenen Körperkonzept (Hahn `AMI_972_3`: `lemma_1958_sense_119198` mit `concept_14021100`; Fisch `FLG1_4135180940_2`: `lemma_1958_sense_119199` mit `concept_14031100`). Höchste Sense-Nummer vorher 119197 (`lemma_79829_sense_119197`, gemessen an `lexicon.xml`), also fortlaufend. Je ein Beleg im Korpus.
+- **Die 9 offenen Belege** (4 unklare, 5 übertragene) kommen nach KZWs Regel an `lemma_1958_sense_49690`. `NAR_9400900_3` trug ihn schon, 8 Tokens ändern sich; `JSG_410_1` wechselt von `lemma_1958_sense_3004` und verliert damit das Tod-Konzept `concept_21104000`. Die drei Würfelknochen in DRE sind menschlich: die Würfel sind aus den zwei Stockzähnen des Ritters gemacht (`tei/DRE.tei.xml`, V. 36, 117 und 122 bis 126). Die Tabelle vom 10.10. hielt die Herkunft für nicht genannt; sie steht im Text, vor dem Fenster, das die Einstufung las (V. 137 bis 217).
+- **Unverändert**: Drache (`PL3_312606_7`, `VIR_17403_4`, `VIR_30008_4`) und Phönix (`TRO_37_4`); offen ist, ob `concept_14100000` direkt oder ein neues Unterkonzept gilt.
+- **Richtigstellung zur Tabelle vom 10.10.:** die Begründung von `NAR_9303540_3` sagte „Sense 49690 gesetzt“. Im TEI trug dieses Token kein `@ana` (nur `NAR_9400900_3`); die Angabe ist aus der Tabelle gestrichen und der Sense jetzt wirklich gesetzt.
+
+Stand danach, gemessen am 2026-10-16 (207 Tokens, `@ana` je Token): `sense_3004` 55, `sense_49690` 10, `sense_119196` 21, `sense_119198` 1, `sense_119199` 1, ohne `@ana` 119; Summe 207.
+
+## Nachtrag 2026-10-18: Fabeltiere und Messung an sense_3004
+
+Umsetzung: `scripts/ingest/pos-disambig/apply-461-fabeltiere.py`, Messung: `scripts/review/messen-461-sense3004.py`.
+
+- **Neues Konzept** `concept_14101100` "Körper/Gliedmaßen von Fantastischen Tieren" ("Body/Limbs of fantastic animals"), `broader` `concept_14100000`. KZW (16.10.): "Leg ein neues Körper-Unterkonzept auch bei Fantastischen Tieren an, wenn es das im Korpus gibt." Die ID folgt dem Muster der Geschwister, Klassenziffern plus `1100`: Säugetiere `14010000` zu `14011100`, Vögel `14020000` zu `14021100`, Fische `14030000` zu `14031100`, Fantastische Tiere `14100000` zu `14101100`; sie war frei (unter `141…` gibt es nur `14100000` und `14110000`).
+- **Neuer Sense** `lemma_1958_sense_119200` mit diesem Konzept (höchste Sense-Nummer vorher 119199). Ihn tragen `PL3_312606_7` (Drache), `VIR_17403_4` und `VIR_30008_4` (Drachenkampf), `TRO_37_4` (Phönix); alle vier im Kontext gelesen, keiner meint etwas anderes als ein Fabeltier. `lemma_1958` hat damit 6 Senses.
+- **Messung an `sense_3004`** (`sense3004-lebend.tsv`): 55 Belege, gelesen am 18.10.2026, **38 tot** (Gebeine Verstorbener, Reliquien, Leichen), **12 lebend**, **3 lebend mit Zweifel** (`HTR_214570_5`, `JEW_2330900000_1`, `ROL_3841_3`), **2 Tier** (`JEW_556900000_3` und `JEW_557800000_0`, die Ochsen in Pharaos Traum). Die Einstufung ist ein Leseurteil. Nichts ist umgehängt.
+- **Berichtigung der Tabelle vom 10.10.:** `JEW_556900000_3` und `JEW_557800000_0` galten als "menschlich"; sie stehen im selben Traum wie `JEW_566800000_5` (dort "tierisch", auf `sense_119196`). Ebenso gelten `LGR_6062000_7` und `LGR_6066000_3` zu Recht als menschlich: es sind die Leichen der toten Könige, deren Fleisch vom Gebein gesotten wird.
+
+## Nachtrag 2026-11-08: die Ochsen umgehängt
+
+Umsetzung: `scripts/ingest/pos-disambig/apply-461-ochsen.py`. Entscheidung @chsteiner am 08.11.2026: die beiden Ochsen jetzt nach dem Zuschnitt vom 10.10. umhängen, die Frage nach einem Sense für die lebenden Gebeine bleibt bei KZW.
+
+- `JEW_556900000_3` und `JEW_557800000_0` wechseln von `lemma_1958_sense_3004` auf `lemma_1958_sense_119196` und verlieren damit `concept_21030000` und `concept_21104000` (der neue Sense trägt nur `concept_14011100`). Die Spalten `Entscheidung` und `Quelle` in `belege.tsv` tragen das.
+- Unverändert: die 12 lebenden und 3 lebenden mit Zweifel aus `sense3004-lebend.tsv`.
+- `scripts/review/messen-461-sense3004.py` erwartet die 55 Belege vom 18.10. und bricht seit dem Umhängen ab („53 Belege im Korpus, 55 eingestuft“). Das ist so gewollt: das Skript dokumentiert den Stand vom 18.10., die Liste für die offene Frage an KZW steht in `sense3004-lebend.tsv`.
+
+Stand danach, gemessen am 2026-11-08 (207 Tokens, `@ana` je Token): `sense_3004` 53, `sense_49690` 10, `sense_119196` 23, `sense_119198` 1, `sense_119199` 1, `sense_119200` 4, ohne `@ana` 115; Summe 207.

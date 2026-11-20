@@ -13,7 +13,7 @@
       </titleStmt>
       <publicationStmt>
         <publisher>MHDBDB</publisher>
-        <date>2026-10-10</date>
+        <date>2026-11-08</date>
       </publicationStmt>
       <sourceDesc>
         <p>Automatically extracted attestations from TEI corpus</p>
@@ -62057,12 +62057,13 @@
           <form xml:id="type_330859" n="4">gejagtt</form>
           <form xml:id="type_333609" n="1">jagtte</form>
           <form xml:id="type_364967" n="1">iain</form>
-          <form xml:id="type_372855" n="109">jaget</form>
+          <form xml:id="type_372855" n="110">jaget</form>
           <form xml:id="type_372856" n="35">jeit</form>
           <form xml:id="type_372857" n="1">jait</form>
+          <form xml:id="type_372858" n="1">jagennes</form>
         </entry>
         <entry corresp="lexicon.xml#lemma_3103">
-          <form xml:id="type_10674" n="13">jaget</form>
+          <form xml:id="type_10674" n="12">jaget</form>
           <form xml:id="type_10675" n="7">jeide</form>
           <form xml:id="type_10676" n="4">jeit</form>
           <form xml:id="type_69965" n="1">jagde</form>
@@ -62075,7 +62076,6 @@
           <form xml:id="type_283784" n="1">ieides</form>
           <form xml:id="type_319547" n="1">gejac</form>
           <form xml:id="type_319549" n="1">jagenes</form>
-          <form xml:id="type_319550" n="1">jagennes</form>
           <form xml:id="type_319553" n="1">jaide</form>
           <form xml:id="type_319554" n="1">jegde</form>
           <form xml:id="type_319555" n="1">jegede</form>
@@ -84279,13 +84279,13 @@
           <form xml:id="type_349979" n="1">minnæren</form>
         </entry>
         <entry corresp="lexicon.xml#lemma_4130">
-          <form xml:id="type_14385" n="6951">minne</form>
+          <form xml:id="type_14385" n="6902">minne</form>
           <form xml:id="type_14390" n="51">minnen</form>
           <form xml:id="type_64099" n="64">mynne</form>
           <form xml:id="type_64451" n="10">mynnen</form>
           <form xml:id="type_65679" n="3">mynnes</form>
           <form xml:id="type_72025" n="2">menne</form>
-          <form xml:id="type_78204" n="47">minn</form>
+          <form xml:id="type_78204" n="46">minn</form>
           <form xml:id="type_154404" n="5">mynn</form>
           <form xml:id="type_193195" n="1">mínn</form>
           <form xml:id="type_193643" n="3">mínnè</form>
@@ -84599,7 +84599,7 @@
           <form xml:id="type_59058" n="1">minnot</form>
           <form xml:id="type_64048" n="8">mynnete</form>
           <form xml:id="type_64097" n="70">mynnet</form>
-          <form xml:id="type_64100" n="5">mynne</form>
+          <form xml:id="type_64100" n="6">mynne</form>
           <form xml:id="type_64452" n="8">mynnen</form>
           <form xml:id="type_64588" n="1">mynnetent</form>
           <form xml:id="type_64590" n="9">mynnent</form>
@@ -126530,6 +126530,8 @@
           <form xml:id="type_288937" n="1">drübem</form>
           <form xml:id="type_293943" n="1">trobich</form>
           <form xml:id="type_310965" n="1">drübe</form>
+          <form xml:id="type_372861" n="4">trüben</form>
+          <form xml:id="type_372862" n="9">trube</form>
         </entry>
         <entry corresp="lexicon.xml#lemma_6252">
           <form xml:id="type_22116" n="12">getrüebet</form>
@@ -126569,6 +126571,9 @@
           <form xml:id="type_319954" n="1">getruobest</form>
           <form xml:id="type_330660" n="1">trübte</form>
           <form xml:id="type_335432" n="1">trübtent</form>
+          <form xml:id="type_372863" n="1">trûben</form>
+          <form xml:id="type_372864" n="1">trûbe</form>
+          <form xml:id="type_372865" n="2">trüben</form>
         </entry>
         <entry corresp="lexicon.xml#lemma_6253">
           <form xml:id="type_22121" n="5">trügelîchen</form>
@@ -209499,16 +209504,16 @@
           <form xml:id="type_314848" n="1">entspruessest</form>
         </entry>
         <entry corresp="lexicon.xml#lemma_15282">
-          <form xml:id="type_63158" n="7">trûben</form>
-          <form xml:id="type_63159" n="2">trûbe</form>
-          <form xml:id="type_67873" n="14">trube</form>
+          <form xml:id="type_63158" n="6">trûben</form>
+          <form xml:id="type_63159" n="1">trûbe</form>
+          <form xml:id="type_67873" n="5">trube</form>
           <form xml:id="type_80801" n="2">troube</form>
           <form xml:id="type_102532" n="4">trauben</form>
           <form xml:id="type_106201" n="1">triubeln</form>
           <form xml:id="type_122754" n="1">druben</form>
           <form xml:id="type_132153" n="1">trawbenn</form>
           <form xml:id="type_150882" n="1">trûbelen</form>
-          <form xml:id="type_154215" n="8">trüben</form>
+          <form xml:id="type_154215" n="2">trüben</form>
           <form xml:id="type_240051" n="1">trub</form>
           <form xml:id="type_246982" n="1">trawp</form>
           <form xml:id="type_249261" n="1">treubel</form>
@@ -273510,7 +273515,6 @@
           <form xml:id="type_169158" n="2">brei</form>
           <form xml:id="type_179355" n="1">breie</form>
           <form xml:id="type_195558" n="2">brey</form>
-          <form xml:id="type_202823" n="1">briech</form>
           <form xml:id="type_272711" n="2">prein</form>
           <form xml:id="type_273238" n="2">brîn</form>
         </entry>
@@ -332085,9 +332089,6 @@
           <form xml:id="type_341707" n="4">dignetur</form>
           <form xml:id="type_347766" n="1">dignentur</form>
         </entry>
-        <entry corresp="lexicon.xml#lemma_67689">
-          <form xml:id="type_341714" n="1">aditus</form>
-        </entry>
         <entry corresp="lexicon.xml#lemma_67690">
           <form xml:id="type_341718" n="1">reseratus</form>
         </entry>
@@ -332227,6 +332228,7 @@
         </entry>
         <entry corresp="lexicon.xml#lemma_67813">
           <form xml:id="type_341964" n="1">aditum</form>
+          <form xml:id="type_372859" n="1">aditus</form>
         </entry>
         <entry corresp="lexicon.xml#lemma_67814">
           <form xml:id="type_341966" n="1">impietatem</form>
@@ -335527,9 +335529,7 @@
           <form xml:id="type_350517" n="4">stênder</form>
           <form xml:id="type_350518" n="1">stêndez</form>
           <form xml:id="type_350519" n="1">stêndiu</form>
-        </entry>
-        <entry corresp="lexicon.xml#lemma_70735">
-          <form xml:id="type_350509" n="1">standime</form>
+          <form xml:id="type_372860" n="1">standime</form>
         </entry>
         <entry corresp="lexicon.xml#lemma_70748">
           <form xml:id="type_350540" n="1">versuchesten</form>
@@ -341901,6 +341901,15 @@
         </entry>
         <entry corresp="lexicon.xml#lemma_79828">
           <form xml:id="type_372337" n="1">hæchlen</form>
+        </entry>
+        <entry corresp="lexicon.xml#lemma_79829">
+          <form xml:id="type_202823" n="1">briech</form>
+        </entry>
+        <entry corresp="lexicon.xml#lemma_79830">
+          <form xml:id="type_372866" n="168">minne</form>
+          <form xml:id="type_372867" n="123">mynn</form>
+          <form xml:id="type_372868" n="26">mynne</form>
+          <form xml:id="type_372869" n="4">minn</form>
         </entry>
       </div>
     </body>

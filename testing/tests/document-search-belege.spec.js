@@ -125,6 +125,86 @@ test.describe('#58: Fundstellen der Dokumentsuche', () => {
     await expect(zeilen).toHaveCount(soll.length);
   });
 
+  test('ein Klick auf eine freie Stelle der Fundstellenliste klappt die Karte nicht zu', async ({ page }) => {
+    await dokumentSuche(page, ['arm'], [ARM_KOERPERTEIL]);
+    const text = await waehleText(page, [ARM_KOERPERTEIL], [2]);
+    expect(text).toBeTruthy();
+    const k = karte(page, text.filename);
+    await aufklappen(page, k);
+
+    // Der Gruppenkopf liegt im aufgeklappten Bereich und ist kein Link
+    await k.locator('.beleg-gruppe h5').first().click();
+    await expect(k).toHaveClass(/expanded/);
+    await expect(k.locator('.beleg-link').first()).toBeVisible();
+
+    // Der Rand der Karte unter der Fundstellenliste ist ebenfalls kein Kopf
+    const liste = await k.locator('.result-details').boundingBox();
+    const rahmen = await k.boundingBox();
+    await k.click({ position: { x: 10, y: liste.y + liste.height - rahmen.y + 6 } });
+    await expect(k).toHaveClass(/expanded/);
+
+    // Der Kopf der Karte klappt weiterhin zu
+    await k.locator('h4').click();
+    await expect(k).not.toHaveClass(/expanded/);
+  });
+
+  test('Kartenkopf per Tastatur: Rolle, aria-expanded, Enter auf, Leertaste zu', async ({ page }) => {
+    await dokumentSuche(page, ['arm'], [ARM_KOERPERTEIL]);
+    const text = await waehleText(page, [ARM_KOERPERTEIL], [2]);
+    expect(text).toBeTruthy();
+    const k = karte(page, text.filename);
+    const kopf = k.locator('.summary-header');
+
+    await expect(kopf).toHaveAttribute('role', 'button');
+    await expect(kopf).toHaveAttribute('tabindex', '0');
+    await expect(kopf).toHaveAttribute('aria-expanded', 'false');
+    // Der Name kommt aus Titel und Hinweis, nicht aus dem Link im Kopf
+    await expect(kopf).toHaveAccessibleName(`${text.filename} Klicken für Fundstellen`);
+
+    // Enter klappt auf; die Fundstellen kommen ueber lazyDetails nach
+    await kopf.focus();
+    await expect(k.locator('.beleg-link')).toHaveCount(0);
+    await page.keyboard.press('Enter');
+    await expect(k).toHaveClass(/expanded/);
+    await expect(k.locator('.beleg-gruppe').first()).toBeVisible({ timeout: 60000 });
+    await expect(kopf).toHaveAttribute('aria-expanded', 'true');
+
+    // Leertaste klappt zu und scrollt die Seite nicht
+    const scrollVorher = await page.evaluate(() => window.scrollY);
+    await page.keyboard.press('Space');
+    await expect(k).not.toHaveClass(/expanded/);
+    await expect(kopf).toHaveAttribute('aria-expanded', 'false');
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollVorher);
+
+    // Leertaste klappt auch wieder auf, ohne Neuladen
+    await page.keyboard.press('Space');
+    await expect(k).toHaveClass(/expanded/);
+    await expect(kopf).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  test('Zeiger: nur der Kopf einer Dokumentkarte zeigt die Hand, nicht die Fundstellenliste', async ({ page }) => {
+    await dokumentSuche(page, ['arm'], [ARM_KOERPERTEIL]);
+    const text = await waehleText(page, [ARM_KOERPERTEIL], [2]);
+    expect(text).toBeTruthy();
+    const k = karte(page, text.filename);
+    await aufklappen(page, k);
+
+    const cursor = sel => k.locator(sel).first().evaluate(el => getComputedStyle(el).cursor);
+    expect(await cursor('.summary-header')).toBe('pointer');
+    expect(await cursor('.summary-expand-hint')).toBe('pointer');
+    expect(await cursor('.result-details')).not.toBe('pointer');
+    expect(await cursor('.beleg-gruppe h5')).not.toBe('pointer');
+
+    // Hover ueber der Liste laesst Rand und Schatten in Ruhelage
+    // Ohne Transition gemessen, sonst faengt der erste Wert den Rueckweg vom Kopf-Hover
+    await k.evaluate(el => { el.style.transition = 'none'; });
+    const stil = () => k.evaluate(el => { const s = getComputedStyle(el); return [s.borderTopColor, s.boxShadow, s.transform].join('|'); });
+    await page.mouse.move(0, 0);
+    const ruhe = await stil();
+    await k.locator('.beleg-gruppe h5').first().hover();
+    expect(await stil()).toBe(ruhe);
+  });
+
   test('eine Fundstelle öffnet die Leseansicht genau an dieser Stelle', async ({ page }) => {
     await dokumentSuche(page, ['arm'], [ARM_KOERPERTEIL]);
     const text = await waehleText(page, [ARM_KOERPERTEIL], [2]);
@@ -211,5 +291,21 @@ test.describe('#58: Fundstellen der Dokumentsuche', () => {
         await expect(hinweis).toHaveCount(0);
       }
     }
+
+    // Julia 16.10.: bei sehr vielen Belegen scrollt die Liste in sich, die Karte
+    // wächst nicht mit. minne hat hier mehr als 50 Belege, also muss die Liste
+    // scrollen; der Fokus kommt per Tastatur hinein (role=region, tabindex=0).
+    const liste = gruppen.first().locator('.beleg-liste');
+    const mass = await liste.evaluate(el => ({
+      overflowY: getComputedStyle(el).overflowY,
+      scrollt: el.scrollHeight > el.clientHeight,
+      hoehe: el.getBoundingClientRect().height,
+      maxHoehe: parseFloat(getComputedStyle(el).maxHeight)
+    }));
+    expect(mass.overflowY).toBe('auto');
+    expect(mass.scrollt, 'Liste mit über 50 Belegen scrollt in sich').toBe(true);
+    expect(mass.hoehe).toBeLessThanOrEqual(mass.maxHoehe + 1);
+    await expect(liste).toHaveAttribute('role', 'region');
+    await expect(liste).toHaveAttribute('tabindex', '0');
   });
 });

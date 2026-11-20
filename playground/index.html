@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MHDBDB Playground – TEI-Daten-Explorer</title>
+    <meta name="description" content="MHDBDB Playground: Personen, Werke, Lemmata, Begriffe und Gattungen der Mittelhochdeutschen Begriffsdatenbank erkunden und das TEI-Korpus mittelhochdeutscher Texte analysieren, von der Mehrlemma-Suche bis zum Reimwörterbuch.">
+
     <!-- Pako: Cross-browser gzip decompression (Safari 14+ compatible) -->
     <script src="../assets/vendor/pako/pako.min.js"></script>
     <!-- Dexie.js: IndexedDB wrapper with better API -->
@@ -13,6 +15,17 @@
     <link rel="stylesheet" href="../assets/css/tailwind-output.css">
     <link rel="stylesheet" href="../assets/css/shared.css">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/onama.css">
+<!-- SEO:START -->
+<link rel="canonical" href="https://dhcraft.org/mhdbdb-tei-only/playground/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MHDBDB">
+<meta property="og:locale" content="de_AT">
+<meta property="og:title" content="MHDBDB Playground – TEI-Daten-Explorer">
+<meta property="og:description" content="MHDBDB Playground: Personen, Werke, Lemmata, Begriffe und Gattungen der Mittelhochdeutschen Begriffsdatenbank erkunden und das TEI-Korpus mittelhochdeutscher Texte analysieren, von der Mehrlemma-Suche bis zum Reimwörterbuch.">
+<meta property="og:url" content="https://dhcraft.org/mhdbdb-tei-only/playground/">
+<meta property="og:image" content="https://dhcraft.org/mhdbdb-tei-only/assets/images/mhdbdb-logo.png">
+<!-- SEO:END -->
 <!-- MATOMO:START -->
 <script>
   (function() {
@@ -105,7 +118,7 @@
             <div class="container mx-auto px-6 py-6">
                 <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">MHDBDB Playground</p>
                 <h1 class="text-3xl font-semibold tracking-tight text-slate-900 mt-1">TEI-Daten-Explorer</h1>
-                <p class="max-w-3xl text-base text-slate-600 mt-2">Forschungsplattform für mittelhochdeutsche Korpusanalyse. Multi-Lemma-Suche, 43.710 Lexikoneinträge, semantische Begriffsnetzwerke, 667 annotierte Texte.</p>
+                <p class="max-w-3xl text-base text-slate-600 mt-2">Forschungsplattform für mittelhochdeutsche Korpusanalyse. Multi-Lemma-Suche, 43.712 Lexikoneinträge, semantische Begriffsnetzwerke, 667 annotierte Texte.</p>
             </div>
         </div>
 
@@ -466,6 +479,15 @@
                                 <span class="text-xs font-normal text-slate-500 mt-0.5">346 Belegstellen aus 5 Werken nach L. Borek</span>
                             </span>
                         </button>
+                        <button id="showOnamaExplorerBtn" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-left text-sm font-medium text-slate-700 transition hover:border-brand-400 hover:text-brand-700 flex items-center gap-2.5">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"></path>
+                            </svg>
+                            <span class="flex flex-col items-start leading-tight">
+                                <span>ONAMA: Argonautensage <span class="text-[10px] font-semibold uppercase text-amber-700">Beta</span></span>
+                                <span class="text-xs font-normal text-slate-500 mt-0.5">Handlungen, Dinge und Rollen in Text und Bild, kuratierter Ausschnitt</span>
+                            </span>
+                        </button>
                         </div>
                     </div>
                 </div>
@@ -613,7 +635,7 @@
       <img
         src="../assets/images/university-logo.png"
         alt="Universität Salzburg"
-        class="h-24 w-auto"
+        class="h-16 w-auto"
       />
       <img
         src="../assets/images/clariah-logo.svg"
@@ -670,6 +692,13 @@
             class="hover:text-brand-600 transition"
           >
             Textreihentypologie
+          </a>
+          <span>|</span>
+          <a
+            href="../hilfe-publikationen.html"
+            class="hover:text-brand-600 transition"
+          >
+            Publikationen
           </a>
           <span>|</span>
           <a

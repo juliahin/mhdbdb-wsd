@@ -4,6 +4,201 @@ Chronological log of development decisions, dead ends, and savepoints. Not a cha
 
 ---
 
+## 2026-10-19 (Koordination): Suchlinks in der Begriffshilfe (#498)
+
+Anlass ist ein externer Praxistest. Ein Fachkollege hat die Begriffshilfe in ChatGPT hochgeladen, die Antwort fand er brauchbar. Seine Kritik: das Modell sucht nicht selbst. Es schlug Lemma-Paare mit Abständen vor, die man dann von Hand eintippen musste.
+
+Selbst suchen kann es auch nicht. Der Playground ist eine JS-App, und die API liefert keine Treffer. Die Hash-Routen nehmen aber vorbelegte Suchen an. Die Datei gibt der KI deshalb jetzt zwei Linkmuster vor (`#concepts&q=`, `#multi-lemma&lemmata=…&dist=`).
+
+Zwei Prüfungen vor dem Start (Fable als Berater, Opus) haben zwei Dinge gekippt, die ich vorhatte:
+- Der Satz „prüfe die Lemma-Chips“: `executeSearch()` setzt die Suche über `reset()` zurück, nach einem Link gibt es also keine Chips mehr.
+- Lemma-Links ohne Einschränkung: Die Suche nimmt bei einer Schreibung still `matches[0]`. In einen Link dürfen deshalb nur Schreibungen aus der Spalte „Häufigste Lemmata“. Die Lemmata des Testfalls stehen alle dort.
+
+Lemma-IDs in die Tabelle aufzunehmen, um zu pinnen, ist verworfen: Das deckte nur die Top 5 je Begriff ab.
+
+## 2026-10-19 (Koordination): Nachschau zum Lauf vom 18.10.
+
+**Was:** Nach dem Lauf sind fünf weitere PRs gemergt, #631 bis #633 am Abend des 18.10. und #635, #636 am 19.10. (Tabelle im Laufplan, Abschnitt Abnahme); die Nachschau prüfte danach Aufräumen, Doku und Issues. Elf Drift-Gates grün. Neun alte lokale Zweige von vor dem Lauf (#583 bis #608) gegen ihren Squash abgeglichen (0 abweichende Dateien) und gelöscht. Zwei Sonnet-Agenten lasen Doku gegen die Commits seit 18.10. und 28 Issues gegen ihre Threads; nachgezogen sind ROADMAP (geschlossene #123, #404, #406, #228, #369 und der Stand von #58, #251, #93), FEATURES und DEVELOPMENT (Kartenkopf, Einklappen, ONAMA "abgeleitet", Formatfehler als harter Fehler), `scripts/review/README.md` (fünf Skripte des Laufs fehlten) und dieser Laufplan.
+
+**Was über den Einzelfall hinausgilt:**
+- Die tägliche Issue-Matrix war seit dem 16.10. rot, und niemand im Lauf hat es gesehen: #358 trug `wait:kzw`, obwohl Katharina am 11.09. geantwortet hatte und keine Frage an sie folgte, und Julias Antwort vom 15.10. stand ohne Erwiderung. Behoben am 19.10.: Antwort an Julia, `wait:kzw` entfernt. Ein roter Matrixlauf steht nur in der Actions-Liste, nicht in einem Ticket; vor einem Lauf und nach ihm gehört `gh run list --workflow issue-matrix.yml --limit 3` in die Prüfung.
+- Ein PR, der ein Ticket nur im Commit nennt ("Bezug: #N"), lässt das Ticket stumm: #564 trug nach #618 als letzten Kommentar die Bot-Erinnerung, die #618 abgearbeitet hatte.
+- Eine Prüfseite, die bei einer Person liegt, wird bei Korpusdrift nicht neu gebaut, sondern eingegrenzt: bei #359 betrafen die Änderungen seit 21.09. vier von 17 offenen Fällen, alle aus schon umgesetzten Entscheidungen (#460, #461, #471).
+
+---
+
+## 2026-10-18 (Koordination lauf-1018): vier Spuren, Nachzug, Abnahme
+
+**Was:** Issue-Audit (78 offene Issues, 471 von 471 Kommentaren), daraus vier Sonnet-Spuren (daten, frontend, lesung, onama) unter dem Laufplan `docs/playbooks/kickoffs/2026-10-18-lauf.md`, dort auch die Grenzverhandlungen G1 bis G8 und die Abnahme. 14 PRs gemergt (#617 bis #630), davon vier als Nachzug auf chsteiners Zuruf über einen Workflow der Koordination (Freigabeliste für "Demnächst im Korpus", ONAMA-Status umgerechneter Passagen, harte Fehler statt stillem Weiterlaufen, Klick in die Fundstellen). Geschlossen: #440, #448, #463, #535, #545.
+
+**Was über den Einzelfall hinausgilt:**
+- Zwei Zweige, die denselben Satz wahr machen müssen, haben eine Merge-Reihenfolge: der Kommentar in `monatslauf-seiten.yml` zu Formatfehlern stimmte für `build-publikationen.py` erst nach #627; #628 ging deshalb danach.
+- Workflow-Worktrees unter `.claude/worktrees/` haben kein `node_modules`; eine Junction auf den Hauptbaum reicht für `npm test`, und sie wird vor `git worktree remove` als Verweis gelöscht (`[System.IO.Directory]::Delete(p, $false)`), nicht rekursiv.
+- `claude agents --json` meldet "blocked" auch für eine Spur, die nur wartet; nur die daten-Spur stand wirklich am Nutzungslimit.
+
+**Rote Zeilen:** keine.
+
+**Was zurück an Christian geht:** die Berater-Punkte der Runden (Liste im Abschlussbericht der Sitzung) und chsteiner/claude-code-setup#88 (Reviewer setzte `taskkill /IM python.exe` ab).
+
+---
+
+## 2026-10-18 (Spur lauf-1018-daten, D4): Glossar #554, Datenteil
+
+**Was:** Nach KZWs Entscheidungen vom 16.10.2026: brî ohne ADJ, der Verweis auf lêrchenvuoʒ bei lêrche entfällt (kein Korpusbeleg, auch nicht getrennt), 9 nagel-Belege im Gewürzkontext tragen jetzt `@ana` auf `lemma_4302_sense_6725`, 17 Tokens von trûbe sind am Token geprüft und umgehängt (13 Adjektive auf trüebe, 4 Verben auf trüeben, altes `@ana` entfällt; 4 Belege bleiben offen: HIS_98_2, WZB_79rb_15_5, FR1_2007050_8, ROT_19160_2). 11 historische MHDBDB-Trefferzahlen in 9 Glossarkommentaren sind durch Messungen am heutigen Korpus ersetzt (`scripts/review/messen-554-zahlen.py`). lôr/lôrber: Befund, nichts umgehängt (lôrber, 7 Belege, ist das Ziel, ergänzt um lôrboum). Indexe Authority 1.9.31, Corpus 4.2.36, fünf neue Variantentypen `type_372861` bis `type_372865`, ein Flip (trube) quittiert.
+
+**Was über den Einzelfall hinausgilt:**
+- Eine Zählung über `@lemmaRef` ist keine Zählung des Textes. Die Messung rôt+rôse ergibt 48 Verszeilen, die alte MHDBDB-Zahl 116; die Differenz sind rôse-Belege neben unannotierten rôt-Formen. Die Kommentarsätze sagen deshalb, dass nur mit Lemma annotierte Wörter gezählt sind.
+- WZB ist Prosa und nutzt `<l>` als Satzeinheit (Handschriftenzeile in `<lb/>`): eine "Verszeile" ist ein `<l>` in einem Text ohne `<lb/>`. Sonst steht hungerc mit 41 statt 39 in Verszeilen.
+- Die Aufteilung "innerhalb der Dichtung" bei wîn und brôt entfällt: sie hat keine reproduzierbare Definition.
+- Aus dem Satz im Kommentar zu wîn ("brôt zählt zu den häufigsten Wörtern in Zwillingsformeln", gefolgt von "wîn und") ist ersichtlich, dass der Text aus dem brôt-Kommentar übernommen wurde; nicht verändert.
+
+**Rote Zeilen:** keine.
+
+**Was zurück an Christian geht:** nichts; die offenen Belege und zwei nicht angefasste Altzahlen (salse: MPS-Suche; visch+haben: Lesung der Stellen) gehen als Frage an KZW in #554.
+
+**Review:** Runde 1 (Opus, voll) auf `0160e7125`: kein A, vier B (Zählsätze, "unmittelbar vor", hungerc, CONTRACTS-Zahlen), behoben. Runde 2 (schmal): kein A, drei B (WZB als Prosa, DATA-MODEL 4,976, Kopfzeile), behoben. Runde 3 (schmal) auf `b80f823f2`: kein Befund. Voller `npm test` auf `0160e7125` grün (528 Tests), Teillauf nach den Folgecommits grün (76 Tests, 8 Specs: Lemmaseite, Kommentare, Lemma-ID-Suche, Varianten, Playground, Wörterbuch). Der Reviewer beendete in Runde 1 mit `taskkill /IM python.exe` einen eigenen Lauf und möglicherweise Python-Läufe anderer Spuren.
+
+---
+
+## 2026-10-18 (Spur lauf-1018-daten, D5): Zotero-Kette FR3 und FLG/FLG1 (#486)
+
+**Was:** Nach KZWs Entscheidungen vom 16.10.2026 sind die zwei Zotero-Einträge geschrieben: `MVWV5QYG` (FR3) auf das Supplement von 2000 (Haustein/Stackmann, ISBN 3-525-82504-8, Reihe 232; Version 1563 auf 2962) und `ATWPNQPS` (FLG1/FLG) auf den Textband 1990 mit Gisela Vollmann-Profe (Artemis, München; 1563 auf 2963). Danach Online-Sync: in `works.xml` ändern sich nur die drei `biblStruct` FLG, FLG1, FR3; Header-Sync auf `tei/FLG`, `FLG1`, `FR3`. `BESTAND_BEHALTEN` ist `{'FLG': ('analytic','note'), 'FR3': ('analytic','note')}`, Authority-Index 1.9.30 (Corpus unverändert 4.2.35). Rückweg: das Item-JSON beider Einträge vor dem Schreiben steht im PR-Body.
+
+**Was über den Einzelfall hinausgilt:**
+- Vor dem Schreiben nach außen den Sync lokal gegen einen gepatchten Cache simulieren: die Simulation zeigte, dass die Vorgabe "FR3 fällt ganz heraus" den Supplement-Verweis und die Mitarbeit der Notiz gekostet hätte (Zotero hat dafür kein Feld). Die Koordination entschied daraufhin, beides dauerhaft zu behalten.
+- Der Header-Sync entfernt ein Element nicht, das aus `works.xml` verschwunden ist (hier `biblScope unit="volume"` bei FR3); das Gate meldet es, die Handänderung ist einmalig. Ein erneuter `--offline`-Sync und `--works` erzeugten danach keinen Diff, die Handänderung wird also nicht zurückgeholt.
+- Der Werktitel von FLG1 "(Buch 3-7 / Neumann MTU 1990)" und sein `analytic` "Buch 1-7" widersprechen sich weiterhin; als Nebenbefund in #486, nicht aufgelöst. (Aufgelöst am 04.11.2026 nach KZWs Klarstellung vom 20.10.: FLG1 ist Buch 3-7, `analytic` berichtigt und über `BESTAND_BEHALTEN` gegen den Sync gesichert.)
+
+**Rote Zeilen:** keine.
+
+**Was zurück an Christian geht:** nichts über die Fragen in #486 hinaus (Werktitel FLG1, für KZW).
+
+**Review:** Runde 1 auf `cedee251a`, mergefähig, kein A-Befund; B-Befund (CONTRACTS F.4a und DATA-MODEL beschrieben die alte Lage) in einem Folgecommit ohne weitere Runde behoben. Teillauf `npm test` auf Port 8084 grün (reading-view, genre-explorer, genre-filter-suggestion, authority-id-search, lemma-id-search, variant-candidates; sie lesen Header-Metadaten, Werk- und Gattungsdaten des Authority-Index).
+
+---
+
+## 2026-10-18 (Spur lauf-1018-daten, D1 bis D3): Lexikon gegen Korpus, naschen, Fabeltiere (#462, #602, #461)
+
+**Was:** #462 nach KZWs Antwort vom 16.10.2026: 16 Lexikoneinträge bekommen 17 Wortarten (Codes a und günlich), 6 Token-`@pos` sind geändert (zedolne ×2, alwirdic, immo, deprofundis, ungenuoge), 2 Tokens umgehängt (aditus auf `lemma_67813`, standime auf `lemma_70734`, neue Typen `type_372859` und `type_372860`). #602: 4 naschen-Belege auf `lemma_57919_sense_93122` (Essen), `OVW_1025010230_4` bleibt offen. #461: `concept_14101100` und `lemma_1958_sense_119200` für Drache und Phönix (4 Belege); Messung an `sense_3004`: 55 Belege, 38 tot, 12 lebend, 3 lebend mit Zweifel, 2 Tier, nichts umgehängt. Indexe Authority 1.9.29, Corpus 4.2.35. Skripte `apply-462-602.py`, `apply-461-fabeltiere.py`, `messen-461-sense3004.py`; Belege unter `ingest/pos-disambig/462-pos/`, `602-naschen/` und `ingest/review/461-gebeine/`.
+
+**Was über den Einzelfall hinausgilt:**
+- Ein `@reason` auf `<w>` macht die Datei für `tei_all` ungültig und lässt sie aus der Baseline in `validate-corpus.py` fallen (JT: 35 statt 34 Dateien). Der Vorschlag für zedolne sah eines vor; es fehlt bewusst und ist ein offener Rest für nach dem Freeze.
+- Zwei Umhängungen, bei denen eine Form nur ein Token hat, lassen den Eintrag des alten Lemmas in `variants.xml` verschwinden: das senkt die Zahl der Einträge (42.460 auf 42.458) und löst den Flip-Gate aus. Beides gehört in dieselbe Datenänderung wie die Quittung und die Zählzeilen in den Docs.
+- Die Einstufung vom 10.10. zu gebeine hielt die Ochsen in Pharaos Traum (`JEW_556900000_3`, `JEW_557800000_0`) für menschlich; sie stehen im selben Traum wie `JEW_566800000_5` (tierisch). Eine Einstufung am Fenster statt am Zusammenhang übersieht das.
+- MWB: die Suche über Lemma, Wortform und Artikelstichwort ist schnell, die Volltextsuche läuft in einen Timeout. Ergebnisse wie "0 Treffer" brauchen einen Kontrollwert (`minne`: 6 Treffer).
+
+**Rote Zeilen:** keine. (`trockenlauf-auswerten.py` lief vor diesem Eintrag, der Kontrollwert hat gefeuert: 73 Zeilen nicht auswertbar.)
+
+**Was zurück an Christian geht:**
+- Fragen an KZW (nach Merge und Deploy): indelicius (Satz, MWB ohne Treffer, Wohin gehört ihr Kommentartext zu Ezechiel 28,13), unpeweglich (Satz, MWB: un-bewëgelich Adj.), `OVW_1025010230_4` (Essen oder Erotik), die Messung an `sense_3004` mit dem Vorschlag eines eigenen Sense für lebende Gebeine.
+- Ob die Hunde bei NEI, NEIC und NEIR unter "Ernährung von Menschen" (`concept_21111000`) fallen.
+- Die zwei Ochsen-Belege an `sense_3004` gehören sachlich an `sense_119196`; nicht umgehängt.
+
+**Review:** Runde 1 auf `184715a94`, Urteil mergefähig, kein A-Befund; B-Befund (README 462-pos datiert) in `9de0a0b63` ohne weitere Runde behoben. Volllauf `npm test` grün auf der Basis `111aef2b1` (512 Tests), danach auf `origin/main` die drei neuen Specs aus #619 (37 Tests) grün.
+
+---
+
+## 2026-10-18 (Spur lauf-1018-onama): ONAMA-Anker-Abgleich und Narrativ-Explorer, Pilot Argonautensage (#609)
+
+**Was:** KZWs Manifest vom 16.10. umgesetzt, soweit es Abgleich und Pilot betrifft. O1: `scripts/ingest/onama/anker-abgleich.py` liest `onamaObjects.ttl` (onama-corpus `b87468b`) und prüft die 308 `TextPassage`-Ressourcen gegen die `xml:id` im TEI (MHDBDB `a89aaf788`): 291 Wortanker, 9 Nichtwort-Anker (7 `pc`, 2 `caesura`), 1 umgekehrt (Q288), 7 nicht gefunden, dazu die 309. Aussage Q67 (`AXU_XXXX`) in eigener Liste. Das sind die Manifestzahlen. O2: `scripts/ingest/onama/build-paket.py` erzeugt aus dem RDF `playground/data/onama/argonauten.json` (Teilbaum Q1309, Sammlungen TRO, TRY, ÖNB cod. 2773; 179 Realisierungen), der Explorer steht unter `playground/#onama` (`playground/js/ui/onama/`, `playground/css/onama.css`), dazu ein Hilfeabschnitt. Nichts in `tei/`, `authority-files/` oder an Annotationen.
+
+**Was über den Einzelfall hinausgilt:**
+- Der Konzeptbaum trägt die Auswahl nur halb: mehrere TRO- und TRY-Konzepte mit Argonautenbezug (etwa Q163 "Jason wählt Argonauten aus"; gesichtet, nicht abschließend gezählt) haben kein `broader` und hängen nicht an Q1309. Eine Auswahl über `narrower` allein hätte sie still ausgelassen; sie stehen als Randfälle (49 insgesamt, mit Grund) beim Pilot, die Entscheidung liegt bei KZW.
+- Von 41 Bildrealisierungen ohne `partOfCollection` teilen nur 9 den RO-Nummernkreis (erste fünf Zeichen) mit Sammlungsmitgliedern. Die Handschrift ist für sie nicht belegt; sie stehen als Quelle `REALONLINE`, Zuordnung "abgeleitet".
+- Bei 93 Wortanker-Passagen und einer Nichtwort-Passage ist ein Endpunkt ein `<w>` ohne `@lemmaRef`, das die Positionszählung nicht zählt. Die Wortspanne wird auf das nächste bzw. vorige gezählte Wort umgerechnet und je Passage als "umgerechnet" markiert (51 von 163 Passagen mit Wortspanne). Das Manifest hatte die Frage gestellt, die Zahl stand nicht darin.
+- Ein `<caesura xml:id>` kann Endpunkt einer Passage sein; der erste Lader kannte nur `w` und `pc` und zählte 9 statt 7 nicht gefundene Anker. Der Abgleich gegen die Manifestzahl hat es gefangen.
+- Der Prüfstatus hat festen Vorrang offen vor abgeleitet vor geprüft; "geprüft" heißt technisch, nie fachlich. Verteilung am Ende 78 geprüft, 74 abgeleitet, 27 offen (179). Frühere Stände: 119/46/14 (erste Regel), 78/87/14 (ohne Vorrang). Die Verschiebung von 87/14 auf 74/27 sind 13 Bilder ohne Bildlink.
+
+**Rote Zeilen:** Vier, Nr. 157 bis 160 (RO-Zuordnung als Allaussage ohne Messung; Spec-Titel verspricht, was die Assertion nicht prüft; `umgerechnet` an der Wortspanne statt am Status, #397; Statusdefinitionen und README-Satz ohne Nachzählen). `trockenlauf-auswerten.py` lief vor diesem Eintrag, der Kontrollwert hat gefeuert (73 Zeilen nicht auswertbar), die Zahlen sind eine Untergrenze: der Spur zugeordnete Zeilen shell-konventionen 125 (davon 20 Treffer), mengenaussagen 70 (17 Treffer).
+
+**Was zurück an Christian geht:**
+- Die Berater-Punkte des Reviewers: Die Oberfläche zeigt nur die Q-Kurzform (die volle Quell-URI steht im Tooltip und im Paket; ob das Kriterium 2 genügt, entscheidet KZW), das exportierte Feld `gleichzeitig` (23 Realisierungen) wird nicht angezeigt, und die Passagenebene hat bei umgerechneter Spanne weiter das grüne "Anker geprüft", daneben die Markierung "umgerechnet".
+- Im Kommentar in #609 nach Merge und Deploy: die 93 plus 1 umgerechneten Spannen mit der Regel, die 49 Randfälle, die Quellenauswahl, und für Peter das Exportformat (DATA-MODEL.md, Abschnitt ONAMA pilot package).
+- Der volle Lauf vor dem Merge: im ersten Lauf auf dem Stand vor den Fixes `VERDICT: ROT (1 flaky ...)`, 0 unexpected; der Flaky-Fall war `playground-router-start.spec.js` ("#naming rendert, waehrend der Korpus-Index noch laedt"), mit `--repeat-each=3` grün.
+
+**Review:** Opus. Runde 1 auf 6f211c556 (vor Rebase): ein A-Befund (Spec "nicht verlinkt" prüfte den Link nicht), vier B-Befunde (Statusdefinitionen, Auswahltext, README, Inventare). Runde 2 auf 76389aa0d (Delta): ein A-Befund (`umgerechnet` hing an `bool(wortspanne)`, #397), drei B. Runde 3 auf 98e5c4252 (Delta nach A, Opus): kein A-Befund, mergefähig. Danach ein rein mechanischer Commit ohne Review (Umlaute in einem Anzeigetext, Zeile `Ohne Review:` im Commit), nach dem Rebase auf `9eaf1fd78` ohne Konflikt und mit Chrome-Prüfung am Endstand (Einstieg über Ding, über Entität, Filter Nur Bild). Ein zweiter Rebase auf `d6d7b51f3` (#621, Index 1.9.29/4.2.35) hatte nur im Journal einen Konflikt (beide Einträge behalten).
+
+---
+
+## 2026-10-18 (Spur lauf-1018-lesung, L2): zweite Lesung zu Ernährung von Menschen oder Tieren (#603)
+
+**Was:** KZWs Wunsch vom 16.10.2026, die Vorsortierung sprachlich gegenzulesen, ist umgesetzt. 13.135 Belege (tier 2.867, unklar 2.523, mensch 7.745) von 42 Sonnet-Agenten in fünf Workflows gelesen, blind gegen die Klasse der Vorsortierung, Kontext 30 Token links und rechts. Lesung: mensch 8.037, keine_nahrung 3.908 (Lemma-Rauschen der Vorsortierung), tier 955 (Säugetier 433, Vogel 239, andere 171, unbestimmt 95, Fisch 17), unklar 235. Nicht gelesen: 20.023 Belege ohne `@ana`, die nicht `tier` sind. Ergebnis in `ingest/review/603-ernaehrung/` (`zweite-lesung.tsv`, `senses-lesung.tsv`, `lemmata-lesung.tsv`, `konzeptfrage.txt`, `pruefen-603.tsv`, README-Abschnitt), Skripte `stapel-603.py`, `verbinden-lesung-603.py`, `auswerten-lesung-603.py`. Nichts in `tei/` oder `authority-files/`; die Konzeptfrage steht bei KZW.
+
+**Was über den Einzelfall hinausgilt:**
+- Die Tierbelege sind meist eine Minderheit innerhalb von Bedeutungen, die sonst Menschen meinen (23 von 78 Bedeutungen mit Tierbelegen haben Tier-Mehrheit); ein zusätzliches Konzept an der Bedeutung allein trennt sie nicht. Das Korpus gibt auch Vögel (239) und andere Tierklassen her, nicht nur Säugetiere.
+- Agenten schreiben Schlüssel falsch ab (17 von 13.135 w_id, 0,13 %) und flicken sie mit eigenen Hilfsskripten, ohne es zu melden. Verbunden wird über die Zeilennummer, und der Stand der Eingabe wird nicht aus dem Bericht des Agenten, sondern aus den Workflow-Transkripten gelesen (`rg 'fix [0-9]+ [0-9]+'`).
+- Eine Regex über `<sense>...</sense>` im Lexikon ist falsch, weil 124 Senses selbstschließend sind; Lexikon immer mit lxml lesen.
+
+**Rote Zeilen:** Eine, Nr. 154 (Differenz subtrahiert statt die fehlenden Elemente zu benennen: "431" statt 331 plus 100 ohne `@ana`, im README bis zur Review-Runde 1). `trockenlauf-auswerten.py` lief vor diesem Eintrag, der Kontrollwert hat gefeuert (73 Zeilen nicht auswertbar); die Zahlen sind eine Untergrenze und der Hook ist nachzusehen.
+
+**Was zurück an Christian geht:**
+- Die Konzeptfrage an KZW (Umbenennen von "Stoffwechsel von Säugetieren" oder neue Kategorie "Ernährung von Säugetieren") nach Merge und Deploy im #603-Kommentar, mit der Prüfliste der fünf Belege.
+- Berater-Punkt des Reviewers: `verbinden-lesung-603.py` schreibt auch bei gemeldeten Formfehlern `teil-*.tsv` und endet mit Exit 0. Ob Prüfmaterial einen harten Abbruch braucht, ist eine Entwurfsfrage, nicht umgesetzt. Ebenso: der neue Abbruch in `auswerten-lesung-603.py` vergleicht gegen die eingecheckte `senses-21111000.tsv` und fängt ein geändertes Lexikon nur, wenn jemand sie neu erzeugt hat.
+
+**Review:** Opus. Runde 1 auf b859cd41e: zwei A-Befunde (Regex über `<sense>` kennt keine selbstschließenden Senses; Docstring versprach einen harten Fehler, der Code tat `pass`), drei B-Befunde (17 statt 13 Korrekturen, 331 statt 431, 52 Minderheit statt 55), alle nachgemessen und behoben. Runde 2 auf aea8b8f67 (Delta, Opus nach einem A-Befund): kein Befund, mergefähig.
+
+---
+
+## 2026-10-18 (Spur lauf-1018-lesung, L1): Prüfseiten auf gerade Anführungszeichen (#440)
+
+**Was:** Auf KZWs Antwort vom 16.10.2026 sind die schrägen Anführungszeichen (U+201E, U+201C) in den drei Prüfseiten aus #440 und in ihren Generatoren durch das gerade `"` ersetzt: `359-pruefseite.html` 8 Zeichen in 3 Zeilen, `418-houwen/pruefseite.html` 1 in 1, `pruefseite-526.html` 66 in 19, `build-359-page.py` 2, `build-526-pruefseite.py` 66, dazu `vorschlaege.json` (6, als `\"`), die Eingabe des 359-Generators und Quelle von zwei der drei Zeilen der Seite. Rückzählung in allen sechs Dateien: 0. Die Seiten sind nicht neu generiert, denn ein Lauf von `build-359-page.py` hätte Stand-Datum und Index-Version mitgeändert und setzt `&quot;` statt `"` (gleiche Darstellung).
+
+**Nicht berührt (Zählung, Zeichen):** `examples/review-pages/` (364: 28, 371: 208, Klaus: 43, Glossar-554: 7.563), Vorlagen `scripts/audit/review-364.template.html` 28 und `review-klaus.template.html` 39, `scripts/ingest/glossar-554/pruefseite.template.html` 12, dazu `359-borek/folgebefunde.md` 16, `359-borek/evidence.json` 5 (« » in Quelltext, Daten) und `418-houwen/README.md` 3.
+
+**Was über den Einzelfall hinausgilt:** Ein Generator hat oft mehr Eingaben als sein Skript: die 359-Seite bezieht Text aus `vorschlaege.json`, und ein Ersetzen nur im Skript hätte beim nächsten Lauf die schrägen Zeichen zurückgebracht. Vor dem Ersetzen die Eingaben des Generators mitzählen.
+
+**Rote Zeilen:** keine.
+
+**Was zurück an Christian geht:** nichts. `trockenlauf-auswerten.py` lief vor diesem Eintrag, der Kontrollwert hat gefeuert (73 Zeilen nicht auswertbar); die Zahlen sind eine Untergrenze und der Hook ist nachzusehen, bevor jemand sie zitiert.
+
+**Review:** keine Runde, rein mechanische Zeichenersetzung (`Ohne Review:` im Commit); Syntaxcheck `ast`/`json` grün.
+
+---
+
+## 2026-10-16 (Spur lauf-1016-daten): jagât-Rest und gebeine nach KZWs Antworten (#460, #461)
+
+**Was:** KZWs Antworten vom 15.10.2026 sind umgesetzt. #460: `WH_28126_1` (jaget) und `JT_43134000_4` (jagennes) von `lemma_3103` jagât auf `lemma_3102` jagen (`@pos="VRB"`, ohne `@ana`); `WVW_6542_4` bleibt Nomen, `AXU_18452_5` und `JT_48611000_4` bleiben unverändert (KZW braucht mehr Kontext). `lemma_3103` trägt danach 38 Tokens, `lemma_3102` 1.553. #461: `lemma_1958` gebeine hat zwei neue Senses, `sense_119198` (Vögel, `concept_14021100`, Hahn `AMI_972_3`) und `sense_119199` (Fische, `concept_14031100`, `FLG1_4135180940_2`); die 9 offenen Belege kommen nach KZWs Regel an `sense_49690` (8 Tokens ändern sich, `NAR_9400900_3` trug ihn schon; `JSG_410_1` wechselt von `sense_3004` und verliert das Tod-Konzept). Drache und Phönix bleiben unverändert. Corpus Index 4.2.34, Authority Index 1.9.28; 12 Tokens in 10 TEI-Dateien. Umsetzung: `scripts/ingest/pos-disambig/apply-460-461-rest.py`, Belege mit Entscheidung und Quelle in den Tabellen der beiden `ingest/`-Ordner.
+
+**Was über den Einzelfall hinausgilt:**
+- Die drei "Würfelknochen" in DRE sind menschlich: die Würfel sind aus den Stockzähnen des Ritters gemacht (`tei/DRE.tei.xml`, V. 36, 117 und 122 bis 126). Die Einstufung vom 10.10. las nur V. 137 bis 217 und hielt die Herkunft für nicht genannt; meine Bestätigung ("kein Tier genannt") stützte sich auf dasselbe Fenster. Ergebnis (`sense_49690`) bleibt, die Begründung war falsch. Eine Herkunftsfrage ("woraus ist es gemacht") wird am Anfang der Episode gesucht, nicht in dem Fenster, in dem das Wort vorkommt.
+- Die Tabelle vom 10.10. behauptete für `NAR_9303540_3` "Sense 49690 gesetzt"; im TEI trug nur `NAR_9400900_3` den Sense. Eine Zustandsangabe in einer Arbeitstabelle ist eine Behauptung, bis das TEI sie trägt.
+- Der Auftrag nannte "Authority 1.9.27, Corpus 4.2.33" als Ziel der Basis + 1; das war der Stand von `origin/main`. Die Koordination hat es bestätigt (G2), die Versionen sind 1.9.28 und 4.2.34.
+- Die Flip-Quittung `scripts/audit/variants-flips-ack.json` liegt unter dem eingefrorenen `scripts/audit/`, ist aber gitignoriert und wird mit `git add -f` aufgenommen, wie bei #554; die Koordination hat sie als benannte Ausnahme bestätigt.
+- Sense-Nummern: die höchste war nicht mehr 119196, sondern 119197 (`lemma_79829_sense_119197`, #554). Vor dem Vergeben messen, nicht aus der Vorgängerarbeit übernehmen.
+
+**Rote Zeilen:** Eine, Nr. 138 (Herkunft am Fenster statt an der Episode gesucht und der Koordination als Befund gemeldet).
+
+**Was zurück an Christian geht:**
+- Die Fragen an KZW (nach Merge und Deploy): Drache und Phönix direkt an `concept_14100000` "Fantastische Tiere" oder ein neues Körper-Unterkonzept; Frage 3 (Tod-Konzept an `sense_3004`) mit Belegen eines lebenden Körpers; in #460 der längere Kontext zu `AXU_18452_5` und `JT_48611000_4`.
+- Hinweis an KZW: `JSG_410_1` (Riesin) verliert mit dem Sensewechsel das Tod-Konzept, obwohl sie als Tote gemeint ist; das gehört zu Frage 3.
+- `trockenlauf-auswerten.py` lief vor diesem Eintrag, der Kontrollwert hat gefeuert (73 Zeilen nicht auswertbar); die Zahlen dort sind eine Untergrenze, keine Messung, und der Hook ist nachzusehen, bevor jemand sie zitiert.
+
+**Review:** Fable. Runde 1 auf 5af8af2ba: kein A-Befund; B (DRE-Begründung) und C (Zählung in README 460) nachgemessen und behoben. Runde 2 (erste schmale) auf fe2ea471f: kein A-Befund, drei B-Befunde (Versangabe zu kurz, behoben; Spaltennummer im Auftrag verschoben und fehlende Belegtabelle im Auftrag, beides ohne Änderung im Diff). Runde 3 (zweite schmale) auf 49bb8d8bc: kein A-Befund, drei B-Befunde (der Kettenzeiger in Fehlerjournal 138 war mit 61 statt 119 falsch und zu früh abgebrochen, behoben; ein Platzhalter in diesem Absatz, behoben; eine unvollständige Belegtabelle im Auftrag). Nach der zweiten schmalen Runde ohne A-Befund ist ohne weitere Runde gepusht.
+
+---
+
+## 2026-10-15 (Spur lauf-554b): KZWs Prüfergebnisse zum Glossar Kochbuchforschung eingearbeitet, briech als neues Lemma (#554)
+
+**Was:** Katharinas 47 Antworten zur Prüfseite (JSON vom 15.10.2026) sind in `lexicon.xml` umgesetzt: 44 Notizen (19 aus Gruppe A, 22 aus B, 1 D, 2 E), letzen verliert eine Bedeutung, naschen tauscht zwei, briech ist ein eigenes Lemma (`lemma_79829`), das einzige Token ZUK_76100_5 hängt von brî darauf um. Authority Index 1.9.27, Corpus Index 4.2.33; die Lemmazahl steigt auf 43.711, Varianteneinträge 42.460, und die Zahl steht in zwölf Doku- und Seitendateien nach. Dazu `ingest/glossar-554/literatur.tsv` (193 Zeilen, 76 Werke, 74 von 138 Notizen mit mindestens einem Zitat; Untergrenze, ungeprüft). Umsetzung je Fall: `ingest/glossar-554/UEBERNAHME.md`, Abschnitt "Einarbeitung der Prüfergebnisse".
+
+**Was über den Einzelfall hinausgilt:**
+- Ein neues Lemma ist eine Änderung an der Lemmazahl in zwölf Dateien; `doc-count-audit.py --check` fand sie erst nach der Datenänderung. Datierte Messungen (CONTRACTS L344/L418) behalten ihre Zahl und bekommen den Vermerk "not today's count" hinter der Zahl, auf derselben Zeile (das Audit liest nur bis zum Zeilenende, höchstens 120 Zeichen).
+- Sense-Nummern sind nicht global eindeutig (`sense_5899` gab es an drei Lemmata, nach der Löschung bei letzen sind es zwei); wer eine gelöschte Bedeutung sucht, sucht mit Lemma-Präfix.
+- Die wîn-Zählung (mete 63, môraz 57, klârêt 50, lûtertranc 26, malvasier 8, sinôpel 6, alantwîn 1) ist am Korpus-Index nachgemessen und trägt den Stand 15.10.2026.
+- Die Kommentare enthalten Altzählungen, Suchsyntax und Ich-Form von 2015 bis 2017 (grobe Textsuche: 12 mit Stand- oder Abrufdatum, 10 mit Trefferzahl, 19 mit Ich-Form; ungeprüft). Kein Eingriff in diesem PR, eigene Frage an Katharina.
+
+**Rote Zeilen:** Eine, Nr. 125 (Zahlen aus der eigenen Verdichtung ungeprüft in die Doku geschrieben; vierte Zeile zu dieser Lehre, 116, 117 und 132 davor).
+
+**Was zurück an Christian geht:**
+- Der Mechanismus zu Eintrag 125: vierte Zeile zur Lehre "Zahl neu messen, bevor sie in eine Doku kommt" (116, 117, 132, 125); der Wechsel war nach der Regel schon bei 132 fällig. Vorschlag: Zahlen in Übernahmedokumenten erzeugt ein Skript (`literatur-erfassen.py` macht es vor), die Doku zitiert dessen Ausgabe.
+- brî führt nach dem Umhängen `<pos>ADJ</pos>` ohne ein ADJ-Token (Reviewer-Beobachtung, kein Gate sieht es); ob die Wortart am Lemma dem Korpus folgen soll, ist eine Entwurfsfrage.
+- Offene Fragen an Katharina (nach Merge und Deploy im Abnahmekommentar): slunthart 1759 ergänzen oder weglassen, lêrchenvuoʒ (a) ohne Beleg anlegen oder (b) bis zum Ingest des Strickers zurückstellen, eigene Bedeutung "Kornschwinge" bei wanne, Fehlannotation "von wannen" (JT), die briech-Konzepte, die Altzählungen in den "passt"-Texten.
+- Die Laufplan-Zahl 83 Lerchen-Formen (G5) ist mit keiner Zählregel reproduzierbar (62 Präfix, 75 Teilstring).
+
+**Review:** Fable, Runde 1 auf 488e64e14: kein A-Befund, drei Zahlenbefunde (B1 bis B3) von der Spur nachgemessen und behoben, B4 betraf nur die Basisangabe im Auftrag.
+
+---
+
 ## 2026-10-13: #93, Bilder der Textreihentypologie nachgezogen, PR #555 rebased
 
 KZW hat die drei offenen Bildfragen aus #93 über Christian beantwortet: Logos, Startbild und Screenshots dürfen übernommen werden. Alle elf Dateien liegen jetzt unter `textreihen/img/` (Startbild als JPEG in der 1024-px-Fassung, die Logos einmal auf der Startseite statt im Fuß jeder Seite). PR #555 stand vier Tage offen, ohne dass jemand etwas sagte, und war inzwischen `CONFLICTING`; nach dem Rebase lagen die Konflikte im umbenannten Reviewer-Memory (`fable-reviewer/` zu `reviewer/`, #593) und in den beiden Journalen.
@@ -302,56 +497,9 @@ Gemergt: #508 (#485, Lindas Beschreibung der Figurenbezeichnungen), #509 (#459, 
 
 Antworten des Tages: @wachauer zu #228 (Mur bleibt vorerst, Zuordnung erst an Quellen prüfen; die 273 reinen Bestandteile werden aus Belegen und Bestandteilsverweisen abgeleitet gekennzeichnet, kein `entry/@type`), @lindabeutel zu #485. Labels entsprechend nachgezogen.
 
-## 2026-09-22: Review-page examples for reuse
-
-KZW approved collecting the blank review pages via a separate branch and PR after consultation with Chris. `examples/review-pages/` preserves byte-identical copies of the local #364, #371 and #390/#115 pages. The overview in INDEX documents scope, snapshot dates, exports and differences from #443, and links the external wachauer/mhdbdb-kuratorik example at commit 296f4ff4cfb3a68b526397c46baef9a3ec9189ef. Existing generators and templates accompany the newer examples; generators continue to write working pages at the repository root, leaving the archived snapshots unchanged. Browser tests now address the archived copies. No submitted human decisions or corpus/authority edits are included. Validation: seven Chromium tests passed at the archive paths; the stat page rendered 95 cards without browser errors and exported valid JSON. Archive copies verified byte-identical.
-
-
-## 2026-09-21: Ein Prüfseiten-Format (#443), und die halbe Fallmenge war gar keine Frage (#359)
-
-Zwei Vorgänge in einem Lauf: ein Format für kuratorische Prüfseiten (#443) und seine erste Anwendung, 45 Fälle aus Luise Boreks Pferdewortlisten (#359). Eine einzelne HTML-Datei, die man verschickt und ohne Installation im Browser öffnet, mit eingebetteten Daten, Rückgabe als JSON und als lesbarer Bericht.
-
-**Der Befund, der die Seite umgebaut hat, steht nicht im Ticket.** Die exakte Stufe des Abgleichsberichts vergleicht Boreks flektierte Formen gegen unsere Lemmaansetzungen. Wo eine fremde Ansetzung zufällig wie eine Flexion aussieht, trifft sie das falsche Wort: `oren` nicht das Ohr, sondern das Fabelvolk der `Ôren` im Herzog Ernst, `lenden` nicht die Lende, sondern das Verb `landen`. Der Homographenzähler des Berichts sieht davon nichts, weil die normalisierten Formen auseinanderlaufen. **28 der 45 Fälle sind Artefakte dieser Art oder bestätigt richtige Annotationen und brauchen keine Entscheidung.** Die Seite ist deshalb nach Befund gruppiert und nicht nach der Klasse des Berichts, und das steht über der ersten Karte: wer 45 Karten durchklickt und bei Karte 31 merkt, dass die Hälfte keine Frage an ihn war, hat bis dahin die falsche Frage beantwortet.
-
-**KZWs Körperteil-Frage vom 16.09. löst sich zu drei Vierteln auf.** `ôr`, `lende` und `brust` tragen `concept_14011100` längst; Boreks Formen haben andere Lemmata getroffen. Nur `gebeine` ist ein echter Kandidat, und die tierische Verwendung ist belegt (`AXU_23544_3` „gar des orses gebeine“, `HTR_193190_2` „des lewen gebeine ist âne marc“). Gelesen sind 9 der 207 Belege, nämlich die mit einem Pferdewort im Kontextfenster: das beantwortet „kommt vor“ und nicht „kommt wie oft vor“, und die Seite sagt das so. Der Löwenbeleg ist dem Filter zugelaufen, weil `marc` in der Wortliste steht und an dieser Stelle Knochenmark heißt.
-
-### Was über den Fall hinausgilt
-
-**Ein Gate schützt, was es liest, und die Liste dessen, was es liest, ist selbst eine Behauptung.** Gegen verfälschte Zitate war ein Gate gebaut: jedes Zitat in der Begründung muss so in den gemessenen Belegen stehen, `ss` ausdrücklich nicht gleich `ß`. Es hat gegriffen und trotzdem nichts genützt, denn über der Begründung steht `kurz`, fett gesetzt und als Erstes gelesen, und dort behauptete eine Kurzzeile eine Formel, die keiner der fünf Belege liest. Das ist dieselbe Geometrie wie #397, eine Stufe höher: dort raubt ein Fix einer Prüfung ihren Gegenstand, hier gibt ein Gate den Nachbarfeldern eine Zusage, die es nicht einlöst.
-
-**Die Antwort darauf hat drei Stufen, und die dritte ist die einzige, die nicht mitwachsen muss.** `_prosafelder` sammelt die Felder, statt sie aufzuzählen; `HTML_FELDER` steht im Modul statt im Kopf des Autors; und `rohe_striche` prüft **das fertige Dokument** statt der Felder. Kommt ein siebtes Feld dazu, bleibt nur die dritte richtig. Vier Felder einzeln zu bewachen hieße, das fünfte zu vergessen.
-
-**Drei Runden, drei Klasse-A-Befunde, und jeder saß in dem, was die vorige Runde gebaut hatte.** Runde 1 fand die fehlende Auszeichnung; Runde 2 fand, dass deren Fix den Rückweg verdorben hatte (`vorschlag.text` ging durch die Auszeichnung, und dasselbe Feld lebt als Text im Export weiter, wo KZW `<span class="mono">hurt</span>` gefunden hätte); Runde 3 fand den Fehler in der Prüfung, die Runde 2 dagegen gebaut hatte. Sie suchte im fertigen Wert nach einem Muster, sah aber einen Wert nach `html.unescape`: ein geschriebenes `<pc>` steht darin wieder als `<pc>` da. **Gemessen brechen `<pc>` und `<w>` ab, während `a < b und c > d` durchläuft**, also trifft der Fehlalarm genau die Formen, die hier in einer Annotationsbegründung stehen.
-
-**Ich habe daraufhin das Gate umgebaut, es vergleichen statt suchen lassen, und Runde 4 hat gezeigt, dass der Umbau nichts prüft.** Der Vergleich leitete den erwarteten Wert mit demselben Ausdruck aus derselben Quelle ab, den der Generator benutzt: für `kopfText` `f['kopf'] == f['kopf']`. Ein ausgezeichnetes Feld ohne Eintrag in `HTML_FELDER` lief glatt durch, und das ist genau das Fehlerbild aus Runde 1. **Der Stand nach Runde 3 war schlechter als der davor**, und damit war die Entscheidung keine Abwägung mehr: zurückgebaut, die Lücke im README benannt, der Vergleich ersatzlos raus.
-
-**Vier Runden, drei davon an derselben Stelle, und das ist für sich ein Befund über das Vorgehen.** Die Prüfung, um die es ging, hat in den 45 realen Fällen nie gefeuert und hätte es auch mit keiner der vier Fassungen getan. Was jede Runde erzeugt hat, war eine weitere Annahme über einen Fall, den es hier nicht gibt.
-
-**Die Lehre, die bleibt, ist nicht die über Muster und Vergleiche, sondern die über den Ersatz:** wer ein Gate ersetzt, fährt die Mutationen der alten Fassung gegen die neue. Meine acht Proben waren alle für die neue Fassung erfunden, keine stammte von der alten, und keine berührte deshalb den Fall, den die alte gefangen hätte. **Eine Mutationsprobe, die nur die neue Prüfung kennt, misst, was der Autor sich vorgestellt hat; die alte Fassung weiß, was früher schiefging.** Rote Zeile 56.
-
-**Und der Grund, warum ich es nicht selbst gesehen habe, steht in meinen eigenen Texten desselben Nachmittags.** Die #397-Frage („was hat diese Änderung wahr gemacht, das vorher falsch sein konnte?“) steht im Eintrag oben, im Reviewauftrag für Runde 4 und in der roten Zeile 47. Ich habe sie dreimal an fremden Code gestellt und kein einziges Mal an den Fix, den ich gerade schrieb.
-
-**Eine Prüfung, deren Greifen nicht gemessen ist, ist eine Behauptung wie jede andere.** Jede neue Prüfung dieses Laufs ist mit einer Mutationsprobe in beide Richtungen belegt: sauberer Fall durch, mutierter abgewiesen. Die Koordination hatte am selben Tag vorgemacht, warum die eine Richtung nicht reicht, und dabei einen ungültigen ersten Anlauf offengelegt, dessen Attrappe an einer Stelle saß, die das Gate ohnehin überspringt. Eine Probe, die nur den mutierten Fall zeigt, belegt, dass ein Gate etwas meldet, und nicht, dass es das Richtige meldet.
-
-**Der Zuschnitt einer Messung ist gefährlicher als ihre Rechnung.** Dreimal an einem Nachmittag war die Menge falsch geschnitten und die Zahl darin richtig: ein Kontrollwert, der flektiert danebenlag (`Welscher Gast` gegen „Der Welsche Gast“); eine Grundmenge, die nur finden konnte, wonach sie fragte (fünf bekannte Titel statt der 36 Werk- und Autornennungen unter 59 Klammernennungen); und eine Zahl, unter der zwei Mengen lagen. Aufgefallen ist jeder der drei erst, als das Kommando für die nächste Aussage hinzuschreiben war, keiner beim Schreiben der Zahl. Rote Zeile 48. **Beim Nachzählen der Kette für diese Zeile ist derselbe Fehler noch einmal aufgetreten:** ein Grep über das Fehlerjournal nach `dateisuche.md` trifft null Einträge, und alle drei Zeilen dieser Lehre nennen sie in Prosa. Wer eine Kette über den Dateinamen zählt, zählt die Zeilen, die ihn zufällig schreiben.
-
-**Und eine Quote, deren Nenner ein Sammel-Limit ist, sieht aus wie eine Aussage über das Korpus.** `jagen` trägt 1.406 Tokens, gesammelt sind 250, weil `BELEG_CAP` dort greift; „249 von 250“ ist eine Aussage über die Sammlung und keine über das Korpus.
-
-### Nebenbefund, der weiter reicht: `pos` gegen `posAll`
-
-Bevor sich Bewertungen auf die Wortart eines Lemmas berufen, ist gemessen, ob das Feld hält. Gegen `posAll` sind **34 von 34** Lemmata mit gesammelten Belegen einig, sobald Kompositum-Tags aufgelöst werden (ohne diese Regel 31, und die drei Abweichungen wären reine Notation). Gegen das Einzelfeld `pos`, also die Angabe, die als *die* Wortart erscheint, weichen **4 von 34** ab: `jagen` führt INJ bei 249 von 250 VRB, `lenden` ADV bei 44 von 45 VRB, `merken` INJ bei 7 von 7 VRB, `rôse` ADJ bei 3 von 3 NOM. Alle vier führen die Korpuswortart in `posAll` an zweiter Stelle. Das betrifft `authority-files/` und jede Ansicht, die `pos` zeigt, und steht mit Messvorschrift in `ingest/review/359-borek/folgebefunde.md`.
-
-### Rote Zeilen
-
-Ausgezogen nach [../fehlerjournal.md](../fehlerjournal.md): **45** die Umlaut-Ersetzung, die drei mittelhochdeutsche Zitate mitgezogen hat; **46** vier aus Siglen erschlossene Werktitel, derselbe Fehlermodus wie `Alanya`, nur an einem Kürzel; **47** das Gate, das ein Feld deckte und daneben fünf stehen ließ; **48** der dreimal falsch geschnittene Zuschnitt; **49** eine Zahl aus einem Reviewbericht, die ich in vier eigene Texte geschrieben habe, ohne sie zu messen; **56** das Gate, das ich durch ein besseres ersetzt habe, welches nichts prüfte.
-
-## 2026-09-16: #444, Moriz von Craûn ist anonym
-
-KZWs Korrektur aus #444: Die veraltete Zuschreibung an Bligger von Steinach entfällt in work_5 und im CR-Header. Anonym stand bereits an zweiter Stelle; der erste Eintrag bestimmte den Index-Autor. Auch der lokale Bligger-Eintrag in CR und der work_5-Rückverweis in MBS sind entfernt. Bliggers Lyrik bleibt ihm zugeordnet. Text und Annotationen bleiben unverändert. Beide Indexe (Corpus 4.2.17, Authority 1.9.7) und API neu gebaut. Die historische Zuschreibung bleibt hier dokumentiert; das Datenmodell für den Forschungsstatus und eine Prüfung aller Mehrfachzuschreibungen sind Folgeaufträge aus dieser Sitzung an Claude.
-
 ## Verdichtete Historie
 
-Hochrangiger Trace der Einträge 2025-02 bis 2026-09-07. Volltext aller 131 verdichteten Einträge in `journal-archive.md`.
+Hochrangiger Trace der Einträge 2025-02 bis 2026-09-24 (bis 2026-09-07 waren es 131 verdichtete Einträge, heute 153). Volltext aller 153 verdichteten Einträge in `journal-archive.md`.
 
 **2025-02 (Phase 0 + #42):** Stabilisierung vor #42 – Wenzelsbibel (652k Zeilen) auf `feature/wenzelsbibel-ingest`, `assets/{css,js,images}` konsolidiert, Playwright 2→36 grün / 25 skipped (#43). #42 Persistent Lemma Pages: Wörterbuchnetz-IDs schon deckungsgleich (`lid=879` = `lemma_879`), Clean URLs `/lemma/879` + 404.html-Redirect-Trick für GitHub Pages. Savepoints `4562c08`, `6849758`, `e16306d`, `5154d04`.
 
@@ -429,742 +577,53 @@ Hochrangiger Trace der Einträge 2025-02 bis 2026-09-07. Volltext aller 131 verd
 
 **2026-09-07 (TRO, drei Fixe, Aufräumlauf):** Beide TRO-Werte waren richtig, sie gehörten nur zu zwei verschiedenen Werken: `works.xml` führt einen zweiten `bibl` mit derselben Sigle. Gefunden hat es erst die #397-Frage, nicht der Abgleich. Am Nachmittag dreimal derselbe Fehler, und **zweimal war er der Fix des vorigen**: die Frage einmal zu stellen genügt nicht, wenn der Fix selbst wieder ein Fix ist. Der CI-Bot fand zwei davon bei grünem Check. Im Aufräumlauf lagen zwei falsche Doku-Stellen im toten Winkel eines Gates, das genau daneben greift.
 
+**2026-09-10/11 (#427, #425, #363):** Ein gemeldetes Token (`hawssen`) waren 19 Belege in 7 Sigeln, 32 Tokens, und alle sieben Texte sind Kochbücher. Mehrwort-Lemmata gibt es im Korpus seit Jahren, nur dokumentiert war es nirgends, und deshalb wurde zweimal "die erste im Korpus" behauptet. Der teure Fehler war eine schon vergebene Versionsnummer (Korpus 4.2.14, Authority 1.9.4) und ein Gate, das auf beiden Seiten grün war: Konsistenz innerhalb eines Arbeitsstands ist keine Eindeutigkeit über offene PRs hinweg.
+
+**2026-09-11 (#198 Schritt 2):** Die seit Juli "kuratorische" Frage, welche der acht Senses von *haben* nominal sind, war eine Messfrage: alle acht sind nur verbal belegt, also zieht nichts um. Das `<pos>NOM</pos>` fiel erst, nachdem die drei NOM-Tokens entschieden waren (Korpus 4.2.15, Authority 1.9.5). Lehre: ein Commit ohne PR ist hier unsichtbar, die Entscheidung vom 21.08. hat 21 Tage nichts bewirkt. Ein Skript im Textmodus hätte aus der einzigen CRLF-Datei (WZB) 235.980 Scheinänderungen gemacht, gefangen hat es nur `git diff --stat`.
+
+**2026-09-11 (Nachmittag, #419, #58):** Alans 15 Screenshots, erstmals gesehen, widersprachen dem Protokoll: Der Fehler lag bei uns, aber woanders, denn die Leermeldung des Reimwörterbuchs nannte den eingestellten Filter nicht. #58 war zum zweiten Mal derselbe Mechanismus, eine Aufräumarbeit ließ die Anzeige auf das einzige verbliebene Zahlenfeld zurückfallen. Vier rote Zeilen (22 bis 25) mit einer Gestalt: eine Aussage, die aus der Nähe stimmt, weil ihre Bestandteile stimmen, und falsch ist in der Verbindung.
+
+**2026-09-14/15 (Nachtlauf, #237, #308, #375, #410, #432):** 9 von 39 Vorgängen mit `wait:kzw` trugen eine Antwort, die den ganzen Rest trägt. Befund des Laufs: der TEI-Header spiegelt drei Master, und nur `msIdentifier` hatte ein Gate. Die Bibliographie-Korrektur in VTC war wirkungslos, weil ausgeliefert wird die Fassung aus `works.xml`. `check-author-refs.py` läuft seither als Schritt in `data-integrity.yml`, und beim dritten Loch wurde der Mechanismus gewechselt: eine Invariante statt einer vierten Fehlerklasse. #410 ordnet die Abfragespalte in vier Blöcke, dabei lösten sich drei Gate-Bindungen still (Korpus 4.2.16, Authority 1.9.6). Rote Zeilen 26 bis 34.
+
+**2026-09-15 (#204, PR #441):** Die Auswahl aus Schritt 1 wirkte auf 10 von 11 Playground-Werkzeugen gar nicht, der erbetene Hinweis hätte eine Wirkung versprochen, die es nicht gab. Zwei Thunks statt einem (`selectedTextsThunk`, `corpusTextsThunk`). Wer eine Menge verengt, entwertet jeden Zustand aus der alten Menge, und Tests, die den Zustand setzen statt ihn entstehen zu lassen, prüfen die Zeile darunter. Zwölf Reviewrunden. Rote Zeile 35.
+
+**2026-09-16 (#444):** Moriz von Craûn ist anonym, die Zuschreibung an Bligger von Steinach entfällt in work_5 und im CR-Header (Korpus 4.2.17, Authority 1.9.7). Folgeaufträge: ein Datenmodell für den Forschungsstatus und eine Prüfung aller Mehrfachzuschreibungen.
+
+**2026-09-21 (Spur A, #366, #375, #371):** 88 Tokens in 45 Dateien, zehn neue Variantentypen statt der geplanten drei, Korpus 4.2.18, Authority 1.9.8. Dreimal stand die Zahl im Auftrag gegen die Zahl im Bestand, und KZWs `zusammenfassung` war entgegen dem geplanten Vorwurf richtig: zwei Felder, zwei Mengen. Die #397-Frage ergab erst im zweiten Anlauf den Befund, dass `hawsen` im Laufzeit-Wörterbuch umklappt, gegen Vorschrift B von ADR-021. Rote Zeilen 40 bis 44.
+
+**2026-09-21 (#443, #359):** Ein Format für kuratorische Prüfseiten und seine erste Anwendung auf 45 Fälle aus Boreks Pferdewortlisten, von denen 28 Artefakte des Abgleichs oder bestätigte Annotationen waren. Ein Gate schützt, was es liest, und die Liste dessen ist selbst eine Behauptung. Wer ein Gate ersetzt, fährt die Mutationen der alten Fassung gegen die neue. Der Zuschnitt einer Messung ist gefährlicher als ihre Rechnung. Rote Zeilen 45 bis 49 und 56.
+
+**2026-09-22 (Prüfseiten-Beispiele):** `examples/review-pages/` hält die leeren Prüfseiten zu #364, #371 und #390/#115 als byte-identische Kopien, mit Überblick in INDEX und Browsertests auf den Archivpfaden. Keine Entscheidungen und keine Korpusänderungen enthalten.
+
+**2026-09-23 (Spur A, #387, #418, #464):** 36 Tokens, Korpus 4.2.19, Authority 1.9.9. Eine Bestandszahl zählt die Altlast mit, bis man fragt, welches Merkmal die Fälle trennt: `VRB PRO` hat 154 von 154 ein `@reason`, `PRO VRB` 0 von 9.068, deshalb steht das Doppeltag in der Reihenfolge `ADJ NOM`. Der Typzähler war zum zweiten Mal grün, während das Wörterbuch umklappte (`froewen`), und die Reviewrunde fand es.
+
+**2026-09-23 (Spur B, #446, #435, #433, #58):** Vier KZW-Meldungen im Frontend, #58 bewusst nicht gebaut. Ein Haltepunkt im Auftrag kann den falschen Gegenstand tragen, ein totes Feld hat oft einen falschen Leser statt eines fehlenden Schreibers (`work.genre` gegen die Liste `genres`), und ein Overlay über Checkboxen macht aus einem Fehlklick eine andere Handlung. Rote Zeilen 70 und 71.
+
+**2026-09-23 (Spur C, #465, PR #472):** Der Testport als Parameter `MHDBDB_TEST_PORT`, 132 absolute Adressen in 30 Specs sind relativ. `http-server` ohne `-p` weicht still auf den nächsten Port aus, deshalb ein Wrapper. Eine Testzahl, die von der Umgebung abhängt, ist keine Eigenschaft der Suite (370 gegen 355, wegen fremder Worktrees), und eine Abnahmeprobe, die die Maschine überfordert, sagt etwas über die Probe. Rote Zeile 73.
+
+**2026-09-23 (Nachtlauf, Paket A1, #252, #267):** 846 Stellen `( caesura )` wurden `<gap reason="lost"/>` in 20 Dateien, neun Header tragen `no-print`. Ein gesicherter Patch ist ein Kontrollwert und kein Ergebnis, und ein Marker, den niemand liest, kann jahrelang das Gegenteil sagen (`excerpt-only` wertete nirgends etwas aus). Kein Index-Bump, weil keiner der Builds eine Differenz erzeugt.
+
+**2026-09-23 (Nachtlauf, Paket B1, #433):** Der Gattungs-Chip auf den Trefferkarten hat nie gerendert, weil `work.genre` in keinem der 584 Werke steht. Ein toter Anzeigezweig hat eine tote Kette hinter sich, und die geht mit weg. Ein Test auf das Fehlen wäre auf der Basis ebenso grün gewesen und hätte nichts festgehalten.
+
+**2026-09-23 (Nachtlauf, Paket A2, #270):** Der Kommentar nennt seinen Urheber, aufgelöst beim Bauen (ADR-018 Option 2, `commentRespName`), Authority 1.9.10. Der Index-Diff ist die Messung: genau zwei Felder ändern sich, und eine unbekannte Urheberangabe hält den Build an.
+
+**2026-09-23 (Nachtlauf, Paket B2, #420):** Pin auf Naming-analysis v0.3.0-beta, gebaut gegen `master` (derselbe Commit), weil ein wörtlich ins Artefakt geschriebener Parameter zum Inhalt gehört. "Lemma" statt "Term" im Modul. Eine Zahl, die ein Skript für ein Modul nachrechnet, muss rechnen wie das Modul: `Math.round` gegen `round()` ergab 244 statt 247.
+
+**2026-09-23 (Nachtlauf, Paket A3, #357):** Ingliart bekommt einen zweiten Sense für den Menschennamen (ADR-020), Authority 1.9.11. Das Konzept ist aus dem Namenkatalog abgeleitet: alle 15 Personen des Katalogs tragen dieselben zwei Konzepte. Der Korpus-Index sieht keine Sense-Zuordnung, ein Bump wäre ohne Inhalt.
+
+**2026-09-23 (Nachtlauf, Paket B3, #467):** Das Wörterbuch nimmt die Lemma-Nummer, auch in der Schreibung aus `@lemmaRef`. Eine nackte Zahl ist dort nicht eindeutig (fünf Lemmata beginnen mit einer Ziffer), und ein Hilfebeispiel ist auch eine Behauptung über die Daten.
+
+**2026-09-23 (Nachtlauf, Paket B4, #448):** CSV-Export in neun von 13 Playground-Werkzeugen, Hapax behält seinen älteren Export. Die Datei trägt die Menge und nicht die Anzeige, und die Multi-Lemma-Suche als Anwendungsfall des Tickets hat keinen Export, die Frage dazu liegt bei KZW. Zwei CSV-Formate bleiben nebeneinander, Helfer `csv-export.js`.
+
+**2026-09-24 (Nachtlauf, Paket A4, #228):** Apparat entannotiert (69 Noten, 422 GWTK-Noten), 165 Lemmata gelöscht, Korpus 4.2.20, Authority 1.9.12. Ein gehaltenes Lemma (Mur) hatte 82 Geschwister im Lexikon, weil das Suchmuster nur einwertige `@ana` sah: 21.844 von 43.404 Attributen sind mehrwertig. Ein gelöschtes Lemma kann das Beispiel einer anderen Spur sein.
+
+**2026-09-24 (Nachtlauf, Koordination):** Zehn PRs gemergt, Schlusslauf grün (389 Tests). Zwei dateidisjunkte Spuren sind es über die Daten nicht (A4 löschte das Prüfbeispiel von B3), und ein "sofern" in einer Entscheidung ist keine Entscheidung. Die Koordination wies einen Force-Push an, den der Spurvertrag verbietet, Spur B lehnte ab.
+
+**2026-09-24 (#237):** VTC-Editionsnachweis aus Zotero (Authority 1.9.13), Josef Jireček als Mitherausgeber. Ein Online-Sync ändert alles, was seit dem letzten auseinandergelaufen ist: 171 Werke mit Großschreibung und zwei Handkorrekturen (FLG, FR1) kamen mit. Entschieden: nur VTC in diesem PR, der Rest in #486, und die Richtung der Kette ist Zotero, dann `works.xml`, dann Header als Kopie.
+
 > Full older entries preserved in journal-archive.md
 
 ---
-
-## 2026-09-10/11 (Nachtsitzung) – Ein gemeldetes Token waren neunzehn Belege, und die Versionsnummer war schon vergeben
-
-Drei freigegebene Vorgänge, zwei PRs, gemergt: **#427** (Escaping der
-Ergebnisköpfe im Playground), **#425** (Mehrwort-Lemmata dokumentiert) in PR
-#428, **#363** (Hausenblase) in PR #429.
-
-**Der Vorgang war sechsmal so groß wie seine Meldung.** #363 meldete ein Token,
-`hawssen` in MBS5 am Adjektiv *heiʒ*. Die Suche nach den Schreibformen statt nach
-der gemeldeten ID findet **19 Belege in 7 Sigeln, 32 Tokens**, und alle sieben
-Sigel sind Kochbücher. Von den 19 waren 5 richtig; die übrigen 14 hingen an
-sieben Lemmata, darunter das Verb *hûsen* „wohnen", der *hase* und die
-Mönchstonsur. Sieben Tokens trugen gar kein `@lemmaRef`. Die Bestätigung stand im
-eigenen Korpus: KBL4 schreibt „ovch ist die **husen blater** vnd all **fisch
-blatra** guot in sulcza", eine Apposition, keine Auslegung.
-
-**Zweimal habe ich in diesem Vorgang behauptet, eine Mehrwort-Einheit wäre „die
-erste im Korpus", und damit gegen die philologisch richtige Zuordnung
-argumentiert.** Beide Male falsch, und beide Male hätte ein Blick in
-`variants.xml` gereicht: das Muster gibt es seit Jahren an `lemma_3141` *Joie de
-la Court*, `lemma_9250` *Schastel Marveile*, `lemma_9251` und `lemma_20598`, und
-`Schastel Marveile` trägt sogar dieselbe Doppelung aus getrennter und
-zusammengeschriebener Schreibung wie dieser Fall. Dokumentiert war es nirgends,
-was genau der Grund ist, warum es zweimal übersehen werden konnte. Daraus wurde
-#425, und `TEI-MODEL.md` §4.1a hält seit #363 auch fest, dass die Klasse nicht
-auf Eigennamen beschränkt ist.
-
-**Die Typ-Entscheidung ist der technische Kern und war beinahe ein Datenschaden.**
-Ein `type_N` ist eine Schreibform *eines* Lemmas, und `extract-variants.py` löst
-ein mehrdeutiges Paar per Mehrheit auf. Wer den Bestands-Typ mitnimmt, nimmt
-fremde Tokens mit: `type_106683` *pleter* trägt 45 Tokens, 43 davon bleiben bei
-`lemma_737` *blat*. Das Skript entscheidet deshalb je Form am gescannten Korpus,
-5 umgehängt und 10 neu geprägt, und `extract-variants` bestätigt es von der
-anderen Seite mit **0 Typen an mehr als einem Lemma**.
-
-**Der teure Fehler war ein anderer: die Versionsnummer war schon vergeben.** #363
-ist mit Korpus 4.2.14 und Authority 1.9.4 gemergt worden, während der offene PR
-#416 genau diese beiden Nummern seit seinem Rebase vom 09.09. trug. Kosten, mit
-`git merge-tree` gemessen: acht Konfliktdateien in Julias PR, allesamt
-abgeleitete Schicht plus Versionsliterale, dazu Umnummerierung und ein
-vollständiger Rebuild auf fremdem Branch. Die Quelldaten mischen sich sauber.
-**Kein Gate deckt das ab, und beide waren auf beiden Seiten grün:**
-`check-index-versions.py` prüft Konsistenz *innerhalb* eines Arbeitsstands, das
-#154-Bump-Gate nur, *dass* gebumpt wurde. Regel steht jetzt im
-Data-Change-Lifecycle, Befund als Kommentar an #416.
-
-**Die zweite Lehre ist eine über Zahlen an ausgelieferten Seiten.** Eine
-Lemma-Löschung verschiebt vier Zähler, und die stehen an 36 Stellen in 15
-Dateien, einschließlich des Stats-Blocks der Startseite. `doc-count-audit.py`
-läuft nur in `validate` und steht nicht in der Schrittfolge des Lifecycles, ist
-also erst in der CI rot geworden. Danach hat der Review-Bot zweimal nachgesetzt,
-und beide Male am selben Muster: meine Gate-Erweiterung war für zwei von drei
-Dateien wirkungslos, weil der Anker `Lemmata` „Lexikoneinträge" nicht trifft, und
-nach dem Ankerfix meldete eine Datei Abdeckung, ohne zu prüfen, weil „rund" vor
-einer exakten Zahl den Rundungs-Skip auslöst. **Ein Target, das Abdeckung meldet
-und schweigt, ist schlechter als eines, das fehlt.** Jede der drei Bindungen ist
-jetzt mit eigener Mutationsprobe belegt.
-
-**Scorecard Doku-Check 2026-09-11** (Trigger: drei PRs an `docs/`). Flow der
-geänderten Abschnitte gelesen, drei Algorithmen gegen den Code (Positionszählung
-gegen `extract_word_data`, Drei-Stufen-Auflösung gegen `resolveLemmaIds` plus
-`lemma-resolve.js`, Auto-Match gegen `wzb-auto-match.py`): alle drei
-deckungsgleich. Vier XPaths der Build Script XPath Reference gegen
-`build-authority-index.py`, samt relativer Achsen: exakt. Alle Zähl-Gates grün.
-**Drei Befunde, behoben:** `POS-TAGSET.md` sagte als einzige Quelle der Wahrheit
-für `@pos` nichts zu Mehrwort-Einheiten, obwohl #363 dort 32 Tags vergeben hat
-(neuer §7: `@pos` bleibt Eigenschaft des Tokens, *Joie de la Court* liest
-`NAM PRP ART NAM`); die Glosse zu *hûsenblâter* warf die Blase mit dem daraus
-gewonnenen isinglass zusammen; „the four names above" stand hinter einer Liste
-von fünf. **Ein Befund offen, weil er eine Entscheidung braucht:**
-`scripts/README.md` sagt, ein issue-gebundenes Einmal-Skript wandere nach
-`_archived/`, sobald sein Issue geschlossen ist, die Praxis in
-`scripts/ingest/pos-disambig/` tut das nicht (`fix-367-waeren.py` liegt dort bei
-geschlossenem #367, und `fix-363-hausenblase.py` jetzt ebenso). Entweder die
-Regel gilt dort auch, oder sie ist auf die Wurzel einzugrenzen: als #430
-abgelegt, weil zwei nebeneinanderstehende Fassungen jede Session neu entscheiden
-lassen.
-
-**Phase:** Betrieb. Offen und auf Menschen wartend: #416 (zwei Antworten, dazu
-die Versionskollision), #252, #366 (jetzt acht Formen statt sieben, weil
-`KDO_121170100_3` erledigt ist und die beiden `hawsen`-Belege aus #363
-zurückkamen: sie sind der Fisch, nicht die Blase), #410, #419.
-## 2026-09-11 – #198 Schritt 2 zugestellt: die Entscheidung war eine Messfrage, das Problem war die Zustellung
-
-**Summary:** Schritt 2 von #198 ist auf `main`. Das `<pos>NOM</pos>` ist aus `lemma_2598` *haben* entfernt, die drei seit PR #205 zurueckgehaltenen NOM-Tokens sind entschieden, und der Sense-Split, der hier seit Juli als die eine offene philologische Frage stand, findet nicht statt. Korpus-Index 4.2.15, Authority-Index 1.9.5. Die inhaltliche Arbeit ist Julias Commit `a1089cb6c` vom 21.08.2026; die Messungen unten sind am 11.09. gegen den gemergten Stand neu gerechnet, drei Zahlen haben dabei nicht gehalten.
-
-**Die Frage war seit Juli als kuratorisch etikettiert und liess sich messen.** „Welche der acht `<sense>` von *haben* sind nominal und gehoeren zu *habe*" klingt nach einer Lesart-Entscheidung. Schluesselt man jeden Sense nach den `@pos` seiner Korpusbelege auf, ist die Antwort eindeutig: alle acht sind ausschliesslich verbal belegt. Es gibt damit keinen Sense, der umziehen muesste.
-
-**Die Reihenfolge ist der eigentliche Inhalt des Schrittes.** Solange ein `<w>` unter `lemma_2598` ein `NOM` traegt, widerspraeche ein Lexikon ohne `<pos>NOM</pos>` dem Korpus. Erst die drei Faelle, dann die eine Zeile: `AC3_23010_1` („hawe vnd schaufel", Geraetepaar als Satzsubjekt) auf `lemma_9644` *houwe*, `DA_8222_3` („daz er dehein habe gesehen / diu bezzer waere") auf `lemma_2593`, weil `dehein habe` eine saubere NP ist und das feminine `diu` mit *habe* kongruiert, `JT_6192000_1` verbal wegen Konjunktiv mit Akkusativobjekt. Gegenprobe danach: null NOM-Tokens unter dem Lemma.
-
-### Drei Zahlen aus dem urspruenglichen Text haben der Nachmessung nicht standgehalten
-
-Keine davon aendert das Ergebnis, alle drei sind nach der Hausregel „jede Zahl ist gemessen oder sie steht nicht drin" zu korrigieren.
-
-- **„26 von 101" waren 28 von 101.** Ohne die `@ana`-Nacharbeit stuenden 28 der 101 `lemma_2593`-Tokens ohne Sense. Die 26 zaehlt nur die von #198 betroffenen Tokens, der Nenner ist die volle Menge. Gemessen: auf `main` 27 von 100 ohne `@ana`, mit diesem Schritt 3 von 101.
-- **„dieselben Konzepte" ist eine Obermenge.** `lemma_2598_sense_4170` traegt `concept_21072000`, `concept_23308000` und `concept_31200000`, `lemma_2593_sense_4159` nur die ersten beiden. Das dritte Konzept ist genau das, was die Senses unterscheidet. Am Schluss aendert das nichts, es stuetzt ihn eher.
-- **„ein Eintrag von 43.879" sind 43.878.** Seit #363 ist `lemma_27031` *hasenblâse* geloescht.
-
-### Und eine Annahme, die KZWs Entscheidung widerlegt hat
-
-Der urspruengliche Text sagte, der Typ-Id-Konflikt „kippt von selbst, sobald das *houwen*-Folgeticket die zwoelf umhaengt". Das trifft nicht zu. `AC3_23010_1` behaelt sein `@corresp` auf `type_117159`, der Typ haengt damit an zwei Lemmata (12 mal `lemma_2598`, einmal `lemma_9644`), und das ist der erste Injektivitaetsverstoss im Korpus: auf `main` gilt die Eindeutigkeit bei **256.772 von 256.772** Typ-Ids ausnahmslos. (Die Zahl stand hier zunaechst als 256.762. Das war die Messung vom 10.09., vor den zehn Typen, die #363 gepraegt hat; fortgeschrieben statt neu gerechnet, gefunden von der Reviewrunde am 11.09.)
-
-KZW hat die dreizehn Belege am 11.09. in #418 einzeln entschieden, und sie wandern **nicht** geschlossen. Seine Tabelle nennt sechs Verbbelege, sechs zum Substantiv und einen unklaren; der unklare (`AC2_9100_9`) ist in derselben Diskussion als Verb aufgeloest worden, und zwei der Substantivbelege brauchen einen neuen Sense. Endstand also sieben zum Verb `lemma_2923` *houwen*, vier auf den bestehenden Sense von `lemma_9644`, zwei auf einen neuen Sense „Schlag" desselben Lemmas. Die Aufteilung sechs zu sechs zu eins ist KZWs, die Aufloesung auf sieben zu vier zu zwei unsere. Ob `type_117159` danach noch mehrdeutig ist, ist damit eine Folge dieser Zuordnung und keine Selbstverstaendlichkeit. Es wird nach der Umsetzung von #418 gemessen und dort festgehalten, nicht vorher behauptet.
-
-### Ein Zeilenende haette 236.000 Scheinaenderungen ins Korpus getragen
-
-Beim Nachtragen der vier `revisionDesc`-Eintraege hat mein eigenes Skript `tei/WZB.tei.xml` im Textmodus gelesen und geschrieben. Die Datei ist die **einzige** im Korpus mit CRLF, und der Schreibvorgang hat daraus stillschweigend LF gemacht: 235.980 Zeilen geaendert, in einem einzigen Hunk ueber die ganze Datei.
-
-Aufgefallen ist es nur an `git diff --stat`, das fuer WZB 471.961 Zeilen meldete, wo 25 zu erwarten waren. **Kein Gate und kein Test haette das gefangen:** die XML ist aequivalent, der Index baut byte-identisch aus beiden Fassungen (nachgemessen), und `.gitattributes` setzt fuer `*.xml` ausdruecklich `-text`, git normalisiert also bewusst nicht und meldet auch nichts. Die Datei traegt ausserdem 17 Zeilen, die schon vorher LF hatten, eine pauschale Rueckumwandlung waere also ebenfalls falsch gewesen; rekonstruiert wurde zeilenweise aus den Bytes von `main`.
-
-Die Lehre ist keine ueber Zeilenenden, sondern eine ueber Werkzeuge: wer eine Korpusdatei mit einem Texteditor-Skript anfasst, aendert mehr als die Zeile, die er meint. Fuer Eingriffe in `tei/` gilt Binaermodus oder `newline=''`, und die Gegenprobe ist die Zeilenzahl im Diff, nicht der Augenschein.
-
-### Die Nummernkollision, zum zweiten Mal in zwei Tagen
-
-Der Commit trug urspruenglich Korpus-Index 4.2.3 und Authority 1.9.1, nach dem Rebase vom 09.09. dann 4.2.14 und 1.9.4. Genau diese beiden Nummern hat in der Nacht auf den 11.09. der #363-Merge vergeben, waehrend dieser PR offen lag. Aufgeloest als 4.2.15 und 1.9.5, die abgeleitete Schicht neu gebaut statt zeilenweise gemerged.
-
-Das Gate `check-index-versions.py` hat dabei einen Fehler von mir gefangen, den ich sonst gepusht haette: `corpus-loader.js` fuehrt die Authority-Version in einer **zweiten** Zeile, und ich hatte nur die Korpus-Version hochgezogen. Das ist der Nutzen dieses Gates in einem Satz.
-
-**Die Lehre ist keine ueber Rebases, sondern eine ueber Zustellung.** Die Entscheidung war am 21.08. gefallen und gemessen; sie hat trotzdem 21 Tage lang nichts bewirkt, weil kein PR existierte, und #198 las sich in dieser Zeit weiter als eine offene Frage an Julia. Ein Commit ohne PR ist in diesem Repositorium kein Zwischenstand, sondern unsichtbar.
-
-
----
-## 2026-09-11 (Nachmittag) – Anhänge nachgeholt, und zwei Zahlen, die aus zwei Mengen kamen
-
-Diese Sitzung lief auf dem Laptop, wo GitHub-Anhänge abrufbar sind. Vorausgegangene Sitzungen bekamen dort `403` (die Begründung steht in #419: `user-attachments` liegt ausserhalb der freigegebenen Repositoriumspfade). Nachgeholt wurden die Anhänge der offenen Vorgänge. Der grösste Posten war Alans Testprotokoll in #419, dessen 15 Screenshots bis dahin niemand gesehen hatte.
-
-**Was die Screenshots hergaben, war nicht das, was im Protokoll stand.** Alan hatte zum Reimwörterbuch notiert: „nein - die belege sind nicht da und anklickbar, und man kann kein zweites lemma ‚tot' angeben" (DOCX in #419, Testfall 8). Auf dem Bild steht `Mindest-Reimpaare 6`, und Gottfried reimt `brôt` und `tôt` fünfmal. Mit der Vorbelegung 1 kommt genau seine Antwort samt anklickbaren Belegen. Der Fehler liegt trotzdem bei uns, nur woanders: bei 0 Reimpartnern nennt die Oberfläche zwei Gründe (Kreuzreime, rein klangliche Reime), die beide nicht zutreffen, und verschweigt den eingestellten Filter, der zwei Zeilen darüber im Kopf steht. **Eine Leermeldung, die den Filter des Nutzers nicht nennt, erklärt den falschen Fall.**
-
-**#58 ist behoben, und der Fehler war zum zweiten Mal derselbe Mechanismus.** Die Dokumentsuche zeigte die Tokenzahl des Textes als Belegzahl. Entstanden ist das nicht durch eine falsche Rechnung, sondern durch eine Aufräumarbeit: #327 entfernte ein rein schreibend gewordenes Feld, und die Anzeige fiel auf das einzige verbliebene Zahlenfeld zurück. Beim Beheben stand dieselbe Falle wieder offen, weil `totalWords` nach der Umstellung seinerseits keinen Leser mehr gehabt hätte; es ist deshalb mit entfernt. `docs/CONTRACTS.md` §C trug die alte Objektform und den Satz „What the result card shows is `totalWords`", beides jetzt nachgezogen. **Gefunden hat diese Doku-Stelle der Reviewer, nicht ich.** Wer die Gestalt eines Objekts ändert, hat die Stelle zu suchen, die diese Gestalt dokumentiert; hier stand sie in §C derselben Datei, in der auch die Suchregeln des Playgrounds stehen.
-
-### Rote Zeilen
-
-**Rot: die 6.418.133 gehörten zu einem anderen Lemma als die 157.** Ausgezogen als rote Zeile 22 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot: eine Zuschreibung, für die ich die Quelle offen vor mir hatte.** Ausgezogen als rote Zeile 23 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot, in Runde 2 desselben Reviews: „im PDF waren die Bildpositionen leer" war ein übernommener Befund, und er stimmt nicht.** Ausgezogen als rote Zeile 24 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot, vierte Zeile, am selben Tag gegen dieselbe Lehre: `items[0].keys()` ist nicht das Schema.** Ausgezogen als rote Zeile 25 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-Alle vier Fehler hatten dieselbe Gestalt: eine Aussage, die aus der Nähe richtig aussieht, weil ihre Bestandteile stimmen. Die 6.418.133 war gemessen, Alans Protokoll war gelesen, der Satz über das PDF stammte von jemandem, der die Datei tatsächlich vor sich hatte, und die Kollisionsmessung lief korrekt über die Felder, die sie kannte. Falsch war jeweils die Verbindung, und viermal hat sie derselbe Reviewer gelöst, der dafür nichts wusste, was mir nicht auch zur Verfügung stand.
-
----
-## 2026-09-14/15 (Nachtlauf) – Neun Entscheidungen waren längst gefallen, und zweimal saß die Korrektur in einer Spiegelkopie
-
-Auftrag: die Vorgänge mit `wait:kzw` durchgehen, die beantworteten vom Warten befreien, umsetzen was dadurch frei wird, und alles ohne Entscheidung aufschreiben statt raten. Die Prämisse hat sich bestätigt, und zwar quantifizierbar: **9 von 39 Vorgängen mit `wait:kzw` trugen eine Antwort, die den ganzen offenen Rest trägt**, und keiner von ihnen hatte das Label verloren.
-
-### Ausgangsstand, selbst gemessen
-
-Grundmenge sind die offenen Vorgänge (`gh issue list --state open --limit 200`), Kontrollwert `evergreen` trifft genau einmal (#44), die Abfrage greift also.
-
-| Menge | vor dem Lauf | nach dem Lauf |
-|---|--:|--:|
-| offene Vorgänge | 71 | 69 |
-| davon `auto:blocked` | 46 | 38 |
-| davon `wait:kzw` | 39 | 31 |
-| `wait:*` ohne `auto:blocked` | 0 | 0 |
-| `auto:blocked` ohne `wait:*` | 0 | 0 |
-
-Die vier Zustände über den 39: **beantwortet und ausführbar 9, teilweise ausführbar 4, beantwortet mit einer neuen Frage 8, wirklich noch wartend 18.** Die Messvorschrift für die letzte Gruppe steht im #44-Kommentar, weil „wartet noch" sonst die Restmenge einer Subtraktion wäre und keine benannte Gruppe.
-
-Die Aufteilung stand zwischendurch auf 10 und 3. **#375 war in der ersten Gruppe gelandet, weil ich den ausführbaren Teil für den ganzen Vorgang gehalten hatte**: die acht eindeutigen Belege sind umannotiert, aber Punkt 1 des dortigen Arbeitsauftrags lautet wörtlich „@wachauer: die acht Fälle der zweiten Tabelle lesen". Der Vorgang bleibt deshalb offen und geht auf `auto:blocked` mit `wait:kzw` zurück. Das ist der Fehler, den dieser Lauf strukturell begünstigt: wer nach ausführbaren Resten sucht, liest einen Auftrag darauf hin, was er tun darf, und nicht darauf, was noch fehlt.
-
-### Der Befund des Laufs: der Header spiegelt drei Master, und nur einer war geprüft
-
-Ein TEI-Header führt an drei Stellen Daten, deren Master woanders liegt: `msIdentifier/idno` aus `works.xml`, `listBibl/biblStruct` über `works.xml` aus Zotero, `particDesc/listPerson/persName` aus `persons.xml`. Nur der erste hatte einen Schreiber und ein Gate. **Beide ungegateten Stellen sind in dieser Nacht aufgefallen, unabhängig voneinander, und beide Male saß eine Korrektur am falschen Glied.**
-
-**#237 AA-1.** Der Auftrag führt die Bibliographie-Korrektur in `tei/VTC.tei.xml` als „sofort ausführbar, unabhängig von allem anderen". Geschrieben, validiert, Index byte-identisch, alle Gates grün, und wirkungslos: derselbe `biblStruct` steht mit derselben `xml:id` in `authority-files/works.xml`, und ausgeliefert wird diese Fassung. `api/works/work_572.json` trägt „Josef Emler" und keinen Jireček. Die Schreibrichtung steht als Kommentar im Sync-Skript selbst (`scripts/sync/enhance_works_with_zotero.py:281-285`), wo sie für #235 schon einmal teuer gelernt wurde. **AA-1 hängt an AA-4**, und AA-4 ist Handarbeit in der Zotero-Oberfläche, also ein Posten für Christian. Zweig gesichert, kein PR.
-
-**#308.** Die Namensansetzung für `person_1249` ging auf „Jakob von Warte", in `persons.xml`, in `works.xml` und im `titleStmt` von `tei/SJW.tei.xml`. Der `particDesc`-Block derselben Datei blieb stehen und führte weiter „Jakob von Wart" als Hauptform. Die Datei widersprach sich nach der Korrektur weiter, nur andersherum, und zwar in genau der Zeile, die der #308-Kommentar vom 06.09. als Widerspruch benannt hatte.
-
-Der zweite Fall ist repariert und bekommt ein Gate. Gemessen über alle 667 Dateien: 666 tragen den Block, 671 Einträge sind gegen `persons.xml` prüfbar, **genau 1 Abweichung, danach 0**. Kontrollwert `person_1050` ergibt „Heinrich von Pressela" wie erwartet. `check-author-refs.py` prüft das seither und läuft als Step 7b in `data-integrity.yml`.
-
-**Dass es dort bisher nicht lief, war keine Lücke, sondern eine Entscheidung mit einer Bedingung daran**, und die stand seit #228 in `scripts/README.md`: „Läuft bewusst nicht in der CI, solange der tote `@ref` in VOR offen ist (#308); sonst wäre der Befund ein Blocker für unbeteiligte PRs." Genau diesen `@ref` hat die Korrektur dieser Nacht behoben. Die Bedingung war erfüllt, bevor irgendjemand sie nachgeschlagen hatte; gefunden habe ich sie erst, als ich die Doku zum Skript nachziehen wollte. **Eine Bedingung, die niemand überwacht, wird still wahr.**
-
-### Das Gate ist in beide Richtungen gelaufen, und es hatte selbst ein Loch
-
-Drei Mutationen, je einzeln eingebaut und zurückgenommen:
-
-| eingebauter Fehler | Meldung | exit |
-|---|---|--:|
-| SJW preferred zurück auf die alte Form | Spiegel veraltet 1 | 1 |
-| HHP `@corresp` auf `person_999999` | Spiegel tot 1 | 1 |
-| preferred-Zeile in SJW gelöscht | (nichts) | **0** |
-
-Der dritte Fall ist der Befund der dritten Reviewrunde und der interessanteste: ein Eintrag ohne `preferred`-Zeile fiel per `continue` aus der Grundmenge, der Zähler sank von 671 auf 670, und nichts wurde rot. **Ein zählendes Gate kann eine schrumpfende Bezugsmenge nicht von einem kleineren Bestand unterscheiden, solange das Schrumpfen keine eigene Klasse hat.** Jetzt hat es eine, und der dritte Fall gibt exit 1. Heute betrifft er 0 von 671 Einträgen, es war also ein Loch im Gate und kein Fehler im Bestand.
-
-**Und dann fand der CI-Review-Bot dasselbe Loch eine Ebene höher.** Die neue Klasse deckt einen Eintrag ohne `preferred`-Zeile ab; ein ganz gelöschtes `<person>`-Element fällt durch alle Klassen, weil sie sämtlich über vorhandene Einträge sprechen. Der Zähler sinkt still von 671 auf 670, `--check` bleibt exit 0, `schema/mhdbdb.rnc:211` erlaubt ein leeres `listPerson`, und sonst greift nichts: der Cross-Ref-Audit sucht tote Verweise, und ein gelöschter Block hat keine.
-
-**Beim dritten Mal wird nach der Hausregel nicht weitergezählt, sondern der Mechanismus gewechselt.** Statt einer vierten Fehlerklasse über gezählten Einträgen steht dort jetzt eine Invariante, die jede Datei selbst mitbringt: jede Autoren-ID des `titleStmt` muss im `particDesc` derselben Datei stehen. Gemessen über alle 667 Dateien: 672 `titleStmt`-Autoren mit `@ref`, keine einzige Datei ohne einen, 671 `particDesc`-Einträge in 666 Dateien, null Einträge ohne zugehörigen Autor. Die Differenz ist genau ein Fall, und er heißt `VOR`. Der Unterschied zur Baseline-Zahl, die der Bot als Alternative vorschlug: **eine Invariante wächst mit dem Korpus mit, eine Zahl muss jemand nachziehen.** Mit gelöschtem Block in SJW meldet das Gate „Autor ohne Spiegel 1" und exit 1, nach Rücknahme exit 0 und `tei/` byte-identisch.
-
-`VOR` steht dabei mit Namen und Grund im Skript statt als Zahl, und das Skript meldet die Ausnahme, sobald sie überflüssig wird. Ob die Datei ihren Autor im `particDesc` nachgetragen bekommt, ist eine Modellfrage und hier ausdrücklich nicht entschieden.
-
-Ungeprüft bleiben, ausdrücklich vermerkt: die `alternative`-Formen und die `idno`-Zeilen desselben Blocks, und die lokale `xml:id` gegen `@corresp`.
-
-### Umgesetzt
-
-**#308, #375 und #432** in einem Zug, weil sie dieselbe abgeleitete Schicht anfassen. Korpus-Index 4.2.16, Authority-Index 1.9.6, ein neuer Variantentyp `type_372376` für `waeren` (nie ein bestehender umgehängt, Regel aus #367).
-
-Wirkung am Index gemessen, alt gegen neu: `lemma_7338` 3.529 → 3.537, `lemma_7505` 36.362 → 36.354, `lemma_7779` 1.001 → 1.000, `lemma_9653` 14 → 15. Die beiden Ausgangswerte 1.001 und 14 sind genau die, die #432 nennt, was die Messung an den Vorgang bindet. `wordCount` ändert sich in 0 von 667 Texten.
-
-**Das Gate, das #378 vorschlägt, ist einmal von Hand gelaufen.** Variantenabbildung 1.9.5 gegen 1.9.6: 0 Formen hinzugekommen, 0 entfallen, 0 umgehängt, bei 234.245 Abbildungen auf beiden Seiten. Das war genau die Art Änderung, die eine Abbildung kippen kann, und sie hat es nicht getan.
-
-**Zwei weitere Gates sind in beide Richtungen ausgeübt worden, ohne dass jemand den Fehler eigens einbauen musste**, weil der Lauf ihn mitbrachte: `check-author-refs.py` stand vor der Korrektur auf **fünf Befunden in vier Klassen** und danach auf lauter Nullen, `doc-count-audit.py` ging über die Formenzahl erst rot und nach dem Nachziehen grün. Die fünf, am Diff nachgezählt statt aus dem Gedächtnis: ein toter `@ref` (VOR), ein Präfix-Ausreißer (WZB), ein Zeilenumbruch im Namen (LUU) und zwei Namensabweichungen (HHP, SJW). Die dokumentierte Formenzahl ist an 9 Stellen von 256.772 auf 256.773 gezogen worden; die 234.245 ausdrücklich **nicht**, weil sie eine andere Menge zählt (CONTRACTS §C).
-
-### Frontend im Browser geprüft, nicht nur im Code
-
-Zwei ausgelieferte Seiten tragen die Formenzahl. Vorher am Livestand: `hilfe-daten.html` zeigt „256.772 orthographischen Varianten". Nachher lokal „256.773", der Zahlenblock intakt neben „667 TEI-Texte" und „43.878 Lemmata"; `index.html` zeigt im Korpus-Übersichtsblock „256.773 / Orthographische Varianten". Beides am Bildschirm gesehen.
-
-### #410: vier Blöcke, und die Grenze ist nicht Wichtigkeit
-
-Der zweite Teil des Abends ist die Informationsarchitektur der Abfragespalte. Die Entscheidung lag seit dem 11.09. vor, samt der Bewertung, die sie trägt, und dem einen Nachtrag: „Ich möchte beim Aufklappen immer einen kleinen erklärenden Satz, was dieser Block beinhaltet (philologisch argumentiert, nicht technisch)."
-
-| Block | Vorgabe | Inhalt |
-|---|---|--:|
-| Korpusanalysen | offen | 6 Werkzeuge |
-| Register & Indizes (Authority Files) | offen | 6 Register |
-| Weitere Korpusanalysen | zu | 5 Werkzeuge |
-| Experimentelle Forschungsdaten | zu | 2 Datensätze |
-
-Die Aufteilung der elf Analysewerkzeuge folgt der am 10.09. an den Eingabefeldern gemessenen Regel: sechs beginnen mit einem Wort oder Begriff, fünf mit einem Text oder einer Autor*in. **Das ist keine Wertung, sondern eine Eigenschaft der Werkzeuge**, und deshalb heißen die Blöcke „Korpusanalysen" und „Weitere Korpusanalysen" statt „zentral" und „weitere".
-
-Auch hier vorher und nachher im Browser: am Livestand ein offener Block „TEI Textanalyse" mit elf Werkzeugen darunter zwei zugeklappte; lokal stehen beim ersten Laden die sechs Register da, während der Korpus noch lädt, und nach wenigen Sekunden kommen die Korpusanalysen dazu. Der Umschalter des dritten Blocks öffnet ihn samt Satz und fünf Werkzeugen, und die Wortfrequenz-Analyse rendert nach dem Umzug unverändert ihre Tabelle.
-
-**Ein toter Anker, gefangen durch Nachsehen statt Annehmen.** Der Hilfe-Link des neuen Blocks zeigte im Entwurf auf `hilfe-playground.html#tei-analyse`. Den Anker gibt es nicht; die Datei führt `#weitere-werkzeuge`. Ein toter Anker springt still auf den Seitenkopf und fällt niemandem auf, also ist er genau die Sorte Fehler, die nur vor dem Schreiben billig ist.
-
-**Das Umbenennen hat drei Gate-Bindungen stumm gelöst, und das Gate blieb dabei grün.** `doc-count-audit.py` bindet eine Zahl an ein Ankerwort: „elf TEI-Analyse-Werkzeuge" wird gegen den aus dem Code gezählten Wert geprüft, aber nur, solange das Ankerwort danebensteht. #410 benennt genau diese Wörter um. Danach meldete die Selbstprüfung des Gates drei Paare als `[no-hit]`: zweimal `README.md`, einmal `hilfe-playground.html`. Gemessen: auf `origin/main` traf das Muster in der README zweimal und in der Hilfeseite einmal, danach keinmal. **Ein Gate, das seinen Gegenstand verliert, meldet das nicht als Fehler, sondern als Zeile ohne Exit-Code**, und diese Zeile stand mitten in dreißig anderen. Die Anker sind erweitert und in beide Richtungen ausgeübt: mit „zehn Korpusanalysen" und „sieben Register und Indizes" in der README meldet das Gate beide Zeilen mit Fundstelle und gibt exit 1, nach Rücknahme exit 0 und kein `[no-hit]` mehr.
-
-Dabei eine Falle vermieden, die das erweiterte Muster selbst aufgestellt hätte: `ANCHOR_SEP` überbrückt bis zu acht Tags, also hätte ein Satz, der auf „Abschnitt 3 und 4." endet und dem eine Überschrift „Korpusanalysen" folgt, die 4 an den Anker gebunden und das Gate rot gemacht. Der Satz steht jetzt ohne Ziffer da.
-
-**Und ein Beinahe-Fall derselben Bauart:** das Skript, das zwölf Stellen der Hilfeseite ersetzt, suchte zunächst mit `\n` in einer Datei, die durchgehend CRLF trägt. Alle zwölf Muster hätten null Treffer gehabt, und weil das Skript bei null Treffern abbricht statt stumm Erfolg zu melden, wäre es aufgefallen; aufgefallen ist es trotzdem vorher, beim Lesen des eigenen Skripts. Die Regel dahinter steht seit dem 02.07. im Journal (`read_text()` normalisiert Zeilenenden) und seit #115 in der Roundtrip-Lehre.
-
-**Die Hilfeseite behauptete danach die falsche Blockzugehörigkeit, und zwar für vier von neun Werkzeugen.** Abschnitt 5 sagt über die Werkzeuge, die er beschreibt, wo sie in der Abfragespalte stehen. Nach dem Umbau stimmte das für fünf und nicht für vier: Kookkurrenz-Ranking, Reim-Wörterbuch, Begriffs-Verteilung und Lemma-Verteilung sind im offenen Block gelandet, der Abschnitt schickte die Leser*innen aber geschlossen in den zugeklappten. Gefunden hat es `fable-reviewer` in Runde 1, gemessen mit lxml über die Überschriften beider Panels, und ich habe es an derselben Stelle nachgemessen, bevor ich etwas geändert habe. Repariert ist nicht der Satz, sondern der Abschnitt: zwei Gruppen, jede mit ihrem Blocknamen als Überschrift, je in der Reihenfolge der Abfragespalte. **Eine Prosa-Aussage über eine Oberfläche altert genau dann, wenn die Oberfläche sich ändert, und niemand liest bei einem Umbau die Hilfeseite mit, weil sie nicht im Diff steht.**
-
-Dieselbe Bauart traf die Startseite: die Kachel „Korpusanalysen" führte zwei Werkzeuge auf, die im zugeklappten Block darunter liegen. Wer von der Kachel kommt und im gleichnamigen Block sucht, findet sie nicht. Und in ihrer Nachbarschaft stand „mit 10 spezialisierten Suchfunktionen". Gemessen sind es elf Korpusanalysen, sechs Register und zwei Datensätze; 10 ist keine dieser Mengen. Welche gemeint war, ist nicht rekonstruierbar, also steht dort jetzt keine Zahl statt einer geratenen.
-
-Beide Zweige sind gemergt: PR #438 (Daten und Gate) und PR #439 (#410), jeder mit vier grünen Checks und je einer Runde des CI-Bots ohne Befund. Der Bot hat auf #438 die beiden Befunde geliefert, die diese Nacht am teuersten waren.
-
-### Was über den Einzelfall hinausgilt
-
-| Aussage | Herkunft | verankert in |
-|---|---|---|
-| Ein Name kann mehrere Entitäten bezeichnen; das ist normal und wird über mehrere Senses am selben Lemma abgebildet, nicht über ein eigenes Lemma | #357 | `docs/DECISIONS.md` ADR-020 |
-| Echte Ambiguität in der Variantenauflösung wird nicht durch einen Tiebreak aufgelöst: alle Kandidaten bleiben erhalten, sortiert nach der Häufigkeit genau dieser normalisierten Form unter dem jeweiligen Lemma | #378 | `docs/DECISIONS.md` ADR-021 („entschieden, nicht umgesetzt") plus ein Zeiger in `docs/CONTRACTS.md` §C |
-| Bei zwei belegten Namensformen ist die historische die Hauptform und die modernisierte die Alternative; wo eine Normdatei ansetzt, folgt die Hauptform ihr | #308 | `docs/CONTRACTS.md` §F.5 |
-| **Nicht verankert:** dass eine Bibliographie-Korrektur bei Zotero anfangen muss und nicht im TEI-Header | Befund dieser Nacht an #237 | steht als Kommentar im Sync-Skript und jetzt im Vorgang; gehört als §F-Abschnitt in `docs/CONTRACTS.md`, ist aber eine Vertragsänderung und braucht eine Entscheidung |
-
-§F.5 ist der Abschnitt, der ohne die Zahlen daneben falsch gelernt würde. Gezählt über `persons.xml`, `works.xml` und `tei/` am Stand vor der Korrektur, mit der Regel, dass ein Name nur zählt, wo er nicht Präfix eines längeren ist: Pressela 7, Breslau 2, Warte 7, Wart 2. **Bei HHP war die Hauptform auch die häufigere, bei SJW die seltenere.** Wer aus „wovon haben wir mehr" argumentiert, bekommt beide Fälle richtig und den nächsten falsch.
-
-### Rote Zeilen
-
-**Rot: der #252-Kommentar ging mit den Zahlen von vor der Gegenprobe hinaus.** Ausgezogen als rote Zeile 26 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot, zweiter Teil desselben Vorgangs, gegen eine eigene Lehre von vor acht Tagen: Eindeutigkeit aus drei Stichproben.** Ausgezogen als rote Zeile 27 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot, und die unangenehmste: derselbe Fehlermodus zweimal in derselben Nacht, drei Stunden auseinander.** Ausgezogen als rote Zeile 28 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot: das Datum 2026-09-15 stand an sieben Stellen und war erschlossen, nicht abgelesen.** Ausgezogen als rote Zeile 29 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot, eigener Regelverstoß, und zwar zweimal in derselben Nacht aus derselben Familie.** Ausgezogen als rote Zeile 30 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot: das Umbauskript hat den Abschnitt aus seinen Teilen neu zusammengesetzt, und was kein Teil war, fiel weg.** Ausgezogen als rote Zeile 31 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-Zwei Dinge daran sind über den Fall hinaus brauchbar. Erstens hätte **ein Größenvergleich es nicht gefangen**: der neue Abschnitt ist mit 12.381 Zeichen größer als der alte mit 12.132, weil zwei Gruppenüberschriften dazukamen. Ein Verlust und ein Zuwachs im selben Diff heben sich in jeder Kennzahl auf, die nur zählt. Zweitens war die brauchbare Gegenprobe ein **Inventar der Top-Level-Elemente** vorher gegen nachher, und die habe ich erst gezogen, nachdem der Reviewer die eine Box benannt hatte: sie hat dann bestätigt, dass es bei dieser einen blieb. **Wer einen Befund über ein verlorenes Element bekommt, prüft nicht das Element, sondern das Inventar.**
-
-**Rot, gleicher Commit, anderer Fehlermodus: ein Deep-Link hing an einer Eigenschaft, die die Änderung aufgehoben hat.** Ausgezogen als rote Zeile 32 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot: „Fifteen checks" über einer Liste mit sechzehn Einträgen.** Ausgezogen als rote Zeile 33 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot, dritter eigener Regelverstoß derselben Familie, und der erste, der Text beschädigt hat.** Ausgezogen als rote Zeile 34 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Nicht rot, aber festzuhalten, weil sonst der Eindruck entsteht, es sei knapp gegangen.** Drei weitere Fehler sind vor dem Commit oder vor der Veröffentlichung gefangen worden und haben nichts getragen: ASCII-Ersatzschreibungen („Jirecek", „ueber") in deutscher Prosa im TEI-Header, um dem NFD-Problem auszuweichen statt es zu lösen; „1 Vorkommen" kombinierender Zeichen in VTC, was eine Aussage über U+0308 war und als Aussage über alle sieben gesuchten Zeichen dastand (richtig sind 4); und „als Befund in #44 vermerkt" im Perfekt, während der #44-Kommentar noch ungeschrieben war.
-
-Drei weitere aus der zweiten Hälfte der Nacht, alle vor dem Commit gefangen und deshalb ohne Zählung, aber zwei davon aus einer Familie, die es wert ist: der neue Abschnitt der Hilfeseite verwies auf `#versposition`, während der Anker `verse-position` heißt (derselbe Fehlertyp wie `#tei-analyse` drei Stunden vorher, nur diesmal vor dem Lauf des Skripts gefangen, weil ich die Ankerliste vorher gemessen habe statt sie zu erinnern); die Ausnahme im neuen Gate begründete sich mit „`VOR` führt als einzige keinen `particDesc`-Block", was falsch ist, denn die Datei hat einen `particDesc` mit leerem `<listPerson/>`, und aufgefallen ist es nur, weil die Mutationsprobe an ihrer eigenen Vorbedingung scheiterte; und der erste Entwurf desselben Abschnitts schrieb „Die elf Korpusanalysen" in eine Seite, aus der die Werkzeugzahl am 02.09. ausdrücklich herausgenommen worden war, weil sie dort niemand nachzieht. **Der letzte ist die unangenehmste Sorte: eine Entscheidung, gegen die man verstößt, ohne sie zu kennen.** Gefunden hat sie nicht mein Gedächtnis, sondern das Gate, das die Entscheidung als Eintrag mit Begründung führt und beim Wiedereinsetzen der Zahl „veraltete Ausnahme" meldete. **Eine Entscheidung, die nur im Journal steht, schützt niemanden; eine, die als Konfigurationszeile neben ihrem Gate steht, meldet sich von selbst.**
-
-**Und der Fall, an dem die Regel sichtbar gearbeitet hat.** Für die Einordnung des neuen CI-Schritts hatte ich „rund zwei Sekunden" geschrieben und ihn in den billigen Block gelegt. Gemessen: 1 min 47 s und in einem zweiten Lauf 1 min 44 s, weil das Skript jede der 667 Dateien ganz parst, während der Nachbarschritt per `iterparse` nach 0,7 s fertig ist. Faktor 50 daneben, und die Zahl hätte eine Entscheidung getragen, nämlich die Position im Workflow. Gefangen hat es niemand: die Zahl ist gemessen worden, weil sie in eine Datei sollte. **Das ist der billigste Fang des Laufs, und er kostet eine Zeile vor dem Schreiben statt einer Reviewrunde danach.** Nachtrag vom Ende der Nacht, und er dreht die Lehre noch einmal weiter: der erste Lauf des Schritts auf `main` brauchte **32 Sekunden**, nicht 1 min 47 s (Lauf 34910635460, Schritt 21). Beide Zahlen sind gemessen, sie sprechen über verschiedene Maschinen, und dokumentiert war die lokale in einem Satz, der die Position in der CI begründet. Die Begründung trägt weiter, weil der Nachbarschritt in derselben CI unter einer Sekunde bleibt; das Verhältnis entscheidet, nicht der Absolutwert. **Eine selbst gemessene Zahl kann trotzdem über die falsche Menge sprechen, und bei einer Laufzeit ist die Menge die Maschine.**
-
-### Zwei Befunde ohne Vorgang
-
-Beim Editieren eines TEI-Headers ist eine Textersetzung gescheitert, weil „Verfügung" dort nicht vorkomponiert steht, sondern als `u` plus kombinierendes Trema. Eine Suche über die NFC-Form findet solche Stellen nicht und meldet dabei keinen Fehler, sondern „nicht gefunden". Gemessen über alle 667 Dateien in `tei/`, für U+0300, U+0301, U+0302, U+0308, U+030A, U+030C und U+0327: **568 Dateien tragen mindestens eines, 1.366 Vorkommen**, Kontrollwert VTC 4, alle im `teiHeader`.
-
-`tei/LUU.tei.xml` führt im `particDesc` die Personen-ID `person_05154796-f128-42a1-bd0d-e8335bf854e6`, korpusweit der einzige Fall dieser Form. Das `@corresp` daneben löst korrekt auf, der Name stimmt. Nicht angefasst, weil eine `xml:id` ein möglicher Deep-Link-Anker ist (#358).
-
-Beide ohne Ticket, weil an keinem ein Arbeitspaket hängt.
-
-### Geschlossen, je ein Satz mit dem Grund
-
-- **#308** geschlossen, weil alle vier entschiedenen Punkte umgesetzt sind und die drei mechanischen Fälle desselben Audits mit ihnen, samt der Regel dahinter als `docs/CONTRACTS.md` §F.5 und einem Gate auf dem Spiegel, der beim Umsetzen aufgefallen ist.
-- **#432** geschlossen, weil `WH_6214_3` jetzt auf `lemma_9653` hängt und die Wirkung am Index gegen die beiden Zahlen gemessen ist, die der Vorgang selbst nennt (1.001 → 1.000 und 14 → 15).
-- **#375** ausdrücklich **nicht** geschlossen, obwohl der ausführbare Teil erledigt ist: Punkt 1 des dortigen Arbeitsauftrags ist eine Lesearbeit für @wachauer.
-- **#410** ausdrücklich **nicht** geschlossen, obwohl umgesetzt und gemergt: die Abnahme der Oberfläche liegt nach dem Deploy bei ihr, und dafür gibt es die Regel, dass das Issue offen bleibt und nicht der PR.
-- **#406** bleibt offen, obwohl der Auftrag „Aktualisiere die Triage" erfüllt ist: die Triage ist ein Lesedokument, und ihre sechs Positionen leben in ihren eigenen Vorgängen weiter.
-
-### Was zurück an Christian geht
-
-Alles hier ist liegengeblieben, weil eine Entscheidung fehlt, nicht weil die Arbeit fehlt.
-
-1. **#237 AA-1 ist geschrieben und nicht gemergt, weil es an AA-4 hängt.** Der Auftrag führt AA-1 als „unabhängig von allem anderen", gemessen ist es das nicht: der `biblStruct` steht zweimal, und ausgeliefert wird die Fassung aus `works.xml`. AA-4 ist Handarbeit in der Zotero-Oberfläche und damit deine. Der Zweig liegt als `claude/237-aa1-vtc-biblstruct`.
-2. **Die Richtung der `listBibl`-Kette braucht eine Entscheidung, bevor sie ein CONTRACTS-Abschnitt werden kann.** Dass eine Bibliographie-Korrektur bei Zotero anfangen muss, steht heute als Kommentar im Sync-Skript und im Vorgang. Als Vertragsabschnitt wäre es eine Festlegung darauf, dass der TEI-Header an dieser Stelle dauerhaft Kopie bleibt, und das ist keine Sitzungsentscheidung.
-3. **#433, #434 und #435 sind `auto:checkin` und tragen im Körper ausdrückliche „Zu entscheiden"-Punkte.** Sie sind nicht angefasst worden, weil genau das der Fall ist, den der Auftrag ausschließt.
-4. **#410 hat eine unbeantwortete Frage aus deinem Bewertungskommentar:** ob der aufgeklappte Zustand weiterhin im Browser gemerkt werden soll. Das Verhalten ist unverändert geblieben, weil „lass es, wie es ist" die einzige Variante ohne Entscheidung war.
-5. **Soll `tei/VOR.tei.xml` seinen Autor im `particDesc` nachgetragen bekommen?** Die Datei führt als einzige ein leeres `<listPerson/>`. Das neue Gate nimmt sie namentlich aus und meldet die Ausnahme, sobald sie überflüssig wird. Ein Nachtrag wäre eine Datenänderung am Modell und keine Reparatur.
-6. **#375 bleibt offen und geht zurück auf `wait:kzw`.** Die acht zu lesenden Fälle liegen als `ingest/pos-disambig/375-waeren-ausweitung/faelle.csv` bereit und warten auf eine Spalte `entscheidung`.
-7. **#370 und #378 sind nicht angefasst worden**, wie im Auftrag vorgegeben. Die Entscheidung aus #378 ist als ADR-021 verankert, ausdrücklich als „entschieden, nicht umgesetzt".
-8. **Der Mechanismuswechsel, den die dritte rote Zeile zu den Shell-Konventionen fällig macht, ist eine Entscheidung über deine Einstellungen und deshalb deine.** Die Regel selbst ist eindeutig und wurde dreimal gebrochen, obwohl sie gelesen war; der vorhandene Mechanismus (Skript per Write, dann `python skript.py`) ist billiger als der Einzeiler und wurde in dieser Nacht bei jeder größeren Ersetzung benutzt. Gebrochen wurde er nur bei Nebenbefehlen. Ein greifender Wechsel wäre eine `deny`-Regel auf `python -c`, die den Weg über die Datei erzwingt. Das sperrt auch die harmlosen Einzeiler, und ob dir das den Fang wert ist, kann ich nicht für dich entscheiden. Ein parsender `PreToolUse`-Hook scheidet aus: dass Einstellungen nicht mit Rückfragen gehärtet werden, ist schon entschieden.
-## 2026-09-15 – #204 im Playground: der erbetene Hinweis wäre eine Zusicherung ohne Deckung gewesen
-
-KZW hat #204 wiedereröffnet, weil eine zweite Nutzerin denselben Fehler machte wie im Juli: im Korpus-Browser nach `mori` filtern, annehmen dass damit Moriz von Craûn das Ausgangskorpus ist, Analyse starten, Gesamtkorpus-Ergebnisse bekommen. Erbeten war, den Hinweis aus der Korpussuche in den Playground zu übernehmen.
-
-**Der Befund steht nicht im Ticket, sondern kam aus der ersten Messung: die Auswahl aus Schritt 1 hat auf die Analysen überhaupt nicht gewirkt.** Auswahl auf null Texte setzen und je Werkzeug `getCorpusTexts().length` lesen: **10 von 11 liefern trotzdem 667**. Nur die Multi-Lemma-Suche las sie, weil sie über `tei-manager.js` läuft und nicht über den Thunk in `playground-main.js`. Der Kontrollwert war dieselbe Messung an ihr: 0 Treffer bei 0 Texten, also misst die Probe wirklich etwas. **Hätte die Nutzerin „Nur diese" geklickt, wären die Zahlen genauso falsch gewesen, nur ohne sichtbaren Anlass zum Misstrauen.** Ein Hinweis allein hätte eine Wirkung versprochen, die es nicht gab.
-
-Umgesetzt in PR #441: zwei Thunks statt einem. `selectedTextsThunk` filtert auf `includedTexts` und geht an sieben Werkzeuge, `corpusTextsThunk` bleibt bei dreien, jedes aus einem von KZW entschiedenen Grund (Hapax ist korpusweit per Definition, der Textvergleich wählt selbst, das Reim-Wörterbuch hat ein eigenes Filterfeld und bekommt die Sigle sichtbar vorbelegt statt still). Alle drei sagen das jetzt in ihrer Kopfzeile. Live nach dem Deploy gegengeprüft: Auswahl CR, Kookkurrenz „minne" ergibt 14 statt 7.161, Hapax bleibt bei 667.
-
-### Was über den Fall hinausgilt
-
-**Eine Änderung, die eine Menge verengt, entwertet jeden Zustand, der aus der alten Menge stammt.** Bis #204 war die Textmenge immer der ganze Korpus und konnte sich nicht ändern; jedes Werkzeug durfte deshalb gefahrlos IDs und fertige Ergebnisse über eine Auswahländerung hinweg behalten. Die Befunde mit genau dieser Wurzel, namentlich: das Reim-Wörterbuch behielt ein ohne Filter gerechnetes Ergebnis unter der neuen Filterzeile (`Filter „CR" → 667 Texte`, eine Aussage, die sich selbst widerspricht); Wortfrequenz und Versendings-Profil hielten in `state.scope` einen abgewählten Text, Ergebnis „Keine Daten" unter „Gesamtkorpus (666 Texte)"; die Text-Statistiken behielten verwaiste IDs in ihren eigenen Häkchen, `Ausgewählt: 3 / 1` neben „Keine Texte ausgewählt"; Kookkurrenz-Ranking und Begriffs-Verteilung überlebten die Auswahländerung sogar dauerhaft, weil sie ihr Ergebnis im State halten und beim Öffnen nur neu rendern. Das ist die #397-Frage in ihrer teuren Form, und sie lautet hier: **was hat diese Änderung falsch gemacht, das vorher wahr sein durfte.**
-
-**Jede eigene Regressionsprobe hat den Zustand verfehlt, den sie bewachen sollte, und zwar dreimal aus demselben Grund: sie richtete den Zustand direkt ein, statt ihn entstehen zu lassen.** Der Kookkurrenz-Test verengte vor der ersten Suche, das Werkzeug besaß also nie ein korpusweites Ergebnis. Der Marker-Test leerte das Feld zuerst und lief damit durch den Leer-Zweig. Die Tests zum Sigle-Wechsel gingen direkt von einer Einzelauswahl in die nächste und nie über „Alle". Alle drei waren grün und prüften nichts. **Ein Test, der den Zustand setzt, prüft die Zeile darunter; ein Test, der den Weg geht, prüft den Zustand.** Der letzte Fall dieser Art hat es explizit gemacht: nach der Verlegung eines Stempels von `show()` nach `runSearch()` wäre der Tauschtest grün geblieben, ohne noch irgendetwas zuzusichern, weil er `state.result` von Hand setzte. Er geht jetzt durch eine echte Suche und misst als Kontrollwert mit, dass sie 14 liefert.
-
-**Zwölf Reviewrunden auf einem Frontend-Diff.** Drei lokale `fable-reviewer`-Runden, die dritte davon als Audit auf den Restzustand statt als Diff-Review, dazu neun Runden des CI-Bots. Sechs der Bot-Runden trugen je einen Verhaltensbefund, die letzten drei keinen mehr. Der Audit-Auftrag war die ergiebigste Variante: statt den Bot einen Fehler nach dem anderen finden zu lassen, einmal systematisch über alle sieben umgestellten Werkzeuge. Er fand den Fehler in der Korrektur des vorigen Befunds, nämlich einen Stempel, der die Textmenge beim Anzeigen festhielt statt beim Rechnen.
-
-### Rote Zeile
-
-**Rot: eine Pluralstelle repariert und den Satz daneben nicht mitgelesen.** Ausgezogen als rote Zeile 35 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-Die Korrektur ist dann größer ausgefallen als der Befund. Statt die zwei gemeldeten Stellen zu flicken, alle gesucht, die eine Textzahl in einen Satz setzen: fünf konnten seit #204 eine Eins tragen, drei konnten es schon vorher und bleiben unberührt, weil sie nicht in diesen PR gehören. **Wer eine Grammatikstelle gemeldet bekommt, sucht nicht die Stelle, sondern ihre Klasse** – derselbe Griff wie beim Inventar statt des verlorenen Elements am 14.09.
-
-### Offen
-
-#204 bleibt offen bis zur Abnahme durch @wachauer und steht auf `auto:blocked` + `wait:kzw`. #442 hält fest, was dieser PR bewusst nicht löst: ändert man die Auswahl bei offenem Werkzeug, folgt dessen Ergebnis erst beim nächsten Öffnen. Das betrifft alle acht auswahlabhängigen Werkzeuge gleich und ist eine Entscheidung über den ganzen Playground.
-
-## 2026-09-21 (Spur A des Datenlaufs) – 88 Tokens, und dreimal stand die Zahl im Auftrag gegen die Zahl im Bestand
-
-Drei von KZW entschiedene Pakete in einem Lauf, ein Rebuild der abgeleiteten Schicht, ein Versions-Bump, ein PR: #366 (acht unlemmatisierte Tokens aus dem fyndling-Beitrag), #375 (die vier letzten `wâren`-Fälle) und #371 (76 Tokens der Formen `stat` und `stât`). Korpus-Index 4.2.18, Authority-Index 1.9.8.
-
-### Was gearbeitet wurde
-
-88 Tokens in 45 Korpusdateien bekommen `@lemmaRef`, `@pos` und `@corresp`, je Datei ein `revisionDesc`-Eintrag pro Paket. 84 davon tragen erstmals ein `@lemmaRef`, vier wechseln von `lemma_7505` (Verb) auf `lemma_7338` (Adjektiv). Zehn Variantentypen neu geprägt, `type_372377` bis `type_372386`, keiner umgehängt. `variants.xml` von 256.773 auf 256.783 Formen, Einträge unverändert 42.626, normalisierte Mappings von 234.245 auf 234.250.
-
-Kein `@ana`. In keinem der drei Vorgänge hat KZW einen Sense benannt, und die Sense-Zuordnung ist nach TEI-MODEL-AUTH-FILES.md kuratorisch: sie wird vom Team vergeben und ist nicht aus dem Korpus rekonstruierbar. Ein hier gesetztes `@ana` wäre kuratorische Arbeit des Skripts gewesen. Das ist der Rest, der an KZW offenbleibt.
-
-### Drei Zahlen aus dem Auftragstext, die am Bestand nicht hielten
-
-Der Kickoff sagte selbst, sein ganzer Text sei eine Behauptung und jede Zahl vor der Verwendung nachzumessen. Dreimal hat das etwas gefangen, und keines der drei wäre von einem Gate bemerkt worden.
-
-**Zehn Typprägungen statt drei.** Der Laufplan rechnete mit drei neuen Typen, alle aus #371, und behandelte #366 als reines Setzen. Gemessen trägt dort **keine** der sieben Schreibungen unter ihrem Ziellemma bereits eine Nummer, es sind also sieben weitere. Der Satz stand seit dem 06.09. im Ticket („Alle sieben Schreibungen sind unter ihrem Ziel-Lemma noch nicht belegt"), und der Plan hatte ihn beim Lesen von #366 überflogen. Der harte Fall darunter ist `hawsen`: die Form wird bereits als `type_372368` unter `lemma_49714` *hûsenblâter* geführt, geprägt im #363-Lauf für die getrennt geschriebenen Erstglieder. Ein Umhängen hätte jene Tokens mitgerissen.
-
-**Die Arbeitsmenge von #375 war vier und nicht sechzehn.** Die acht „eindeutigen" Fälle sind seit PR #438 erledigt, einzeln nachgemessen; die vier VRB-Fälle aus KZWs Tabelle bestätigen den Ist-Stand. Und alle vier verbleibenden tragen die Form `wâren`, brauchen also nur den bestehenden `type_287014`. Die Typtabelle des Tickets nennt drei Zieltypen, weil sie für die ganze Sechzehnermenge geschrieben war. **Eine übernommene Liste ist derselbe Fehler wie eine übernommene Zahl, nur an einer Stelle, die niemand für eine Zahl hält.**
-
-**KZWs `zusammenfassung` war richtig, und der geplante Vorwurf traf nicht.** Laufplan und Kickoff hielten fest, ihr `offen: 7` stehe gegen gezählte 17 und die Zahl in der Zusammenfassung sei falsch. Gemessen decken sich alle vier Werte der `zusammenfassung` exakt mit dem Feld `status` (95/95, 63/63, 25/25, 7/7); die 17 zählt das Feld `option`. Die Kreuztabelle löst es auf: `status=offen` **und** `option=OFFEN` sind 7, `status=anders` **und** `option=OFFEN` sind 10. **Zwei Felder, zwei Mengen, beide Zahlen richtig.** Der Satz wäre vier Tage nach ihrer Rüge in #406 als Korrektur ins Ticket gegangen, für einen Fehler, den sie nicht gemacht hat. Er ist aus beiden Dokumenten entfernt, und ins Ticket geht stattdessen die Auflösung.
-
-### Die Feldsemantik eines Review-JSON, und warum sie ins Provenienz-Log gehört
-
-KZWs Review zu #371 kommt als JSON mit 95 beurteilten Fällen und einem `actions`-Array mit 76. Drei seiner Felder sehen nach ihrer Stimme aus und sind es nicht, gemessen am abgelegten Original:
-
-- **`begruendung` ist dreiteilig.** 19 von 95 wortgleich mit ihrem Feld `notiz`, 6 der generierte Satz „Abweichung von Claudes Vorschlag, ohne Notiz.", 70 ein analytischer Text, der nicht aus `notiz` stammt. Nur `notiz` ist zuverlässig ihre Stimme, und sie ist bei 76 der 95 Fälle leer.
-- **`batch_verdict` ist das Maschinenurteil.** Es weicht bei 25 Fällen von `pos` ab und trägt auch dort ein Urteil samt Konfidenz, wo sie `pos: null` gesetzt hat.
-- **`actions.confidence` ist kein Maß für Sicherheit, sondern eine Ableitung aus `status`**, ohne eine einzige Ausnahme: `ok` wird `high` (63), `anders` wird `medium` (13). Gegen `batch_verdict.confidence` weicht sie bei 61 von 76 ab. **Die 13 mit `medium` sind damit gerade die Fälle, in denen KZW vom Vorschlag abgewichen ist**, also die am gründlichsten angesehenen, und nicht die unsichersten.
-
-Der dritte Punkt hätte fast einen falschen Satz in den PR-Text gebracht: die 13 waren als die ausgewiesen, bei denen die Abnahme zuerst hinsehen soll. **Ein Feld, das einen Wert trägt, sieht geprüft aus, auch wenn nie jemand geprüft hat, was der Wert bedeutet.** Die Messvorschrift steht deshalb in `ingest/pos-disambig/371-stat/README.md`, neben der Aussage.
-
-Und das JSON ist nicht parsbar: bei Zeichen 82.382 steht mitten im `actions`-Array die Klartextzeile `Prüfer: Alan van Beek`. Genau einmal. Eine Zeile entfernen, dann strikt mit `json.loads`, mit `len(faelle) == 95` und `len(actions) == 76` als harter Bedingung; kein Feldschnitt über Regex, der hätte keine Kontrolle darüber, ob er ein Objekt verliert.
-
-### Was über den Fall hinausgilt
-
-**Eine Zahl, die steigt, zieht die Zahl neben sich mit, auch wenn ein Plan sie für unbeteiligt erklärt hat.** Der Laufplan führte die normalisierten Mappings ausdrücklich unter „nicht betroffen, andere Menge". Gemessen stiegen sie mit, von 234.245 auf 234.250: zehn neue Rohformen ergeben fünf neue Mappings. Beim Vorgängerzug (#375, eine einzige neue Schreibung) war es tatsächlich null, und daraus war eine Regel geworden. Die beiden Zahlen mussten zusammen gezogen werden, weil sie in denselben zwei Sätzen mit einem gemeinsamen Stichtag stehen: **eine allein zu ziehen hätte genau den Satz falsch gemacht, der vor ihrer Verwechslung warnt.**
-
-**Ein Gate, das eine Zahl bewacht, sieht nicht, ob die Zahl an dieser Stelle einen Ist-Stand meint.** `doc-count-audit.py` meldete die Formen- und die Mappingzahl an 17 Stellen. Zwei davon in `DECISIONS.md` sind keine Ist-Angaben: die eine benennt den Messstand von #378, die andere einen abgeschlossenen Vergleich zweier Indexstände („Authority Index 1.9.5 against 1.9.6: 0 forms added, 0 removed, 0 re-pointed, out of 234,245 mappings on both sides"). Die zweite hochzuziehen wäre eine Falschaussage über eine dokumentierte Messung gewesen. Der Ausweg stand schon im Gate: `find_stale_numbers` kennt einen nachgestellten Stand-von-Version-Vermerk, gebaut für genau diesen Satztyp in `CONTRACTS.md` (#297). Die Zeile heißt jetzt „out of 234,245 mappings on both sides, which is the state of v1.9.6 and not today's" und ist damit für das Gate **und** für einen menschlichen Leser eindeutig. **Wo eine historische Zahl neben einer wachsenden steht, ist der Vermerk billiger als die Ausnahme**, denn die Ausnahme altert still und der Vermerk steht im Text.
-
-**Das Inventar-Gate liest mehr Namen, als es Verzeichnisse scannt.** `check-doc-inventories.py` bindet vier Pfade (`scripts/` flach plus `audit/`, `sync/`, `_archived/`), hält aber jeden im Baum von `scripts/README.md` genannten Skriptnamen gegen die gescannten Dateien. Ein Name aus `scripts/ingest/` ist damit „genannt, aber nicht vorhanden" und färbt das Gate rot. Mutationsprobe am committeten Stand gefahren und zurückgenommen. Die Lücke unter `ingest/` sah aus wie ein Versehen und ist eine Notwendigkeit; sie trägt jetzt einen Absatz, der sagt warum.
-
-### Die #397-Frage: was hat dieser Zug wahr gemacht, das vorher falsch sein konnte
-
-Zehn Prägungen stellen eine Invariante her, die vorher an zehn Stellen verletzt war: die Form steht jetzt unter ihrem Lemma. **Jede Prüfung, die auf „Form nicht unter diesem Lemma vorhanden" gebaut war, hat für diese zehn Paare keinen Gegenstand mehr.** Auf der Typ-Ebene trägt die Gegenprobe: der Trockenlauf vor und nach dem Zug hat `added 10` und die übrigen drei Semantikzähler auf 0, die Mehrdeutigkeitszähler stehen unverändert bei 613 und 1.
-
-**Hier stand zuerst „gesucht und nicht gefunden", und das war falsch.** Die Antwort auf die #397-Frage liegt eine Ebene tiefer, im normalisierten Laufzeit-Wörterbuch des Authority-Index, und dort hat der Zug eine Schreibform umgehängt: `hawsen` löst ab jetzt auf `lemma_42619` *hûse* auf statt auf `lemma_49714` *hûsenblâter*, weil first-wins in Dokumentreihenfolge entscheidet und `variants.xml` nach Lemmanummer sortiert ist, 42619 dort also vor 49714 steht. Gemessen über beide gebauten Wörterbücher: **added 5, removed 0, re-pointed 1**. Wer „hawsen" sucht, erreicht damit 4 Belege statt 32, gezählt über die Belege des aufgelösten Lemmas und nicht über die Vorkommen der Form; die Form selbst steht 5 mal unter der Hausenblase und 2 mal unter dem Fisch. **Der Flip geht gegen Vorschrift B von ADR-021**, also gegen die Rangfolge, die KZW am 14.09. in #378 entschieden hat und die nicht gebaut ist.
-
-**Die Prüfung, die es gefunden hätte, verlangt dieses Projekt seit dem 14.09. selbst:** ADR-021 fordert genau diesen Vergleich als Handgate, ausdrücklich damit „a single re-annotation cannot silently flip a mapping". Er war einmal von Hand gelaufen, grün, 0/0/0; dieser Zug ist der zweite Lauf und liefert das erste rote Testdatum. Es steht jetzt in `docs/DECISIONS.md` neben dem grünen.
-
-**Was daraus über die #397-Frage hinaus folgt: null zusätzliche Mehrdeutigkeiten auf der Typ-Ebene ist eine richtige Zahl, die eine falsche Sicherheit trägt.** Ein Token, das ein Lemma mit dem Typ eines anderen kombiniert, bliebe in der Mehrheit unsichtbar, und dagegen misst dieser Zähler richtig. Er misst aber nicht, was die Prägung mit der **Schreibform** macht, und genau dort lag die Antwort. Ein Kontrollwert, der im selben Zuschnitt liegt wie die Frage, teilt dessen Blindheit; ausgezogen als rote Zeile 43.
-
-### Rote Zeilen
-
-**Rot: einem Menschen zugeschrieben, er habe etwas geprüft, weil ein Feld daneben so klang.** Ausgezogen als rote Zeile 40 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot, erste Zeile zu dieser Lehre: die Trefferzahl stimmte, die Einfügeposition nicht, weil die Zeilenenden ungeprüft blieben.** Ausgezogen als rote Zeile 41 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot: zwei Variantenzahlen mit einem Skript gezogen und die dritte im selben Absatz daneben stehengelassen.** Ausgezogen als rote Zeile 42 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot: die #397-Frage gestellt, verneint, und die Verneinung war eine Abwesenheitsbehauptung über den halben Bestand.** Ausgezogen als rote Zeile 43 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot: aus einer Eigenschaft der Datei auf das Verhalten des Codes geschlossen, und die Auskunft stand in demselben ADR, in das ich in diesem Lauf geschrieben habe.** Ausgezogen als rote Zeile 44 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-### Offen
-
-Alle drei Vorgänge bleiben offen bis zur Abnahme durch @wachauer; ein `Closes` ist keine Abnahme. Was sie noch entscheiden muss: die Sense-Zuordnungen für alle 88 Tokens, die 17 Fälle mit `option: OFFEN` und die 2 mit `NEU_STAND` aus #371 (letztere bräuchten ein neues Lemma), und die erste Hälfte des `hirne`-Auftrags aus #366, die kein Objekt hat: `lemma_2853` trägt 228 Tokens in 66 Dateien und ist nicht leer, und die Form `gehornn` steht nicht darunter.
-
-## 2026-09-23 (Spur A, Welle A1) – #387, #418, #464: 36 Tokens, und das Doppeltag steht in der Reihenfolge, die nichts verwechselt
-
-Drei von KZW entschiedene Pakete in einem PR, ein Rebuild, Korpus-Index 4.2.19, Authority-Index 1.9.9. 21 Resttokens aus #387, die 12 offenen *hawe*-Belege aus #418 (dazu `AC3_23010_1` mit neuem Typ), die zwei *zalder*-Tokens aus #464. Fünf Typen geprägt (`type_372387` bis `type_372391`), `type_117159` entfallen, ein neuer Sense `lemma_9644_sense_119194`. Laufskript `scripts/ingest/pos-disambig/apply-387-418-464.py`, Einzelheiten im PR.
-
-### Was über den Einzelfall hinausgilt
-
-**Eine Bestandszahl zählt die Altlast mit, bis man fragt, welches Merkmal die Fälle trennt.** Der Laufplan hatte `NOM ADJ` statt KZWs `ADJ NOM` vorgesehen, weil der Bestand 119.501 zu 0 steht. Die Zahl war richtig, trug aber die falsche Menge: keiner der 119.501 hat ein `@reason`, sie sind die unaufgelösten Komposita der Migration, die K4 auflösen soll. Die Verschmelzungen zeigen, was eine bewusste Doppelannotation im Bestand ausmacht: `VRB PRO` 154 von 154 mit `@reason`, `PRO VRB` 0 von 9.068. Ein bewusstes Doppeltag in `NOM ADJ` zu schreiben, hätte es in genau die Menge gelegt, die später maschinell aufgelöst wird. Festgehalten in POS-TAGSET §2; die Koordination hat die Laufplan-Zeile revidiert. Die #464-Tokens wechseln aus demselben Grund von `PRO VRB` auf `VRB PRO`.
-
-**Eine Kommentarvorgabe hat Folgen im Schema, die niemand mitgeplant hatte.** `@reason` an `<w>` ist GAP-Kategorie 1 und in tei_all ungültig. Vier Dateien, die vorher tei_all-gültig waren (FR1, FR3, ENE, ROT), sind es mit ihrem ersten `@reason` nicht mehr; die Baseline steigt von 30 auf 34, und die alte Zahl stand in `validate-corpus.py`, TEI-MODEL.md §10, `schema/README.md`, `DECISIONS.md` und einer Hilfeseite. Gefunden hat es die Stichprobe über die 19 geänderten Dateien, nicht ein Gate: Stage 1 warnt nur, und mit `--sample` oder `--corpus-only` überspringt `validate-corpus.py` den Namensabgleich ganz. Wer nachweisen will, dass die Baseline hält, fährt den Lauf **ohne** Filter (hier 641/675, Stage-1 34 bei Baseline 34, keine NEW- oder GONE-Zeile).
-
-**Der Typzähler war zum zweiten Mal grün, während das Wörterbuch umklappte.** `extract-variants.py` meldete `>1 lemma` von 1 auf 0, also sauberer als vorher. Der Vergleich der beiden gebauten `authority-index`-Wörterbücher, den ADR-021 seit dem 14.09. verlangt, zeigte 0 neu, 0 entfallen, 2 umgeklappt: `hawe` zu *houwen* (B-konform) und `froewen` zu *vrô*, gegen Vorschrift B (35 Belege unter *vrouwe*, 21 unter *vröuwen*, 1 unter *vrô*). Die Ursache ist dieselbe wie bei `hawsen` am 21.09.: eine zwingende Neuprägung trifft auf first-wins. Gefunden hat es die Reviewrunde, nicht ich, obwohl der Eintrag darüber und rote Zeile 43 genau das beschreiben. **Der Vergleich steht nicht als Schritt im Data-Change-Lifecycle, und solange er dort fehlt, fährt ihn nur, wer sich an ADR-021 erinnert.** Die dritte Fixture liegt als Änderungswunsch im Laufplan, weil `DECISIONS.md` eingefroren ist.
-
-**Eine revisionDesc-Vorlage, die für jede Datei gilt, sagt über den Sonderfall die Unwahrheit.** In AC3 stand zunächst „2 Tokens umannotiert“, obwohl einer davon nur einen neuen Typ bekam. Das Skript kennt den Fall jetzt (`NUR_TYP`), und die Zeile ist aus der Vorlage neu erzeugt; die Reviewrunde 2 hat per Nachbau auf dem Vor-Stand bestätigt, dass alle 19 TEI-Dateien und `lexicon.xml` byteidentisch herauskommen.
-
-### Rote Zeilen
-
-Keine neue. Der Wörterbuch-Flip hätte eine Zeile zu derselben Lehre wie Nummer 43 werden können; er hat nichts getragen, weil die vorgeschriebene Reviewrunde ihn vor dem Push gefunden hat. Dasselbe gilt für die zwei Nachbarzeilen, die die Zahländerung nicht mitgezogen hatte (CONTRACTS.md:381, TEI-MODEL.md:933, Lehre aus `korrigieren.md`), und für die Vorher-Zahlen, die im POS-TAGSET-Absatz zunächst als Ist-Stand standen. Nach `wiederholte-fehler.md` ist ein durch ein Gate abgewendeter Fehler keiner. Dass die Lehre selbst dreimal nicht gegriffen hat und jedes Mal die Reviewrunde, steht oben.
-
-Gemessene Verteilung aus `trockenlauf-auswerten.py`, Abschnitt `shell-konventionen`: diese Session `394e94e5 mhdbdb-daten2` mit 178 Aufrufen, 49 Treffern, 28 %. Das Skript bricht danach am Log `gelesenes-trockenlauf.jsonl` mit `AttributeError: 'NoneType' object has no attribute 'get'` ab (eine Zeile ist `null`); die übrigen Abschnitte liegen deshalb nicht vor. Das Skript liegt in `claude-code-setup` und ist hier nicht angefasst.
-
-### Was zurück an Christian geht
-
-- Der PR ist ein Daten-PR, der CI-Review-Bot wird rot; der lokale Review trägt ihn (zwei Runden, keine offenen Befunde).
-- `npm test` endete mit `VERDICT: ROT (3 flaky …)`: 352 bestanden, 0 unerwartet, drei Lade-Timeouts im ersten Versuch, alle im Retry grün, während Spur C parallel testete.
-- Der *fröwen*-Flip (siehe oben) bleibt bis zur Umsetzung von ADR-021 bestehen; KZW bekommt ihn in #387 als Hinweis.
-- Nachzüge außerhalb des PR: `hilfe-daten-beitragen.html:819` (Baseline 30, Spur B), `docs/DECISIONS.md:782` und die dritte ADR-021-Fixture (Inbox).
-- Offen bei KZW: das `etym` von *zalder* (#464, Vorschlag *er* + *zal* + *zeln*) und die Grenze zwischen ihrer allgemeinen Konvention `ADJ NOM` und ihren zwei Einzelentscheidungen `NOM` (#387).
-
-## 2026-09-23 (Spur B des Issue-Abbaus) – vier KZW-Meldungen im Frontend, eine davon wartet auf sie
-
-### Was gearbeitet wurde
-
-- **#446**, „das Korpus“ in nutzersichtbarem Text: sechs Stellen in Playground und Hilfe. Das Audit hatte vier genannt; die fünfte (`playground/index.html:126`) stand dort nicht, die sechste habe ich selbst zuerst übersehen (rote Zeile 70). `README.md:115` hat die Koordination in `081ad4d10` übernommen.
-- **#435**, Tippfilter über beiden Textlisten im Textvergleich, wie KZW am 15.09. entschieden hat. Ihre Frage zur Begriffs-Verteilung beantwortet die Messung: das Autocomplete gibt es seit `a2e7b0b36` (#113, 15.05.). Alans „baum“ scheiterte an der Umlautfaltung, behoben am 11.09. in `a3779e271`; im Browser schlägt „baum“ jetzt „Bäume“ vor.
-- **#433**, Gattungs-Vorschlag im Textfilter der Korpussuche, Klick setzt die Auswahl samt Untergattungen. Dazu der Gattungen-Explorer auf den Teilbaum umgestellt; das revidiert #361/PR #362 und ist von Christian freigegeben. Die Chip-Frage steht in #433 bei KZW.
-- **#58** nicht gebaut: für den Durchklick gibt es drei vernünftige Zielorte, und Christian wollte die Form mit KZW klären. Der Entwurf ging über die Koordination an sie.
-
-### Was über den Einzelfall hinausgilt
-
-**Ein Haltepunkt im Auftrag kann den falschen Gegenstand tragen.** Der Kickoff nannte für #433 den Haltepunkt „Chip“ als „Form der Auswahl in der Suchmaske“. Im Thread war diese Form seit dem 17.09. entschieden, und „Chip“ meinte den Gattungs-Chip in der Trefferliste, zu dem KZWs Frage „Wo genau würde man das sehen?“ seit dem 15.09. offen stand. Erst die Kommentare, nicht der Auftragstext, sagten, wo der Halt hingehört.
-
-**Eine Entscheidung von gestern kann an einer Prämisse hängen, die heute fällt.** #361 hatte bewusst zwei Bedeutungen für denselben Filterhaken festgeschrieben, weil „Werke anzeigen“ nur die direkten Werke las. KZWs „die Untergattungen kommen immer mit“ nimmt genau diese Prämisse weg. Die Revision musste trotzdem benannt und vorgelegt werden, bevor gebaut wurde, weil sie gegen eine dokumentierte Entscheidung ging.
-
-**Ein totes Feld hat oft einen falschen Leser, nicht einen fehlenden Schreiber.** Das Ticket vermutete den Gattungs-Chip am leeren `genre` des Korpus-Index. Gelesen wird aber `work.genre` im Authority-Index, ein Feld, das keines der 584 Werke trägt; sie tragen `genres` als Liste.
-
-**Ein Overlay über einer Liste von Checkboxen macht aus einem Fehlklick eine andere Handlung.** Der Reviewer hatte es nur „für den Berater“ notiert: die Vorschlagsliste lag über der Textliste, und ein Klick auf eine verdeckte Checkbox hätte eine ganze Gattung gewählt. Sie steht jetzt im Fluss.
-
-### Die #397-Frage
-
-Wahr gemacht hat der Zug: `findWorksInGenre` ist jetzt eine Obermenge der direkten Zuordnung. Unerreichbar geworden ist dadurch der Detailfeld-Zweig „kein Werk direkt zugeordnet, im Zweig darunter N“; er ist entfernt. Die zwei Stellen, die weiter die direkte Zahl brauchen (Baumzeile, Detailfeld), gehen über das neue `countOwnWorks`. Der Filterhaken zählt in beiden Ansichten jetzt dieselbe Menge; seine zwei Beschriftungen bleiben stehen, bis `genre-explorer.spec.js` nach dem Merge von #465 angepasst werden darf.
-
-### Rote Zeilen
-
-**Rot: eine Trefferzeile selbst abgeschnitten und das Abgeschnittene als Nichttreffer gelesen.** Ausgezogen als rote Zeile 70 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-**Rot: Port 8080 als frei gemeldet, weil die Gegenprobe auf einem deutschen Windows nach „LISTEN“ suchte.** Ausgezogen als rote Zeile 71 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-Verteilung aus `claude-code-setup/hooks/trockenlauf-auswerten.py` am 23.09.: `suchergebnis` 1.798 Zeilen, davon eng 1.371, leer 46, eng und leer 36. Die Auswertung bricht danach beim Log `gelesenes` (2.250 Zeilen) mit `AttributeError: 'NoneType' object has no attribute 'get'` ab (Zeile 102); eine Zeile dieses Logs ist kein Objekt. Das ist ein Befund an `claude-code-setup`, hier nicht angefasst.
-
-Nicht gezählt: zwei Testläufe durch eine Pipe geschickt, gegen die Projektregel. Die VERDICT-Zeile war beide Male sichtbar, getragen hat es nichts.
-
-### Was zurück an Christian geht
-
-- #58 wartet auf KZWs Wahl der Form; die Lesearbeit (Render- und Lesestellen) steht in #58 und in dieser Session.
-- #433: der Chip wartet auf KZW; FILTER_LABEL und `genre-explorer.spec.js` werden nach dem Merge von #465 zusammengezogen.
-- `docs/FEATURES.md` und `docs/DEVELOPMENT.md` tragen der Koordination übergebene Änderungswünsche, einzutragen nach den Merges.
-- Nebenbefund: ERB und ERD tragen im Textvergleich dieselbe Beschriftung „Herzog Ernst (Hrsg. Bartsch, 1869)“; der Disambiguator unterscheidet sie nicht.
-- `hilfe-daten-beitragen.html:819` nennt die Baseline 34 auf Ansage von Spur A; bis deren PR gemergt ist, eilt die Hilfeseite voraus.
-
-## 2026-09-23 (Spur C des Laufs) – #465: der Testport als Parameter, und warum die Probe zweimal am Speicher scheiterte
-
-PR #472, nicht gemergt. `MHDBDB_TEST_PORT`, Vorgabe 8080. Gelesen wird die Variable allein in `testing/test-port.js`, und dieselbe Funktion versorgen die Config (`baseURL`, `webServer`), `scripts/run-tests.js` (Sentinel) und `npm run serve` (neuer Wrapper `testing/serve.js`). In 30 Specs sind 132 absolute Adressen jetzt Pfade relativ zu `baseURL`; zusammen mit den drei Stellen in der Config sind das die 135 in 31 Dateien, die die Koordination gezählt hatte.
-
-### Was gearbeitet wurde
-
-- Umbau, zwei Review-Runden `fable-reviewer` (Runde 1 auf `cdaee8ddd`: Basisangabe im Auftrag, Randwert 65535 im Abhilfetext; Runde 2 auf `e36b5b17e`: ohne Befund), CI grün, Bot ohne Befund.
-- Parallelprobe mit je `--workers=2`, Hauptbaum auf 8080 und dieser Zweig auf 8081 gleichzeitig: `VOLLLAUF GRUEN (370 Tests, 34 Dateien)` und `VOLLLAUF GRUEN (355 Tests, 34 Dateien)`. Allein auf 8080 ohne Variable: `VOLLLAUF GRUEN (355 Tests, 34 Dateien)`.
-- Mutationen: fremder Server auf dem gesetzten und auf dem Vorgabeport ergibt je Exit 2; der eigene Server über `npm run serve` wird erkannt und wiederverwendet; eine leere Spec-Datei ergibt `NICHT GELAUFEN` und `VERDICT: ROT`, Exit 1; ungültige Werte (`abc`, `0`, `""`, `65536`) ergeben je Exit 2 mit VERDICT-Zeile.
-- Nebenbefund behoben: `vendor.spec.js` durchsuchte die Repo-Wurzel ohne `.claude` auszunehmen und testete im Hauptbaum je fünf Seiten aus drei fremden Worktrees mit. Daher 370 Tests dort gegen 355 hier, mit `--list` gezählt und nach Datei aufgeschlüsselt.
-
-### Zwei Fallen, die kein Ticket kannte
-
-**`http-server` ohne `-p` weicht still aus.** Der naheliegende Umbau von `npm run serve` wäre gewesen, `-p 8080` wegzulassen und `PORT` zu setzen. `http-server` nimmt dann `PORT` und ohne sie den nächsten freien Port ab 8080 (`bin/http-server`, Zeile 68 und 129). Bei belegtem 8080 wäre der Dev-Server also stillschweigend auf 8081 gelandet: genau die Verhaltensänderung ohne gesetzte Variable, die der Auftrag als Stoppbedingung nannte. Dazu kommt, dass npm-Skripte unter Windows in `cmd.exe` laufen (`script-shell` ist `null`), wo `$VAR` nicht expandiert. Beides zusammen verlangt einen Wrapper, der `-p` immer setzt.
-
-**Das Inventar-Gate entschied über den Ort einer neuen Datei.** `scripts/serve.js` machte `check-doc-inventories.py` rot, weil `scripts/README.md` jede Datei unter `scripts/` kennen muss und in diesem Lauf eingefroren war. Unter `testing/` zählt dasselbe Gate nur `*.spec.js` in `testing/tests/`. Gemessen, nicht gelesen: das Gate einmal mit der Datei unter `scripts/` gefahren (Exit 1, „Fehlt: serve.js"), einmal unter `testing/` (Exit 0). Der Rotlauf war zugleich der Kontrollwert, dass das Gate neue Dateien überhaupt sieht.
-
-### Was über den Einzelfall hinausgilt
-
-**Eine Testzahl, die von der Umgebung abhängt, ist keine Eigenschaft der Suite.** Wer im Hauptbaum `npm test` fuhr, bekam so viele vendor-Tests, wie gerade Worktrees unter `.claude/` lagen. Die VERDICT-Zeile zeigte 370 und sah aus wie ein Bestand. Aufgefallen ist es nur, weil zwei Läufe gleichzeitig liefen und ihre Zahlen nebeneinander standen. Der Spec-Abgleich von `run-tests.js` hätte es nicht gefunden, denn er vergleicht Dateien, nicht Tests je Datei.
-
-**Eine Abnahmeprobe, die die Maschine überfordert, ist ein Befund über die Probe und nicht über die Änderung.** Die ersten beiden Läufe mit je sechs Workern hatten vor dem Abbruch 11 und 14 Fehlschläge, auch der unveränderte Hauptbaum. Die naheliegende Lesart „der Umbau bricht 14 Tests" hätte eine Nacharbeit an fehlerfreiem Code ausgelöst. Getrennt hat es erst ein zweiter Lauf unter anderen Bedingungen: gleichzeitig mit je zwei Workern, beide grün.
-
-**Was diese Änderung wahr gemacht hat, das vorher falsch sein konnte (#397):** `BASIS_URL` stimmte mit dem Port von Playwright nur überein, weil beide Konstanten waren. Jetzt hängt die Übereinstimmung an derselben Lesefunktion und an der Vererbung der Umgebung über `spawnSync`. Außerhalb von `run-tests.js` (`--config`, `test:ui`, `test:debug`, `test:headed`) prüft kein Sentinel, und das war vorher genauso.
-
-### Rote Zeilen
-
-**Rot: aus einem gemessenen Abbruch auf seine Ursache geschlossen und die Ursache in einen PR-Body geschrieben.** Ausgezogen als rote Zeile 73 nach [../fehlerjournal.md](../fehlerjournal.md).
-
-Verteilung aus `trockenlauf-auswerten.py`, Zeile dieser Session (`03dc7dca`, mhdbdb-testport): shell-konventionen 32 Treffer bei 107 Aufrufen (30 %), mengenaussagen 10 bei 15 (67 %). Das Skript selbst bricht im Abschnitt `gelesenes` mit `AttributeError: 'NoneType' object has no attribute 'get'` ab (Zeile 102, `auswerten_bool`): ein Element der eingelesenen Logzeilen ist `None`, woher, ist nicht untersucht. Das ist ein Befund für `claude-code-setup` und nicht in diesem Repositorium zu beheben.
-
-### Was zurück an Christian geht
-
-- **#472 mergen**, wenn der PR trägt. Danach trägt die Koordination die drei Inbox-Sätze in `docs/DEVELOPMENT.md` ein, sobald auch #469 gemergt ist.
-- **Zwei Volläufe parallel brauchen weniger Worker.** Mit je sechs hat Claude Code die Läufe wegen Speichermangels beendet, mit je zwei liefen beide in etwa 22 Minuten grün. Ob sechs auf einer sonst ruhigen Maschine parallel tragen, ist nicht gemessen.
-- **`trockenlauf-auswerten.py` stürzt im Abschnitt `gelesenes` ab** (siehe oben).
-- **`TaskStop` auf `npm run serve` ließ hier den `http-server`-Kindprozess stehen** (gemessen: PID 34060 lauschte nach dem Stopp weiter auf 8081). Der Port bleibt belegt, bis jemand die PID beendet. Ob der alte Aufruf ohne Wrapper sich genauso verhielt, ist nicht gemessen.
-
-## 2026-09-23 (Nachtlauf, Spur A, Paket A1) – #252 und #267: 846 Lücken und neun Header, und kein Index hat es gemerkt
-
-Der Nachlass des Tageslaufs, fertig gemacht. #252 zweiter Durchgang: 846 Stellen des Musters `( caesura )` innerhalb einer Zeile mit Wortlaut sind `<gap reason="lost"/>` geworden, in 20 Dateien, nach KZWs Freigabe vom 22.09. #267: neun Header tragen `no-print` statt `excerpt-only` und den Satz, den KZW am 10.09. formuliert hat, FR3 trägt das Standard-`<availability>`. Kein Versions-Bump, weil keiner der drei Builds eine Differenz erzeugt. Skripte unter `scripts/ingest/gap-252/` und `scripts/ingest/no-print-267/`, Zahlen im PR.
-
-### Was über den Einzelfall hinausgilt
-
-**Ein gesicherter Patch ist ein Kontrollwert, kein Ergebnis.** Das Skript lief frisch auf `origin/main`; der Tagespatch wurde nicht angewandt, sondern auf Kopien des Basisstands im Scratch, und dann zeilenweise gegen den Arbeitsbaum gehalten. 17 Dateien zeilengleich, drei unterscheiden sich genau um die #267-Zeilen. Kein Byte-Gleichstand, und zwar aus einem Grund, der beim ersten Blick wie eine Abweichung aussieht: `core.autocrlf=true`, `git show` liefert den LF-Blob, der Arbeitsbaum hat CRLF. Wer hier nur Bytes vergleicht, meldet 20 Abweichungen, die keine sind; wer nur Zeilen vergleicht, übersieht eine echte Zeilenend-Änderung. Beides zusammen, plus `git diff --numstat` als Gegenprobe (3 → 1 Zeilen je Stelle), trennt die Fälle.
-
-**Die Zahl einer Messung steht in TEI-MODEL.md zweimal, und kein Gate kennt sie.** §6.5 und §3.1 nennen beide die Zahl der `<caesura/>`. Am 10.09. ist die Kopie in §3.1 stehen geblieben, heute wieder; gefunden hat es beide Male die Reviewrunde. `doc-count-audit.py` führt keinen `caesura`-Schlüssel, also hängt an keiner der beiden Zeilen ein Anker. Der Vorschlag des Reviewers gehört an Christian: entweder verweist §3.1 nur noch auf §6.5, ohne Zahl, oder das Audit bekommt den Schlüssel.
-
-**Ein Marker, den niemand liest, kann jahrelang das Gegenteil sagen.** `sources/README.md` behauptete, das Frontend zeige bei den `excerpt-only`-Texten nur Auszüge. Es hat den Marker nirgends ausgewertet (#267, am 06.09. gemessen, heute für `assets/`, `playground/`, `testing/` wiederholt). Der neue Name `no-print` hat dasselbe Risiko: auch ihn wertet heute nichts aus, weil nichts druckt. Die Bedeutung steht jetzt in TEI-MODEL §2.1, damit der, der einmal eine Druckansicht baut, sie findet.
-
-### Rote Zeilen
-
-Keine neue. Die stehen gebliebene Zahlkopie in TEI-MODEL.md:263 fällt unter die Lehre aus `korrigieren.md` (Nachbarschaft einer geänderten Zahl mitlesen), hat aber nichts getragen: die vorgeschriebene Reviewrunde hat sie vor dem ersten Push gefunden, und ein durch ein Gate abgewendeter Fehler zählt nach `wiederholte-fehler.md` nicht. Dass dieselbe Lehre damit heute zum zweiten Mal nur über die Reviewrunde gegriffen hat (Eintrag darüber, CONTRACTS.md:381 und TEI-MODEL.md:933), steht oben als Befund.
-
-Gemessene Verteilung aus `trockenlauf-auswerten.py`, Abschnitt `shell-konventionen`: diese Session `09f7a3aa nacht-daten` mit 85 Aufrufen, 17 Treffern, 20 %. Das Skript bricht danach weiterhin am Log `gelesenes-trockenlauf.jsonl` mit `AttributeError: 'NoneType' object has no attribute 'get'` ab; es liegt in `claude-code-setup` und ist hier nicht angefasst.
-
-### Was zurück an Christian geht
-
-- Ein Daten-PR ohne Index-Bump; der CI-Review-Bot wird voraussichtlich rot, der lokale Review trägt ihn (zwei Runden, Runde 2 ohne Befund).
-- `npm test` auf Port 8081 mit zwei Workern: `VERDICT: VOLLLAUF GRUEN (373 Tests, 38 Dateien)`, 0 unerwartet, 0 flaky, gelaufen auf 8be73c141; danach nur eine Doku-Zeile und Reviewer-Memory.
-- Offen bei KZW in #252: die fünf Komma- und Doppelpunktfälle (Kontextliste vom 23.09. 14:05), die zwei `MUG`-Stellen mit der Zäsur im `<hi>`, die drei Stellen „Marker plus ein Zeichen“.
-- Nicht angefasst, weil nicht Spur A: der Docstring von `scripts/migrate-caesura-to-gap-252.py` nennt noch „838 in 17 Dateien“ als offen.
-- Zu entscheiden: ob die caesura-Zahl in TEI-MODEL §3.1 bleibt oder ein Audit-Schlüssel dazukommt (siehe oben).
-
-## 2026-09-23 (Nachtlauf, Spur B, Paket B1) – #433: der Chip war nie da, und die Kette dahinter auch nicht
-
-Der Nachlass des Tageslaufs, übernommen von der Neustart-Instanz `nacht-frontend-2` (die erste Instanz `nacht-frontend` endete ohne Commit). Zwei Teile: der verwaiste Commit `5625ff334` (eine Beschriftung für den Filterhaken im Gattungen-Explorer) per Cherry-pick, byte-identisch; und KZWs Entscheidung vom 23.09. 12:32 UTC in #433, den ungenutzten Anzeigezweig für den Gattungs-Chip auf den Trefferkarten zu entfernen. Damit sind die zwei Zusagen aus dem Eintrag des Tageslaufs eingelöst: „der Chip wartet auf KZW" und „FILTER_LABEL und `genre-explorer.spec.js` werden nach dem Merge von #465 zusammengezogen" (oben unter „Was zurück an Christian geht" und im #397-Absatz). Der JOURNAL-Nachtrag aus dem gesicherten Patch ist nicht übernommen: er hätte eine alte Zeile mitten im Text geändert und einen Hash genannt, den es auf `main` nicht geben wird.
-
-### Was über den Einzelfall hinausgilt
-
-**Ein toter Anzeigezweig hat eine tote Kette hinter sich, und die gehört mit weg.** Der Chip las `result.genre`, das `SearchEngine.getGenre()` aus `work.genre` füllte, einem Feld, das keines der 584 Werke im Authority-Index trägt (gemessen, der Schlüssel fehlt ganz; die Werke tragen die Liste `genres`). An derselben Kette hing ein Filterzweig `filters.genre`, den kein Aufrufer übergibt. Hätte ihn jemand benutzt, hätte er jeden Text ausgeschlossen, weil `null !== genre` immer wahr war. Nur die Chip-Zeile zu streichen hätte diesen Zweig als scheinbar funktionierenden Gattungsfilter stehen lassen, genau die Sorte Feld, die #58 erzeugt hat.
-
-**Kein neuer Test, und das ist gemessen, nicht bequem.** Ein Test auf das Fehlen des Chips wäre auf der Basis ebenso grün gewesen, weil der Chip nie gerendert hat. Er hätte also nichts festgehalten (§2.1 Regel 3 im Issue-Playbook).
-
-### Rote Zeilen
-
-Keine. Verteilung aus `trockenlauf-auswerten.py`, Zeile dieser Session (`11858632`, nacht-frontend-2), Stand beim Schreiben dieses Eintrags am 23.09. abends (die Zahlen wachsen mit jedem weiteren Aufruf der Session): shell-konventionen 19 Treffer bei 60 Aufrufen (32 %), mengenaussagen 2 bei 13 (15 %). Das Skript bricht weiterhin im Abschnitt `gelesenes` mit `AttributeError: 'NoneType' object has no attribute 'get'` ab (Zeile 102); es liegt in `claude-code-setup`.
-
-### Was zurück an Christian geht
-
-- `docs/DESIGN.md` verliert die Zeile „Genre tag" unter Badges, als benannte Freeze-Ausnahme der Koordination: die Chip-Zeile war die einzige Verwendung des Musters.
-- Nicht angefasst, weil Spur A gehört: das Feld `genre` je Text im Korpus-Index, in 667 von 667 Texten vorhanden und in keinem gefüllt (`build-corpus-index.py`). Es hat nach diesem PR auch im Frontend keinen Leser mehr; ob es aus dem Build fällt, ist eine eigene Entscheidung.
-- KZW prüft nach Merge und Deploy; sichtbar ändert sich an den Trefferkarten nichts, sichtbar neu ist nur die eine Beschriftung des Filterhakens im Gattungen-Explorer.
-
-## 2026-09-23 (Nachtlauf, Spur A, Paket A2) – #270: der Kommentar nennt seinen Urheber
-
-KZW hat am 23.09. in #270 entschieden: die gespeicherte Urheberangabe soll direkt beim Kommentar stehen, auf der Lemma-Seite und im Playground, als „Kommentar von Katharina Zeppezauer-Wachauer“. Umgesetzt nach ADR-018 Option 2, also beim Bauen: `build-authority-index.py` liest `contributors.xml` und schreibt zu jedem `sense.commentResp` ein `sense.commentRespName` in den Index. Beide Oberflächen setzen das Label daraus, ohne Namen bleibt es beim bloßen „Kommentar“. Authority-Index 1.9.10, Korpusindex unverändert. ADR-018 trägt eine Revision statt einer neuen ADR, weil die Entscheidung dieselbe ist und nur ihr Geltungsbereich wächst.
-
-### Was über den Einzelfall hinausgilt
-
-**Der Index-Diff ist die Messung, nicht der Build-Erfolg.** Gegen `main` verändert der Rebuild genau zwei Felder: die Versionsnummer und `lemmata[22933].senses[0].commentRespName`. Heute trägt genau ein Kommentar eine Urheberangabe (lemma_37818, Abba). Die Spec verlangt diese Menge deshalb nicht, sondern liest den Index von der Platte und prüft, dass jede Oberfläche ihm folgt; lemma_37818 steht nur als Kontrollwert darin, damit ein leerer Abruf nicht als grün durchgeht.
-
-**Eine unbekannte Urheberangabe hält den Build an.** Ein `@resp`, das nicht mit `contributors.xml#` beginnt oder auf keine Person und keine Organisation zeigt, ist ein harter Fehler statt eines stillen Kommentars ohne Namen. Per Mutationsprobe an drei ungültigen Werten geprüft, jede brach ab, der Ausgangsstand war danach wiederhergestellt. 54 Namen werden gelesen (52 Personen, 2 Organisationen).
-
-**Aufgelöst wird nur der Kommentar.** `definitionResp` und `origin.resp` bleiben Verweise ohne Namen; die Spec prüft, dass kein `definitionRespName` und kein `origin.respName` in den Index gerät. Ob „von <Name>“ auch an `<def>` und `<etym>` gehört, ist eine Frage an KZW und steht im Statuskommentar von #270.
-
-### Rote Zeilen
-
-Keine neue. Die Runde-1-Befunde (Bump-Widerspruch in DATA-MODEL.md:903, Schema und XPath-Tabelle ohne das neue Feld) hat die vorgeschriebene Reviewrunde vor dem ersten Push gefunden; abgewendet, nicht gezählt. Einen Teillauf (4 Tests auf 593bdcb40) habe ich gestartet, ohne ihn bei der Koordination anzumelden, während Spur B einen Volllauf hatte. Die Koordination hat das korrigiert, seitdem werden auch Teilläufe angemeldet. Der Kickoff hatte nur Volläufe genannt; das ist eine Klarstellung der Laufregel, keine gerissene Lehre.
-
-Verteilung aus `trockenlauf-auswerten.py`, Zeile dieser Session (`09f7a3aa`, nacht-daten, über A1 und A2 zusammen), Stand beim Schreiben: shell-konventionen 63 Treffer bei 214 Aufrufen (29 %), mengenaussagen 32 bei 80 (40 %). Das Skript bricht weiterhin im Abschnitt `gelesenes` mit `AttributeError` ab.
-
-### Was zurück an Christian geht
-
-- Lokaler Review in drei Runden, alle drei mergefähig, keiner mit Klasse A und keiner am Verhalten; neben einem Code-Kommentar und dem Reviewer-Memory betrafen sie die Doku: Die Bump-Regel für `contributors.xml` stand in der Routingzeile und im Satz darunter gegensätzlich, und drei Aufzählungen der Indexfelder (DATA-MODEL Schema und XPath-Tabelle, TEI-MODEL-AUTH-FILES) kannten das neue Feld nicht. Behoben über Freeze-Ausnahmen der Koordination.
-- Veraltet und nicht angefasst, weil in docs/playbooks: MASTERPLAN-EINZEL-LEMMA-KURATION.md:102 („@resp wird nirgends angezeigt“). Die Koordination zieht die Zeile nach dem Merge nach.
-- `VERDICT: VOLLLAUF GRUEN (377 Tests, 39 Dateien)` auf e9b381d44, also vor dem Rebase auf B1 (28a5bffda). Der Rebase hat keine A2-Datei verändert; das kombinierte Verhalten prüft die Koordination mit einem Volllauf auf main.
-- Frage an KZW in #270: Urheber auch an Definition und Etymologie?
-- Freeze-Ausnahmen dieses PRs, von der Koordination benannt (Zeilen im Endstand): DATA-MODEL.md 239-244, 466, 512, 549, 894, 904, 908; CONTRACTS.md 927; TEI-MODEL-AUTH-FILES.md 211, 219; DECISIONS.md 46 und ADR-018; scripts/README.md 123; dazu die DEVELOPMENT.md-Zeile für die neue Spec.
-
-## 2026-09-23 (Nachtlauf, Spur B, Paket B2) – #420: Pin auf v0.3.0-beta und "Lemma" statt "Term"
-
-Lindas Punkte 1 und 4 aus ihrer Abnahme vom 16.09.: der Naming-Index steht jetzt auf Naming-analysis v0.3.0-beta, und das Modul "Erweiterte Figurenbezeichnungen" sagt überall "Lemma", wo es "Term" sagte (Perspektive, Auswahl, Filter, Spaltentitel, Hilfe, FEATURES, Spec). Der Montagslauf `naming-index-update.yml`, seit dem 14.09. rot, hat damit seinen Grund verloren. Punkt 3, ein Tab "Bezeichnung", ist nicht gebaut: die Kategorie wird an vier Stellen gefiltert oder gezählt, und ob der Tab in allen drei Perspektiven erscheinen soll, ist eine Gestaltungsfrage, die Linda offen gelassen hat.
-
-### Was über den Einzelfall hinausgilt
-
-**Ein Aufrufparameter, der wörtlich in ein Artefakt geschrieben wird, gehört zum Inhalt.** Der Laufplan sah `--ref v0.3.0-beta` vor. Das Skript schreibt `source.ref` aber unverändert in den Index, und der Montagslauf baut ohne `--ref`, also gegen `master`, und vergleicht Bytes. Mit dem Tag im Feld hätte er jeden Montag einen PR ohne Datenänderung geöffnet. Gebaut ist deshalb gegen `master`, das zum Bauzeitpunkt derselbe Commit war wie der Tag (`8076467a`); die Provenienz trägt `source.commit`, und das Freshness-Gate in `data-integrity.yml` normalisiert `ref` ohnehin weg.
-
-**Eine Zahl, die ein Skript für ein Modul nachrechnet, muss rechnen wie das Modul.** In Kommentar und FEATURES stand seit #420 "247 von 433 treffen exakt 100, Spanne 89 bis 109". Das Modul rundet mit `Math.round`, halbe Prozente also aufwärts; gemessen war mit Pythons `round()`, das halbe zur geraden Zahl rundet. Mit der Rundung des Moduls sind es 244 und 91 bis 121. Die zwei Beispiele daneben (`helt` 98, `hêrre` 95) sind in beiden Rundungen gleich, deshalb fiel es niemandem auf. Gefunden hat es die Reviewrunde.
-
-**Linda sprach von 13 Zeilen in drei Werken, der Index zeigt 9 Records in zwei.** Ihr Bereinigungscommit `af531d30` vom 09.09. berührt die Dateien aller drei Werke. In den `categorization_*.json` sind es 12 Stellen, nicht 13 (die dreizehnte liegt vermutlich nur in einer Excel-Datei, nicht geprüft): Iwein 3 (V. 1805, 2216, 4905), Rolandslied 8 (V. 527, 2863, 2864, 2875, 2880, 2882, 2887, 6101), Trojanerkrieg 1. Den Index bewegen davon 9. Rolandslied 527 und 6101 und die Trojanerkrieg-Stelle trugen doppelte Attribution, und unser Build hatte schon dieselbe Seite gewählt: er zählt Figurenrede nur, wenn nennende Figur **und** `Bezeichnung` gesetzt sind, und prüft das vor dem Erzähler-Feld (`build_record`). Bei 527 und 6101 fehlte `Bezeichnung`, also Erzähler wie jetzt bei Linda; bei der Trojanerkrieg-Stelle war beides gesetzt, also Figurenrede wie jetzt bei Linda. Im Index ändern sich Attribution oder Phrase von 9 Records (IW 3, ROL 6); Record- und Figurenzahlen je Werk bleiben gleich, und die 2 Iwein-Records "Figurenrede ohne Nenner" gibt es nicht mehr. Lindas Beispielzahlen im Rolandslied (`helt`, `hêrre`, Ruolant) sind auf altem und neuem Stand identisch.
-
-### Rote Zeilen
-
-Keine. Verteilung aus `trockenlauf-auswerten.py`, Zeile dieser Session (`11858632`, nacht-frontend-2), Stand beim Schreiben dieses Eintrags am 23.09. abends (die Zahlen wachsen mit jedem weiteren Aufruf): shell-konventionen 52 Treffer bei 174 Aufrufen (30 %), mengenaussagen 16 bei 41 (39 %). Der Abschnitt `gelesenes` bricht weiter mit `AttributeError` ab (siehe B1).
-
-### Was zurück an Christian geht
-
-- Frage an Linda in #420: ihre `CITATION.cff` nennt seit v0.3.0-beta den Concept-DOI `10.5281/zenodo.21914259`, bis v0.2.2-beta den Versions-DOI. Übernommen ist ihr Wortlaut; ob der Index lieber den Versions-DOI `10.5281/zenodo.22690452` zitieren soll, entscheidet sie.
-- Angebot an Linda in #420: der Tab "Bezeichnung" (ihr Punkt 3), wenn sie ihn will, mit der Frage, in welchen Perspektiven.
-- #420 schließt mit dem Merge, weil Linda die Abnahme an Punkt 1 und 4 gebunden hat.
-
-## 2026-09-23 (Nachtlauf, Spur A, Paket A3) – #357: ein Name, zwei Entitäten, und das Konzept stand schon im Katalog
-
-KZW hat am 14.09. in #357 entschieden (ADR-020): „ingligar von jelezie“ im Rennewart bekommt kein eigenes Lemma, aber Ingliart einen zweiten Sense für den Menschennamen. Welches Konzept dieser Sense trägt, stand nicht im Thread. Der Laufplan verlangte, es aus den Nachbarn im selben Namenkatalog abzuleiten, und bei fehlender Übereinstimmung anzuhalten. Übereinstimmung gab es: `lemma_3036_sense_119195` trägt `concept_21012000` und `concept_23112500`, `REN_242090_0` zeigt mit `@ana` darauf, die beiden Parzival-Belege bleiben beim Pferdenamen. Authority-Index 1.9.11, Korpus-Index unverändert.
-
-### Was über den Einzelfall hinausgilt
-
-**Der Katalog war die bessere Messung als die drei genannten Nachbarn, und seine Grenzen gehören mitgemessen.** Der Auftrag nannte drei Lemmata. Der Katalog läuft von Vers 24206 bis 24220, gerahmt von „als daz maer mir tuot bekant“ und „die gaben ritterliche ir leben“, und hat 15 Personen und 14 Orte. Alle 15 Personen tragen dieselben zwei Konzepte; 14 davon sind Zeugen, der 15. ist der umgehängte Token. Ein Konzept, das der ganze Katalog trägt, ist abgeleitet und nicht gewählt. Meine erste Fassung des ADR-Satzes nannte „24206 bis 24213, acht Personen“ und damit ein Messfenster als Katalogumfang. Die Zahl stimmte für das Fenster, der Bezug nicht. Die zweite Reviewrunde hat das vor dem Push gefunden.
-
-**Der Korpus-Index sieht keine Sense-Zuordnung.** `build-corpus-index.py` liest `@ana` nicht. Ein Token, das nur den Sense wechselt, lässt den Index byte-gleich, und ein Bump wäre einer ohne Inhalt. Sichtbar wird der zweite Sense nur über den Authority-Index (`senseCount`, `conceptToLemmas`).
-
-**`sense/@ana` im Lexikon hat keinen Konsumenten im Build, trägt aber eine Regel.** Die Typliste des Sense ist die Schnittmenge, aus der ein Ingest `@corresp` auflöst (DATA-MODEL.md, Phase 3). `type_177507` („ingligar“) trägt korpusweit nur dieser eine Token. Deshalb ist er aus dem Pferde-Sense in den neuen gewandert; bliebe er stehen, wäre die Schnittmenge für den neuen Sense leer.
-
-### Rote Zeilen
-
-Keine. Der Fensterfehler im ADR-Satz (oben) fällt unter die Mengenlehre (`mengen.md`: eine richtige Zahl mit falschem Bezug), hat aber nichts getragen: Die Reviewrunde hat ihn vor dem ersten Push gefunden.
-
-Verteilung aus `trockenlauf-auswerten.py`, Zeile dieser Session (`09f7a3aa`, nacht-daten, über A1 bis A3), Stand beim Schreiben: shell-konventionen 110 Treffer bei 365 Aufrufen (30 %), mengenaussagen 57 bei 126 (45 %).
-
-### Was zurück an Christian geht
-
-- Lokaler Review in drei Runden, alle mergefähig, kein Klasse A. Einziger Sachbefund war der Katalogumfang im ADR-Satz (oben). Die Konzepte der drei Nachbarn hat die Koordination selbst am Baum geprüft.
-- Pilde (`lemma_47319`, REN 24216) steht im Katalog als Ort, trägt aber `concept_23253000`, `concept_24212000` und `concept_24222000` plus „Personennamen“ (`concept_23112500`) und kein `concept_24120000`. Das ist nicht angefasst und im PR genannt.
-- `VERDICT: VOLLLAUF GRUEN (377 Tests, 39 Dateien)` auf 767810ae7, vor der Prosa-Korrektur und dem Rebase auf #480. Nach dem Rebase ist der Authority-Rebuild byte-gleich mit dem committeten Index.
-- ADR-020 hat einen neuen Consequences-Punkt (Freeze-Ausnahme der Koordination). Er hält fest, dass die Konzeptzuweisung abgeleitet ist und KZW sie in #357 überstimmen kann; Z. 1247 („sense meanings stay curatorial“) bleibt stehen.
-- „Das gilt für alle Namen“ ist nicht angefasst. Welche Namen heute einen Sense mit Referenten verschiedener Art teilen, ist eine eigene Messung und steht als Beobachtung im Statuskommentar.
-
-## 2026-09-23 (Nachtlauf, Spur B, Paket B3) – #467: das Wörterbuch nimmt die Lemma-Nummer
-
-KZWs Wunsch aus #467: im Wörterbuch "lemma_4086" eingeben und "mer" sehen. Das Suchfeld nimmt jetzt `lemma_4086`, auch in der Schreibung aus `@lemmaRef` (`lexicon.xml#lemma_4086`), und zeigt genau dieses Lemma; beim Treffer steht die Nummer neben dem Eintrag. Korpussuche und Playground sind nach dem Laufplan nicht gebaut, sondern gemessen; die Antwort steht in #467.
-
-### Was über den Einzelfall hinausgilt
-
-**Eine nackte Zahl ist im Wörterbuch nicht eindeutig, und das ließ sich vor dem Bauen messen.** Fünf Lemmata beginnen mit einer Ziffer ("1", "36", "42", "46", "49"), und die Präfixsuche findet sie heute über genau diese Eingabe. Hätte eine Zahl nur noch die Nummer gesucht, wären sie über das Suchfeld unerreichbar geworden. Deshalb sucht `lemma_46` nur die Nummer, `46` dagegen die Nummer zuerst (*abwege*) und darunter weiter das Lemma *46*. Die Multi-Lemma-Suche im Playground, auf die KZW am 23.09. hinwies, behandelt eine nackte Zahl dagegen allein als Nummer (`tei-ui.js:19`), und nur sie: `lemma_4086` findet dort nichts, denn alles außer reinen Ziffern geht in die Namensauflösung, die keinen ID-Zweig hat. Die ID-Erkennung in `authority-manager.js:49` (`resolveLemmaNames`) sieht nach dem Gegenteil aus, hat aber keinen Aufrufer; die erste Fassung dieses Eintrags hatte sich auf sie gestützt, die Reviewrunde hat es gefunden.
-
-**Ein Hilfebeispiel ist auch eine Behauptung über die Daten.** Die erste Fassung erklärte "Nummer zuerst, darunter die Präfixtreffer" am Beispiel `4086`, zu dem es keine Präfixtreffer gibt; wer es nachtippt, sucht die zweite Liste vergeblich. Gefunden hat es die Reviewrunde, das Beispiel ist jetzt `46`, dasselbe, das der Test prüft.
-
-### Rote Zeilen
-
-Keine. Verteilung aus `trockenlauf-auswerten.py`, Zeile dieser Session (`11858632`, nacht-frontend-2), Stand beim Schreiben dieses Eintrags am 23.09. spätabends (die Zahlen wachsen mit jedem weiteren Aufruf): shell-konventionen 76 Treffer bei 259 Aufrufen (29 %), mengenaussagen 28 bei 68 (41 %).
-
-### Was zurück an Christian geht
-
-- KZW prüft nach Merge und Deploy im Wörterbuch; der Prüfweg steht in #467.
-- In #467 beantwortet: Korpussuche und Lemma-Explorer kennen die Nummer nicht, die Multi-Lemma-Suche nur als nackte Zahl (`4086`, nicht `lemma_4086`). Ob Korpussuche oder Playground sie lernen sollen, ist KZWs Entscheidung; der Aufwand wäre klein.
-- Die Commits der Pakete B1 und B2 und der erste Commit von B3 tragen als Trailer `Co-Authored-By: Claude Opus 5.5`, `CLAUDE.md` schreibt `Co-Authored-By: Claude` vor (Hinweis der Reviewrunde zu B3); ab dem zweiten B3-Commit in der Form von `CLAUDE.md`.
-
-## 2026-09-23 (Nachtlauf, Spur B, Paket B4) – #448: CSV-Export im Playground
-
-Die Userfrage aus #448: Ergebnisse im Playground als CSV herunterladen. KZWs Auftrag dazu war, die Werkzeuge systematisch durchzugehen. Unter `playground/js/ui/tei/` liegen 15 Dateien, ohne den Helfer `corpus-scope.js` und die Hülle `tei-ui.js` also 13 Werkzeuge, aufgeteilt 13 (9 + 1 + 3). Neun Werkzeuge mit tabellarischem Ergebnis bekommen einen Export: Wortfrequenz, Versendings-Profil, Text-Statistiken, Kookkurrenz-Ranking, Reim-Wörterbuch, Textvergleich, Versposition, Bezeichnungen und Pferde. Das eine ist Hapax, das seinen älteren Export behält. Drei bekommen keinen: Konzept- und Lemmaverteilung, weil ihr Ergebnis ein Diagramm ist, und die Multi-Lemma-Suche, weil ihr Ergebnis aus Karten besteht, deren Kontext erst beim Aufklappen per `fetch` aus dem TEI nachkommt. Ausgerechnet der Anwendungsfall aus dem Ticket ("an der brust" bei Steinen) liegt dort; die Tabelle je Werkzeug und die offene Frage dazu stehen im Statuskommentar in #448.
-
-### Was über den Einzelfall hinausgilt
-
-**Die Datei trägt die Menge, nicht die Anzeige.** Wo eine Tabelle nach Top-N oder einer Anzeigegrenze kappt (50, 100, beim Reim-Wörterbuch 200), exportiert der Knopf trotzdem alles hinter ihr, mit den aktuellen Filtern. Das war schon die Regel des Hapax-Exports, der über alle Seiten geht, und der Tooltip jedes Knopfs sagt, welche Zeilen drin sind. In Wortfrequenz und Versendings-Profil stand die Filter- und Sortierlogik mitten in `renderTable`; sie ist jetzt eine eigene Methode `sortedEntries()`, damit Tabelle und Datei dieselbe Menge lesen und nicht zwei Kopien derselben Regel.
-
-**Zwei Formate im selben Werkzeugkasten, und das bleibt so.** Die Hauptseite exportiert seit #114 mit Komma, der Hapax-Export im Playground mit Semikolon. Der Laufplan hatte beide für gleich gehalten; gleich sind nur BOM und CRLF. Entschieden hat die Koordination: die neuen Exporte folgen der Hauptseite, Hapax bleibt, weil ein Wechsel bestehende Auswertungen bräche. Der Helfer `assets/js/lib/csv-export.js` trägt das Format jetzt für beide Seiten, `app.js` delegiert an ihn. Dass der Export der Hauptseite dabei bytegleich bleibt, prüft ein Test gegen eine wörtliche Kopie des alten Quotings, nicht gegen den Helfer selbst; sein Kontrollwert sind die vier Texte mit Komma in Titel oder Autor, die *minne* trifft (FR1, FR2, HVM, PL1).
-
-**Komma-CSV und deutsches Excel.** Ein deutsches Excel spaltet eine Komma-CSV beim Doppelklick nicht auf. Die Hilfe verspricht deshalb nicht "öffnet sich direkt", sondern nennt den Weg über "Daten, Aus Text/CSV". Das gilt für die Hauptseite seit #114 genauso und ist vielleicht der Grund, warum Hapax einmal das Semikolon bekam.
-
-### Rote Zeilen
-
-Keine. Ein eigener Zählfehler, bevor er etwas trug: in der Meldung an die Koordination standen "12 Werkzeuge", es sind 13; die Koordination hat nachgezählt, der PR-Body trägt die richtige Aufschlüsselung.
-
-### Was zurück an Christian geht
-
-- Die Multi-Lemma-Suche ist genau das Werkzeug aus dem Anwendungsfall des Tickets und hat keinen Export. Ein Export dort bräuchte eine Entscheidung, ob die Datei nur die Trefferliste (Text, Abstand, Vers) trägt oder auch den Wortlaut, der erst per `fetch` aus dem TEI kommt. Die Frage steht in #448.
-- Die Datensätze von Linda (CC BY-NC-SA) und Borek (CC0) gehen jetzt als CSV aus dem Playground. Die Datei trägt keine Quellenangabe, die Seite schon. Ob die CSV eine Attributionszeile braucht, ist eine Frage an Linda; eine Kommentarzeile bricht allerdings manches Einleseprogramm.
-
-## 2026-09-24 (Nachtlauf, Spur A, Paket A4) – #228: Apparat entannotiert, und ein gehaltenes Lemma hat 82 Geschwister im Lexikon
-
-KZW hat am 11.09. in #228 entschieden (K7): Die Dichternamen im Verfasser-Slot von acht Liedtexten, die übrigen Apparatnoten mit `@n` und die 422 neuhochdeutschen Inhaltsangaben in GWTK sind Herausgebertext und werden entannotiert; CL und KVO bleiben, in KVO wird `lob` nachgetragen; Lemmata, die dadurch jeden Beleg verlieren, werden gelöscht. Umgesetzt mit `scripts/ingest/entannotate-228/apply-228.py`: 69 Noten mit 132 Tokens in 12 Texten, 422 GWTK-Noten mit 2.058 Tokens, 165 Lemmata gelöscht (`lexicon.xml` 43.878 auf 43.713), `variants.xml` regeneriert (256.787 auf 256.512 Formen, 233.978 Mappings). Korpus-Index 4.2.20, Authority-Index 1.9.12.
-
-Drei Dinge blieben bewusst draußen. NEIM, weil seine Noten die Konkordanz tragen, die #453 sichern will. Die 26 Ziffern in MR1 und WVV, weil K7 sie nur unter „sofern“ nennt; die Form ist als Frage in #228. Und `lemma_66692` *Mur*: belegfrei, aber `lemma_33528` *Murouwe* und `lemma_66691` *Murstat* verweisen per `etym` darauf, also Haltepunkt statt Löschung.
-
-### Was über den Einzelfall hinausgilt
-
-**Ein Lemma zu halten macht seine ausgehenden Zeiger falsch, nicht nur seine eingehenden richtig.** Der Haltepunkt schützt die zwei `etym`-Verweise auf Mur. Dass Murs eigener Sense per `@ana` auf einen Typ zeigt, den die Regeneration von `variants.xml` gerade entfernt hatte, sah kein Gate: `check-authority-cross-refs.py` überspringt nackte `#frag`. Die erste Reviewrunde hat es gefunden.
-
-**Und das Suchmuster war der Zuschnitt.** Gemessen war mit `ana="#type_\d+"`, also nur an einwertigen Listen. `sense/@ana` ist eine Leerzeichenliste; 21.844 von 43.404 Attributen auf origin/main sind mehrwertig. Per `split()` gemessen hatte A4 nicht einen, sondern 83 Typ-Tokens hängend gemacht; Mur war der einzige einwertige Fall und deshalb der einzige, den das Muster sah. Die zweite Runde hat das gefunden, `prune-ana-228.py` entfernt die übrigen 82. Danach hängen wieder genau die 105 Tokens, die schon auf origin/main hingen. Ob jede Regeneration von `variants.xml` die Lexikonlisten mitbereinigen soll, ist eine Frage an den Data-Change-Lifecycle, nicht an #228.
-
-**Ein gelöschtes Lemma kann das Beispiel einer anderen Spur sein.** „46“ war seit #467 (B3, am selben Abend gemergt) das Prüfbeispiel für die Suche nach der Lemma-Nummer, in `woerterbuch.spec.js` und in `hilfe-korpussuche.html`. Beide zeigen jetzt auf „36“ (`lemma_69748` und `lemma_36` *aberelle*, genau zwei Treffer). Entscheidet KZW die Ziffern, muss das Beispiel noch einmal umziehen.
-
-### Rote Zeilen
-
-Keine. Der hängende Zeiger (83 Tokens) hat nichts getragen: `sense/@ana` hat keinen Konsumenten im Build, und beide Runden haben ihn vor dem ersten Push gefunden. Ebenso abgewendet: Der erste Apply-Lauf schrieb `<note n>` wörtlich in den `<change>`-Text und zerbrach 13 TEI-Dateien. `extract-variants.py` brach daran ab, die Dateien wurden zurückgesetzt, das Skript bekam einen Markup-Guard und einen Parse vor dem Schreiben.
-
-Verteilung aus `trockenlauf-auswerten.py`, Zeile dieser Session (`09f7a3aa`, nacht-daten, über A1 bis A4), Stand beim Schreiben: shell-konventionen 139 Treffer bei 542 Aufrufen (26 %), mengenaussagen 75 bei 190 (39 %).
-
-### Was zurück an Christian geht
-
-- Lokaler Review in drei Runden. Runde 1 und 2 hatten je einen Sachbefund (oben), Runde 3 auf Prune und Doku war mergefähig ohne Befund.
-- `VERDICT: VOLLLAUF GRUEN (379 Tests, 39 Dateien)` auf f13277280, vor dem Rebase auf #448 (danach f123424f5; `git diff --stat` zwischen beiden zeigt nur die 22 Dateien, die main seither geändert hat: #448, Kickoff, Reviewer-Memory). Er gilt für den Prune-Commit, weil kein Test `lexicon.xml` liest und Index und API danach byte-gleich neu gebaut wurden. Nach dem Rebase `VERDICT: TEILLAUF GRUEN (24 Tests aus 2 Datei(en))` für die zwei Specs, die #448 geändert hat, auf 3e15feb40.
-- Freeze-Ausnahmen der Koordination: CONTRACTS.md Z. 99, 381, 396 (Homographen jetzt 476 Formen, 991 Lemmata, 2,27 %), sieben ungegatete Stellen mit 43.878 in DATA-MODEL, DESIGN, FEATURES und TEI-MODEL-AUTH-FILES, das „46“-Beispiel.
-- Nicht angefasst, im PR genannt: `ingest/foreign-lang/28-gleis1-kandidaten.csv:5626` führt das gelöschte `lemma_64691` *Siegesfest*; die Kommentare in `hapax-legomena.spec.js:7-12` und `hapax-legomena.js:127-130` sagen noch, 42/46/49 fielen mit #228, es fiel nur 46.
-- Fragen an KZW in #228: die Form für die 26 Ziffern; ob Mur gelöscht und die zwei `etym`-Verweise umgehängt werden sollen.
-
-## 2026-09-24 (Nachtlauf, Koordination) – acht PRs in einer Nacht, und wo die Koordination selbst danebenlag
-
-Laufplan `docs/playbooks/kickoffs/2026-09-23-nachtlauf.md`, zwei Spuren (A Daten, B Frontend), Merge-Freigabe von Christian für PRs ohne offene Befunde, Index-Bumps eingeschlossen. Gemergt wurden zehn PRs, 10 (2 + 8): zwei Reste des Tageslaufs und die acht Pakete des Nachtlaufs, in dieser Reihenfolge: #476, #469 (Tagesreste), #477 (A1: #252, #267), #478 (B1: #433), #479 (A2: #270, Authority 1.9.10), #480 (B2: #420, geschlossen), #482 (A3: #357, Authority 1.9.11), #481 (B3: #467), #483 (B4: #448), #484 (A4: #228, Korpus 4.2.20, Authority 1.9.12). Schlusslauf der Koordination auf `82af90239`, dem Stand mit allen zusammen: `VERDICT: VOLLLAUF GRUEN (389 Tests, 40 Dateien)`. Deploy und Data Integrity auf diesem Stand grün.
-
-### Was über den Einzelfall hinausgilt
-
-**Zwei Spuren, die dateidisjunkt geschnitten sind, sind es über die Daten nicht.** A4 löschte `lemma_69733` „46“, und genau dieses Lemma war in derselben Nacht in B3 zum Prüfbeispiel für die Nummernsuche geworden, in Spec, Hilfeseite und Ticketkommentar. Kein Dateibesitz hat das angezeigt; gefunden hat es die Koordination, weil sie die Löschliste gegen den eben gemergten PR hielt. Wer Spuren nach Dateien schneidet, muss bei Löschungen in `authority-files/` zusätzlich fragen, welche gemergten Tests und Beispiele an den gelöschten IDs hängen.
-
-**Ein „sofern“ in einer Entscheidung ist keine Entscheidung.** K7 in #228 rechnet die 26 Ziffern in MR1 und WVV nur mit, „sofern“ sie wie vorgeschlagen entannotiert werden, und der Vorschlag stammt von einer Session. Die Spur hatte das als entschieden gelesen; die Koordination hat es nach Lektüre des Kommentars herausgenommen und als Frage an KZW gegeben.
-
-**Testvergabe seriell hat gehalten, bis auf einen Fall.** Ein Volllauf zur Zeit, Teilläufe nicht daneben; einmal fuhr Spur A zwei unangemeldete Teilläufe während eines B-Volllaufs, der trotzdem grün endete. Einmal hat Spur B einen Slot zurückgegeben statt ihn zu nutzen, weil ein Checkout einem laufenden Review die Dateien weggezogen hätte. Wo ein Teillauf statt eines Volllaufs reichte, stand die Begründung als Messung daneben (wer die geänderte Datei lädt), nicht als Einschätzung.
-
-**Ein vermeintlicher Neustart war eine eigene Nachricht.** Spur A stand mitten in der Nacht mit neuer PID unter derselben Kennung da, und die Zustellung meldete „new session under a previously used name“. Das Operator-Skill (`transport.md`) beschreibt genau das: eine Nachricht an eine ruhende Spur startet sie neu. Verloren ging nichts (Baum sauber, Zweig gleich PR-Kopf, laut Spur A).
-
-### Rote Zeilen
-
-Keine. Einmal lag die Koordination daneben, und abgewendet hat es die Spur, nicht die Koordination: Für den Konflikt in #481 wies sie Spur B an, mit `--force-with-lease` auf den PR-Zweig zu pushen, obwohl der Spurvertrag Force-Push verbietet. Spur B hat abgelehnt und gefragt; gemergt wurde über einen Merge-Commit. Es hat nichts getragen, deshalb keine Zeile; die Nummern 90 bis 94 bleiben unverbraucht.
-
-### Was zurück an Christian geht
-
-Steht im Morgenbericht der Koordination; die Fragen an KZW stehen je in #251, #252, #267, #270, #357, #228, #433, #467, #448, alle auf `auto:blocked` + `wait:kzw`, die Matrix in #44 ist nachgezogen.
-
-## 2026-09-24 – #237: VTC-Editionsnachweis aus Zotero, und ein Online-Sync ist nie nur ein Werk
-
-KZW hat am 23.09. in #237 Weg 1 gewählt: den Zotero-Eintrag Z246QK62 selbst korrigiert (Josef Jireček als Mitherausgeber von FRB III) und um einen Online-Sync gebeten. Übernommen ist genau dieses Werk: `works.xml` (`work_572`), der VTC-Header, Authority-Index 1.9.13, API. Der Korpus-Index bleibt byte-gleich.
-
-### Was über den Einzelfall hinausgilt
-
-**Ein Online-Sync ändert alles, was seit dem letzten Online-Sync auseinandergelaufen ist.** Am 24.09. brachte er außer VTC zweierlei mit. Erstens 171 Werke, in denen nur die Großschreibung zurückkehrt (`[lieder]` → `[Lieder]`, `N.f.` → `N.F.`): die Korrektur aus #171 F37 (`2734267a3`, 11.07.), die seither auf keinen Online-Sync getroffen war; kein Großbuchstabe fällt dabei weg. Zweitens zwei bewusste Handkorrekturen, die der Sync still zurückgenommen hätte, weil sie nur in `works.xml` stehen: FLG (`c0b546a45`, #104) und FR1 (`115c3a01f`, #236).
-
-**Die 171 blieben draußen, weil ihre Kopien in 182 TEI-Headern nicht mitlaufen.** Für `listBibl` gibt es keinen gefahrlosen Schreiber (`--bibl-struct` serialisiert alle 667 Dateien neu und löscht die `mwb-sigle`), und `--works --check` prüft nur `msIdentifier`. Gefunden hat das die lokale Review in Runde 1; entschieden hat chsteiner am 24.09.: dieser PR nur VTC, der Rest in #486. Mit derselben Antwort ist die Richtung der Kette entschieden, die seit dem Nachtlauf 14./15.09. offen stand: Zotero → `works.xml` → Header, der Header ist Kopie.
-
-### Rote Zeilen
-
-Keine.
-
-### Was zurück an Christian geht
-
-- #486: Schreiber und Gate für `listBibl`, die 171 Titel, FR1 und FLG nach Zotero (KZW), Doku an die Kettenentscheidung.
-- Offen in #237 bei KZW: Blaschka 1934 für WLK (Werkeintrag vorbereiten, Zotero-Felder vorgeben).
 
 ## 2026-10-02 – #370 Punkt 2: Vorprüfung der offenen Paare (Spur C)
 
@@ -1341,3 +800,77 @@ Operator-Lauf mit den Spuren `lauf-486` und `lauf-554` (Sonnet, unter dem Betrie
 **Rote Zeilen.** Eine aus der Koordination, Fehlerjournal 121 (FR1 ungeprüft aus dem Ticket in den Kickoff übernommen, obwohl `git show 115c3a01f` ein Aufruf war). Aus den Spuren 130 bis 132 (`lauf-554`), aus `lauf-486` keine.
 
 **Was zurück an Christian geht.** (1) Ein Datenmodell für Klug-Links an der Lemmaseite (Schema und Frontend). (2) Der Einklapp-Vorschlag für lange Kommentare (PR #600, `UEBERNAHME.md`). (3) Die Gate-Grenze aus #486: aus `works.xml` verschwundene Elemente bleiben im Header stehen. (4) `BESTAND_BEHALTEN` für FLG hält Angaben ohne Zotero-Quelle fest.
+
+## 2026-10-15 – Lauf mit einer Spur (#554) und zwei eigenen PRs: Koordination
+
+Laufplan, Grenzverhandlungen G1 bis G6 und Abnahme in `docs/playbooks/kickoffs/2026-10-15-lauf.md`. Spur `lauf-554b` (Sonnet) hat KZWs Antworten auf die Prüfseite eingearbeitet: #606 (`2ccb54659`, Authority 1.9.27, Korpus 4.2.33, neues Lemma briech). Die Koordination hat daneben #604 (`e8d533e98`, Dateiliste eines PR über `git diff`) und #605 (`9b2e02f86`, listBibl-Gate mit `ERLAUBTE_ZUSAETZE`) gebaut. Neue Tickets: #602 (naschen-Belege), #603 (Ernährung von Tieren). #554 und #486 offen auf `auto:blocked` + `wait:kzw`.
+
+**Was über den Einzelfall hinausgilt.** (1) Der Probelauf mit einer zusätzlichen Fable-Runde 1 (#605) fand ein A, das beide Modelle fanden, und ein A, das nur Opus fand (ganzer Block mit Zotero-`@corresp`, der aus `works.xml` verschwindet). Eine Allowlist für „nur im Header“ hat drei Ränder: Kindelemente, einen in `works.xml` geleerten Container und ganze Blöcke. (2) `gh pr view --json files` ist in gh selbst auf 100 gekappt (`files(first: 100)`), und die Plattform liefert für manche gemergte PRs auf allen Feldern 0. Ob ein Diff berechnet wurde, zeigt nur das Job-Log, und auch dessen `<changed_files>`-Block endet bei 100. (3) Ein Freeze mit benannten Ausnahmen trägt: Drei Ausnahmen waren nötig (eine Zeile in `CLAUDE.md`, `variants-flips-ack.json`, zwei Zahlen in `schema/README.md`), jede steht mit Grund im Laufplan. (4) KZWs Rückfragen setzen manchmal eine Lage voraus, die das Korpus nicht hat („Verweise auf die Textstellen setzen“ bei lêrchenvuoʒ, das im Korpus nicht vorkommt). Das klärt eine Messung, bevor ein Lemma angelegt wird.
+
+**Rote Zeilen.** Zwei aus der Koordination: Fehlerjournal 122 (Klug-Link-Frage ohne KZWs Vorgabe vom 13.10.) und 123 (Datum 16.10. erschlossen statt abgelesen). Aus der Spur 125.
+
+**Was zurück an Christian geht.** (1) Fehlerjournal 125 ist laut Spur die vierte Zeile zur Lehre aus `agentenbefunde.md` (Kette 116, 117, 132, 125). Der Mechanismuswechsel nach `wiederholte-fehler.md` war bei der dritten fällig und ist ausgeblieben. (2) Nachzuziehen, solange es eingefroren war: der Kommentar in `.github/workflows/data-integrity.yml:52-53` zu den erlaubten Header-Zusätzen und `docs/playbooks/MASTERPLAN-AUTONOME-ISSUE-SESSION.md:357-360` zu `--json files`. (3) Bei KZW: Klug-Verweise und Einklappen (Kommentar 6194629707), FLG in Zotero (#486), die Abnahme mit den Fragen zu briech, brî ADJ, slunthart, lêrchenvuoʒ und den Altzählungen (Kommentar 6196973713).
+
+## 2026-10-16 – Lauf mit einer Spur (#460, #461) und sieben Subagenten: Koordination
+
+Ausgelöst durch einen Issue-Audit über 78 offene Tickets (448 von 448 Kommentaren gelesen), danach die Entscheidungen von Christian per `/entscheiden`. Laufplan, Grenzverhandlungen G1, G2, D3 und Abnahme in `docs/playbooks/kickoffs/2026-10-16-lauf.md`. Gemergt: #610 (#93 Textreihen-Browser, `861476a25`), #611 (Prüflisten zu #462, #603, #554, `f8a49ef1a`), #612 (Spur `lauf-1016-daten`, #460/#461, `7a11b4dd9`, Authority 1.9.28, Corpus 4.2.34). Fragen an KZW in #419, #460, #461, #462, #554, #579, #603; Abnahme an Julia in #93; #434 geschlossen.
+
+**Was über den Einzelfall hinausgilt.** (1) Der Probelauf mit einer Fable-Runde 1 neben dem Opus-Gate fand auf #610 dieselben Befunde in beiden Modellen und auf #611 bei Opus mehr (stilles Überspringen von Eingaben, Wortwahl "Handurteil" für Agentenurteile); bei Fable nichts, was Opus nicht auch fand. (2) Eine Vorsortierung über eine Wortliste aus Lexikonformen prüft man gegen die Laufzusammenfassung des Skripts: `du` ist im Lexikon eine Präposition, das Pronomen ist `dû`, und die Regel feuerte deshalb nie, ohne Fehlermeldung. Die Zusammenfassung des Laufs nannte die drei tatsächlich gefundenen Pronomen und hätte es gezeigt. (3) Ein Squash-Merge macht die Commits einer Spur "unpushed", sobald der Zweig auf GitHub gelöscht ist; `claude rm` weigert sich dann zu Recht. Ob nichts verloren geht, zeigt der Vergleich der Bäume (`rev-parse <zweig>^{tree} <squash>^{tree}`). (4) Der Status einer Hintergrundspur kommt aus `claude agents --json`, nicht aus ihrer Antwort: sie meldet ihren Stand nach dem Lösen einer Rückfrage, nicht den davor (Fehlerjournal 133).
+
+**Rote Zeilen.** Eine aus der Koordination, Fehlerjournal 133. Aus der Spur 138.
+
+**Was zurück an Christian geht.** (1) #453 wird am 22.10. unter "Ball bei uns" rot, gewollt, keine neue Frage an KZW. (2) Den MPS-Export im Inventar erfassen; er liegt jetzt in `DigitalHumanitiesCraft/medieval-plantnames-archive` (privat, Ordner `mps/`), nicht mehr nur in CoReMA. (3) Die Frage zum PLUS-Logo im Seitenfuß (#93). (4) Die Prüfseite für #603 als Folgepaket, falls KZW sie will. (5) Einklappen und Literaturanzeige für #554 waren nicht in diesem Lauf. (6) Zur Lehre aus `agentenbefunde.md` (Fehlerjournal 125, 133) ist kein Mechanismuswechsel offen: die begründete Aussetzung (#58) ist der Mechanismus, entschieden von chsteiner am 16.10. und in 125 nachgetragen. (7) `claude-code-setup` ist während des Laufs von `ef3abe9` auf `ee80d66` gegangen (40 Commits, darunter `rules/modelle.md`); der Lauf hat die Gate-Regel vom Start befolgt.
+
+## 2026-10-18 – Spur lauf-1018-frontend, PR 1: Playground und Lemmaseite (#251, #58, #554 Einklappen)
+
+Spur `lauf-1018-frontend` (Sonnet, unter dem Betriebsvertrag, Laufplan `docs/playbooks/kickoffs/2026-10-18-lauf.md`). Umgesetzt auf Julias Abnahme vom 16.10. und KZWs Wunsch vom 16.10.: (#251) im Wortbestandteil-Modus stehen die Namen der gewählten Schreibformen neben dem unveränderten Zähler (`#componentPickList`); (#58) die Fundstellen-Liste je Lemma in der Karte der Dokumentsuche scrollt in sich (`.beleg-liste`, 36 rem); (#554) Lexikonkommentare über 600 Zeichen stehen auf sechs Zeilen gekürzt mit "Weiterlesen", auf der Lemmaseite und im Lemma-Explorer (neues Modul `assets/js/lib/collapsible-text.js`). Dazu die Antwort für #448 (Kommentar nach dem Merge): der Kontext im Export der Dokumentsuche ist fest 10 Wörter je Seite; 24.958 von 24.995 Treffern von minne und herze haben beide Seiten voll, die übrigen 37 liegen am Textrand, und die Zeichenlänge der vollen Fenster schwankt zwischen 75 und 148 (Median 102), weil die Wörter verschieden lang sind.
+
+**Was über den Einzelfall hinausgilt.** (1) Eine Funktion, die nach `innerHTML` Layout misst (`clientHeight`, `scrollHeight`), läuft ins Leere, solange ein Elternteil `hidden` trägt: auf der Lemmaseite steht `renderLemma` vor dem Aufdecken von `#lemmaContent`, jede Höhe war 0, und der Knopf blieb auch ohne verdeckten Text. Der Reviewer fand es in Runde 1 (A); die Spec prüfte nur die drei langen Beispiele und sah es nicht. Wer so eine Nachmessung schreibt, verfolgt den Aufrufpfad bis zum Aufdecken und prüft den Fall knapp über der Schwelle. (2) Julias Satz zu #251 klang nach verlorener Auswahl und war eine Sichtbarkeitsfrage: am Live-Stand blieben nach Filter an und aus beide Häkchen (2 von 2) und der Zähler stand bei 2, nur hieß keine Stelle die Namen. Erst den Prüfweg nachstellen, dann bauen. (3) Eine Suche über die Schreibform findet nicht das Lemma, das man meint: "wîn" trifft 345 Lemmata, die Liste zeigt 50, wîn selbst steht nicht darunter (#545); Specs gehen über die ID.
+
+**Rote Zeilen.** Keine. Trockenlauf-Zeile dieser Session (`lauf-1018-frontend`, Stand der Auswertung vor dem PR): 176 Aufrufe, 65 Treffer (37 %). Beinahe-Fälle, nicht gezählt, weil etwas sie vor dem Tragen abgewendet hat: ein Heredoc im Befehl (der Hook sperrte ihn) und eine `Ohne Review:`-Zeile an einem Commit, der nur das Reviewer-Memory berührt (nach CLAUDE.md trägt der keine; vor dem Push selbst nachgelesen und amendiert).
+
+**Was zurück an Christian geht.** (1) Der Klick auf eine freie Fläche der Fundstellen-Liste klappt die ganze Karte zu, weil `ui-helpers.js:414` nur Links ausnimmt; bei einer scrollbaren Region liegt der Griff näher. Der Reviewer ordnete es als Punkt für den Berater ein, nicht umgesetzt. (2) Der Gegentest "knapp über der Schwelle" trennt mit null Zeilen Marge (`lemma_1079` darben, 683 Zeichen, genau sechs Zeilen bei 1.280 px); er prüft eine Invariante und bleibt bei anderer Schrift grün, kann dann aber nichts mehr unterscheiden. (3) Für F2 liegt die Antwort bei Julia: ist die sichtbare Liste das, was ihr gefehlt hat? Die Zählerfrage (Schreibformen oder Lemmata) bleibt bei KZW.
+
+## 2026-10-18 – Spur lauf-1018-frontend, PR 2: PLUS-Logo im Seitenfuß (#93)
+
+KZW hat am 16.10. geschrieben, das alte PLUS-Logo dürfe seit 1.10.2026 nicht mehr verwendet werden, auch im Haupt-Footer, und zwei Zips angehängt. `assets/images/university-logo.png` zeigte nicht nur das alte PLUS-Zeichen, sondern PLUS plus den Schriftzug "Mittelhochdeutsche Begriffsdatenbank" (1.279 x 828, Verhältnis 1,54). Ersetzt ist es durch die linksbündige Farbvariante aus `Universitat.Salzburg_Logo.linksbundig_Ext.zip`, vom Sicherheitsrand befreit (Inhalt 2.945 x 715 von 3.887 x 1.649) und auf 900 x 219 skaliert (Verhältnis 4,1). Weil sich das Verhältnis ändert, ist die Footer-Höhe von `h-24` auf `h-16` gegangen, 26 Seiten neu gebaut. Das MHDBDB-Logo bleibt: die zweite Zip enthält sechs Varianten als PNG und als EPS (dazu ein PDF); die eine, die ich mir angesehen habe (`Mittelhochdeutsche Begriffsdatenbank.png`), zeigt "UNIVERSITÄT SALZBURG" mit dem Schriftzug "Mittelhochdeutsche Begriffsdatenbank", die übrigen fünf sind nicht angesehen; ob eine davon das bisherige `mhdbdb-logo.png` ersetzen soll, ist eine Frage an KZW im Abnahmekommentar.
+
+**Was über den Einzelfall hinausgilt.** (1) Ein Austausch "unter demselben Namen" ändert keine Seite nur dann, wenn sich Format und Verhältnis nicht ändern; hier wechselte das Verhältnis, und die Höhenklasse im Include war Teil der Darstellung. (2) Julias Befund "Alle anderen Logos außer Clariah und MHDBDB fehlen komplett" ließ sich nicht nachstellen: am Live-Stand laden alle 7 Logos der Textreihen-Startseite (7 von 7, `naturalWidth` größer als 0), und alle 7 Dateien liegen in `textreihen/img/`. Die Koordination hatte denselben Befund am 16.10. Die Logozeile der Textreihen-Startseite enthält weiter kein PLUS-Logo; das wurde nicht ohne Entscheidung ergänzt.
+
+**Rote Zeilen.** Keine.
+
+**Was zurück an Christian geht.** (1) KZW: soll das MHDBDB-Logo durch eine der sechs neuen Varianten ersetzt werden? (2) Julia hat vermutlich eine zwischengespeicherte oder blockierte Ansicht gesehen; ohne Bildschirmfoto bleibt es eine Vermutung.
+
+## 2026-10-18 – Spur lauf-1018-frontend, PR 3: Unterseiten Publikationen und Demnächst im Korpus (#417, #537)
+
+Zwei Hilfe-Unterseiten, beide aus eingefrorenen Ständen unter `data/` gebaut, nie live: `hilfe-publikationen.html` aus den Zotero-Sammlungen WB4HTUGC (88 Einträge) und Z2N4SWWI (205) der Gruppe 5043625, `hilfe-demnaechst.html` aus den offenen `ingest`-Issues (15, davon 0 sichtbar) und einer von Hand gepflegten Zeitplan-Datei. Ein Monatslauf (`monatslauf-seiten.yml`, Muster `naming-index-update.yml`) zieht beide nach und öffnet bei Änderung einen PR.
+
+**Entscheidungen.** (1) Wie der Vorgänger `build-textreihen-bibliography.py`: Marker-Region in der Seite, Stand als JSON, `--offline` und `--check`. (2) Ein Ausfall von Zotero oder GitHub lässt den alten Stand liegen und endet mit Exit 0; auch weniger als die Hälfte der bisherigen Einträge gilt als misslungener Abruf. Probe mit totem Proxy: beide Skripte Exit 0, Stand und Seite unverändert. (3) Das Abrufdatum ändert sich nur mit dem Inhalt, sonst öffnete jeder Monat einen PR. (4) Der Em-Dash eines Zotero-Titels (Naming-analysis) wird erst beim Bauen der Seite ersetzt; der Stand behält den Titel. (5) Ausgeschlossen sind `wait:extern` per Label (auch wenn der Zeitplan das Issue nennt) und elf Issues per Eintrag in der Zeitplan-Datei: Pipeline, WZB schon im Korpus, Zusammenarbeit ohne Text, zwei zurückgestellte, #262 und #263 mit offener Rechtefrage, und #264, #265, #266, #139, die noch nicht genannt werden dürfen (#265: Frage an KZW vom 09.10. offen, #264 hängt daran, #266 ohne Beschluss; #139 ist beschlossen, aber die Lizenz von CoReMA steht laut Body noch offen und die Kochbuchwahl des Piloten auch; die Koordination hat das Lesen der Threads vor der Nennung verlangt, der Reviewer hat meine erste Lesart von #139 "nicht beschlossen" am ganzen Thread widerlegt). Die Seite startet deshalb leer ("Zurzeit steht keine Aufnahme fest"). Der erste Bau hatte #262 und #263 mit Quartal auf der Seite, weil die Spur "offene Rechtefrage" mit dem Label `wait:extern` gleichsetzte; der Reviewer hat es am Thread von #537 gemessen (KZW 08.10.: "erst nach Freigabe nennen", #262 und #263 genannt, #262 seit 06.10. `wait:kzw`). Das Label ersetzt keine Entscheidung aus dem Thread. Die Quartalsvorschläge (262: 2026-Q4, 263: 2027-Q1, 265: 2027-Q2) stehen im Grund der jeweiligen `ausgeschlossen`-Zeile, bis die Freigabe da ist; `"vorschlag": true` würde den Hinweis "noch nicht abgestimmt" auf der Seite einschalten; zurzeit steht es auf `false`, weil kein Quartal drinsteht. (6) Das DOI-Feld in Zotero ist Freitext: von 293 Einträgen standen in 13 Links als `doi.org/https://...` oder relativ; jetzt gilt nur eine echte DOI oder eine Web-Adresse als Link, 87 Einträge zeigen "kein Link hinterlegt". (7) Das Datum gehört zum Abschnitt, damit ein ausgefallener Abschnitt die Seite nicht frischer macht; der PR-Body trägt das Build-Log.
+
+**Rote Zeilen.** Keine.
+
+## 2026-10-20 – Doku-Check (Scorecard)
+
+**Scorecard Doku-Check 2026-10-20** (Anlass: Fälligkeit nach `check-doc-staleness.py --faellig`, 70 Commits an den 14 stabilen Docs seit dem 05.10., erster Lauf als Cloud-Routine nach `docs/playbooks/DOKU-CHECK.md`). Gates alle grün (`doc-count-audit`, `check-doc-inventories`, `check-index-versions`, `build-pages --check`, Em-Dash), geprüft gegen `ede78bca3`; die 12 geänderten Docs haben sechs Agenten vollständig gelesen, jeder übernommene Befund ist selbst nachgemessen. Drei Algorithmen gegen den Code (§A Normalisierung mit Parität über 280.619 Strings, §B Positionszählung, §C Drei-Stufen-Auflösung samt #463) stimmen, die Fehler saßen in den Beispielen (`brott`, `brot`); von drei XPaths stimmte einer nicht beim Leser (`broader` liest `parse_genres`, nicht `build_performance_maps`). **52 Befunde behoben, je Befund ein Commit**, darunter ein Rebuild-Block, der den Authority-Index vor dem Korpus-Index baute und `build-lemma-pos.py` ausließ, „ein kuratiertes Lemma" an vier Stellen bei heute 134 Lemmata mit Kommentar (#554), zwei P-OFFEN-Punkte in POS-TAGSET, die KZW am 10.07. entschieden hatte, fünf ROADMAP-Zeilen, die der Thread überholt hatte (#58, #63, #93, #109, #139), und „~35 bis 40 %" Compound-Tags bei gemessenen 28 %. Zurückgelassen, weil Code statt Doku: `npm run build:data` ruft `build:authority` ohne `--allow-dirty` auf und bricht darum genau nach einem `extract-variants --apply`, das `variants.xml` ändert, ab (DATA-MODEL Schritt 6 nennt das Flag jetzt); der Schemakommentar zu `<interpretation>` in `mhdbdb.rnc` („present in some files", heute in keinem).
+
+**Was über den Einzelfall hinausgilt.** (1) Die Zahl der Befunde hing an den Ist-Sätzen, die ein früherer Zustand geschrieben hat und kein Gate liest: Status, Beispiele und Zählungen in Prosa, wie am 05.10. (2) Erledigtes stand dreimal als offen in TEI-MODEL, obwohl §10 desselben Docs es als erledigt führt (`<seg type="pc">`, `<suppplied>`, WUT): ein Doc, das Soll und Migrationsgeschichte trennt, muss beim Abschluss beide Stellen anfassen. (3) „~40 MB" für den Korpus-Index blieb wie am 05.10. stehen, die Rundung ist kein Fehler. (4) Der Check selbst macht sich fällig, wenn sein PR nicht gesquasht wird: `check-doc-staleness.py` zählt `git log <commit>..HEAD -- <docs>` ohne `--first-parent`, die 52 Befund-Commits allein überschreiten die Schwelle von 40. (5) Eine Korrektur ist selbst eine Behauptung: die neu geschriebene `<monogr>`-Regel in TEI-MODEL §2.1a war aus einer Korpuszählung erschlossen und falsch, erst die Probe des Reviewers gegen `schema/tei_all.rng` zeigte die Zweige des Inhaltsmodells (drei, wie Runde 2 nachzählte). Der Reviewer (Opus, Runde 1 und schmale Runde 2, beide ohne A) fand vier Fehler in Sätzen dieses PRs (monogr zweimal, `join="left|right"`, fehlende `--allow-dirty` im Rebuild-Block), behoben in je einem Commit vor der Scorecard.
+
+## 2026-11-18 – Nachtsession nacht-147-bre: Weingrüße, Stufe 0 und Phase 1 bis 3 (#147)
+
+Autonome Session (Opus als Orchestrator, Sonnet-Subagenten für die Disambiguierung) unter dem Betriebsvertrag, Kickoff `637248697`. 18 von 21 Zeugen stehen als `ingest/bre/BRE_*.tei.xml` mit `@lemmaRef` (28245 von 30216 lexikalischen `<w>`), `@pos` (27364), `@ana` (27896) und `@corresp` (15865), gemessen mit `scripts/ingest/bre/21-abdeckung.py`. B2, d4 und d6 warten auf Silvans Antwort zur Segmentierung, von D ist nur Teil A drin (Teil B ist 17. Jh.). Nichts in `tei/`, `lexicon.xml` unverändert. Prüfpaket für Julia und KZW in `ingest/bre/pruefung/`. PR #717.
+
+**Was über den Einzelfall hinausgilt.** (1) **Der Auto-Match aus `variants.xml` ist nicht fehlerfrei, und Phase 3 ist sein Detektor.** Eine Form, die `variants.xml` nur unter einem Lemma führt, bekommt dieses Lemma ohne Blick auf den Satz. In den Weingrüßen trifft das „dorffen“ (Dörfer) als *durfen*, „imm“ (ihm) als *ime*, „weck“ (Gebäck) als *wëc*. Sichtbar wird es erst, wenn keine Bedeutung des Lemmas passt: 190 der 233 Sense-abstains haben ihr Lemma aus dem Auto-Match. Für jeden künftigen Ingest heißt das: die Sense-abstains gehören als Lemma-Verdachtsliste ins Prüfpaket, nicht in eine Restmenge. (2) **`@corresp` scheitert meist an Zirkumflex-Paaren** (*nu*/*nû*, *du*/*dû*), die normalisiert zusammenfallen: 8211 Wörter mit mehreren Typen, 8166 davon durch einen exakten Formvergleich vor dem normalisierten lösbar. Das betrifft den gemeinsamen Algorithmus mit WZB und ist nicht umgesetzt. (3) **Wortart-Kandidaten aus dem Lemma haben Lücken:** *zuo* kennt kein `ADV`, das sind 132 der 387 Wortart-abstains. (4) Ein Assign-Skript muss unabhängig vom schon gesetzten Attribut einteilen, sonst schrumpft die Pending-TSV beim zweiten Lauf und die Entscheidungen verlieren ihre Zeilen. Gemessen: nach 10 und 13 sind TEI und Pending-TSV byte-gleich zum Commit. (5) **Ein Lecktest ist nur so gut wie seine Quelle.** Der erste Stand von `test_bre.py` las `sources/weingruesse/docling/` und hielt es für die Druckfahnen; es sind Silvans Steckbriefe von 2022. Seine Kontrolle traf (ein Steckbrief-Zitat in `zeugen.tsv`), und gerade das ließ die falsche Quelle echt aussehen. Der Reviewer zog den PDF-Text mit `pdftotext` und fand eine Wendung der Druckfahnen in derselben Datei (Zeile d4, seit #654 auf `main`). Ein Kontrollwert beweist, dass die Suche läuft, nicht, dass sie in der richtigen Menge läuft: die Gegenprobe muss aus der Quelle stammen, die der Test schützen soll.
+
+**Rote Zeilen.** Keine. Beinahe-Fälle, nicht gezählt, weil etwas sie vor dem Tragen abgewendet hat: der Lecktest auf der falschen Quelle samt der Aussage „kein Wortlaut“ in README und Commit Message (das Review-Gate fing es vor dem Push, Runde 1, A), ein `14-pos-assign.py`, das beim zweiten Lauf abbrach (ebenso), die Umformulierung der d4-Zeile in `zeugen.tsv`, die den Lecktest bestand und Erst- und Nachdruck vertauschte (Runde 2, A: wer gegen einen Wortlaut-Test umformuliert, liest das Ergebnis gegen die Quelle, nicht gegen den Test), ein `cd` in den eigenen Worktree in einem Prüfbefehl (die Harness wies ihn ab), ein README-Satz, ein Skript spiele die Korrekturen ein (es gibt keins, vor dem Commit beim Nachlesen gemerkt), und die Abbildung `GRA` → `ADV` aus `wzb-pos-assign.py`, die POS-TAGSET §3 widerspricht (vor dem Commit gemerkt, TEI zurückgesetzt).
+
+**Was zurück an Christian geht.** (1) Die Abnahme liegt bei Julia, KZW ist erwähnt; KZWs Antwort vom 17.11. fehlt noch. (2) Soll `@corresp` exakt vor normalisiert vergleichen, für BRE und WZB? (3) Braucht *zuo* einen `ADV`-Sense oder eine Wortartangabe im Lexikon? (4) Die Druckfahnen-Wendung (d4) und das Steckbrief-Zitat (C) aus #654 sind umformuliert, stehen aber weiter in der Git-Geschichte von `main`. (5) Für den Advisor, vom Reviewer in Runde 1 gemessen und von mir nicht nachgezählt: `pos19` lässt `GRA` auch neben anderen Tags weg, nach POS-TAGSET geht es in `ADJ` auf. Betroffen wären 667 Lemmata und 2639 Wörter der Weingrüße. Ob ein `ADJ`-Kandidat dazukommen soll, ist eine Entwurfsfrage.
+
+## 2026-11-19 – Session apk-262: Hesler-Apokalypse zur Ansicht und toter ETC-Link (#262)
+
+Autonome Session (Opus als Orchestrator, Sonnet-Subagenten für die Disambiguierung) unter dem Betriebsvertrag, Kickoff `5ddf5942d`. **PR #724** legt die Apokalypse Heinrichs von Hesler als `ingest/apk/APK.tei.xml` ab: 23.254 Verse, `@lemmaRef` 110.241, `@pos` 94.675, `@ana` 100.585 und `@corresp` 59.057 von 115.566 `<w>` (`scripts/ingest/apk/21-abdeckung.py`). Nichts in `tei/`, `lexicon.xml` unverändert, die Rohdatei nicht im Repo. Der PR wird nicht gemergt, bevor Ute Recker-Hamm (MWB Trier) den Ingest über KZW gesehen hat. Prüfpaket für Julia in `ingest/apk/pruefung/`. **PR #723** ersetzt den toten ETC-Link in 71 TEI-Headern durch `https://mhdwb-online.de/textarchiv.php`. In fünf Zotero-Notizen bleibt die URL als Text stehen, weil `sync_tei_headers.py --works --check` sie gegen `works.xml` hält.
+
+**Was über den Einzelfall hinausgilt.** (1) **Offene SPLIT-Gruppen verfälschen die Lemma-Verdachtsliste.** `20-pruefpaket.py` aus dem BRE-Lauf zählte jeden Sense-abstain als Verdacht, auch die Tokens, deren Gruppe auf SPLIT steht und nur noch nicht je Token entschieden ist. Bei BRE gab es keine offenen SPLITs, hier waren es 9.014 von 9.320 Zeilen. Die Liste hätte das eine Signal, für das sie gebaut ist, unter dem Rest begraben. Heute filtert das Skript sie heraus und meldet die Zahl. (2) **Eine Bulk-Entscheidung sieht nur die gezeigten Belege.** Für `ir` (697 Wörter) zeigte der Batch zwölf Belege, alle Possessiv. Der erste Lauf setzte die Form auf das Lemma *ir*, der zweite nach präzisierter Anleitung begründet auf *sie*. Eine eigene Stichprobe aus 15 Belegen fand drei Anreden („sult ir“). Bei einer häufigen Funktionsform ist die Stichprobe des Orchestrators die einzige Stelle, an der die Belege außerhalb des Fensters vorkommen. (3) **Im Ostmitteldeutschen trifft der Auto-Match häufiger daneben als in den Weingrüßen.** „geschaft“ steht in `variants.xml` nur unter dem Substantiv *geschaft* und ist bei Hesler das Partizip von *schaffen* (30 Wörter). Die Sense-SPLITs zeigen dasselbe in größerem Umfang („wert“ als *werden*, „lut“ als *liute*), und 4.786 Wörter in 2.756 Schreibungen kennt `variants.xml` gar nicht (darunter „dutet“, „irkornen“). Ob eine Normalisierung vor-→ver-, ir-→er- schon im Abgleich davon wie viele fände, ist nicht gemessen. (4) **Zwei Lexikoneinträge *sie*** (`lemma_5454`, `lemma_56116`): verschiedene Sonnet-Batches wählten verschieden, ohne dass eine Anleitung das hätte verhindern können.
+
+**Rote Zeilen.** Keine. Beinahe-Fälle, nicht gezählt, weil etwas sie vor dem Tragen abgewendet hat: die Testfixture in `test_apk.py`, als „erfunden“ beschrieben, übernahm einen `sic`-Wert samt Text wörtlich aus V. 9619 der Rohdatei. Der Kickoff verbietet genau das, und Docstring, README und Commit Message behaupteten das Gegenteil. Das Review-Gate fand es in Runde 1 (A) per Suche nach Attributwerten, bevor etwas gepusht war, der Commit ist per Amend ersetzt. Eine Wortfolgen-Suche hätte es nicht gefunden, die Suche nach Attributwerten schon. Dazu ein Satz im PR-Entwurf, `ingest/` werde nicht ausgeliefert (`_config.yml` schließt es nicht aus, vor dem Absenden nachgesehen).
+
+**Was zurück an Christian geht.** (1) Die Ansicht durch Ute liegt bei KZW, die Abnahme der Zuweisungen bei Julia. (2) SPLIT-Gruppen in Phase 2 (13.925) und Phase 3 (9.014 Wörter) sind offen, rund 460 Batches, Nachlauf in `scripts/ingest/apk/README.md`. (3) Gattung und Normdaten entscheidet KZW (`ingest/apk/normdaten-vorschlag.md`). (4) In #262 stand „in allen 73“, geändert sind 71 Dateien, BDK und DL1 tragen die URL nur in der Zotero-Notiz.

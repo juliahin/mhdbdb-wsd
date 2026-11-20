@@ -110,6 +110,12 @@ data/audit/
 # Und das Laufzeitbudget der CI-Schritte (#564), gelesen von
 # check-runtime-budget.py.
 !scripts/audit/runtime-budget.json
+# Und der Stand des Doku-Health-Checks (#641), gelesen von
+# check-doc-staleness.py: ein Marker, kein Report.
+!scripts/audit/doc-health-state.json
+# Und die Allowlist des Link-Checks (#653), gelesen von check-external-links.py:
+# eine Vorgabe mit Begruendung je Eintrag, kein Report.
+!scripts/audit/link-check-allowlist.json
 scripts/audit/*-REPORT.md
 scripts/audit/lexicon-backfill-*.md
 scripts/audit/lexicon-backfill-*.xml
@@ -122,3 +128,15 @@ testing/test-debug.html
 
 # Source-ZIPs in Ingest-Ordnern (Original-Daten von Beitragenden, untracked)
 ingest/**/*.zip
+
+# Weingrüße (Silvan Wagner, #147), nur lokal: Druckfahnen der Hirzel-Ausgabe
+# (Verlagsrechte ungeklärt), seine Word-Transkriptionen als Zip und deren
+# docling-Umwandlung
+/sources/weingruesse/*.pdf
+/sources/weingruesse/*.zip
+/sources/weingruesse/docling/
+
+# Hesler-Apokalypse (#262), nur lokal: TEI.2 aus dem MHGTA (Trier/Virginia
+# 2002), von KZW am 18.11.2026 geschickt; bleibt draussen, bis Ute
+# Recker-Hamm (MWB Trier) den fertigen Ingest gesehen hat
+/sources/hesler-apokalypse/

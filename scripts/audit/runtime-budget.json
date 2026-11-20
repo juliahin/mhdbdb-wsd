@@ -10,11 +10,11 @@
   ],
   "steps": {
     "no-cdn-check.yml/Checkout": {
-      "budget_s": 13,
-      "n": 56,
-      "date": "2026-10-14",
-      "basis": "p90 aller 56 erfolgreichen Laeufe seit 2026-10-10T13:57:23Z (median 12 s, max 15 s; --max-runs 100); Nachkalibrierung aus #564",
-      "reason": "schlanker Checkout nach E1; vorher median 124 s im Gesamtlauf. Nur die neuesten 25 Laeufe (--measure ohne --max-runs) ergaeben p90 10 s, max 11 s; die Fensterregel fuer E1-Checkouts verlangt alle Laeufe seit dem Zeitpunkt"
+      "budget_s": 16,
+      "n": 35,
+      "date": "2026-11-03",
+      "basis": "p90 der 35 erfolgreichen Laeufe seit 2026-10-19T09:36:00Z (median 14 s, max 16 s; Filter wie --measure). Abweichung von der Fensterregel (seit E1): der Checkout ist um den 19.10. stufenartig langsamer geworden, das E1-Fenster ergab p90 14 (Reviewer, 181 Laeufe) bzw. 15 (die neuesten 100). Der Filter sieht keinen der 3 Laeufe ueber der alten Grenze 16.9 s (2 PR-Laeufe rot am Budgetschritt; 1 push auf main gruen, 18 s, fehlt dennoch in status=success der API, Ursache ungeklaert). Mit allen 39 Checkouts der letzten 40 Laeufe bleibt p90 16, max 20 s",
+      "reason": "Checkout ist seit der Kalibrierung vom 14.10. langsamer geworden (median 12 s auf 14 s, am 03.11. 15 s ueber 13 Laeufe), ohne Aenderung am Checkout-Schritt; vermutlich Wachstum des Repos. Bis 03.11.: budget 13 s, n 56, basis p90 aller erfolgreichen Laeufe seit 2026-10-10 (median 12 s, max 15 s). Angehoben in #659, wo der Schritt mit 17 s rot wurde, wie zuvor in #656 (20 s)"
     },
     "no-cdn-check.yml/Dokumentierte Zahlen gegen die Daten (#382/#398)": {
       "budget_s": 6,
@@ -101,12 +101,11 @@
       "reason": "liegt unter der Untergrenze, die Grenze ist daher 10 s und haengt nicht am Budget"
     },
     "data-integrity.yml/Freshness lemma-pos (#462)": {
-      "budget_s": 13,
-      "n": 2,
-      "date": "2026-10-12",
-      "basis": "lokal gemessen, 4 Kerne unter Last: --jobs 4 12,4 s, --jobs 2 12,6 s (fable-reviewer, #462); noch kein CI-Lauf, n unter 10, vorlaeufig",
-      "reason": "neuer Schritt aus #462, liest tei/ (@lemmaRef und @pos) mit Regex",
-      "provisional_since": "2026-10-12T17:43:11Z"
+      "budget_s": 18,
+      "n": 21,
+      "date": "2026-10-18",
+      "basis": "p90 aller 21 Laeufe des Schritts in den 22 erfolgreichen Laeufen seit 2026-10-12T17:43:11Z (median 13 s, max 18 s; --max-runs 100); Nachkalibrierung aus #564",
+      "reason": "neuer Schritt aus #462, liest tei/ (@lemmaRef und @pos) mit Regex; vorlaeufiges Budget 13 s war lokal gemessen (n 2)"
     },
     "data-integrity.yml/Freshness variants.xml (#125)": {
       "budget_s": 45,
@@ -142,6 +141,38 @@
       "date": "2026-10-14",
       "basis": "p90 der 11 erfolgreichen Laeufe seit 2026-10-10T13:57:23Z (median 108 s, max 128 s); Nachkalibrierung aus #564",
       "reason": "Zaehlskripte ueber das ganze Korpus"
+    },
+    "doc-health.yml/Checkout": {
+      "budget_s": 60,
+      "n": 0,
+      "date": "2026-10-20",
+      "basis": "nicht gemessen, vorlaeufig: Schaetzung vor dem ersten Lauf (n unter 10, vorlaeufig)",
+      "reason": "ganze History ohne Blobs (fetch-depth 0, filter blob:none) und nur docs, scripts, .github; der sparse-Checkout von no-cdn-check.yml (fetch-depth 2) braucht p90 13 s, die volle History kostet Zeit fuer Commits und Trees, wie viel ist ungemessen; grosszuegig, bis zehn Laeufe vorliegen",
+      "provisional_since": "2026-10-20T00:00:00Z"
+    },
+    "doc-health.yml/Set up Python": {
+      "budget_s": 5,
+      "n": 0,
+      "date": "2026-10-20",
+      "basis": "nicht gemessen, vorlaeufig: gleicher Schritt wie in measured-counts.yml (p90 5 s, n 11), ohne pip-Cache (n unter 10, vorlaeufig)",
+      "reason": "liegt unter der Untergrenze, die Grenze ist daher 10 s",
+      "provisional_since": "2026-10-20T00:00:00Z"
+    },
+    "doc-health.yml/Doku-Health Selbsttest (#641)": {
+      "budget_s": 5,
+      "n": 0,
+      "date": "2026-10-20",
+      "basis": "lokal gemessen am 2026-10-20 unter einer Sekunde, nicht auf dem Runner (n unter 10, vorlaeufig)",
+      "reason": "reine Logik ohne Netz und ohne git; die Grenze ist die Untergrenze 10 s",
+      "provisional_since": "2026-10-20T00:00:00Z"
+    },
+    "doc-health.yml/Doku-Health Bericht (#641)": {
+      "budget_s": 20,
+      "n": 0,
+      "date": "2026-10-20",
+      "basis": "nicht gemessen, vorlaeufig: Schaetzung vor dem ersten Lauf (n unter 10, vorlaeufig)",
+      "reason": "ein git log ueber 14 Pfade, drei bis fuenf gh-api-Aufrufe (PRs, Issues der Feature-Docs, Kommentare des Sammeltickets); lokal gemessen am 2026-10-20 mit gh auf diesem Rechner, nicht auf dem Runner",
+      "provisional_since": "2026-10-20T00:00:00Z"
     }
   }
 }

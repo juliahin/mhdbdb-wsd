@@ -14,6 +14,16 @@
     <link rel="stylesheet" href="assets/css/shared.css">
     <link rel="stylesheet" href="assets/css/hilfe.css">
     <link rel="stylesheet" href="assets/vendor/prism/prism.css">
+<!-- SEO:START -->
+<link rel="canonical" href="https://dhcraft.org/mhdbdb-tei-only/hilfe-daten-beitragen.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MHDBDB">
+<meta property="og:locale" content="de_AT">
+<meta property="og:title" content="Eigene Texte beitragen – MHDBDB Hilfe">
+<meta property="og:description" content="Technischer Leitfaden zur Konversion bestehender TEI-Daten (MHD/FNHD) in das MHDBDB-Schema: Header-Struktur, Wort-Annotation, Authority-Files, Pipeline, Validierung.">
+<meta property="og:url" content="https://dhcraft.org/mhdbdb-tei-only/hilfe-daten-beitragen.html">
+<meta property="og:image" content="https://dhcraft.org/mhdbdb-tei-only/assets/images/mhdbdb-logo.png">
+<!-- SEO:END -->
 <!-- MATOMO:START -->
 <script>
   (function() {
@@ -816,8 +826,9 @@ L105: Element body has extra content: div    ← Cascade-Spitze</code></pre>
                 <strong>Stufe&nbsp;2</strong>
                 gegen <code class="px-2 py-0.5 bg-slate-100 rounded text-sm">mhdbdb.rng</code>
                 (MHDBDB-Konventionen). Stufe&nbsp;2 ist das harte Gate: 0&nbsp;Fails sind erforderlich.
-                Stufe&nbsp;1 wird mit einer dokumentierten Baseline von 34 toleranten GAP-Files verglichen
-                (Drift-Wache).
+                Stufe&nbsp;1 wird mit einer dokumentierten Baseline von 35 Dateien verglichen, die bewusst
+                von TEI&nbsp;P5 abweichen. Eine neue Datei steht nicht in dieser Baseline: Besteht sie
+                Stufe&nbsp;1 nicht, ist die CI rot.
             </p>
 
             <h3 class="text-lg font-semibold text-slate-800 mb-2">Lokal validieren</h3>
@@ -827,12 +838,18 @@ from lxml import etree
 tei_all = etree.RelaxNG(etree.parse('schema/tei_all.rng'))
 mhdbdb  = etree.RelaxNG(etree.parse('schema/mhdbdb.rng'))
 doc = etree.parse('tei/SIGLE.tei.xml')
-print('Stage 1 (TEI P5):  ', 'PASS' if tei_all.validate(doc) else 'FAIL: toleriert (siehe GAP-Baseline)')
+print('Stage 1 (TEI P5):  ', 'PASS' if tei_all.validate(doc) else 'FAIL: rot, außer die Datei steht in der GAP-Baseline')
 print('Stage 2 (MHDBDB):  ', 'PASS' if mhdbdb.validate(doc) else mhdbdb.error_log)
 "</code></pre>
 
             <h3 class="text-lg font-semibold text-slate-800 mb-2">Volles Skript</h3>
             <pre class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs overflow-x-auto mb-4"><code>python scripts/audit/validate-corpus.py --sample SIGLE</code></pre>
+            <p class="text-sm text-slate-700 leading-relaxed mb-4">
+                Mit <code class="px-2 py-0.5 bg-slate-100 rounded text-sm">--sample</code> vergleicht das Skript nicht
+                mit der Baseline. Den Vergleich, den die CI macht, zeigt erst der volle Lauf ohne Argumente
+                (auf einem Rechner mit 8 Prozessorkernen etwa eine Minute, mit weniger Kernen entsprechend länger):
+            </p>
+            <pre class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs overflow-x-auto mb-4"><code>python scripts/audit/validate-corpus.py</code></pre>
 
             <h3 class="text-lg font-semibold text-slate-800 mb-2">CI-Validierung</h3>
             <p class="text-sm text-slate-700 leading-relaxed">
@@ -867,11 +884,11 @@ print('Stage 2 (MHDBDB):  ', 'PASS' if mhdbdb.validate(doc) else mhdbdb.error_lo
                     </div>
                     <div>
                         <dt class="font-semibold text-slate-700"><code class="px-2 py-0.5 bg-slate-100 rounded">@lemmaRef</code> Coverage</dt>
-                        <dd class="text-slate-600">95,3&nbsp;%</dd>
+                        <dd class="text-slate-600">95,5&nbsp;%</dd>
                     </div>
                     <div>
                         <dt class="font-semibold text-slate-700"><code class="px-2 py-0.5 bg-slate-100 rounded">@pos</code> Coverage</dt>
-                        <dd class="text-slate-600">95,3&nbsp;%</dd>
+                        <dd class="text-slate-600">95,5&nbsp;%</dd>
                     </div>
                     <div>
                         <dt class="font-semibold text-slate-700"><code class="px-2 py-0.5 bg-slate-100 rounded">@ana</code> Coverage</dt>
@@ -882,6 +899,7 @@ print('Stage 2 (MHDBDB):  ', 'PASS' if mhdbdb.validate(doc) else mhdbdb.error_lo
                         <dd class="text-slate-600">Böhmische Schreibungen (<em>cz=z, v=u, ou=û</em>), tschechische Interlinearglossen, Initial-Schmuck, Kapitel-Header-Position</dd>
                     </div>
                 </dl>
+                <p class="text-xs text-slate-500 mt-4">Gemessen am 09.11.2026 über alle <code>&lt;w&gt;</code> im <code>&lt;body&gt;</code> von <code>tei/WZB.tei.xml</code>.</p>
             </div>
 
             <ul class="space-y-2 text-sm text-slate-700 ml-4 list-disc list-inside">
@@ -1012,7 +1030,7 @@ print('Stage 2 (MHDBDB):  ', 'PASS' if mhdbdb.validate(doc) else mhdbdb.error_lo
       <img
         src="assets/images/university-logo.png"
         alt="Universität Salzburg"
-        class="h-24 w-auto"
+        class="h-16 w-auto"
       />
       <img
         src="assets/images/clariah-logo.svg"
@@ -1069,6 +1087,13 @@ print('Stage 2 (MHDBDB):  ', 'PASS' if mhdbdb.validate(doc) else mhdbdb.error_lo
             class="hover:text-brand-600 transition"
           >
             Textreihentypologie
+          </a>
+          <span>|</span>
+          <a
+            href="hilfe-publikationen.html"
+            class="hover:text-brand-600 transition"
+          >
+            Publikationen
           </a>
           <span>|</span>
           <a

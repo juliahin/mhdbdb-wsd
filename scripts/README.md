@@ -10,8 +10,10 @@ scripts/
 ├── build-authority-index.py     # Authority-Index generieren
 ├── build-begriffshilfe.py       # Begriffshilfe-Download (assets/downloads/mhdbdb-begriffshilfe.md) aus concepts.xml, lexicon.xml und w/@ana; deterministisch, CI-Freshness-Gate (#498)
 ├── build-corpus-index.py        # Korpus-Index generieren
+├── build-demnaechst.py          # Hilfe-Unterseite "Demnächst im Korpus": offene ingest-Issues (data/demnaechst-issues.json) plus Freigabeliste von Hand (data/demnaechst-zeitplan.json, nur Freigegebenes erscheint) -> hilfe-demnaechst.html (--offline, --check, --selftest, monatlicher Lauf, #537)
 ├── build-lemma-pos.py           # Wortart-Zählung je Lemma aus tei/ (data/lemma-pos.json.gz), Quelle für lemma.pos und lemma.posAll im Authority-Index; deterministisch, CI-Freshness-Gate (#462)
-├── build-pages.py               # Nav/Footer/Matomo aus includes/ in alle Seiten injizieren (--check Drift-Gate)
+├── build-pages.py               # Nav/Footer/Matomo aus includes/ und den SEO-Block in die registrierten Seiten injizieren (--check Drift-Gate)
+├── build-publikationen.py       # Hilfe-Unterseite "Publikationen": Zotero-Gruppe 5043625 (Sammlungen WB4HTUGC, Z2N4SWWI) -> eingefrorener Stand data/zotero-publikationen.json -> hilfe-publikationen.html; ein Zotero-Ausfall lässt den Stand liegen (--offline, --check, monatlicher Lauf, #417)
 ├── build-textreihen.py          # Textreihentypologie: SKOS (RDF/JSON, unverändert aus textseries 86c233f08) -> textreihen/data/textreihen.json für den SKOS-Browser (--check Drift-Gate, #93)
 ├── build-textreihen-bibliography.py # Textreihentypologie: Zotero-Gruppe 4876216 -> statische Bibliografie in textreihen/bibliography.html samt Schnappschuss (--offline, --check, #93)
 ├── build-vendor.js              # Vendored JS-Dependencies bündeln
@@ -27,6 +29,7 @@ scripts/
 ├── insert-div-wrappers-138.py   # Editorische <div>-Hüllen für HUG und MBS (#138)
 ├── insert-lg-stanzas-138.py     # <lg type="stanza"> in HUG-Lieder einfügen (#138)
 ├── remove-stanza-numerals-138.py # Strophenziffern aus dem Verstext entfernen (#138)
+├── hug-strophengrenzen-138.py   # Sechs verschobene Strophengrenzen in HUG nach Hofmeister 2005 (#138)
 ├── insert-div-chapters-358.py   # Willehalm-Dreißiger: `<pb n>` zu `<div type="chapter" n>` (#358)
 ├── migrate-caesura-to-gap-252.py # Ueberlieferungsluecken von '( caesura )' auf <gap/> (#252)
 ├── apply-308-375-432.py         # Die drei entschiedenen Korrekturen einer Nacht: Namensansetzung, waeren als ADJ, WH_6214_3 (#308/#375/#432)
@@ -36,11 +39,18 @@ scripts/
 │
 ├── ingest/                      # Korpus-Ingest je Vorhaben
 │   ├── ari/                     # ARITHMETIC, 6 Rechenbuch-Handschriften (#92)
+│   ├── bre/                     # Weingrüße aus dem Brevitas-Wiki (Silvan Wagner): Abruf, Segmentierung, Stage 0 (#147)
+│   ├── cor/                     # CoReMA-Pilot (Bs1, GR1, M11, W1): Stage 0 aus dem lokalen Datenrepository (#139)
+│   ├── datierung-118/           # Handschriftencensus-Abruf und Normalisierung der Handschriftendatierungen zu Werk-Datierungen (terminus ante quem) (#118)
+│   ├── entannotate-228/         # Modernen Apparat und nhd. Inhaltsangaben entannotieren, hängende sense/@ana-Verweise entfernen (#228)
 │   ├── frauenlob/               # Frauenlob-Revision (#236)
+│   ├── gap-252/                 # '( caesura )' innerhalb eines Verses mit Wörtern wird <gap reason="lost"/> (#252)
 │   ├── glossar-554/             # WordPress-Export des Glossars Kochbuchforschung: bereinigen, nachmessen, Lemmata zuordnen (#554)
 │   ├── horses/                  # Arthurische Pferde (Borek), horses-index bauen (#193)
 │   ├── legacy-sources/          # Linecode-Quellen ins Repo spiegeln (#248)
 │   ├── naming/                  # Figurenbezeichnungen, naming-index bauen (#59)
+│   ├── no-print-267/            # Marker excerpt-only auf no-print umstellen, Lizenzsatz korrigieren (#267)
+│   ├── onama/                   # ONAMA-Anker-Abgleich und Datenpaket für den Narrativ-Explorer (#609)
 │   ├── parzival-358/            # Dreißiger-subtype und Buchgrenzen-milestone in PZ und WH (#358)
 │   ├── pos-disambig/            # PoS-/Lemma-Disambiguierung in Batches (#189/#198)
 │   └── wzb/                     # Wenzelsbibel (#224 und Vorläufer)
@@ -50,6 +60,7 @@ scripts/
 │   ├── audit-authority-files.py # Struktur-Audit der Authority Files (authority→authority)
 │   ├── build-foreign-candidates-28.py # Kandidatenmenge Fremdsprachigkeit aus dem Begriffssystem (#28)
 │   ├── foreign-sense-contradictions-28.py # #28 Phase 2: Belege, deren @ana der Sprachzuordnung widerspricht, plus die Lemmata zur Handpruefung
+│   ├── build-28-schicht-a-belegliste.py # #28 Schicht A: alle Belege von dominus, et, engel, lewe, creatura und item mit heuristischem Latein-Vorschlag (ja/grenzfall/nein)
 │   ├── build-issue-matrix.py    # Triage-Matrix #44 aus den Issue-Labels bauen (#44)
 │   ├── build-review-364.py      # Offline-Prüfseite #364 (fehlende Lemma-Ziele) aus Korpus und Authority-Files erzeugen (variants.xml gegen lexicon.xml) (#443)
 │   ├── build-review-klaus.py    # Offline-Prüfmappe #390/#115 (Wortgrenzen WZB, fehlende Bedeutungen) erzeugen (#443)
@@ -57,6 +68,8 @@ scripts/
 │   ├── compare-findebuch-resolution-259.py # dreistufige Auflösung gegen den Findebuch-Verweisgraph (#259)
 │   ├── check-author-refs.py     # Personennamen im Header gegen persons.xml: titleStmt/author (#228) und particDesc/listPerson (#308)
 │   ├── check-doc-inventories.py  # Specs und Audit-Skripte stehen in DEVELOPMENT.md, Skripte auch in diesem Baum (#329)
+│   ├── check-doc-staleness.py   # Fälligkeit des Doku-Health-Checks und liegen gebliebene Feature-Docs, nur lesend, wöchentlich in doc-health.yml (#641)
+│   ├── check-external-links.py  # externe Links der ausgelieferten HTML-Seiten abfragen, gedrosselt, mit Allowlist; wöchentlich in link-check.yml (#653)
 │   ├── check-file-sizes.py      # Einzeldateien vor GitHubs harter 100-MiB-Wand stoppen (#350)
 │   ├── check-header-genres.py   # Gattungen im TEI-Kopf (classDecl) gegen die Gattungen des Werks in works.xml (#495)
 │   ├── check-runtime-budget.py  # Laufzeitbudget der CI-Schritte, letzter Schritt je Job (#564)
@@ -81,11 +94,14 @@ scripts/
 │   ├── measure-stage3-resolution.py # Wirkung von Stufe 3 der Lemma-Auflösung (#224)
 │   ├── parallel-witness-bias.py # Verzerrung je Werkzeug durch Parallelüberlieferung (#255)
 │   ├── quantify-unannotated-tokens.py # unannotierte Wortformen korpusweit zählen (#189)
+│   ├── report-schedule-state.py # Zustandswechsel eines Zeitplanlaufs als Kommentar in #653 melden, von nightly-tests.yml, link-check.yml, data-integrity.yml gerufen (#653)
 │   ├── review-rounds.py         # Review-Runden pro gemergtem PR, mit Baseline vom 02.08.
 │   ├── survey-concept-distribution.py # Concepts für die Begriffs-Verteilung (#47)
 │   ├── validate-corpus.py       # Zwei-Stufen-Schema-Validierung
 │   ├── lexicon-baseline.json    # committete Referenzmenge des #152-Gates, per !-Regel vom *.json-Ignore ausgenommen
 │   ├── corresp-coverage-baseline.json # lemmatisierte Tokens ohne @corresp je Sigle, Ratsche im selben Gate (#370)
+│   ├── link-check-allowlist.json # Domains oder einzelne URLs mit bekannten Fehlalarmen (je Eintrag die freigestellten Status) für den Link-Check, mit Grund und Stand (#653)
+│   ├── doc-health-state.json    # Stand des letzten Doku-Health-Checks (Commit, Datum) und des letzten Zahlen-Nachlaufs (daten_commit, daten_date), vom jeweiligen PR fortgeschrieben (#641)
 │   └── TEXT_DATA_TABLE.xlsx     # Legacy-Linecode-Mapping
 │
 ├── sync/                        # Externe Daten / Korpus → TEI/Authority
@@ -96,7 +112,7 @@ scripts/
 │   ├── find-mentions.py         # Erwähnende Publikationen suchen → Zotero „Zu prüfen"
 │   └── sync_tei_headers.py      # Authority Files → TEI-Header
 │
-├── review/                      # Kuratorische Prüfseiten, eine HTML-Datei zum Verschicken (#443)
+├── review/                      # Kuratorische Prüfseiten (eine HTML-Datei zum Verschicken, #443) und Prüflisten als TSV
 │                                # Dateien siehe review/README.md
 │
 └── _archived/                   # Referenz, nicht ausführen
@@ -123,6 +139,8 @@ Ein issue-gebundenes Einmal-Skript wandert nach `_archived/`, sobald sein Issue 
 
 **Unter `ingest/` gilt die Issue-Grenze nicht.** Die Batch-Skripte unter `ingest/<ordner>/` (etwa `fix-367-waeren.py` in `pos-disambig/`) bleiben dort, auch wenn ihr Issue geschlossen ist, weil sie zusammen mit ihrem Provenienz-Log unter `ingest/pos-disambig/<N>-<name>/` gelesen werden: ein Batch-Skript ohne sein Log ist schwer zu lesen, und der Ordner ist die Chronik der Läufe. Entschieden von chsteiner am 23.09.2026 in #430 (Variante B); in Kauf genommen ist, dass `pos-disambig/` damit unbegrenzt wächst. `_archived/wzb/` widerspricht dem nicht: dort liegen vier abgelöste Pipeline-Skripte, keine Batch-Skripte eines geschlossenen Issues (siehe dessen `README.md`).
 
+**`ingest/onama/` braucht `rdflib` (gemessen mit 7.6.0), das nicht in `requirements.txt` steht**, weil die nur die Build-Kette pinnt. Die Skripte dort lesen ONAMA-Turtle aus einem Verzeichnis außerhalb des Repos; der Aufruf steht im Docstring, die Input-Commits werden als Argument übergeben und stehen im erzeugten Bericht (`eingaben`, `meta.quellen`) (#609).
+
 **Unter `ingest/` stehen im Baum nur die Unterordner und keine Skriptnamen, und das ist kein Versehen.** Das Inventar-Gate `audit/check-doc-inventories.py` (#329) scannt vier Pfade: `scripts/` flach plus `audit/`, `sync/` und `_archived/`. `ingest/` ist nicht dabei, aber das Gate liest **jeden** Skriptnamen aus diesem Baum und hält ihn gegen die gescannten Verzeichnisse. Ein hier eingetragener Name aus `ingest/` ist damit „genannt, aber nicht vorhanden", und das Gate wird rot. Gemessen am 21.09.2026 mit einer Mutationsprobe: `apply-366-375-371.py` unter `pos-disambig/` in den Baum geschrieben, Gate gelaufen (64 im Dateisystem gegen 65 in dieser Datei, der Name namentlich als fehlend gemeldet), Zeile wieder entfernt, Gate grün. Wer ein Ingest-Skript dokumentieren will, tut das in seinem Provenienz-Log unter `ingest/pos-disambig/<batch>/`, nicht hier.
 
 Skripte im Archiv sind Referenz. Der Grund, sie nicht zu starten, ist nicht technisch, sondern inhaltlich: es sind abgeschlossene Einmal-Migrationen, deren Ergebnis längst im Korpus steht, und ein zweiter Lauf schreibt auf einen anderen Ausgangsstand als der erste. Technisch scheitert genau eines von sechs, nämlich `convert-l-to-lb-143.py`, das die Repo-Wurzel als `Path(__file__).resolve().parent.parent` berechnet und aus `_archived/` heraus auf `scripts/` zeigt; die übrigen fünf arbeiten CWD-relativ (`Path('tei').glob(...)`) und liefen aus dem Repo-Root ohne Fehlermeldung durch. Wer eines wieder braucht, verschiebt es zurück und prüft den Ausgangsstand, statt es aus `_archived/` heraus aufzurufen.
@@ -142,6 +160,8 @@ Parst alle TEI-Dateien in `tei/` und generiert `data/corpus-index.json.gz` (~42 
 
 ### `build-pages.py`
 Injiziert die geteilte Navigation + Footer + Matomo-Snippet aus `includes/_nav.html` / `includes/_footer.html` / `includes/_matomo.html` in die Marker-Regionen (`NAV:START`/`FOOTER:START`/`MATOMO:START`) der Seiten. Idempotent; `{{ROOT}}`-Token wird pro Seitentiefe ersetzt; aktive Nav-Seite bekommt `aria-current="page"`. Zwei Seitenlisten: `PAGES` bekommt die volle Chrome (Nav+Footer+Matomo); `MATOMO_PAGES` (Standalone-Seiten mit eigenem Layout wie `api/index.html`, `404.html`) bekommt nur das Matomo-Snippet vor `</head>`, ohne Header/Footer anzufassen. `--check` ist ein Drift-Gate (exit 1 bei Out-of-Sync, keine Writes). Nach Änderung an `includes/` ausführen — nicht die Seiten direkt editieren.
+
+Seit 19.10.2026 schreibt es zusätzlich die Region `SEO:START`/`SEO:END` (Canonical-URL und Open-Graph-Angaben) aus dem eigenen `<title>` und der `description` jeder Seite in `PAGES` und in `api/index.html`; fehlt einer Seite eines von beiden, bricht der Lauf ab. `korpus.html`, `woerterbuch.html` und `lemma/index.html` bekommen keine Canonical-URL (`NO_CANONICAL`), weil ihr Inhalt über URL-Parameter gewählt wird. Wer Titel oder Beschreibung einer Seite ändert, baut danach neu. `--check` läuft seit demselben Tag in `no-cdn-check.yml`.
 
 ### `validate-indices.py`
 Validiert Struktur und Integrität der generierten Index-Dateien.
@@ -205,22 +225,25 @@ Sucht Publikationen, die die MHDBDB erwähnen, und legt die noch unbekannten in 
 ### `sync_tei_headers.py`
 Spiegelt aus `works.xml` in die TEI-Header (667 Dateien): die Werk-Identifier im `msIdentifier` und seit #486 den Editionsnachweis im `biblStruct` der `listBibl` (Kette Zotero → `works.xml` → Header, CONTRACTS.md F.4a). Gespiegelt werden `handschriftencensus`, `GND` und `wikidata`; `sigle` und `mwb-sigle` bleiben header-eigen (CONTRACTS.md F.4). Aufgelöst wird über das `@corresp` des Headers, nicht über die Sigle: TRO trägt zwei `works.xml`-Einträge, und die Sigle ist dort mehrdeutig (#395).
 
-- `--works` schreibt **chirurgisch**, also per Textersetzung im `msIdentifier`-Block und innerhalb des `biblStruct` je `@corresp`, und lässt alles andere byteweise stehen, Zeilenenden eingeschlossen. Beim `biblStruct` ersetzt es geänderte Blattelemente und setzt fehlende Elemente ein; Zusatzelemente im Header (AK, #134) und die Kindreihenfolge bleiben stehen. Ein aus `works.xml` verschwundenes Element bleibt im Header stehen.
-- `--works --check` ist das CI-Gate (#399, #486, `data-integrity.yml`): prüft die Identifier im `msIdentifier` auf Gleichheit und den Editionsnachweis auf Enthaltensein (jedes Element des `works.xml`-`biblStruct` steht im Header; Zusatzelemente sind erlaubt und werden gezählt). Es vergleicht Inhalte statt Formatierung, schreibt nichts, Exit 1 bei Abweichung, rund eine Sekunde über alle 667 Dateien (gemessen 08.09.2026). Rot wird es auch, wenn eine Datei gar keinen lesbaren `msIdentifier` mehr hat (fehlender Block oder nicht parsebares XML). Das war bis zur Bot-Runde vom 07.09. nur eine Warnung, und damit konnte der ganze Block verschwinden, ohne dass das Gate anschlug.
+- `--works` schreibt **chirurgisch**, also per Textersetzung im `msIdentifier`-Block und innerhalb des `biblStruct` je `@corresp`, und lässt alles andere byteweise stehen, Zeilenenden eingeschlossen. Beim `biblStruct` ersetzt es geänderte Blattelemente und setzt fehlende Elemente ein; Zusatzelemente im Header (AK, #134) und die Kindreihenfolge bleiben stehen. Ein aus `works.xml` verschwundenes Element bleibt im Header stehen; `--works` löscht nie, meldet es aber, und das Gate wird rot.
+- `--works --check` ist das CI-Gate (#399, #486, `data-integrity.yml`): prüft die Identifier im `msIdentifier` auf Gleichheit und den Editionsnachweis auf Enthaltensein (jedes Element des `works.xml`-`biblStruct` steht im Header; was nur im Header steht, ist nur erlaubt, wenn es in `ERLAUBTE_ZUSAETZE` steht; ein Header-Block mit Zotero-`@corresp`, den `works.xml` nicht führt, ist rot). Es vergleicht Inhalte statt Formatierung, schreibt nichts, Exit 1 bei Abweichung, rund eine Sekunde über alle 667 Dateien (gemessen 08.09.2026). Rot wird es auch, wenn eine Datei gar keinen lesbaren `msIdentifier` mehr hat (fehlender Block oder nicht parsebares XML). Das war bis zur Bot-Runde vom 07.09. nur eine Warnung, und damit konnte der ganze Block verschwinden, ohne dass das Gate anschlug.
 - `--works --bibl-struct` ist der alte Weg über lxml, der die `listBibl` als ganzen Block zieht (`--works` gleicht sie seit #486 chirurgisch an). **Er verliert dabei Daten und wird deshalb nur bewusst benutzt:** er löscht alle Nicht-Sigle-`idno` und damit die 19 `mwb-sigle`, die `works.xml` gar nicht kennt (gemessen 07.09.2026 auf einer Korpuskopie: 19 Dateien vorher, 0 nachher), er ändert bei AK, FR3, HZ, LUU und WZB die Bibliographie inhaltlich, und er serialisiert nebenbei alle 667 Dateien neu (Korpus 1.432,5 auf 1.430,6 MB). `--check` bemerkt den Verlust nicht, weil es `mwb-sigle` bewusst nicht prüft.
 - `--all` läuft für `works` über denselben chirurgischen Pfad wie `--works`. Das ist kein Detail: bis zur Reviewrunde vom 07.09. fiel `--all` still in den alten lxml-Weg und hätte die 19 `mwb-sigle` gelöscht, ohne dass ein Gate angeschlagen hätte.
 - `--persons`, `--genres`, `--concepts` sind deklarierte Stubs. `main()` weist sie ab, bevor eine Klasse instanziiert wird: Fehlermeldung, Exit 1, kein Traceback. Unter `--all` werden sie mit einer Warnung übersprungen. Das `NotImplementedError` in den Klassen ist nur beim direkten Aufruf erreichbar.
 
-## review/: Kuratorische Prüfseiten
+## review/: Kuratorische Prüfseiten und Prüflisten
 
 Generatoren für Seiten, die an eine Fachwissenschaftlerin gehen und dort ohne
-Installation im Browser geöffnet werden. Das Gegenstück zu `audit/`: dort steht,
-was eine Maschine entscheiden kann, hier das, was eine Person entscheiden muss.
+Installation im Browser geöffnet werden, dazu Skripte, die Prüflisten als TSV
+erzeugen. Das Gegenstück zu `audit/`: dort steht, was eine Maschine entscheiden
+kann, hier das, was eine Person entscheiden muss.
 
 Die ausführliche Beschreibung des Formats, seiner Spec-Felder und der einen
 Entscheidung, die es trägt, steht in [`review/README.md`](review/README.md).
 Das erzeugte Material liegt nicht hier, sondern neben seinen Daten unter
-`ingest/review/<vorgang>/`.
+`ingest/review/<vorgang>/` oder, bei den TSV-Prüflisten, unter
+`ingest/<bereich>/<vorgang>/` (etwa `ingest/pos-disambig/462-pos/`,
+`ingest/glossar-554/`).
 
 ### `review_page.py`
 Das Prüfseiten-Format aus #443. Nimmt eine Fallliste entgegen und gibt eine
@@ -252,25 +275,12 @@ Originales Transformationsscript aus dem `initial-data-wrangling`-Branch (~2000 
 
 ## Verwendung
 
-**Der verbindliche Ablauf nach einer Änderung in `tei/` oder `authority-files/` steht in [`docs/DATA-MODEL.md` → Data-Change-Lifecycle](../docs/DATA-MODEL.md#data-change-lifecycle)**, samt Routing-Tabelle (welche Schritte der konkrete Fall überhaupt braucht) und der Angabe, welche davon die CI abfängt. Die Zeilen hier sind die Aufrufe, nicht das Verfahren: wer nur sie liest, vergisst den Versions-Bump und `api/`, und die Suche liefert dann bis zu 30 Tage lang den alten Stand aus dem IndexedDB-Cache.
+**Der verbindliche Ablauf nach einer Änderung in `tei/` oder `authority-files/` steht in [`docs/DATA-MODEL.md` → Data-Change-Lifecycle](../docs/DATA-MODEL.md#data-change-lifecycle)**, samt Routing-Tabelle (welche Schritte der konkrete Fall überhaupt braucht) und der Angabe, welche davon die CI abfängt. Die Schrittfolge steht nur dort, hier keine zweite Fassung. Wer nur die Builds anstößt, vergisst den Versions-Bump, und die Suche liefert dann bis zu 30 Tage lang den alten Stand aus dem IndexedDB-Cache.
 
 ```bash
-# Nach Aenderung in tei/, vollstaendiger Fall, Reihenfolge zaehlt
-# 1. Version bumpen (build-*-index.py + assets/js/lib/corpus-loader.js), dann:
-python scripts/audit/check-index-versions.py
-python scripts/build-corpus-index.py
-python scripts/sync/extract-variants.py --apply     # nur bei neuen Formen
-python scripts/build-lemma-pos.py                  # nach Aenderung von @lemmaRef oder @pos, vor dem Authority-Index
-python scripts/build-authority-index.py             # nur nach --apply oder geaenderter lemma-pos
-python scripts/build-api.py
-python scripts/build-begriffshilfe.py               # nur bei geaendertem w/@ana
-python scripts/audit/check-authority-cross-refs.py --check
-
-# Nach Aenderung in authority-files/
-# 1. Version bumpen, dann (data/lemma-pos.json.gz muss zum Korpus passen: python scripts/build-lemma-pos.py --check):
-python scripts/build-authority-index.py
-python scripts/build-api.py
-python scripts/build-begriffshilfe.py               # bei lexicon.xml oder concepts.xml
+# Nach Aenderung in tei/ oder authority-files/: Bump, Gates und Commit nach dem Lifecycle (Link oben).
+# Alle Builds der abgeleiteten Schicht in dessen Reihenfolge, mit --allow-dirty fuer die uncommitteten Quellen:
+npm run build:data
 
 # Indexe validieren, Korpus gegen Schema validieren
 python scripts/validate-indices.py

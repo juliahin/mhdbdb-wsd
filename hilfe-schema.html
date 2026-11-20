@@ -14,6 +14,16 @@
     <link rel="stylesheet" href="assets/css/shared.css">
     <link rel="stylesheet" href="assets/css/hilfe.css">
     <link rel="stylesheet" href="assets/vendor/prism/prism.css">
+<!-- SEO:START -->
+<link rel="canonical" href="https://dhcraft.org/mhdbdb-tei-only/hilfe-schema.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MHDBDB">
+<meta property="og:locale" content="de_AT">
+<meta property="og:title" content="Schema – MHDBDB Hilfe">
+<meta property="og:description" content="Das MHDBDB-Schema: TEI-Encoding-Modell, Pflicht-Elemente, Beispieldateien und Step-by-Step-Tutorial zur Erstellung MHDBDB-kompatibler TEI-Dateien.">
+<meta property="og:url" content="https://dhcraft.org/mhdbdb-tei-only/hilfe-schema.html">
+<meta property="og:image" content="https://dhcraft.org/mhdbdb-tei-only/assets/images/mhdbdb-logo.png">
+<!-- SEO:END -->
 <!-- MATOMO:START -->
 <script>
   (function() {
@@ -290,7 +300,7 @@
             <pre class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs overflow-x-auto mb-3"><code class="language-xml">&lt;w xml:id="ABG_101_0"
    lemmaRef="lexicon.xml#lemma_879"
    pos="NOM"
-   ana="lexicon.xml#lemma_879_sense_1234"
+   ana="lexicon.xml#lemma_879_sense_1449"
    corresp="variants.xml#type_5678"&gt;brôt&lt;/w&gt;</code></pre>
             <ul class="space-y-1 text-sm text-slate-700 mb-4 ml-4 list-disc list-inside">
                 <li><code class="px-2 py-0.5 bg-slate-100 rounded">@lemmaRef</code> – Pfad zum Lemma-Eintrag in <code class="px-2 py-0.5 bg-slate-100 rounded">lexicon.xml</code></li>
@@ -728,7 +738,7 @@ print('MHDBDB:', 'VALID' if mhdbdb.validate(tree)  else mhdbdb.error_log)
       <img
         src="assets/images/university-logo.png"
         alt="Universität Salzburg"
-        class="h-24 w-auto"
+        class="h-16 w-auto"
       />
       <img
         src="assets/images/clariah-logo.svg"
@@ -785,6 +795,13 @@ print('MHDBDB:', 'VALID' if mhdbdb.validate(tree)  else mhdbdb.error_log)
             class="hover:text-brand-600 transition"
           >
             Textreihentypologie
+          </a>
+          <span>|</span>
+          <a
+            href="hilfe-publikationen.html"
+            class="hover:text-brand-600 transition"
+          >
+            Publikationen
           </a>
           <span>|</span>
           <a

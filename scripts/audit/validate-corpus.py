@@ -54,10 +54,17 @@ Usage:
     python scripts/audit/validate-corpus.py --fail-fast          # stop on first fail
     python scripts/audit/validate-corpus.py --jobs 1             # serial (default: min(8, cores))
 
-Exit code: 0 if no Stage-2 failures, 1 otherwise. Stage-1 failures
-count against the known #30-baseline (docs/TEI-MODEL.md §10) and do
-NOT fail the run by themselves — that baseline is documented and
-represents deliberate GAP patterns the custom schema accepts.
+Exit code: 1 on any Stage-2 failure, and on a full run also on a
+Stage-1 failure of a file outside the known #30-baseline
+(docs/TEI-MODEL.md §10); 2 if the schemas do not load or there is
+nothing to validate; 0 otherwise. Baseline files do not fail the
+run: they carry deliberate GAP patterns the custom schema accepts. A
+file that newly fails tei_all (NEW) is red since 2026-11-03 (chsteiner;
+until then only a printed hint): fix the data, or add the file to
+KNOWN_TEI_ALL_BASELINE and TEI-MODEL.md §10 with its GAP category.
+A baseline file that became valid (GONE) stays a hint. Runs on a
+subset (--sample, --corpus-only, --authority-only) never compare
+against the baseline.
 """
 import argparse
 import concurrent.futures
@@ -84,7 +91,7 @@ SCHEMA_TEI_ALL = str(REPO / 'schema' / 'tei_all.rng')
 SCHEMA_MHDBDB = str(REPO / 'schema' / 'mhdbdb.rng')
 SCHEMA_MHDBDB_AUTH = str(REPO / 'schema' / 'mhdbdb-authority.rng')
 
-# Known #30-baseline: 34 corpus files that are intentionally not
+# Known #30-baseline: 35 corpus files that are intentionally not
 # strict-tei_all-valid because they contain patterns documented as
 # GAPs in mhdbdb.rnc. They are listed in TEI-MODEL.md §10 with the
 # GAP-Kategorie they fall under. Keep this set in sync with that doc.
@@ -92,7 +99,7 @@ KNOWN_TEI_ALL_BASELINE = frozenset({
     # @reason auf <w> (Compound-POS-Split wie wiltu = wilt + du)
     'ABS.tei.xml', 'AC1.tei.xml', 'AC2.tei.xml', 'AC3.tei.xml',
     'ADP.tei.xml', 'AGS.tei.xml', 'ENE.tei.xml', 'FLG.tei.xml',
-    'FR1.tei.xml', 'FR3.tei.xml', 'ROT.tei.xml',
+    'FR1.tei.xml', 'FR3.tei.xml', 'JT.tei.xml', 'ROT.tei.xml',
     # <hi> direkt in Block-Kontext ohne Wrapper
     'DAL.tei.xml', 'DBK.tei.xml', 'DBS.tei.xml', 'DKA.tei.xml',
     'DKF.tei.xml', 'DKI.tei.xml', 'DKM.tei.xml', 'DKR.tei.xml',
@@ -106,7 +113,7 @@ KNOWN_TEI_ALL_BASELINE = frozenset({
     # <head> fehlend/unerwartet
     'TKR.tei.xml', 'VOR.tei.xml',
 })
-KNOWN_TEI_ALL_BASELINE_COUNT = len(KNOWN_TEI_ALL_BASELINE)  # 34
+KNOWN_TEI_ALL_BASELINE_COUNT = len(KNOWN_TEI_ALL_BASELINE)  # 35
 
 
 def load_schemas():
@@ -252,6 +259,7 @@ def main():
     # --sample or --corpus-only/--authority-only subset the number
     # naturally differs and a warning would be noise.
     is_full_run = not (args.sample or args.corpus_only or args.authority_only)
+    new_fails = []
     if is_full_run:
         actual_s1 = set(s1_fail_files)
         new_fails = sorted(actual_s1 - KNOWN_TEI_ALL_BASELINE)
@@ -265,7 +273,7 @@ def main():
         if new_fails or missing:
             print(f'  Baseline drift vs TEI-MODEL.md §10:')
             for name in new_fails:
-                print(f'    + NEW    {name}  (not in baseline — investigate or add to baseline)')
+                print(f'    + NEW    {name}  (not in baseline, fails the run: fix the data or add it to the baseline)')
             for name in missing:
                 print(f'    - GONE   {name}  (was in baseline, now valid — baseline can be shrunk)')
         elif s1_fail_files and n_s1_fail == KNOWN_TEI_ALL_BASELINE_COUNT:
@@ -280,7 +288,12 @@ def main():
             if err:
                 print(f'    {err}')
 
-    sys.exit(1 if n_s2_fail > 0 else 0)
+    if new_fails:
+        print()
+        print(f'Stage-1 failures outside the baseline (these break the build since 2026-11-03): {len(new_fails)}')
+    # Nach einem --fail-fast-Abbruch ist die Stage-1-Liste unvollstaendig;
+    # dann ist n_s2_fail > 0 und der Lauf ohnehin rot.
+    sys.exit(1 if n_s2_fail > 0 or new_fails else 0)
 
 
 if __name__ == '__main__':

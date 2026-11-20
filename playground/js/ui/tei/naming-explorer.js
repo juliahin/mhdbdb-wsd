@@ -79,7 +79,7 @@
 
 import { TextNormalizer } from '../../../../assets/js/lib/text-normalizer.js';
 import { getNavigationEpoch } from '../core/router.js';
-import { csvButton } from '../core/ui-helpers.js';
+import { csvButton, pl } from '../core/ui-helpers.js';
 import { toCsv, downloadCsv, csvDateStamp, csvFilenamePart, csvSourcePart } from '../../../../assets/js/lib/csv-export.js';
 
 const DEFAULT_STATE = Object.freeze({
@@ -322,10 +322,14 @@ export class NamingExplorer {
   /** Auswahlliste der zweiten Selectbox, je nach Perspektive. */
   getSubjects(work) {
     if (this.state.perspective === 'lemma') {
-      return this.getTerms(work).map(e => ({
-        value: e.term, label: e.term, count: e.count,
-        hint: `${e.figures.size} ${e.figures.size === 1 ? 'Figur' : 'Figuren'}`
-      }));
+      // Dropdown alphabetisch (#643). getTerms bleibt nach Belegzahl sortiert
+      // und gecacht, hier wird nur eine Kopie umgeordnet.
+      return [...this.getTerms(work)]
+        .sort((a, b) => a.term.localeCompare(b.term, 'de'))
+        .map(e => ({
+          value: e.term, label: e.term, count: e.count,
+          hint: `${e.figures.size} ${e.figures.size === 1 ? 'Figur' : 'Figuren'}`
+        }));
     }
     if (this.state.perspective === 'namer') {
       return this.getNamers(work).map(n => ({
@@ -564,6 +568,18 @@ export class NamingExplorer {
     `;
   }
 
+  /**
+   * Optionen der Auswahlbox. Ein eigenes Filterfeld darüber gab es kurz
+   * (#643); es ist wieder entfernt, weil Tippen im aufgeklappten Dropdown
+   * schon reicht (Linda Beutel, 04.11.2026).
+   */
+  renderSubjectOptions(work) {
+    return this.getSubjects(work).map(s => {
+      const suffix = s.hint ? `, ${s.hint}` : '';
+      return `<option value="${escapeAttr(s.value)}"${s.value === this.state.subject ? ' selected' : ''}>${escapeHtml(s.label)} (${s.count.toLocaleString('de-DE')} ${pl(s.count, 'Beleg', 'Belege')}${suffix})</option>`;
+    }).join('');
+  }
+
   renderForm() {
     const works = this.index?.works || [];
     const workOptions = works.map(w =>
@@ -573,11 +589,7 @@ export class NamingExplorer {
     const work = this.getWork(this.state.workSigle);
     const namerMode = this.state.perspective === 'namer';
     const lemmaMode = this.state.perspective === 'lemma';
-    const subjects = this.getSubjects(work);
-    const subjectOptions = subjects.map(s => {
-      const suffix = s.hint ? `, ${s.hint}` : '';
-      return `<option value="${escapeAttr(s.value)}"${s.value === this.state.subject ? ' selected' : ''}>${escapeHtml(s.label)} (${s.count.toLocaleString('de-DE')} Belege${suffix})</option>`;
-    }).join('');
+    const subjectOptions = this.renderSubjectOptions(work);
 
     return `
       <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
@@ -602,7 +614,7 @@ export class NamingExplorer {
             </select>
           </label>
           <label class="block">
-            <span class="text-xs font-medium text-slate-600">${namerMode ? 'Nennende Instanz (nach Belegzahl)' : lemmaMode ? 'Lemma (nach Belegzahl)' : 'Figur (nach Belegzahl)'}</span>
+            <span class="text-xs font-medium text-slate-600">${namerMode ? 'Nennende Instanz (nach Belegzahl)' : lemmaMode ? 'Lemma (alphabetisch)' : 'Figur (nach Belegzahl)'}</span>
             <select id="neFigureSelect" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"${work ? '' : ' disabled'}>
               <option value="">${namerMode ? 'Nenner wählen ...' : lemmaMode ? 'Lemma wählen ...' : 'Figur wählen ...'}</option>
               ${subjectOptions}
@@ -653,11 +665,11 @@ export class NamingExplorer {
     if (!this.state.subject) {
       let hint;
       if (namerMode) {
-        hint = `${this.getNamers(work).length.toLocaleString('de-DE')} nennende Instanzen (Erzähler, Figurenrede, Selbstnennung). Bitte einen Nenner auswählen.`;
+        hint = `${this.getNamers(work).length.toLocaleString('de-DE')} ${pl(this.getNamers(work).length, 'nennende Instanz', 'nennende Instanzen')} (Erzähler, Figurenrede, Selbstnennung). Bitte einen Nenner auswählen.`;
       } else if (lemmaMode) {
-        hint = `${this.getTerms(work).length.toLocaleString('de-DE')} Lemmata in kuratierten Bezeichnungen. Bitte ein Lemma auswählen.`;
+        hint = `${this.getTerms(work).length.toLocaleString('de-DE')} ${pl(this.getTerms(work).length, 'Lemma', 'Lemmata')} in kuratierten Bezeichnungen. Bitte ein Lemma auswählen.`;
       } else {
-        hint = `${Object.keys(work.figures).length.toLocaleString('de-DE')} Figuren mit kuratierten Bezeichnungen. Bitte eine Figur auswählen.`;
+        hint = `${Object.keys(work.figures).length.toLocaleString('de-DE')} ${pl(Object.keys(work.figures).length, 'Figur', 'Figuren')} mit kuratierten Bezeichnungen. Bitte eine Figur auswählen.`;
       }
       return `<div class="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500">${escapeHtml(work.bookName)}: ${hint}</div>`;
     }
@@ -739,7 +751,7 @@ export class NamingExplorer {
       <div class="rounded-2xl border border-slate-200 bg-white p-4">
         <div class="text-xs uppercase tracking-wide text-slate-500">${escapeHtml(work.sigle)} - ${escapeHtml(work.bookName)}</div>
         <div data-ne-heading class="text-lg font-semibold text-slate-800">${escapeHtml(term)}</div>
-        <div class="text-xs text-slate-500">benennt ${figuren.toLocaleString('de-DE')} ${figuren === 1 ? 'Figur' : 'Figuren'} in ${teil}${von} kuratierten Belegstellen</div>
+        <div class="text-xs text-slate-500">benennt ${figuren.toLocaleString('de-DE')} ${figuren === 1 ? 'Figur' : 'Figuren'} in ${teil}${von} kuratierten ${pl(von ? gesamtImWerk : angezeigt, 'Belegstelle', 'Belegstellen')}</div>
       </div>
     `;
   }
@@ -852,13 +864,15 @@ export class NamingExplorer {
       const genannte = new Set(pairs.map(p => p.figure)).size;
       heading = namer ? namer.label : this.state.subject;
       const von = this.state.target && namer ? ` von ${namer.count.toLocaleString('de-DE')}` : '';
-      sub = `benennt ${genannte.toLocaleString('de-DE')} ${genannte === 1 ? 'Figur' : 'Figuren'} in ${teil}${von} kuratierten Belegstellen`;
+      const letzte = this.state.target && namer ? namer.count : pairs.length;
+      sub = `benennt ${genannte.toLocaleString('de-DE')} ${genannte === 1 ? 'Figur' : 'Figuren'} in ${teil}${von} kuratierten ${pl(letzte, 'Belegstelle', 'Belegstellen')}`;
       const roh = namer && namer.variants.size > 1 ? [...namer.variants.keys()].join(', ') : '';
       if (roh) sub += ` <span class="cursor-help underline decoration-dotted" title="Schreibungen in der Quelle: ${escapeAttr(roh)}">(${namer.variants.size} Schreibungen)</span>`;
     } else {
       const gesamt = (work.figures[this.state.subject] || []).length;
       heading = this.state.subject;
-      sub = `${teil}${this.state.speaker ? ` von ${gesamt.toLocaleString('de-DE')}` : ''} kuratierte Belegstellen`;
+      const letzte = this.state.speaker ? gesamt : pairs.length;
+      sub = `${teil}${this.state.speaker ? ` von ${gesamt.toLocaleString('de-DE')}` : ''} kuratierte ${pl(letzte, 'Belegstelle', 'Belegstellen')}`;
     }
 
     return `
@@ -1001,7 +1015,7 @@ export class NamingExplorer {
             placeholder="z.B. tore (findet tôre)"
             class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs focus:border-brand-400 focus:outline-none" />
         </label>
-        <span class="text-xs text-slate-500">${visibleCount.toLocaleString('de-DE')} Lemmata</span>
+        <span class="text-xs text-slate-500">${visibleCount.toLocaleString('de-DE')} ${pl(visibleCount, 'Lemma', 'Lemmata')}</span>
         ${visibleCount > 0 ? csvButton('neCsvExport', 'Die angezeigten Lemmata mit Kategorie und Häufigkeit, ohne die Belegstellen. Quelle (Beutel-Thurow, Naming-analysis) und Lizenz stehen im Dateinamen') : ''}
       </div>
     `;

@@ -1,37 +1,52 @@
 ---
 name: projekt-fremdquellen
-description: Fremdquellen und Fremdindizes im Review: Naming-Index (#420), Pferde-Index (#193), Glossar-Export (#554, PII), Textreihen-Unterseite (#93, Gegenprüfung gegen die alte Site, Zotero)
+description: Fremdindizes, Fremdexporte, Monatsläufe, HSC-Datierung, BRE, COR, fyndling, Textreihen
 metadata:
   type: project
 ---
-Zusammengelegt aus projekt_fremdindizes, projekt_glossar_554 und projekt_93_textreihen, 14.10.2026. Zahlen sind Eingabe, vor Gebrauch nachmessen.
+**Naming-Index (#420):** Nachbau mit `01-fetch-and-build-index.py` (PROJECT_ROOT = `parents[3]`) plus `alias-overrides.json` und `naming-explorer.js` in gleicher Tiefe ins Scratch, `--ref <sha>`. Bytevergleich der gz lokal wertlos: Blob-Hash gegen `refs/pull/<N>/head`. bez + epi > mentions nur bei einem Term im selben Record in beiden Gruppen.
 
-## Naming-Index (#420)
+**Pferde-Index (#193):** „Verse" hat zwei Einheiten, `Counter((work, citation))` und `Counter(target)` getrennt zählen.
 
-- **Nachbau und Pin-Prüfung:** `01-fetch-and-build-index.py` (PROJECT_ROOT = `parents[3]`, schreibt nach data/): Skript + `alias-overrides.json` nach `<scratch>/scripts/ingest/naming/`, `naming-explorer.js` nach `<scratch>/playground/js/ui/tei/` (Marker-Guard), `--ref <sha>`.
-- Byte-Vergleich lokal wertlos (zlib-Version): Blob-Hash gegen `refs/pull/<N>/head`; nur er sagt bei einem Bot-PR, ob der Runner gebaut hat. Alt/neu-Index: Records als (sigle, figur, vers, json) flach diffen.
-- **Lindas Repo (lindabeutel/Naming-analysis):** `raw.githubusercontent.com/.../<tag|sha>/data/<Werk>/analysis/figures_by_lemma_<lemma>_<scope>.json`; Committer-Datum per `git clone --depth 5`, `git log -1 --format=%cI` (generatedAt ist UTC).
-- **Zitation** steht fest verdrahtet in contributors.xml (contrib_052), DATA-MODEL.md, FEATURES.md; kein Build liest sie. Bei Pin-Bump `git grep` nach alter Version, DOI und Kurzhash.
-- **Term-Perspektive nachrechnen:** Record einmal je Term (Set über eig/deck/ant/epi); `bez` = Term in eig|deck|ant, `epi` = Term in epi; `share` mit JS-Rundung (`math.floor(x + 0.5)`); bez + epi > mentions nur, wenn ein Term im SELBEN Record in beiden Gruppen steht.
-- **Beispiel-Lemmata in Beschreibungstexten gegen den Index halten** (#485): der Index führt Lindas Lemmaformen, nicht normalisierte Wörterbuch-Ansätze (`rîtaere` statt `rîter`). Messen über works[].figures[fig][].{eig,deck,ant,epi} (ganze Strings); ein Substring-Count trifft daneben `ph` (Versphrasen).
-- **Diakritika-Filter (#525):** Lindas Lemmaformen tragen ë und í, die `normalizeMHG` nicht kennt; der Filter in `renderBody` ist `matchesNormalized || matchesFolded`, nur in Figuren- und Nenner-Perspektive. **Der `foldDiacritics`-Docstring (text-normalizer.js, „nicht für MHG") hat einen Zwilling in `docs/CONTRACTS.md` §F („Where the fold may be used", Aufrufstellen-Liste mit Zahl).** Messen mit `matchesFolded\|foldDiacritics` über playground/js assets/js.
+**Fremdexporte nach `sources/` (Glossar #554)**
+- PII nicht an der Mail-Regex aufhängen: Zeilendiff Original gegen Bereinigt, dann `Telefon`, `\+\d{2}`, `<address>`, `credit` in `_wp_attachment_metadata`, `/author/`, `?author=`. `PHONE_RE` trifft die nationale Form ohne `Tel:` nicht.
+- GitHub-`user-attachments` eines öffentlichen Repos sind ohne Login abrufbar, Löschen des Kommentars löscht die Datei nicht: die Datei-ID nie in Notizen, Commits, Issues.
+- `sources/README.md` zählt die Bestände auf: jeder neue Bestand macht die Aufzählung falsch, ohne dass der Diff sie berührt (#397).
+- Original nur bei KZW: Bytes und SHA-256 gegen die Glossar-README, `bereinige-export.py` (mit `-E -P`), `cmp` gegen den Blob. Nur `einordnung.json` (Feld `c`) steuert die Kürzungen. `entfallenes-suchen.py`: `AUTO_B` stuft still als (b) ein, nie in `offen`.
 
-## Pferde-Index (#193, Borek)
+**Zotero- und Issue-Monatslauf (#417, #537)**
+- Zotero `DOI` und `url` sind Freitext: alle Werte gegen `^10\.\d{4,9}/\S+$` bzw. `^https?://` prüfen, gerenderte `href` greppen.
+- Specs über eingefrorene Fremdstände: nimmt die Spec Rohfeld = gerenderter Wert an, oder verdrahtet sie Issue-Nummern eines Zwischenstands? Beides wird beim nächsten Monatslauf rot.
+- Das `--check` in `monthly-pages.yml` ist tautologisch (baut erst, prüft dann). Das Gate ist der `--check` in `no-cdn-check.yml`, den Monatslauf-PRs aus dem GITHUB_TOKEN nicht auslösen. Mutationsprobe im Markenbereich (`<!-- PUBLIKATIONEN:START -->`), nicht am ersten `<li` (Navigation).
+- `build-publikationen.py`: Autorenzeile, Teamfilter und `verdeckte_team` laufen seit PR #705 über ein Prädikat (`ROLLEN`). Wer eines ändert, prüft die anderen zwei. Mock mit `presenter` + `name` vor einem Teammitglied an Platz 4.
+- `verdeckte_team` misst Sichtbarkeit am Nachnamen-Wort in der Zeile, nicht an der Person: ein sichtbarer Namensvetter unterdrückt das „(mit X)".
+- Das Feld `autoren` im Stand wird beim Abruf berechnet, nicht beim Bauen: eine Änderung an `autoren()` sieht `--check` erst nach dem nächsten Monatslauf. Nachfahren über die aus `personen` rekonstruierten Creators gegen das gespeicherte Feld.
+- „Nicht beschlossen" und Labels als Entscheidungsersatz am ganzen Thread messen, nicht am letzten Kommentar oder am Label (#139, #262).
+- Wandert ein Issue zwischen `freigegeben` und `nicht_freigegeben`, wird `docs/FEATURES.md` („Demnächst im Korpus", zählt Beispiele beider Listen) still falsch. Specs mit `if (sichtbar.length === 0)` prüfen nichts, solange `freigegeben` leer ist.
 
-- **„Verse" hat zwei Einheiten:** `02-map-citations.py` zählt `verse=len(belege[werk])` (Boreks verschiedene Zitatnummern); die verschiedenen Sprungziele (`target`) im Index sind eine andere Zahl. Wer „N auf M Versen" prüft, muss die Einheit nennen; „von zwei Pferden zitiert" ist nicht „zweimal zitiert". Messrezept: Index per `gzip` laden, `Counter((work, citation))` und `Counter(target)` getrennt zählen.
-- Datierte Altzahlen stehen bewusst in `ingest/horses/README.md` und im Kopf von `scripts/ingest/horses/mapping.py`: nicht als Drift melden. Schreibweisen: naming `source.license`, horses `source.licence`.
+**Handschriftencensus-Datierung (#118, `scripts/ingest/datierung-118/`)**
+- Nie selbst abrufen (robots.txt sperrt KI-Agenten), offline gegen `temp/hsc-cache` im Main Worktree.
+- Gefährlich ist ein zu frühes notAfter (verworfene Klammerzusätze mit eigener Datierung). Proben mit konstruierten Freitexten über `normalisiere()`, Wortlisten gegen das ganze Vokabular von `REGELN`, Untergrenzen mit `float("nan")` (`nan < 1.0` ist False).
 
-## Glossar-Export Kochbuchforschung (#554, WordPress-Export in sources/)
+**Weingrüße BRE (#147, `scripts/ingest/bre/`)**
+- Proben ohne Schreiben nach `ingest/bre/`: 00 `--offline`, 01 in-process per `runpy` mit umgebogenem `bc.SEGMENTIERUNG`/`bc.INGEST_DIR`, 02 mit `--ausgabe-dir <scratch> --datum <change-Datum>` gegen das eingecheckte TEI diffen (`bre_common.REPO = parents[3]`).
+- Zeilennummern aus 02 gegen die Quelle zählen, nicht aus dem Log. `[...]` am Spaltenanfang einer Synopse heißt meist „eingebettet".
+- Seit 13.11.2026 ist die Hauptseite „Kategorie:Quelle Weingruß" maßgeblich für die Werkzuordnung (Abgleich 03, Gate in 02 über `ABWEICHUNG_ERKLAERT`). Altschema-Probe: `c02.SCHEMA_RNG` auf eine `git show origin/main:schema/mhdbdb.rng`-Kopie biegen, `main()` mit `--trocken`.
+- Ausnahmeschlüssel, die nur die Art tragen (`(zeuge, "reihenfolge", "")`), decken jede künftige Abweichung derselben Art. Jeden Zweig, der ein Abweichungs-dict baut, einzeln proben, nicht nur die, die ein neuer Test deckt.
+- `bh.abgleich` paart in `filtere()` die jeweils ersten Vorkommen: ein doppelt geführter Titel erzeugt Schein-`reihenfolge`. Liste je Zeuge und Übersichtstabelle der Hauptseite widersprechen sich, `bh.parse_matrix` liefert die Übersicht.
+- **`sources/weingruesse/docling/*.md` (Main Worktree) sind die Steckbriefe 2022 („Erfassung der Quellen“), nicht die Druckfahnen.** Druckfahnentext: `pdftotext -enc UTF-8` auf `wagner-2023-weingruesse-druckfahnen.pdf` daneben. Ein Lecktest gegen docling prüft die falsche Quelle (Runde 1 Phasen, 17.11.2026).
+- Phasen 10 bis 21 schreibend proben: `git archive <sha> scripts ingest/bre authority-files schema | tar -x -C <Temp>`, dort laufen lassen, Vergleich mit `diff -rq --strip-trailing-cr` (Archiv hat CRLF). Rerun-Proben: jedes Assign-Skript nach seinem Apply erneut fahren; Zählungen, die nur beim ersten Setzen zählen (18: „mit <expan>“), sind im Rerun 0.
+- **Eine Umformulierung gegen den Lecktest gegen die Quelle lesen, nicht nur gegen den Test:** die d4-Neufassung in `zeugen.tsv` (Runde 2, 17.11.2026) kehrte Erst- und Nachdruck um (PDF: Hergot Erstdruck, Wachter Nachdruck; das Wiki vertauscht dazu die VD16-Nummern). Grün heißt nur „keine 6-Wort-Folge“, nicht „sachlich gleich“.
 
-Bei jedem weiteren Fremdexport nach `sources/` diese Punkte vorab abarbeiten; Personendaten im Korpus: [[header-spiegel]].
-- **PII-Prüfung nicht an der Mail-Regex aufhängen.** Die Bereinigung traf alle Mail-Vorkommen, ließ aber im Impressum die Telefonnummer der Herausgeberin neben der entfernten Mailadresse stehen. Rezept: Zeilendiff Original gegen Bereinigt (gleiche Zeilenzahl, da Textersatz), dann gezielt `Telefon`, `\+\d{2}`, `<address>`, `credit` in `_wp_attachment_metadata`, `/author/`, `?author=` suchen. Ort je Fund über das umschließende `<item>` bestimmen, nicht der Seitenangabe des Arbeiters glauben.
-- **GitHub-`user-attachments` eines öffentlichen Repos sind ohne Login abrufbar** (curl -sI: 302 auf signierte S3-URL). Ein „Original nur als Anhang in #N" ist öffentlich, und das Löschen des Kommentars löscht die Datei nicht (gemessen 10.10.: HTTP 200 danach). Die Datei-ID eines solchen Anhangs gehört nie in Notizen, Commits oder Issues.
-- **#397 an `sources/`:** `sources/README.md` sagt im Kopf „historische Ingest-Vorlagen" und „Auszug aus dem 9,1-GB-Archiv"; jeder neue Nicht-Legacy-Bestand macht das falsch, ohne dass der Diff die Zeilen berührt.
-- **Original** gibt es nur bei KZW: Bytes und SHA-256 gegen die Glossar-README, dann `bereinige-export.py` (mit `-E -P`, nicht `-I`) und `cmp` gegen den Blob. `PHONE_RE` trifft die nationale Form ohne `Tel:` nicht.
+**CoReMA-Pilot COR (#139, `scripts/ingest/cor/`)**
+- Quelle ist `../corema` (`data/published/annotated/<buch>.recipes.xml`), nicht GAMS: zuerst `sha256sum` gegen `ingest/cor/quellen.tsv`, dann 01 mit `--ausgabe-dir <scratch> --datum <change-Datum>` und `cmp` aller Ausgaben. Der Konverter vergleicht selbst keine Hashes, er schreibt neue.
+- Mutationsproben am Fixture-Helfer `test_cor.lauf()` per Scratch-Skript mit `sys.path` auf den Skriptordner. Ganzlauf-Probe: Konverter plus `schema/mhdbdb.rng` (ohne Includes) in eine Scratch-Kopie gleicher Tiefe, `--buch w1 --trocken --corema-dir <stufe0>`. Text außerhalb von w/pc/note sieht kein Rundlauf.
+- `ingest/cor/README.md` trägt eine Zeilentabelle je TSV (Datenzeilen = `wc -l` minus 1), die bei jeder neuen `art` mitwachsen muss. Lizenz: ARI und BRE übernehmen die Quelllizenz, `tei/` steht auf BY-NC-SA, DATA-MODEL.md „Stage 0" verlangt die Klärung vorab.
 
-## Textreihen-Unterseite (#93, `textreihen/`)
+**fyndling-Beiträge (@neongrau, #366, #376, `ingest/review/139-fyndling/`)**
+- Lokal liegt nur `temp/mhdbdb-angebot-207-lemma-vorschlaege.csv` (Siglen `w1` = COR_W1, `mha` = COR_BS1, `mon` = GR1), nicht die spätere 213er-Lieferung: „disjunkt zu den 213" ist lokal nur gegen die 207 messbar, und das so sagen.
+- Token-Prüfung: `<w>`/`<pc>`-Folge aus `ingest/cor/COR_*.tei.xml` per lxml, `[[ ]]` gegen Tokentext, `+`-Gruppen auf Lückenlosigkeit, Duplikate über alle IDs einer Zeile. Der `Kontext` lässt `<pc>` weg.
+- Agentenerzeugter Text trägt Arbeitsnotizen (`von Claude …`, `Wie B23`, `ev_clean/…`): in `Bedeutung` und `Hinweis` danach greppen, bevor eine README „geprüfte Fassung" stehen bleibt.
+- Wörterbuchstellen über `api.woerterbuchnetz.de/open-api/dictionaries/<SIGLE>/`: `lemmata/<lemma>` liefert `bookref` (Band,Spalte,Zeile), `fulltext/<form>` die textids, `kwic/<textid>` den Kontext. Einen `wbnetzid`-Endpunkt gibt es nicht (400).
 
-- **Treue gegen die alte Site messen, nicht lesen.** WebFetch liefert nur Zusammenfassungen. Geht: `curl -s -L -A "Mozilla/5.0" "https://www.marketext.at/Textreihentypologie/?page_id=N"` nach `%TEMP%\fr93\old\`, dann Textvergleich per Skript (Tags weg, typografische Anführungszeichen und nbsp normalisieren, Fragmente ab 25 Zeichen als Substring suchen). Erwartete Lücken: WP-Kommentarformulare, der Hinweis „Links noch nicht anklicken" (Browser), `#DOI (wird nachgeliefert)`, `dokument.html#MHDBDB`. Der Tippfehler „Texreihentypologie" (about) steht so im Original.
-- **Zotero-Gruppe 4876216:** `/items/top` zählt weniger als `/items` (dort auch attachment und note); das Skript holt `/items/top`, sein SKIP_TYPES-Zweig greift dort nie. `include=bib` liefert `<div class="csl-bib-body"><div class="csl-entry">…</div></div>`. Schnappschuss gegen Zotero: `/items/top?format=versions` liefert `{key: version}`, `Last-Modified-Version` mitlesen. `--check` des Bibliografie-Skripts ist der lesende Lauf.
-- **Quelle:** `gh api repos/Middle-High-German-Conceptual-Database/textseries/git/trees/86c233f08…` gibt die vier Blob-SHAs; `git hash-object` auf `textreihen/data/skos/*` muss sie treffen.
-- **Verzeichnisbaum-Zeile in `CLAUDE.md`:** kein Skript unter `scripts/audit/` liest den Baum; sein Spiegel ist der Baum in `docs/DEVELOPMENT.md` (dort steht auch `examples/`, in `CLAUDE.md` nicht). Datenstand: `git hash-object` gegen die README-Tabelle; „kein Abgleich mit genres.xml": `gh issue view 93 --json comments` (wachauer, 2026-10-08). `marketext.at/Textreihentypologie/` antwortet weiter mit 200, „former" meint die Herkunft. Skripte unter `%TEMP%`: [[querschnitt-umgebung]].
+**Textreihen (#93, `textreihen/`):** Treue gegen marketext.at per `curl` und Skriptvergleich messen, nicht per WebFetch (fasst zusammen). Den Verzeichnisbaum in `CLAUDE.md` liest kein Skript, sein Spiegel ist der Baum in `docs/DEVELOPMENT.md`.

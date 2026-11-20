@@ -779,7 +779,7 @@ Two concrete cases forced the decision on 2026-04-15:
 
 ### Decision
 
-**Approach B** is the project default for all future schema/data conflicts. Schema relaxation is only acceptable as a documented `GAP` comment in the RNC source when a data migration would be disproportionately expensive or semantically dangerous (e.g., the 34 corpus files currently covered by GAPs 1 to 9 and 11, which represent intentional encoding choices for specific text genres).
+**Approach B** is the project default for all future schema/data conflicts. Schema relaxation is only acceptable as a documented `GAP` comment in the RNC source when a data migration would be disproportionately expensive or semantically dangerous (e.g., the 35 corpus files currently covered by GAPs 1 to 9 and 11, which represent intentional encoding choices for specific text genres).
 
 The policy is codified in `CLAUDE.md` under "Hard Constraints":
 
@@ -1011,7 +1011,7 @@ Chosen: **option 2**, together with NFC composition in the normalizer against ca
 
 ### Decision
 
-Stage 3 accepts a candidate if `lemma.normalized` begins with the input (stem input) or the input begins with `lemma.normalized` (inflected input) and the lemma has at least 3 normalized characters. Results are sorted by length difference to the input; the playground breaks ties by corpus frequency (ADR context #163/#164).
+Stage 3 accepts a candidate if `lemma.normalized` begins with the input (stem input) or the input begins with `lemma.normalized` (inflected input) and the lemma has at least 3 normalized characters. Since #259 (KZW, 2026-10-20) the inflected-input direction also requires the lemma to cover at least half of the input (`MIN_STAGE3_COVERAGE = 0.5`), see CONTRACTS.md §C. Results are sorted by length difference to the input; the playground breaks ties by corpus frequency (ADR context #163/#164).
 
 The predicate and the ranking distance live as pure functions in `assets/js/lib/lemma-resolve.js` and are imported by both interfaces. Deliberately shared is **only stage 3**, not the whole orchestration: the main site reads a precomputed `lemma.normalized`, the playground normalizes at runtime and additionally ranks homographs by frequency. The pattern follows `lemma-match.js` (ADR context #126/#130).
 
@@ -1037,7 +1037,7 @@ The middle column belongs there, otherwise the top-1 jump reads as a thirtyfold 
 - **The WZB ingest track gains as well, but has not been followed up yet.** `wzb-auto-match.py`, `wzb-sense-assign.py` and `wzb-sense-apply.py` normalize through the same function. **289 WZB `<w>` with an o/u breve still carry no `@lemmaRef`**, because the breve stopped the matcher. A re-run of the matcher under this rule will resolve some of them; that is backfill work on the data side and belongs in its own run, not in this frontend PR.
 - **The breve stays unsolved on 136 WZB tokens, 64 of them lemmatized.** The rule covers `ŏ` and `ŭ`, so 405 of the 469 lemmatized breve tokens. The rest sit on `w` (91 tokens, 48 lemmatized) and `n` (22, of those 16), plus single cases on y/a/v/r/m/i/e/z. There the breve is not an umlaut sign but a Bohemian writing convention: `few̆er` stands for `viur`, `ew̆er` for `ir`, `wenn̆` for `wan`. Anyone copying these forms out of the reading view still lands in the fallback. A rule for them would be an editorial decision about the WZB transcription, not a technical one, and therefore belongs to KZW, not in this ADR. (Decided on 2026-08-06 for the 113 tokens on `w` and `n`: the breve is stripped, see ADR-017. The 23 remaining tokens stay untouched.)
 - **The keyness column of the table view** (#114) uses the same `resolveLemmaIds` reference set. For stage-3 search terms the log-likelihood values therefore change, because the reference sum runs over fewer lemmata.
-- **The minimum length of 3 lets fragments through.** „heldentum" finds `hel` as its only hit, „treueschwur" finds `tre`. Consumers of `matches[0]` in the playground take that silently. It is better than the previous 14 random hits, but not a good result; raising the threshold would be the next adjustment if users complain.
+- **The minimum length of 3 let fragments through** until #259. „heldentum" found `hel` as its only hit, „treueschwur" found `tre`. Consumers of `matches[0]` in the playground took that silently. It was better than the previous 14 random hits, but not a good result. Raising the threshold was named here as the next adjustment. Since #259 the minimum coverage of 0.5 (Decision above) does that, and both inputs now return nothing.
 
 ---
 
@@ -1093,7 +1093,7 @@ Measured with `scripts/mhg_normalizer.py` against `data/authority-index.json.gz`
 - **Both indexes and the API stay byte-identical.** The rule changes the normalization of user input, and no authority record carries a breve on `w` or `n` (0 of 234,243 variant keys). Verified by a full rebuild on 2026-08-06: `build-corpus-index.py`, `build-authority-index.py`, `build-api.py`, no diff, hence no version bump (per the rule „do not set a bump without a change of content", DATA-MODEL.md).
 - **13 tokens in 10 forms still find nothing**, all of them unlemmatized and most of them compounds: `new̆komen` (4), plus `strew̆te`, `hew̆es`, `bow̆te`, `strew̆ende`, `vrew̆te`, `bow̆o`, `vngesow̆erteigtes`, `mow̆ern`, `gemaw̆erte`. They fail on the compound, not on the breve, and the word-component search (#239) is the path for them.
 - **The measuring rule matters more than the number.** „113 tokens" counts `<w>` elements whose NFD text contains `w` or `n` plus U+0306, in `tei/WZB.tei.xml`, `@lemmaRef` irrelevant. Counted after NFC, or per distinct form (40), or only for lemmatized tokens (64), the same fact yields a different number. This is the lesson of 2026-07-31: a number without its measuring rule gets falsified when someone „corrects" it.
-- **The reverse direction is not covered.** Typing `fewer` finds the lemma, and through the lemma the annotated tokens. It does not highlight the 49 unlemmatized breve tokens in the reading view; only a `@lemmaRef` does that. That is #235 point 3. (#235 was closed on 2026-09-02 while its last status comment still called point 3 unfinished; measured 2026-10-05 with the rule above, 48 of the 113 tokens carry no `@lemmaRef`; the remainder of point 3 is tracked in #526.)
+- **The reverse direction is not covered.** Typing `fewer` finds the lemma, and through the lemma the annotated tokens. It does not highlight unlemmatized breve tokens in the reading view (19 of the 113 on 2026-10-20, after #536 annotated 29 more on 2026-10-07); only a `@lemmaRef` does that. That is #235 point 3. (#235 was closed on 2026-09-02 while its last status comment still called point 3 unfinished; measured 2026-10-05 with the rule above, 48 of the 113 tokens carry no `@lemmaRef`; the remainder of point 3 is tracked in #526.)
 
 ---
 

@@ -1,34 +1,40 @@
 ---
 name: projekt-lexikon-variants
-description: lexicon.xml und variants.xml im Review: Vorschrift B (form/@n, variantCandidates), Dangling-Filter, sense/@ana ohne Konsument, Schreiber außerhalb Lifecycle, Komposita und noCorpus (#228), Ziffernlemmata, lemma.pos/posAll
+description: Authority-Dateien, lexicon.xml, variants.xml, Senses und Umhängen von Tokens
 metadata:
   type: project
 ---
-Verdichtet 14.10.2026. Zahlen sind Eingabe, vor Gebrauch nachmessen.
+**Authority-Dateien und Authority-Index**
+- **concepts.xml ist kein Baum:** Mehrfacheltern über `<ptr type="broader">` und eine Selbstschleife. Hüllen brauchen eine Visited-Menge. „Subtree" meint die Root meist mit, „unter X" nicht: beide Lesarten messen.
+- Optionale Indexfelder (`altDE`, `altEN`, `altNormalized`) stehen nur an Trägern. `totalAuthorityFiles = 7` (ui-helpers.js) zählt Index-Sammlungen, nicht Dateien.
+- Das Index-Schema steht an vier Orten: DATA-MODEL.md (Schema-Block und XPath-Referenz), TEI-MODEL-AUTH-FILES.md, CONTRACTS.md §G.3 (normativ). Neues Feld: alle greppen.
+- contributors.xml liest build-authority-index nur in `load_contributor_names()`, `resp_name` bricht bei fremdem Präfix, unbekannter oder leerer ID ab.
+- **works.xml:** Siglen mit `.//tei:idno[@type="sigle"]` zählen wie der Syncer, TRO ist die einzige Doppelsigle. Werke ohne TEI-Datei gibt es (`WG`, `WLK`). Die Werkzahl steht ungegatet an drei Stellen (TEI-MODEL-AUTH-FILES.md, Kommentar in `build-authority-index.py`, Docstring `sync_tei_headers.py`).
 
-**Laufzeit-Wörterbuch seit Authority 1.9.18: Vorschrift B statt first-wins** (bis 1.9.17 gewann die Dokumentreihenfolge)
-- `variants.xml` trägt je `<form>` ein Pflichtattribut `n` (Tokens des Typs unter dem Lemma, aus `extract-variants.py`; Schema verlangt es). `parse_variants(known_lemma_ids)` summiert `n` je (Normalform, Lemma), rangiert absteigend, Gleichstand = Dokumentordnung (= Lemmanummer). `variants[form]` = erster Kandidat, `variantCandidates[form]` nur bei >1. Fehlendes `n` = harter Build-Abbruch. Gegenprobe (iterparse-Scan, ~3,5 min): `@n`-Summen == corresp-Tokenzahlen je (Normalform, Lemma).
-- Der Dangling-Filter ist die eine Stelle, an der der Index von lexicon.xml abhängt: ein Backfill (#115), der ein hängendes Lemma anlegt, kann eine Form umklappen (halap).
-- Inversionen (`app.js getVariantFormsFor`, `lemma-page.js renderVariants`) listen eine Form weiter nur unter dem ersten Kandidaten; ADR-021 führt das als offen.
-- `extract-variants.py` zählt Typen, nicht Formen; ein neuer Typ für eine anderswo existierende Form kann die Rangfolge drehen, sichtbar in `check-variants-flips.py` (projekt_gates_und_ci). Typ-Id -> Lemma ist eindeutig. Typ-Träger korpusweit: `re.finditer(r'<w xml:id="([^"]+)"[^>]*corresp="variants\.xml#(type_\d+)"')`, ~30 s. Zählung der beanspruchten Formen: parse_variants-Logik mit `mhg_normalizer.normalize_mhg` nachbauen, nicht NFC-lower.
+**Laufzeit-Wörterbuch: Vorschrift B (seit Authority 1.9.18)**
+- `<form>` in variants.xml trägt Pflicht-`n` (Tokens des Typs unter dem Lemma). `parse_variants` summiert `n` je (Normalform, Lemma), rangiert absteigend, Gleichstand = Dokumentordnung. `variants[form]` = erster Kandidat, `variantCandidates[form]` nur bei >1. Gegenprobe: `@n`-Summen == corresp-Tokenzahlen je (Normalform, Lemma).
+- Der Dangling-Filter ist die eine Stelle, an der der Index von lexicon.xml abhängt: ein Backfill, der ein hängendes Lemma anlegt, kann eine Form umklappen.
+- `extract-variants.py` zählt Typen, nicht Formen: ein neuer Typ kann die Rangfolge drehen (`check-variants-flips.py`). Typ-Träger: `re.finditer(r'<w xml:id="([^"]+)"[^>]*corresp="variants\.xml#(type_\d+)"')`. Formen mit `mhg_normalizer.normalize_mhg` nachbauen, nicht NFC-lower.
+- `entry/@corresp` ist `lexicon.xml#lemma_N`, immer genau ein Token (so schreibt es `extract-variants.py`). Ein Leser mit `.split()` statt `split('#')[-1]` ist heute wirkungsgleich, kein A. Einige `entry/@corresp` hängen auf Lemmata ohne lexicon-Eintrag: ein Konsument, der jeden Kandidaten im Lexikon verlangt, bricht erst, wenn so einer trifft.
 
-**sense/@ana**
-- Trägt Variantentypen, hat keinen Konsumenten (build-authority-index liest `ana` nur am Konzept-`title`, cross-refs überspringt `#type_N`, kein Spec/Frontend lädt lexicon.xml): Änderungen sind index-, API- und testneutral. Richtig/falsch entscheidet DATA-MODEL (der Typ gehört zum Sense seines Tokens). Konzepte eines Sense stehen in `sense/ptr/@target`.
-- Hängende Typverweise je Revision: lexicon + variants per `git show`, `split()` über sense/@ana gegen die variants-xml:id-Menge. Eine belegfrei gehaltene Waise verliert ihren variants-Eintrag und behält sense/@ana; `extract-variants.py --apply` räumt sie ab.
+**sense/@ana, w/@ana und lexicon.xml**
+- sense/@ana trägt Variantentypen und hat keinen Konsumenten (Index liest `ana` nur am Konzept-`title`, cross-refs überspringt `#type_N`, kein Spec und kein Frontend lädt lexicon.xml). Konzepte eines Sense stehen in `sense/ptr/@target`. Hängende Typverweise: `split()` über sense/@ana gegen die variants-xml:id-Menge, `extract-variants.py --apply` räumt sie ab.
+- Kein JS liest `w/@ana` (`git grep -w ana -- '*.js'`), der Korpus-Index auch nicht. Leser sind `build-begriffshilfe.py`, `measure-498-*`, `check-authority-cross-refs.py`, `foreign-sense-contradictions-28.py`, alle trennen an Leerzeichen (mehrere Senses in einem `w/@ana` gibt es, #602).
+- **Selbstschließende `<sense xml:id="…"/>` gibt es:** eine Regex `<sense\b[^>]*xml:id="…"[^>]*>(.*?)</sense>` frisst dann den Folge-Sense. Gegenprobe mit lxml `iter(TEI+'sense')`.
+- Schreiber außerhalb des Lifecycle: apply-228.py (löscht Einträge), backfill-lexicon.py (Stubs). „Der eine Ort, an dem tei/ lexicon.xml ändern kann" (DATA-MODEL) gilt nur für die Lifecycle-Skripte. Kein Skript vergleicht Token-@pos mit gramGrp oder Lexikon-`pos`.
+- Eine Aussage über Senses („Erotik-Bedeutung neben der wörtlichen", #702, „verliert damit Konzept X", #461) je Sense an den `ptr` prüfen, nicht am Etikett oder am Satz eines Vorläufers: dasselbe Konzept kann an mehreren Senses eines Lemmas hängen.
 
-**Schreiber von lexicon.xml außerhalb des Lifecycle:** apply-228.py (löscht Einträge), backfill-lexicon.py (Stubs). „Der eine Ort, an dem eine tei/-Änderung lexicon.xml ändern kann" (DATA-MODEL) gilt nur für die Lifecycle-Skripte.
+**Neues Lemma mit der Normalform eines bestehenden (#216 Minne/minne):** Stufe 1 liefert beide. Hauptseite gibt die Vereinigung zurück, Playground `searchLemmaByOrthography` rankt nach Korpusfrequenz, `resolveLemmaNames` nimmt `tables.lower[...][0]`. Positionen ändern sich nur in Dateien mit NEU gesetztem `@lemmaRef`: „ändert die Positionszählung in N Texten" gegen das Protokoll zählen.
 
-**Wortart:** kein Skript vergleicht Token-@pos mit gramGrp; Legacy-Tag ART fällt aus NP-Start-Mengen heraus.
+**Tokens zwischen Lemmata umhängen:** Variantentypen werden nicht umgehängt, neue Nummern geprägt, `n` der alten sinkt, ein Typ ohne Rest entfällt. Das Flip-Gate verlangt die gitignorierte `variants-flips-ack.json` (`git add -f`). Sense-IDs sind nur als `lemma_M_sense_N` global, ein neuer Sense trägt kein `@ana`.
 
-**Ziffernlemmata:** seit `claude/228-ziffern` nur noch lemma_53328 „1" (Belege alle NEIM, #453); alle Ziffernschlüssel im Laufzeit-Wörterbuch zeigen darauf. hapax-legomena.spec.js ankert auf ein Orakel aus den Indexen. Außerhalb des Diffs veraltend: CONTRACTS.md C.1.2 („4 lemmata ... 78 keys"), Kommentar `passesFilters` in hapax-legomena.js.
+**w/@ana zwischen Senses umhängen (#461, #602)**
+- `scripts/review/messen-*.py` mit fester Erwartungsmenge (`ERWARTET`) brechen nach dem Umhängen ab. Eine Quelle „Kommentare in #N" für eine Terminal-Entscheidung gegen den Thread zählen.
+- Nachfahren der `apply-461-*.py` (`ROOT` = `parents[3]`, nicht idempotent): Skript aus HEAD plus `lexicon.xml`, `tei/<sigle>.tei.xml`, `belege.tsv` der Basis per `git cat-file blob` in einen Scratch-Baum gleicher Tiefe, `--apply`, dann `git hash-object --no-filters` gegen `git rev-parse HEAD:<pfad>`.
+- Nebenwirkungen stehen woanders: Authority-Index lemmaweise gegen die Basis diffen (#602 klappte das `pos` eines anderen Lemmas). `comment-attribution.spec.js` zieht eine Stichprobe nach Index-Position aus der Kommentarliste: ein neuer Kommentar verschiebt sie, vorher/nachher nachrechnen.
 
-**Reine Wortbestandteile (#228, `component-only.js`, `noCorpus`)**
-- `lemma.id` und `etymology[].lemmaRef` tragen beide `lemma_N` ohne `#`/`lexicon.xml#`. `noCorpus` gibt es erst seit 1.9.18; die Spec mockt es per `page.route`; veralteter Browser-Cache ist kein Loch (`corpus-loader.js` verwirft ihn bei Versionsabweichung). `renderOccurrences` kehrt ohne `lemmaIndex[lemmaKey]` früh zurück.
-- `hilfe-korpussuche.html` ~Z. 445-446 („Jeder Eintrag besteht aus dem Lemma und einem Wortart-Kürzel") ist nach #228 eine Allaussage mit Ausnahmen.
+**lemma.pos / posAll (#462):** `data/lemma-pos.json.gz` aus `scripts/build-lemma-pos.py` (Regex über tei/, kein Textleer-Filter wie im Korpus-Index). `apply_corpus_pos` fasst nur `len(posAll) > 1` an, Sortkey `(-count, lexikonindex)`. Nachrechnen gegen `git show <base>:data/authority-index.json.gz` je Lemma. Altbestand: leeres `posAll` mit `pos == ''` (`posAll[0]` wirft).
 
-**Tokens zwischen Lemmata umhängen (#460/#461/#462)**
-- Variantentypen werden nicht umgehängt (#367), neue Nummern geprägt; `n` der alten Typen sinkt, ein Typ ohne Rest entfällt. Das Flip-Gate verlangt die gitignorierte `scripts/audit/variants-flips-ack.json` (`git add -f`): den Grund je Form lesen.
-- Sense-IDs sind global, ein neuer Sense trägt kein `@ana`. `extract-variants.py --help` läuft als Trockenlauf und schreibt `authority-files/variants.regen.xml`: vor dem Commit löschen.
-- Zerlegte Tags zählen für beide Teile (`NEG VRB`): ein „häufigste Wortart" aus Korpuszählung hat bei Gleichstand keinen Sieger. Die Grundmenge zerlegen, bevor eine Regel darauf steht (#462: 1.537 abweichende `pos` nach der Wortlaut-Lesart gegen 5.653 nach „Inhaltswort gewinnt").
-
-**lemma.pos / posAll seit Authority 1.9.24 (#462):** `data/lemma-pos.json.gz` aus `scripts/build-lemma-pos.py` (Regex über tei/, Teil-Tags je Token, kein Textleer-Filter wie im Korpus-Index). `apply_corpus_pos` fasst nur `len(posAll) > 1` mit Eintrag an; Sortkey `(-count, lexikonindex)`. Nachrechnen gegen alten Index: `git show <base>:data/authority-index.json.gz`, Vergleich je Lemma von `pos`, `posAll`, `sorted(posAll)` und aller übrigen Felder; Altbestand: Lemmata mit leerem `posAll` und `pos == ''` (`posAll[0]` wirft IndexError), lemma-IDs in lemma-pos ohne Indexeintrag (Dangling-Baseline).
+**WZB-Paare ohne @corresp (#370 Punkt 2)**
+- ANLEGEN heißt „neuen Typ prägen" und setzt voraus, dass keiner existiert. Vorhandener Typ über (NFC-lower-Form, Lemma) ergibt VERKNÜPFEN (nur `@corresp`), dieselbe Form unter einem anderen Lemma bleibt ANLEGEN (Homographe).
+- `find-370-nachtrag.py` zählt nur neue Paare, nie neue Tokens bekannter Paare. `pruefe_urteile` prüft das Ziellemma nur bei `ANDERE_ZUORDNUNG:`.

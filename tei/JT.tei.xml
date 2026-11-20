@@ -138,6 +138,9 @@
       <change when="2026-09-11" who="#editor">#198 Schritt 2: Token JT_6192000_1 (habe) verbal gelesen, @pos NOM VRB VEX zu VRB VEX; @lemmaRef und @ana unveraendert. Grundlage: Konjunktiv mit Akkusativobjekt (diu werch).</change>
       <change when="2026-09-30" who="#editor">#493: Angabe zur semantischen Disambiguierung in encodingDesc/normalization an den Stand der Annotation angeglichen (232434 von 235853 lemmatisierten Tokens tragen einen Begriff in @ana). Vorher: &#34;Voll lemmatisiert und disambiguiert.&#34;</change>
       <change when="2026-10-10" who="#editor">#460 jagen: 1 Token als Verbform gelesen, von lemma_3103 jagât (NOM) auf lemma_3102 jagen (VRB) umgehängt, @ana entfällt; neu geprägte Variantentypen nach der Regel aus #367.</change>
+      <change when="2026-10-16" who="#editor">#460 jagen: 1 Token als Verbform gelesen (KZW 2026-10-15), von lemma_3103 jagât (NOM) auf lemma_3102 jagen (VRB) umgehängt, @ana entfällt.</change>
+      <change when="2026-10-18" who="#editor">#462 Lexikon gegen Korpus: 2 Tokens nach KZWs Antwort vom 2026-10-16 in @pos oder Lemma angepasst.</change>
+      <change when="2026-11-08" who="#editor">#216 Frau Minne: 9 Tokens auf das Namenlemma lexicon.xml#lemma_79830 (Minne, NAM) gesetzt (9 von lemma_4130 umgehängt). Regel: unmittelbar vorangehendes Token mit lemma_7260, Form ohne -n (Entscheidung chsteiner und K. Zeppezauer-Wachauer 2026-08-31, Umsetzung 2026-11-08; Provenienz-Log: ingest/pos-disambig/216-minne-nam/).</change>
     </revisionDesc>
   </teiHeader>
   <text>
@@ -94176,7 +94179,7 @@
           <l n="4">
             <w xml:id="JT_15304000_0" lemmaRef="lexicon.xml#lemma_7260" pos="NOM" ana="lexicon.xml#lemma_7260_sense_11763" corresp="variants.xml#type_25981">frou</w>
             <hi rend="upper_case_first_letter">
-              <w xml:id="JT_15304000_1" lemmaRef="lexicon.xml#lemma_4130" pos="NOM" ana="lexicon.xml#lemma_4130_sense_6485" corresp="variants.xml#type_14385">minne</w>
+              <w xml:id="JT_15304000_1" lemmaRef="lexicon.xml#lemma_79830" pos="NAM" ana="lexicon.xml#lemma_79830_sense_119201" corresp="variants.xml#type_372866">minne</w>
             </hi>
             <pc xml:id="JT_15304000_2" join="left">,</pc>
             <w xml:id="JT_15304000_3" lemmaRef="lexicon.xml#lemma_3567" pos="VRB" ana="lexicon.xml#lemma_3567_sense_5651" corresp="variants.xml#type_12435">lat</w>
@@ -139674,7 +139677,7 @@
             <w xml:id="JT_22924000_1">wer</w>
             <w xml:id="JT_22924000_2" lemmaRef="lexicon.xml#lemma_7260" pos="NOM" ana="lexicon.xml#lemma_7260_sense_11763" corresp="variants.xml#type_25989">vrou</w>
             <hi rend="upper_case_first_letter">
-              <w xml:id="JT_22924000_3" lemmaRef="lexicon.xml#lemma_4130" pos="NOM" ana="lexicon.xml#lemma_4130_sense_6485" corresp="variants.xml#type_14385">minne</w>
+              <w xml:id="JT_22924000_3" lemmaRef="lexicon.xml#lemma_79830" pos="NAM" ana="lexicon.xml#lemma_79830_sense_119201" corresp="variants.xml#type_372866">minne</w>
             </hi>
             <w xml:id="JT_22924000_4" lemmaRef="lexicon.xml#lemma_4632" pos="VRB" ana="lexicon.xml#lemma_4632_sense_7197" corresp="variants.xml#type_52839">gepfendet</w>
             <caesura/>
@@ -154259,7 +154262,7 @@
           <l n="2">
             <w xml:id="JT_25362000_0" lemmaRef="lexicon.xml#lemma_7260" pos="NOM" ana="lexicon.xml#lemma_7260_sense_11763" corresp="variants.xml#type_25989">vrou</w>
             <hi rend="upper_case_first_letter">
-              <w xml:id="JT_25362000_1" lemmaRef="lexicon.xml#lemma_4130" pos="NOM" ana="lexicon.xml#lemma_4130_sense_6485" corresp="variants.xml#type_14385">minne</w>
+              <w xml:id="JT_25362000_1" lemmaRef="lexicon.xml#lemma_79830" pos="NAM" ana="lexicon.xml#lemma_79830_sense_119201" corresp="variants.xml#type_372866">minne</w>
             </hi>
             <w xml:id="JT_25362000_2" lemmaRef="lexicon.xml#lemma_4172" pos="PRP" ana="lexicon.xml#lemma_4172_sense_6544" corresp="variants.xml#type_14531">mit</w>
             <w xml:id="JT_25362000_3">ir</w>
@@ -159850,7 +159853,7 @@
             <pc xml:id="JT_26294000_3" join="left">,</pc>
             <w xml:id="JT_26294000_4" lemmaRef="lexicon.xml#lemma_7260" pos="NOM" ana="lexicon.xml#lemma_7260_sense_11763" corresp="variants.xml#type_25989">vrou</w>
             <hi rend="upper_case_first_letter">
-              <w xml:id="JT_26294000_5" lemmaRef="lexicon.xml#lemma_4130" pos="NOM" ana="lexicon.xml#lemma_4130_sense_6485" corresp="variants.xml#type_14385">minne</w>
+              <w xml:id="JT_26294000_5" lemmaRef="lexicon.xml#lemma_79830" pos="NAM" ana="lexicon.xml#lemma_79830_sense_119201" corresp="variants.xml#type_372866">minne</w>
             </hi>
             <pc xml:id="JT_26294000_6" join="left">,</pc>
             <caesura/>
@@ -159935,7 +159938,7 @@
             <pc xml:id="JT_26311000_4" join="left">,</pc>
             <w xml:id="JT_26311000_5" lemmaRef="lexicon.xml#lemma_7260" pos="NOM" ana="lexicon.xml#lemma_7260_sense_11763" corresp="variants.xml#type_25989">vrou</w>
             <hi rend="upper_case_first_letter">
-              <w xml:id="JT_26311000_6" lemmaRef="lexicon.xml#lemma_4130" pos="NOM" ana="lexicon.xml#lemma_4130_sense_6485" corresp="variants.xml#type_14385">minne</w>
+              <w xml:id="JT_26311000_6" lemmaRef="lexicon.xml#lemma_79830" pos="NAM" ana="lexicon.xml#lemma_79830_sense_119201" corresp="variants.xml#type_372866">minne</w>
             </hi>
             <pc xml:id="JT_26311000_7" join="left">:</pc>
             <caesura/>
@@ -160056,7 +160059,7 @@
             <pc xml:id="JT_26331000_4" join="left">,</pc>
             <w xml:id="JT_26331000_5" lemmaRef="lexicon.xml#lemma_7260" pos="NOM" ana="lexicon.xml#lemma_7260_sense_11763" corresp="variants.xml#type_25989">vrou</w>
             <hi rend="upper_case_first_letter">
-              <w xml:id="JT_26331000_6" lemmaRef="lexicon.xml#lemma_4130" pos="NOM" ana="lexicon.xml#lemma_4130_sense_6485" corresp="variants.xml#type_14385">minne</w>
+              <w xml:id="JT_26331000_6" lemmaRef="lexicon.xml#lemma_79830" pos="NAM" ana="lexicon.xml#lemma_79830_sense_119201" corresp="variants.xml#type_372866">minne</w>
             </hi>
             <pc xml:id="JT_26331000_7" join="left">:</pc>
             <caesura/>
@@ -160156,7 +160159,7 @@
             <caesura/>
             <w xml:id="JT_26344000_5" lemmaRef="lexicon.xml#lemma_7260" pos="NOM" ana="lexicon.xml#lemma_7260_sense_11763" corresp="variants.xml#type_25989">vrou</w>
             <hi rend="upper_case_first_letter">
-              <w xml:id="JT_26344000_6" lemmaRef="lexicon.xml#lemma_4130" pos="NOM" ana="lexicon.xml#lemma_4130_sense_6485" corresp="variants.xml#type_78204">minn</w>
+              <w xml:id="JT_26344000_6" lemmaRef="lexicon.xml#lemma_79830" pos="NAM" ana="lexicon.xml#lemma_79830_sense_119201" corresp="variants.xml#type_372869">minn</w>
             </hi>
             <pc xml:id="JT_26344000_7" join="left">,</pc>
             <w xml:id="JT_26344000_8" lemmaRef="lexicon.xml#lemma_3001" pos="PRO" ana="lexicon.xml#lemma_3001_sense_4805" corresp="variants.xml#type_10212">ich</w>
@@ -160215,7 +160218,7 @@
             <pc xml:id="JT_26354000_4" join="left">,</pc>
             <w xml:id="JT_26354000_5" lemmaRef="lexicon.xml#lemma_7260" pos="NOM" ana="lexicon.xml#lemma_7260_sense_11763" corresp="variants.xml#type_25989">vrou</w>
             <hi rend="upper_case_first_letter">
-              <w xml:id="JT_26354000_6" lemmaRef="lexicon.xml#lemma_4130" pos="NOM" ana="lexicon.xml#lemma_4130_sense_6485" corresp="variants.xml#type_14385">minne</w>
+              <w xml:id="JT_26354000_6" lemmaRef="lexicon.xml#lemma_79830" pos="NAM" ana="lexicon.xml#lemma_79830_sense_119201" corresp="variants.xml#type_372866">minne</w>
             </hi>
             <pc xml:id="JT_26354000_7" join="left">,</pc>
             <caesura/>
@@ -160279,7 +160282,7 @@
             <pc xml:id="JT_26364000_4" join="left">,</pc>
             <w xml:id="JT_26364000_5" lemmaRef="lexicon.xml#lemma_7260" pos="NOM" ana="lexicon.xml#lemma_7260_sense_11763" corresp="variants.xml#type_25989">vrou</w>
             <hi rend="upper_case_first_letter">
-              <w xml:id="JT_26364000_6" lemmaRef="lexicon.xml#lemma_4130" pos="NOM" ana="lexicon.xml#lemma_4130_sense_6485" corresp="variants.xml#type_14385">minne</w>
+              <w xml:id="JT_26364000_6" lemmaRef="lexicon.xml#lemma_79830" pos="NAM" ana="lexicon.xml#lemma_79830_sense_119201" corresp="variants.xml#type_372866">minne</w>
             </hi>
             <pc xml:id="JT_26364000_7" join="left">,</pc>
             <caesura/>
@@ -260638,7 +260641,7 @@
             <w xml:id="JT_43134000_1" lemmaRef="lexicon.xml#lemma_1288" pos="ADJ NUM" ana="lexicon.xml#lemma_1288_sense_2017" corresp="variants.xml#type_4192">erste</w>
             <w xml:id="JT_43134000_2">was</w>
             <w xml:id="JT_43134000_3" lemmaRef="lexicon.xml#lemma_1517" pos="PRO" ana="lexicon.xml#lemma_1517_sense_2355" corresp="variants.xml#type_4999">er</w>
-            <w xml:id="JT_43134000_4" lemmaRef="lexicon.xml#lemma_3103" pos="NOM" ana="lexicon.xml#lemma_3103_sense_4930" corresp="variants.xml#type_319550">jagennes</w>
+            <w xml:id="JT_43134000_4" lemmaRef="lexicon.xml#lemma_3102" pos="VRB" corresp="variants.xml#type_372858">jagennes</w>
             <pc xml:id="JT_43134000_5" join="left">,</pc>
             <caesura/>
             <w xml:id="JT_43134000_6" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3507">der</w>
@@ -292940,7 +292943,7 @@
             <w xml:id="JT_48512000_0" lemmaRef="lexicon.xml#lemma_5941" pos="PRO IPA" ana="lexicon.xml#lemma_5941_sense_9416" corresp="variants.xml#type_20940">swaz</w>
             <w xml:id="JT_48512000_1" lemmaRef="lexicon.xml#lemma_3001" pos="PRO" ana="lexicon.xml#lemma_3001_sense_4805" corresp="variants.xml#type_10237">mir</w>
             <w xml:id="JT_48512000_2" lemmaRef="lexicon.xml#lemma_30703" pos="ADV" ana="lexicon.xml#lemma_30703_sense_48076" corresp="variants.xml#type_157721">darumb</w>
-            <w xml:id="JT_48512000_3" lemmaRef="lexicon.xml#lemma_17456" pos="CNJ VRB" ana="lexicon.xml#lemma_17456_sense_29790" corresp="variants.xml#type_75261">zedolne</w>
+            <w xml:id="JT_48512000_3" lemmaRef="lexicon.xml#lemma_17456" pos="PRP VRB" ana="lexicon.xml#lemma_17456_sense_29790" corresp="variants.xml#type_75261" reason="ze+dolne">zedolne</w>
             <caesura/>
             <w xml:id="JT_48512000_4" lemmaRef="lexicon.xml#lemma_2199" pos="VRB" ana="lexicon.xml#lemma_2199_sense_3477" corresp="variants.xml#type_45190">geschicht</w>
             <pc xml:id="JT_48512000_5" join="left">,</pc>
@@ -293946,7 +293949,7 @@
             <w xml:id="JT_48672000_0" lemmaRef="lexicon.xml#lemma_4172" pos="PRP" ana="lexicon.xml#lemma_4172_sense_6544" corresp="variants.xml#type_14531">mit</w>
             <w xml:id="JT_48672000_1" lemmaRef="lexicon.xml#lemma_3530" pos="NOM" ana="lexicon.xml#lemma_3530_sense_5587" corresp="variants.xml#type_12253">kumber</w>
             <w xml:id="JT_48672000_2">not</w>
-            <w xml:id="JT_48672000_3" lemmaRef="lexicon.xml#lemma_17456" pos="CNJ VRB" ana="lexicon.xml#lemma_17456_sense_29790" corresp="variants.xml#type_75261">zedolne</w>
+            <w xml:id="JT_48672000_3" lemmaRef="lexicon.xml#lemma_17456" pos="PRP VRB" ana="lexicon.xml#lemma_17456_sense_29790" corresp="variants.xml#type_75261" reason="ze+dolne">zedolne</w>
             <pc xml:id="JT_48672000_4" join="left">.</pc>
             <caesura/>
             <w xml:id="JT_48672000_5" lemmaRef="lexicon.xml#lemma_4432" pos="ADV CNJ" ana="lexicon.xml#lemma_4432_sense_6912" corresp="variants.xml#type_15441">nu</w>

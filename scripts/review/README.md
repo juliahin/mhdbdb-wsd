@@ -2,7 +2,9 @@
 
 Generatoren für **kuratorische Prüfseiten**: einzelne HTML-Dateien, die man an
 eine Fachwissenschaftlerin verschickt und die sie ohne Installation im Browser
-öffnet, um Belegstellen zu beurteilen und die Antworten zurückzuschicken.
+öffnet, um Belegstellen zu beurteilen und die Antworten zurückzuschicken. Dazu
+Skripte, die **Prüflisten als TSV** erzeugen (unten, Vorgänge #462, #603, #554);
+deren Ausgabe liegt unter `ingest/<bereich>/<vorgang>/`.
 
 Angelegt am 21.09.2026 für #443 (das Format) und #359 (die erste Anwendung).
 
@@ -16,11 +18,34 @@ Angelegt am 21.09.2026 für #443 (das Format) und #359 (die erste Anwendung).
 | `build-370-entscheidungen.py` | #370 Punkt 2: `entscheidungen.csv` aus Evidenz und den Handurteilen in `urteile-manuell.csv` |
 | `build-370-pruefseite.py` | #370 Punkt 2: die Prüfseite `pruefseite-370.html` für die PRUEFSEITE-Paare |
 | `build-526-pruefseite.py` | #526 Punkt 4: die Prüfseite `ingest/pos-disambig/526-breve-wn/pruefseite-526.html` für die WZB-Breve-Tokens, die #536 nicht annotiert hat. Die Kandidaten stehen im Skript und werden beim Lauf gegen `lexicon.xml` geprüft |
+| `build-560-pruefseite.py` | #560 Frage 6: die Prüfseite `ingest/wzb/370-corresp/pruefseite-560-abc.html` für die ganzen Wörter am Lemma `abc` (41 Schreibungen aus `abc-befunde.csv`), eine Karte je Schreibung mit allen Belegen. Gruppen und Kandidaten stehen im Skript und werden beim Lauf gegen `lexicon.xml` und das TEI geprüft |
 
-Das Material und die erzeugte Seite liegen unter
-[`ingest/review/359-borek/`](../../ingest/review/359-borek/README.md), nicht
-hier: erzeugte Artefakte gehören neben ihre Daten und nicht neben ihren
-Generator.
+Dazu kommen Skripte vom 16.10.2026, die **Prüflisten als TSV** statt Prüfseiten erzeugen. Sie benutzen `review_page.py` nicht. Die vier Skripte, die Dateien erzeugen (`collect-462-pos.py`, `vorsortieren-603.py`, `zotero-abgleich-554.py`, `klug-links-554.py`), verlangen einen Ausgabeordner außerhalb des Repos oder in einem Unterordner von `temp/` (gitignoriert), schreiben nur dorthin und brechen bei jedem anderen Ordner im Repo ab (`zotero-abgleich-554.py` nimmt auch `temp/` selbst). `stichprobe2-603.py` und `ana-603.py` haben diese Sperre nicht: sie lesen den Ordner, den man ihnen gibt, und `stichprobe2-603.py` schreibt seine Stichprobe dorthin; man gibt ihnen den Ausgabeordner von `vorsortieren-603.py`. Die eingecheckten Dateien erneuert man, indem man die Ausgabe vergleicht und bewusst kopiert. Wo die eingecheckte Fassung liegt, steht in der Rolle:
+
+| Datei | Rolle |
+|---|---|
+| `collect-462-pos.py` | #462: Korpusbelege der 25 Lemmata, bei denen Lexikon und Korpus in der Wortart auseinanderliegen, in den Ausgabeordner (`belege.tsv`, dazu `lexikon.json` und `zaehlung.txt`); eingecheckt ist `ingest/pos-disambig/462-pos/belege.tsv` |
+| `vorsortieren-603.py` | #603: Belege der Bedeutungen mit `concept_21111000` nach Tier, Mensch oder unklar vorsortiert, Regeln T1/T2/M1-M3 (M1 mit ich, wir, ir; `dû` ist kein Auslöser, siehe README dort); liest die Eingabe `agent-faelle.tsv` aus `ingest/review/603-ernaehrung/`, wo auch die eingecheckten Ausgaben liegen |
+| `stichprobe2-603.py` | #603: zweite Stichprobe (Klasse `tier` ohne Mensch-Treffer), liest die große Ausgabe von `vorsortieren-603.py` |
+| `ana-603.py` | #603: Kennzahlen zu den Bedeutungen aus `senses-21111000.tsv` und `lemmata-ohne-ana.tsv` auf der Konsole |
+| `zotero-abgleich-554.py` | #554: Abgleich der Literatur aus `literatur.tsv` gegen zwei Zotero-Gruppen; eingecheckt ist `ingest/glossar-554/zotero-abgleich.tsv`. **Braucht das Netz** (Zotero-API) |
+| `klug-links-554.py` | #554: Klug-Verweise. Phase 1 holt Pflanzenseiten (**Netz**) und schreibt ein Dossier; Phase 2 (`--nur-urteile`, ohne Netz) schreibt `klug-links.tsv` aus `klug-urteile.tsv` (beide eingecheckt unter `ingest/glossar-554/`); `--aus <Ordner>` ist Pflicht, falsche Urteile oder Doppelte brechen ab |
+
+Vom Lauf am 18.10.2026 kommen fünf Skripte dazu, drei für die zweite Lesung zu #603 und zwei Messungen. Aufruf, Eingaben und Ausgaben stehen jeweils im Docstring:
+
+| Datei | Rolle |
+|---|---|
+| `stapel-603.py` | #603: Lesestapel mit weitem Kontext aus dem TEI, ohne die Klasse der Vorsortierung; fehlt eine `w_id` im TEI, bricht der Lauf ab |
+| `verbinden-lesung-603.py` | #603: verbindet die Urteile der Lesenden über `nr` mit der Eingabe und prüft sie; ein Formfehler oder eine Zeile ohne Urteil endet mit Exit 1 ohne Ausgabedatei |
+| `auswerten-lesung-603.py` | #603: fügt die Teile zusammen und zählt je Bedeutung und Lemma für die Konzeptfrage |
+| `messen-461-sense3004.py` | #461: wie viele der Belege an `lemma_1958_sense_3004` einen lebenden Körper meinen; die Einstufung steht als Leseurteil im Skript, das Skript prüft die Menge |
+| `messen-554-zahlen.py` | #554: heutige Trefferzahlen für die Glossarkommentare am heutigen Korpus; zählt `<l>` nur in Texten ohne `<lb/>` (WZB-Regel aus `docs/TEI-MODEL.md` §3.2) |
+
+Bei allen drei Gruppen liegen Material und Ausgabe nicht hier, sondern neben ihren
+Daten, etwa für #359 unter
+[`ingest/review/359-borek/`](../../ingest/review/359-borek/README.md) und für
+#603 unter [`ingest/review/603-ernaehrung/`](../../ingest/review/603-ernaehrung/README.md):
+erzeugte Artefakte gehören neben ihre Daten und nicht neben ihren Generator.
 
 ## Die eine Entscheidung, die das Format trägt
 

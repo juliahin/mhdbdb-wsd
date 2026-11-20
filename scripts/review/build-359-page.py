@@ -335,9 +335,18 @@ def _zahlwort(n, einzahl, mehrzahl):
 
 
 def fundstelle(b):
-    if b['kontextart'] == 'vers' and b['zeile_n']:
-        return 'Vers %s' % b['zeile_n']
-    return 'Prosa, ohne Verszählung'
+    """Jede `kontextart` aus collect-359-evidence.py ausdruecklich.
+
+    `satz` ist ein <l> in einem Text mit <lb/> (WZB, #634): ein Satz, keine
+    Verszeile. Ein unbekannter Wert ist ein harter Fehler und faellt nicht
+    still auf "Prosa" zurueck.
+    """
+    art = b['kontextart']
+    if art == 'vers':
+        return ('Vers %s' % b['zeile_n']) if b['zeile_n'] else 'Prosa, ohne Verszählung'
+    if art in ('satz', 'prosa'):
+        return 'Prosa, ohne Verszählung'
+    sys.exit('%s: unbekannte kontextart %r' % (b.get('xml_id', '?'), art))
 
 
 def bau_fall(schluessel, f, b):
@@ -559,7 +568,7 @@ def vorab_panel(zahl):
         'fremde Ansetzung zufällig so aussieht wie eine solche Form, trifft der Abgleich das '
         'falsche Wort. <span class="mono">oren</span> trifft dann das Fabelvolk der '
         '<span class="mono">Ôren</span> statt das Ohr, <span class="mono">lenden</span> das Verb '
-        '„landen“ statt die Lende, <span class="mono">gorre</span> das Königreich Gorre aus dem '
+        '"landen" statt die Lende, <span class="mono">gorre</span> das Königreich Gorre aus dem '
         'Prosa-Lancelot statt die Gurre.</p>'
         '<p>Das ist an den Belegstellen geprüft, Fall für Fall. Übrig bleiben <b>%d Fälle, die '
         'wirklich eine Entscheidung brauchen</b>. Die anderen %d stehen trotzdem hier, mit ihren '

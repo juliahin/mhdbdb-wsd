@@ -14,16 +14,16 @@ Counterpart to `docs/TEI-MODEL.md` (corpus files).
 
 ## 1. Overview
 
-| File | Content | Entries | Size |
+| File | Content | Entries | Size (2026-10-20, `ls -l`, decimal units) |
 |-------|--------|-----------|---------|
-| `lexicon.xml` | Lemmata with senses, POS, etymology | 43,710 lemmata | 33 MB |
-| `variants.xml` | Orthographic variants per lemma | 42,459 variant entries, 256,961 forms | 16 MB |
-| `persons.xml` | Authors/persons with authority data | 211 | 74 KB |
-| `works.xml` | Works with bibliography and genre | 585 | 1.4 MB |
-| `contributors.xml` | MHDBDB contributors (founders, coordination, editors) | 52 persons + 2 orgs | 15 KB |
-| `concepts.xml` | Semantic concept ontology | 567 categories | 207 KB |
-| `genres.xml` | Genre taxonomy | 615 categories | 405 KB |
-| `names.xml` | Onomastic system (proper names) | 90 categories | 33 KB |
+| `lexicon.xml` | Lemmata with senses, POS, etymology | 43,712 lemmata | 34 MB |
+| `variants.xml` | Orthographic variants per lemma | 42,459 variant entries, 256,970 forms | 18 MB |
+| `persons.xml` | Authors/persons with authority data | 211 | 57 KB |
+| `works.xml` | Works with bibliography and genre | 585 | 1.2 MB |
+| `contributors.xml` | MHDBDB contributors (founders, coordination, editors) | 52 persons + 2 orgs | 9 KB |
+| `concepts.xml` | Semantic concept ontology | 568 categories | 217 KB |
+| `genres.xml` | Genre taxonomy | 615 categories | 424 KB |
+| `names.xml` | Onomastic system (proper names) | 90 categories | 35 KB |
 
 ### Functional groups
 
@@ -52,7 +52,7 @@ Important for day-to-day operation (see [INDEX.md → Current Phase](INDEX.md#cu
 | `names.xml` | RDF→CSV→TEI snapshot | maintained by hand in-repo, decoupled from the corpus | low (0 corpus coupling) |
 | `contributors.xml` | born-digital (2026-04) | **maintained by hand** (no generator) | none |
 
-**Overall pattern:** all files are RDF-derived migration snapshots (2025-07-22), maintained **in-repo** since the migration: there is no external master left and no re-export source. Only `variants.xml` is corpus-derived and regenerable. `lexicon.xml` is repo master AND index of the corpus annotation: if a corpus `<w>` carries a `@lemmaRef`/`@ana` that is missing from lexicon.xml, the corpus leads and lexicon.xml has to be brought in line (see [CONTRACTS.md → Authority Source Rules](CONTRACTS.md#f-authority-source-rules)). New **sense meanings** are curatorial (the team assigns the concept), not automatically reconstructible from the corpus. `lexicon.xml` and `variants.xml` were stale until 2026-05; `variants.xml` has been regenerated (most recently 256,961 forms, 2026-10-10 with #460), `lexicon.xml` still has 396 ingest-caused dangling refs after the category A stub backfill (2026-07-02) (109 IDs, curatorial remainder B/C open, #115; cause in §6.1). The `_archived` generators write pre-#32 attributes (`@wordRef`/`@meaningRef`) on the corpus side and must never be run against the current corpus unchecked.
+**Overall pattern:** all files are RDF-derived migration snapshots (2025-07-22), maintained **in-repo** since the migration: there is no external master left and no re-export source. Only `variants.xml` is corpus-derived and regenerable. `lexicon.xml` is repo master AND index of the corpus annotation: if a corpus `<w>` carries a `@lemmaRef`/`@ana` that is missing from lexicon.xml, the corpus leads and lexicon.xml has to be brought in line (see [CONTRACTS.md → Authority Source Rules](CONTRACTS.md#f-authority-source-rules)). New **sense meanings** are curatorial (the team assigns the concept), not automatically reconstructible from the corpus. `lexicon.xml` and `variants.xml` were stale until 2026-05; `variants.xml` has been regenerated (most recently 256,970 forms, 2026-11-08 with #216), `lexicon.xml` still has 396 ingest-caused dangling refs after the category A stub backfill (2026-07-02) (109 IDs, curatorial remainder B/C open, #115; cause in §6.1). The `_archived` generators write pre-#32 attributes (`@wordRef`/`@meaningRef`) on the corpus side and must never be run against the current corpus unchecked.
 
 ---
 
@@ -218,7 +218,7 @@ The RDF migration brought classification only (POS, concept pointers, compound c
 
 **Index mapping:** `lemma.origin = {languages[{name, code}], attribution?, resp?, respName?}` plus `sense.definition` / `sense.comment` (and `definitionResp` / `commentResp`, plus the names resolved from contributors.xml: `commentRespName` from v1.9.10 on, `definitionRespName` and `origin.respName` from v1.9.15 on), each only where present in the lexicon: empty fields on every lemma would inflate index and API for no gain. Authority index from v1.7.0 on.
 
-**Current state:** 1 entry (`lemma_37818` Abba, 2026-07-30). The rest follows via #28 phase 2/3.
+**Current state (2026-10-20):** an origin on 1 lemma (`lemma_37818` Abba), a definition on 2 senses, a comment on 138 senses of 134 lemmata; all comments but Abba's came from the cookbook glossary (#554).
 
 ### 3.2 variants.xml: orthographic variants
 
@@ -358,7 +358,7 @@ The evidence sits only in `works.xml`, in a `<note type="attribution" target="#w
   <date when="2026-09-16"/>Ältere Zuschreibung, …</note>
 ```
 
-The four cases of #452 as they stand: `work_5` (CR) Anonym, Bligger von Steinach rejected; `work_462` (BAX) Lamprecht, Anonym as adapter; `work_408` (HOF, VDH) Stricker alone; `work_325` (RHB) Anonym first, Konrad von Würzburg disputed. What the build derives from it: [CONTRACTS.md → F.6 Attribution Status](CONTRACTS.md#f6-attribution-status-which-author-a-reader-sees-452).
+The four cases of #452 as they stand: `work_5` (CR) Anonym, Bligger von Steinach rejected; `work_462` (BAX) Lamprecht, Anonym as adapter; `work_408` (HOF, VDH) Stricker first, Anonym second (KZW, 2026-11-16: Anonym next to a named author, as in `work_325`); `work_325` (RHB) Anonym first, Konrad von Würzburg disputed. What the build derives from it: [CONTRACTS.md → F.6 Attribution Status](CONTRACTS.md#f6-attribution-status-which-author-a-reader-sees-452).
 
 ### 3.5 concepts.xml: concept ontology
 
@@ -393,7 +393,7 @@ TEI Ch. 2.3.7 (The Classification Declaration / Taxonomy). Data in `<encodingDes
 </body>
 ```
 
-**`<term type="alternative">`**: optional synonyms alongside the primary term. Several `type="alternative"` entries per language are allowed; 263 of 567 concepts currently have at least one German synonym, 266 an English one. The build script (`scripts/build-authority-index.py:parse_concepts()`) separates primary (`termDE`/`termEN`) from alternative (`altDE[]`/`altEN[]`), see DATA-MODEL.md §Concepts. **Quirk:** some entries use slash-separated strings inside a single `<term type="alternative">` (for example `Abendessen/Nachtmahl/Festmahl`); the editorial follow-up that splits them into separate `<term>` elements is still open.
+**`<term type="alternative">`**: optional synonyms alongside the primary term. Several `type="alternative"` entries per language are allowed; 263 of 568 concepts currently have at least one German synonym, 266 an English one. The build script (`scripts/build-authority-index.py:parse_concepts()`) separates primary (`termDE`/`termEN`) from alternative (`altDE[]`/`altEN[]`), see DATA-MODEL.md §Concepts. **Quirk:** some entries use slash-separated strings inside a single `<term type="alternative">` (for example `Abendessen/Nachtmahl/Festmahl`); the editorial follow-up that splits them into separate `<term>` elements is still open.
 
 ### 3.6 genres.xml: genre taxonomy
 
@@ -527,8 +527,8 @@ works.xml ──author @ref──> persons.xml
 |-----|------|-----------------|---------------|
 | lexicon → concepts | `<ptr target="concepts.xml#..."/>` | a sense has 0-N concept pointers |
 | lexicon → lexicon | `<seg corresp="lexicon.xml#...">` | etymology components |
-| variants → lexicon | `@corresp="lexicon.xml#..."` | 1:1 (one entry per lemma) |
-| works → persons | `<author ref="persons.xml#...">` | 1:N, with attribution status and role on the relation itself (see "Attribution status" in §3.4); 3 works carry two `<author>` elements since #452 (`work_5`, `work_325`, `work_462`), `work_408` carries one |
+| variants → lexicon | `@corresp="lexicon.xml#..."` | 0..1 entries per lemma (only lemmata with corpus forms) |
+| works → persons | `<author ref="persons.xml#...">` | 1:N, with attribution status and role on the relation itself (see "Attribution status" in §3.4); 4 works carry two `<author>` elements since #452 (`work_5`, `work_325`, `work_408`, `work_462`) |
 | works → genres | `<ptr target="genres.xml#..."/>` | 1:N (one work, several genres) |
 | names → concepts | `<ptr type="exactMatch\|closeMatch" target="concepts.xml#..."/>` | 0-N |
 | taxonomy-internal | `<ptr type="broader" target="#..."/>` | 0-N (polyhierarchy) |

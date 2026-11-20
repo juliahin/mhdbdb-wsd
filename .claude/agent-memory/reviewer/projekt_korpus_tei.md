@@ -1,34 +1,30 @@
 ---
 name: projekt-korpus-tei
-description: Strukturtatsachen des TEI-Korpus fürs Review: was der Korpus-Index liest, pc/caesura/gap, Vers vs. Prosa, WZB-Eigenheiten, Header-Konventionen, Reset-Zahlen, Trierer Findebuch-Dump (#259)
+description: Strukturtatsachen des TEI-Korpus: Index-Leser, Token-Ebene, WZB, Parzival, HUG, Header
 metadata:
   type: project
 ---
-Verdichtet 14.10.2026. Zahlen sind Eingabe, vor Gebrauch nachmessen.
+**Was `build-corpus-index.py` liest:** nur `w` und `l` plus Header `idno[@type=sigle]`, titleStmt title/author, `msIdentifier/@corresp`, keywords. Nicht: revisionDesc, availability, gap/caesura, particDesc, Header-biblStruct, `@pos`, `w/@ana`: dort ohne Rebuild und Bump prüfbar. Der Index enthält keine xml:ids.
 
-**Was `build-corpus-index.py` liest:** nur `w` und `l` (iterwalk; Frames ohne `w` fallen weg) plus Header `idno[@type=sigle]`, titleStmt title/author, `msIdentifier/@corresp`, keywords. Nicht: revisionDesc, availability, gap/caesura, particDesc, Header-biblStruct, `@pos`. Änderungen dort sind ohne Rebuild und Bump prüfbar. `corpus-index.json.gz` enthält keine xml:ids und keine Versnummern-Stämme (gegen einen `lemma_N`-Kontrollwert gemessen): eine gelöschte `pc`-/`caesura`-id kann dort nicht hängen.
+**Token-Ebene:** `@lemmaRef` ist in tei/ einwertig. Attributreihenfolge an `w`: xml:id lemmaRef pos ana corresp reason. Multi-pos = Leerzeichen in @pos. pc `<`/`>` sind in GWTK, BRF, MR1, GAR Redezeichen. `pc@join` steuert den Leerraum im Reader.
 
-**Token-Ebene**
-- `@lemmaRef` ist in tei/ einwertig. Attributreihenfolge an `w`: xml:id lemmaRef pos ana corresp reason. Multi-pos = Leerzeichen in @pos.
-- pc `<`/`>` sind in GWTK, BRF, MR1, GAR Redezeichen, keine Klammern. `pc@join` steuert den Leerraum im Reader.
+**Parzival (#358):** `ingest/parzival-buecher/grenzen.csv` ist die Eingabe von `<milestone unit="book">`, ein falscher Wert wandert in den Korpus. `div type="chapter"` sind Dreißiger. DATA-MODEL.md nennt `milestone unit="chapter"`, das Schema erlaubt unter div nur `book`. Die Leseansicht hebt „Buch N" nur, wenn der milestone `firstElementChild` des div ist.
 
-**caesura/gap (#252)**
-- gap immer `reason="lost"`, kein `extent`. Zwei Kopien der caesura-Zahl in TEI-MODEL.md, kein Gate.
-- Rohmuster inline: `<pc[^>]*>\(</pc>\s*<caesura[^>]*/>\s*<pc[^>]*>\)</pc>`; `find(T+'caesura')` sieht nur direkte Kinder.
-- Linecode-Gegenprobe nur für Siglen in `sources/linecode-manifest.csv`; die Zeilennummer im Linecode-Präfix ist nicht überall die TEI-`@n` (RVBR um eins niedriger): Versatz am Wortlaut der Nachbarzeilen ermitteln.
-- revisionDesc-Präzedenz bei #252 ist gespalten (#426 ohne `<change>`, #477 mit je einem pro Datei): ein fehlender Eintrag bei einer Handkorrektur ist Klasse C.
-- Resttabelle TEI-MODEL §6.5a zählt die nicht migrierten Fälle; jede Handkorrektur daraus macht die Zeile falsch, der Diff fasst sie nicht an. Messgerät: `python scripts/migrate-caesura-to-gap-252.py` ohne `--apply`.
+**WZB**
+- Eigennamen fehlen im TEI. Kolumnentitel und Buchzahlen stehen als unannotierte `<w>` im Fluss und zerreißen Wörter. Breve teils zerlegt, teils vorkomponiert. `|` ist normale Interpunktion.
+- Prosa mit `<l>` als Satzeinheit (ohne `@n`) und `<lb/>` für die Handschriftenzeile, gegen TEI-MODEL.md („`<l>` is reserved for verse"): Zählungen „in Verszeilen" per Sigle aufschlüsseln.
+- Die xml:id `WZB_<blatt>_<zeile>_<n>` zählt ab 0 über `<w>` **und** `<pc>`, Suffix auch `13b`: „Wort n+1" aus der id ist bei Satzzeichen davor falsch.
+- **Einzige CRLF-Datei in tei/, im Blob selbst** (gemischte Zeilenenden). Ein Handedit kann LF-Zeilen kippen, `git diff --stat` zeigt nur eine zu hohe Zeilenzahl. Gegenprobe: `(?<!\r)\n` vor und nach zählen, oder `difflib` auf `split(b"\n")` gegen den Basis-Blob mit `endswith(b"\r")`. „Byte-identisch" gilt nur modulo CR.
+- `grep -o ' ana="'` auf `tei/WZB.tei.xml` zählt eine `<category ana=…>` im Header mit: Zählungen von `w/@ana` per lxml auf `<w>` einschränken.
+- Breve-Tokens auf `w`/`n` lemmatisieren (#526) bewegt Sätze in CONTRACTS §A (Breve-Absatz und Messabsatz, „already lemmatized forms") und ADR-017. Zählweg: Text enthält w/n + U+0306 (roh NFD, eine vorkomponierte Form gibt es nicht), mit/ohne `lemmaRef`, Formen **case-sensitiv** (so zählen ADR-017 und CONTRACTS, lowercase ergibt kleinere Zahlen).
 
-**Vers und Prosa:** Reader-Deep-Link `?verseId=` löst nur in Texten mit `<l>` auf; Prosa hat nur `lb`, `lb@n` wiederholt sich je Seite (Kochbücher: je Rezept neu).
-
-**WZB:** Eigennamen fehlen im TEI (Lücken im Kontext sind kein Extraktionsfehler). Kolumnentitel und Buchzahlen stehen als unannotierte `<w>` im Fluss und zerreißen Wörter. Seit #390 (`scripts/ingest/wzb/wzb-wortgrenzen-390.py`) sind 16 davon zusammengeführt (Wort unter der xml:id der ersten Hälfte; 6 `pc join=left` mitgewandert, deren id-Folio nicht mehr zur Position passt); der Generator `build-review-klaus.py` bricht an `== 22` ab. Breve: 607 Tokens zerlegt (o+U+0306), 26 vorkomponiert (U+014F), also nicht „überall zerlegt"; `|` ist mit 5.651 `<pc join="left">` normale Interpunktion. `<l>` ohne `@n`; kombinierende Breve zerfallen bei flachem `\w`-Vergleich. Vulgata-Zitate: Folio gegen Kolumnentitel (pb), Kapitel-`head` des div, dann biblegateway `version=VULGATE`.
+**WZB-Tafelskripte (`scripts/ingest/wzb/`, #370/#526):** `REPO` = `parents[3]`, lesen `tei/WZB.tei.xml` und `data/authority-index.json.gz` hart. Probe auf einer Scratch-Kopie mit Basis-TEI per `git show origin/main:`, nicht idempotent. Alt gegen neu per lxml als `xml:id -> (text, lemmaRef, corresp, pos, ana)`. Sie schreiben kein `w/@ana` (entgegen dem Docstring). Regel V prüft nur `treffer > 0`: ein falsches, aber belegtes Lemma+pos läuft durch.
 
 **Header**
-- msIdentifier-Reihenfolge: sigle, handschriftencensus, GND, wikidata, [mwb-sigle], msName+; im Header nackte IDs, in works.xml URLs.
-- `status="restricted"` = `n="no-print"`; kein Konsument von excerpt-only/restricted/`@media print` außerhalb der Prüfseiten.
-- **NEIM-Liedkonkordanz steht zweimal** (#453): im Header `editorialDecl/normalization` und je Lied als `<note n="1">` im Body (Ziffern als `<w lemmaRef=lemma_53328 pos=NUM>`). Ein Header-Fix ohne die Note erzeugt Widerspruch; die Note anzufassen ist ein `<w>`-Wortlaut-Change (volle Korpus-Checkliste). Bei Header-Korrekturen immer nach einer Body-Kopie suchen.
-- revisionDesc trägt je-Datei-Zahlen der Annotationsserien (#216, #369): damit lassen sich fremde Zählungen rekonstruieren. Kombinierende Diakritika sind in Headern verbreitet: vor Vergleichen NFC.
+- msIdentifier-Reihenfolge: sigle, handschriftencensus, GND, wikidata, [mwb-sigle], msName+. Im Header nackte IDs, in works.xml URLs. Kombinierende Diakritika sind verbreitet: vor Vergleichen NFC.
+- Header-Angaben können im Body kopiert stehen (NEIM-Liedkonkordanz in `editorialDecl/normalization` und als `<note n="1">` je Lied, #453). Dort anzufassen ist ein Wortlaut-Change.
+- **`<monogr>` ohne jing:** `define name="monogr"` in `schema/tei_all.rng` hat in der optionalen `choice` DREI Alternativen (author/editor zuerst, title/idno zuerst, `authority, idno`). Im title-zuerst-Zweig steht jedes `idno` vor dem ersten author/editor. Kindfolgen per lxml gegen eine Regex aus den drei Zweigen plus Schwanz halten.
 
-**Reset-Zahlen** (`count-verse-numbering-resets.py`) stehen dreimal in tei-text-reader.js und in FEATURES.md, kein Gate. Alt/neu per `git archive`; Regel abschalten per Patch `in_nested_parallel` -> False. tei/ ist 1,4 GB.
+**HUG (Hugo von Montfort, #138):** Vorlage Hofmeister 2005, PDF lokal bei Christian (Druckseite = PDF-Seite minus 40), nichts daraus ins Repo zitieren. `l/@n` zählt je `div type="song"` ab 1, deckt sich aber nicht überall mit der Randzählung des Drucks (Sprung am Repeticio-Refrain in Nr. 6, nicht in Nr. 7 und 9). Eine Angabe „im Druck ab V. N" an der Randzahl nachzählen, nicht von einem Lied aufs andere schließen. Strophengrenzen lassen sich am Reimschema aus dem TEI prüfen.
 
-**Trierer Findebuch-Dump (#259, außerhalb des Repos):** DHCraft-Drive `Projekte/mhdbdb/extern/`, lokal `~/.cache/mhdbdb/woerterbuchnetz2015/FindeB/P5` (kein Namensraum, externe DTD); Lizenz und Bytezahl in `sources/INVENTAR-ARCHIV.md`. **Keine Wortform aus dem Dump in Berichte:** Strukturbefunde über Zählungen und maskierten Text. `<form type="sublemma">` trägt teils ein `<gram>`-Kind, `itertext()` hängt das Kürzel an die Schreibform; `<hi>`-Kinder erzeugen Scheinleerzeichen.
+**Trierer Findebuch-Dump (#259, außerhalb des Repos):** Ort, Lizenz und Bytezahl in `sources/INVENTAR-ARCHIV.md`, lokal `~/.cache/mhdbdb/woerterbuchnetz2015/FindeB/P5`. **Keine Wortform aus dem Dump in Berichte**, nur Zählungen und maskierter Text. `itertext()` hängt `<gram>`-Kürzel an Sublemmata, `<hi>`-Kinder erzeugen Scheinleerzeichen.

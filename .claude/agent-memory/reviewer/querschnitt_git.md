@@ -1,37 +1,32 @@
 ---
 name: querschnitt-git
-description: Git-Rezepte fürs Review: Altstand ohne stash, Basis prüfen, Rebase/Cherry-pick-Nullproben, Herkunft per log -S, Trailer, Blob-Hash, Squash und Stack, EOL-Probeklon
+description: Git-Rezepte fürs Review ohne den Working Tree anzufassen
 metadata:
   type: project
 ---
-Verdichtet 14.10.2026.
-
-**Altstand ohne den Arbeitsbaum anzufassen:** `git show <rev>:<pfad> > <scratch>/x` oder `git archive <rev> tei scripts | tar -x -C <scratch>`. Nie `git stash` im Baum des Aufrufers. Skripte, die `git show origin/main` und `HEAD` statt fester SHAs lesen, laufen in Folgerunden unverändert.
+**Altstand ohne den Working Tree:** `git show <rev>:<pfad> > <scratch>/x` oder `git archive <rev> tei scripts | tar -x -C <scratch>`. Nie `git stash` im Baum des Callers.
 
 **Basis und Stand**
-- `git rev-parse origin/main` gegen die Auftragsangabe; `git merge-base --is-ancestor <basis> origin/main` (exit 1 = gestackt); `git diff --name-only <basis> origin/main` gegen die Dateien des Branch.
-- `git log origin/main..HEAD` am Anfang UND am Ende der Runde: der Aufrufer committet weiter. „Gepusht"? `git branch -r`. Ein im Auftrag genannter Stand kann ein Vor-Rebase-Stand sein, der im Repo nicht existiert (Code-Äquivalent per `range-diff` suchen).
+- `git rev-parse origin/main` gegen den Prompt, `git merge-base --is-ancestor <basis> origin/main` (Exit 1 = gestackt), `git diff --name-only <basis> origin/main` gegen die Dateien des Branch. Die Basis im Prompt kann die Merge-Base sein, während origin/main weiterrückt: `git merge-tree --write-tree --name-only origin/main HEAD`.
+- `git log origin/main..HEAD` am Anfang UND am Ende der Runde. „Gepusht"? `git branch -r`. Ein Stand im Prompt kann ein Vor-Rebase-Stand sein (Code-Äquivalent per `range-diff`).
+- `git range-diff <altbasis>..<altkopf> <neubasis>..HEAD`: `!` an JOURNAL- oder MEMORY-Commits sind meist fremde Kontextzeilen. Nullprobe `git diff <alt> <neu> -- <dateien> | wc -l` = 0. Konfliktmarker per `git grep -n -E '^(<<<<<<<|=======|>>>>>>>)'`.
+- Relative Revisionen in einer Behauptung („HEAD~1 (vor X)") sind seit ihrer Messung womöglich weitergerückt: `git diff --stat <rev> HEAD -- <datei>` zeigt, ob die Revision die Datei überhaupt anders hat.
 
-**Rebase / Cherry-pick**
-- `git range-diff <altbasis>..<altkopf> <neubasis>..HEAD`: `=` identisch; `!` an JOURNAL/MEMORY-Commits sind meist nur fremde Kontextzeilen.
-- Nullprobe: `git diff <alt> <neu> -- <dateien> | wc -l` = 0 (gleiche `--stat` reicht nicht). Konfliktmarker: `git grep -n -E '^(<<<<<<<|=======|>>>>>>>)' HEAD -- <dateien>`. Mergbarkeit vorab: `git merge-tree --write-tree --name-only origin/main HEAD`.
-- **Auto-Merge-Commit auf Kohärenz:** je Datei beide Seiten gegenhalten: `diff <(git diff $(git merge-base <branch-elter> origin/main) <branch-elter> -- f) <(git diff <main-elter> <merge> -- f)` und spiegelbildlich; nur `@@`-Offsets dürfen abweichen. Dazu Dubletten zählen (`grep -c` auf je einen Satz beider Seiten, `grep -o '<h[23]…' | sort | uniq -d`); html.parser-Mismatches an `<path/>`/`<img/>` sind Altbestand, erst gegen `git show origin/main:f` halten.
-- Daten-PR nach Rebase mit `--ours`: Versionskollision über alle Refs prüfen (je Ref `INDEX_VERSION` aus `git show <ref>:assets/js/lib/corpus-loader.js`; Reservierungen im PR-Body überleben keinen Rebase), Verlust auf JSON-Ebene.
+**Gitignorierte Nutzlast im Prüfgegenstand** (lokale Fremdquelle unter `sources/`): `stash create`, `status` und `ls-files --others --exclude-standard` sehen sie nicht, die Pinning-ID hält sie also nicht fest. Am Anfang und Ende selbst hashen (`sha256sum`), dazu `git check-ignore -v` und `git ls-files <ordner>` (leer = nichts versehentlich getrackt).
 
-**Herkunft und Zuschreibung**
-- „Seit #N kein Leser": `git log --oneline -S"<objekt>.<feld>" -- <pfade>`, Datum gegen das Issue. „Folgestellen korrigiert": `git log -S <phrase> origin/main..HEAD`. Erstes Auftauchen einer Datei: `git log --diff-filter=A`.
-- Trailer: `git log --format='%h %(trailers:key=Co-Authored-By,valueonly)'`. Zeilenzitate `datei:N` per `git show <ref>:<pfad> | grep -n` prüfen.
-- Blob gleich Runner-Build: `git fetch origin refs/pull/<N>/head`, `git rev-parse FETCH_HEAD:<p> HEAD:<p>`.
+**Herkunft:** „Seit #N kein Leser": `git log --oneline -S"<objekt>.<feld>" -- <pfade>`. „Folgestellen korrigiert": `git log -S <phrase> origin/main..HEAD`. Blob gleich Runner-Build: `git fetch origin refs/pull/<N>/head`, `git rev-parse FETCH_HEAD:<p> HEAD:<p>`.
 
-**Squash (Repo-Konvention seit 21.09.2026)**
-- `git log --no-merges | grep -c '(#N)$'` zählt Commits mit Issue-Bezug, keine Squash-Merges. Squash je Commit: `gh api repos/<org>/<repo>/pulls/N --jq .merge_commit_sha` gleich Commit-SHA; 404 = Issue.
-- Stack nach Squash der Basis: `rebase --onto main <alter Basis-Head>` (alter Head: `gh pr view <basis> --json headRefOid`, auch nach MERGED); schlichtes `git rebase main` bricht.
-- **Lokales Zusammenfassen auf neue Basis revertiert main still** (#554): ein Squash, dessen Baum aus dem alten Stand kommt, aber dessen Elternteil die neue `origin/main` ist, nimmt jeden zwischenzeitlichen main-Commit zurück. Probe immer `git diff --stat HEAD^ HEAD` (nicht `<alte Basis>...HEAD`, das blendet es aus) und `git diff --stat origin/main HEAD -- <Pfade außerhalb des Auftrags>`.
-- **„Spurkopf inhaltsgleich mit Squash" misst man per patch-id, nicht per `git diff <head> <squash>`** (#564): kam zwischen Abzweig und Squash ein anderer main-Commit, ist der Baumdiff nicht leer. Probe: `git diff <sq>^ <sq> | git patch-id --stable` gegen `git diff $(merge-base <head> <sq>^) <head> | git patch-id --stable`. Lokaler Kopf gleich `gh pr view N --json headRefOid` heißt gepusht, auch wenn der Remote-Zweig `[gone]` ist.
-- Kein gesquashter Head ist Vorfahr von main: `branch --merged` listet ihn nicht, `branch -d` verweigert, nur `-D`; Guards auf `--merged` mitlesen.
+**Squash (Repo-Konvention)**
+- `(#N)$` im Betreff trennt keine Squash-Merges von Commits mit Issue-Bezug: **Squash-Merges trennt der Committer** (`git log origin/main --format=%ce` = `noreply@github.com`), Gegenprobe der Nummer per `gh api repos/<o>/<r>/issues/N --jq .pull_request`. Stack nach Squash der Basis: `rebase --onto main <alter Basis-Head>` (`gh pr view <basis> --json headRefOid`).
+- Lokales Zusammenfassen auf neue Basis revertiert main still: `git diff --stat HEAD^ HEAD` und `git diff --stat origin/main HEAD -- <Pfade außerhalb des Prompts>`.
+- „Branch-Kopf inhaltsgleich mit Squash" per `git patch-id --stable` beider Diffs messen, nicht per Baumdiff. Lokaler Kopf gleich `headRefOid` heißt gepusht, auch bei `[gone]`.
+- Eine Zahl aus einem Squash-Betreff zählt keine Commits: Branch-Kopf holen (`gh pr view N --json headRefOid,commits`), `git rev-list --count <marker>..<kopf> -- <pfade>`.
+- Dateiliste eines PR: Rezept in CLAUDE.md (Git Rules), nie `--json files`.
+- **Eine Regel, die einen Vermerk per `git log --grep` auf `main` wiederfinden will, trägt nur über die Squash-Message:** Branch-Commits erreichen `main` nie. Sagt die Regel, dass der Mergende die Zeile übernimmt, und zwar für jede Vermerkzeile einzeln (Schuld- und `nachgeholt:`-Zeile)?
+- **Message eines einzelnen Commits: `git show -s --format=%B <sha>`**, nie `git log origin/main -1 <sha>`: zwei Revisionen sind eine Vereinigung, `-1` zeigt den main-Kopf. `git log --grep` mit Umlaut trägt in Git Bash.
 
-**EOL- und Attribut-Proben ohne den Arbeitsbaum**
-- Probeklon im Scratchpad: `git clone --shared --no-checkout --branch main <repo> <scratch>/<eigener Name>`, dann `sparse-checkout set --no-cone .gitattributes <datei>` **ohne führenden Slash** (Git Bash macht aus `/.gitattributes` einen Pfad unter `C:/Program Files/Git/`) und `sparse-checkout reapply`. `config core.autocrlf false` + `core.eol lf` simuliert Linux.
-- Ein `git status` M bei leerem `git diff` ist eine Größenabweichung zwischen Index-Stat und Datei (`git ls-files -s --debug`); `git add` oder `git restore` löst es. `git ls-files --eol <datei>` zeigt, was im Baum liegt. `rnc2rng` schreibt unter Windows CRLF, unter Linux LF.
+**`git log -- <pfade>` an einem `--no-ff`-Merge:** ohne `--first-parent` erscheinen die Branch-Commits, der Merge nicht (TREESAME zum zweiten Elternteil), mit Flag nur der Merge. Eine umgestellte Pfadzählung im Probe-Repo nachmessen.
+
+**EOL-Probeklon:** `git clone --shared --no-checkout --branch main <repo> <scratch>/<name>`, `sparse-checkout set --no-cone .gitattributes <datei>` **ohne führenden Slash** (Git Bash macht daraus einen Pfad unter `C:/Program Files/Git/`), `sparse-checkout reapply`. `core.autocrlf false` plus `core.eol lf` simuliert Linux.
 
 **Stand pinnen (Lehre 2026-11-12, mhdbdb-wsd):** `git stash create` nie in einer Kette mit `tee /dev/stderr` o. ä. aufrufen: seine Zeile ging dort verloren, und die erste Hash-Zeile sah aus wie die Stash-Kennung (`git diff <id>` am Ende: `bad object`). Jedes Pinning-Kommando in einen eigenen Aufruf und die Zeilenzahl gegen die Dateizahl halten. Ging die Kennung verloren: Blob-Hashes der Dateien gegen die `index a..b`-Zeile des Diffs vom Anfang halten.

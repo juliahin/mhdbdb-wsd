@@ -20,11 +20,11 @@ Jede MHDBDB-Datei muss beide Stufen bestehen:
 1. **TEI-P5-Konformität** (`tei_all.rng`) — die Datei ist valides TEI
 2. **MHDBDB-Constraints** (`mhdbdb.rnc` oder `mhdbdb-authority.rnc`) — die Datei folgt den MHDBDB-Konventionen
 
-Stufe 2 ist das maßgebliche Schema (hartes Gate in der CI). Stufe 1 stellt die Interoperabilität mit dem TEI-Ökosystem sicher und wird in der CI als Drift-Wache mitgeprüft: 34 Korpus-Files sind als #30-Baseline (GAPs 1 bis 9 und 11 in `mhdbdb.rnc`) absichtlich nicht TEI-Standard-konform. Ein 35. Fail würde als WARN im CI-Log erscheinen.
+Stufe 2 ist das maßgebliche Schema (hartes Gate in der CI). Stufe 1 stellt die Interoperabilität mit dem TEI-Ökosystem sicher und wird in der CI als Drift-Wache mitgeprüft: 35 Korpus-Files sind als #30-Baseline (GAPs 1 bis 9 und 11 in `mhdbdb.rnc`) absichtlich nicht TEI-Standard-konform. Seit dem 03.11.2026 macht eine Datei außerhalb dieser Baseline, die Stufe 1 nicht besteht, den vollen Lauf in der CI rot: entweder die Daten korrigieren oder die Datei mit ihrer GAP-Kategorie in die Baseline aufnehmen (`KNOWN_TEI_ALL_BASELINE` in `scripts/audit/validate-corpus.py` und `docs/TEI-MODEL.md` §10).
 
 ### Editor-Validation: nur Stufe 2 als `<?xml-model?>`-PI
 
-Die TEI-Korpusdateien in `tei/` haben **nur eine** `<?xml-model?>`-Processing-Instruction, die auf `mhdbdb.rng` zeigt. `tei_all.rng` ist dort bewusst **nicht** als PI verlinkt, weil die 30 GAP-Files sonst in oXygen/VS Code Scholarly XML mit konstanten roten Markern gegen Strukturen anlaufen, die das MHDBDB-Schema bewusst toleriert. Vollständige Zwei-Stufen-Validation läuft weiterhin in der CI (`data-integrity.yml`) und im `validate-corpus.py`-Script.
+Die TEI-Korpusdateien in `tei/` haben **nur eine** `<?xml-model?>`-Processing-Instruction, die auf `mhdbdb.rng` zeigt. `tei_all.rng` ist dort bewusst **nicht** als PI verlinkt, weil die GAP-Files der Baseline sonst in oXygen/VS Code Scholarly XML mit konstanten roten Markern gegen Strukturen anlaufen, die das MHDBDB-Schema bewusst toleriert. Vollständige Zwei-Stufen-Validation läuft weiterhin in der CI (`data-integrity.yml`) und im `validate-corpus.py`-Script.
 
 Die 8 Authority-Files in `authority-files/` haben **beide** PIs — dort produziert die Stufe-1-Validierung keine false positives (alle 8 sind grün gegen `tei_all.rng`).
 
@@ -91,7 +91,7 @@ TEI [@xml:id = Sigle]
 <w xml:id="ABG_101_0"
    lemmaRef="lexicon.xml#lemma_879"
    pos="NOM"
-   ana="lexicon.xml#lemma_879_sense_1234"
+   ana="lexicon.xml#lemma_879_sense_1449"
    corresp="variants.xml#type_5678">brôt</w>
 ```
 
@@ -108,7 +108,7 @@ Querverweise zwischen Korpus- und Authority-Dateien verwenden relative URIs:
 
 ```
 lexicon.xml#lemma_879              — Lemma-Eintrag
-lexicon.xml#lemma_879_sense_1234   — Bedeutung innerhalb eines Lemmas
+lexicon.xml#lemma_879_sense_1449   — Bedeutung innerhalb eines Lemmas
 variants.xml#type_5678             — orthographischer Variantentyp
 persons.xml#person_445             — Person
 works.xml#work_89                  — Werk
@@ -123,12 +123,12 @@ Für die 8 XML-Dateien in `authority-files/`, die als kontrollierte Vokabulare d
 
 | Datei | Inhalt | Body-Struktur |
 |-------|--------|---------------|
-| `lexicon.xml` | 43.710 Lemmata mit Bedeutungen | `<div>/<entry>` |
-| `variants.xml` | 256.961 Wortformen (42.459 Lemma-Gruppen) | `<div>/<entry>/<form>` |
+| `lexicon.xml` | 43.712 Lemmata mit Bedeutungen | `<div>/<entry>` |
+| `variants.xml` | 256.970 Wortformen (42.459 Lemma-Gruppen) | `<div>/<entry>/<form>` |
 | `persons.xml` | 211 Personen (Autoren, Herausgeber) | `<listPerson>/<person>` |
 | `works.xml` | 585 Werke mit bibliographischen Daten | `<listBibl>/<bibl>` |
 | `contributors.xml` | 52 MHDBDB-Mitwirkende + 2 Organisationen | `<listOrg>` + `<listPerson>` |
-| `concepts.xml` | 567 semantische Konzepte | `<taxonomy>` in `<encodingDesc>` |
+| `concepts.xml` | 568 semantische Konzepte | `<taxonomy>` in `<encodingDesc>` |
 | `genres.xml` | 615 Gattungskategorien (hierarchisch) | `<taxonomy>` in `<encodingDesc>` |
 | `names.xml` | 90 Namensformen des Mittelalters | `<taxonomy>` in `<encodingDesc>` |
 

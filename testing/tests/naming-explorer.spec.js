@@ -446,8 +446,44 @@ test.describe('Naming Explorer (#59)', () => {
     await page.selectOption('#neWorkSelect', 'IW');
     await expect(page.locator('#resultsContainer')).toContainText(/\d+ Lemmata in kuratierten Bezeichnungen/);
     const optionen = await page.locator('#neFigureSelect option').allTextContents();
-    // Lemmata nach Belegzahl, mit der Zahl der Figuren als Zusatz
+    // Lemmata mit der Belegzahl und der Zahl der Figuren als Zusatz
     expect(optionen.some(o => /\(\d+ Belege, \d+ Figuren?\)/.test(o))).toBe(true);
+  });
+
+  test('Lemma-Perspektive: Dropdown alphabetisch, Singular bei einem Beleg (#643)', async ({ page }) => {
+    await page.click('[data-ne-persp="lemma"]');
+    await page.selectOption('#neWorkSelect', 'IW');
+    await expect(page.locator('#resultsContainer')).toContainText('Lemma (alphabetisch)');
+    const optionen = await page.locator('#neFigureSelect option').allTextContents();
+    const lemmata = optionen.slice(1).map(o => o.replace(/ \(\d.*$/, ''));
+    expect(lemmata.length).toBeGreaterThan(50);
+    const sortiert = [...lemmata].sort((a, b) => a.localeCompare(b, 'de'));
+    expect(lemmata).toEqual(sortiert);
+    // Es gibt Lemmata mit genau einem Beleg: Singular, nie "1 Belege"
+    expect(optionen.some(o => /\(1 Beleg, /.test(o))).toBe(true);
+    expect(optionen.some(o => /\(1 Belege/.test(o))).toBe(false);
+  });
+
+  test('Steuerleiste nennt bei einem Lemma den Singular (#643)', async ({ page }) => {
+    // Der Bote von Breziljan hat in IW genau ein Lemma (bote)
+    await page.selectOption('#neWorkSelect', 'IW');
+    await page.selectOption('#neFigureSelect', 'Bote von Breziljan');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+    const text = await page.locator('#resultsContainer').innerText();
+    expect(text).toMatch(/\b1 Lemma\b(?!ta)/);
+    expect(text).not.toMatch(/\b1 Lemmata/);
+  });
+
+  test('Lemma-Perspektive: kein eigenes Filterfeld, Auswahl direkt im Dropdown (#643)', async ({ page }) => {
+    // Das Filterfeld ueber dem Dropdown ist wieder entfernt (Linda, 04.11.2026):
+    // Tippen im aufgeklappten Dropdown reicht.
+    await page.click('[data-ne-persp="lemma"]');
+    await page.selectOption('#neWorkSelect', 'IW');
+    await expect(page.locator('#neFigureSelect')).toBeVisible();
+    await expect(page.locator('#neSubjectFilter')).toHaveCount(0);
+    await page.selectOption('#neFigureSelect', 'rîtaere');
+    await page.waitForSelector('[data-ne-term]', { state: 'visible', timeout: 5000 });
+    await expect(page.locator('[data-ne-heading]')).toHaveText('rîtaere');
   });
 
   test('Perspektivwechsel setzt die Auswahl zurueck', async ({ page }) => {

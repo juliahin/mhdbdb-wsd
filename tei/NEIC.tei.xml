@@ -156,6 +156,8 @@
       <change when="2026-09-23" who="#editor">#252 zweiter Durchgang: 22 Stellen des Auslassungsmusters ( caesura ) innerhalb einer Zeile mit Wortlaut auf &lt;gap reason="lost"/&gt; migriert, nach der Freigabe von KZW vom 22.09.2026. Nur das Muster ersetzt, umliegender Text sowie Satz- und Redezeichen unverändert.</change>
       <change when="2026-09-30" who="#editor">#493: Angabe zur semantischen Disambiguierung in encodingDesc/normalization an den Stand der Annotation angeglichen (47832 von 52974 lemmatisierten Tokens tragen einen Begriff in @ana). Vorher: &#34;Noch nicht disambiguiert, zum Teil lemmatisiert.&#34;</change>
       <change when="2026-10-06" who="#editor">#252: 1 wortloser Vers mit vollständigem Auslassungsmuster ( caesura ) und einem weiteren Zeichen auf &lt;gap reason="lost"/&gt; migriert, nach der Freigabe von KZW vom 02.10.2026. Das Zeichen daneben unverändert.</change>
+      <change when="2026-10-18" who="#editor">#602 naschen: 1 Token mit @ana auf lemma_57919_sense_93122 (Essen) gesetzt.</change>
+      <change when="2026-10-18" who="#editor">#554 trûbe: 2 Tokens (Adjektiv trüebe 2, Verb trüeben 0) von lemma_15282 umgehaengt, @ana entfaellt.</change>
     </revisionDesc>
   </teiHeader>
   <text>
@@ -72346,7 +72348,7 @@
               <hi rend="initial upper_case_first_letter">
                   <w xml:id="NEIC_9701010_0" lemmaRef="lexicon.xml#lemma_1169" pos="DET" ana="lexicon.xml#lemma_1169_sense_1850" corresp="variants.xml#type_73793">diese</w>
                 </hi>
-              <w xml:id="NEIC_9701010_1" lemmaRef="lexicon.xml#lemma_15282" pos="NOM" ana="lexicon.xml#lemma_15282_sense_25272" corresp="variants.xml#type_67873">trube</w>
+              <w xml:id="NEIC_9701010_1" lemmaRef="lexicon.xml#lemma_6251" pos="ADJ" corresp="variants.xml#type_372862">trube</w>
               <w xml:id="NEIC_9701010_2" lemmaRef="lexicon.xml#lemma_5994" pos="NOM" corresp="variants.xml#type_21151">tag</w>
               <pc xml:id="NEIC_9701010_3" join="left">,</pc>
             </l>
@@ -73908,7 +73910,7 @@
               <w xml:id="NEIC_9806110_6" lemmaRef="lexicon.xml#lemma_29" pos="ADV PRP" ana="lexicon.xml#lemma_29_sense_39" corresp="variants.xml#type_86">ab</w>
               <w xml:id="NEIC_9806110_7" lemmaRef="lexicon.xml#lemma_1119" pos="ART" ana="lexicon.xml#lemma_1119_sense_1770" corresp="variants.xml#type_3507">der</w>
               <w xml:id="NEIC_9806110_8" lemmaRef="lexicon.xml#lemma_1545" pos="NOM ADJ" ana="lexicon.xml#lemma_1545_sense_2397" corresp="variants.xml#type_5166">erden</w>
-              <w xml:id="NEIC_9806110_9" lemmaRef="lexicon.xml#lemma_57919" pos="VRB" corresp="variants.xml#type_310733">naschen</w>
+              <w xml:id="NEIC_9806110_9" lemmaRef="lexicon.xml#lemma_57919" pos="VRB" ana="lexicon.xml#lemma_57919_sense_93122" corresp="variants.xml#type_310733">naschen</w>
               <pc xml:id="NEIC_9806110_10" join="left">.</pc>
             </l>
           </lg>
@@ -82960,7 +82962,7 @@
               <w xml:id="NEIC_11102110_2" lemmaRef="lexicon.xml#lemma_3001" pos="PRO" ana="lexicon.xml#lemma_3001_sense_4805" corresp="variants.xml#type_10237">mir</w>
               <w xml:id="NEIC_11102110_3">nye</w>
               <w xml:id="NEIC_11102110_4" lemmaRef="lexicon.xml#lemma_5601" pos="ADV" ana="lexicon.xml#lemma_5601_sense_8764" corresp="variants.xml#type_19596">so</w>
-              <w xml:id="NEIC_11102110_5" lemmaRef="lexicon.xml#lemma_15282" pos="NOM" ana="lexicon.xml#lemma_15282_sense_25272" corresp="variants.xml#type_67873">trube</w>
+              <w xml:id="NEIC_11102110_5" lemmaRef="lexicon.xml#lemma_6251" pos="ADJ" corresp="variants.xml#type_372862">trube</w>
               <w xml:id="NEIC_11102110_6" lemmaRef="lexicon.xml#lemma_7489" pos="VRB VEX" corresp="variants.xml#type_27046">ward</w>
               <w xml:id="NEIC_11102110_7" lemmaRef="lexicon.xml#lemma_7193" pos="PRP" ana="lexicon.xml#lemma_7193_sense_11656" corresp="variants.xml#type_25544">von</w>
               <w xml:id="NEIC_11102110_8" lemmaRef="lexicon.xml#lemma_56117" pos="PRO" ana="lexicon.xml#lemma_56117_sense_90961" corresp="variants.xml#type_304773">euch</w>

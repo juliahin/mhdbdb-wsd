@@ -6,7 +6,7 @@ description: >-
   mit Bash nach, ändert nie Dateien). Use, sobald ein Entwurf von `autor`
   oder Julia steht und bevor er weitergegeben wird, und nach jeder
   Überarbeitung, die auf ein Gutachten antwortet. Nicht für Code-Diffs (dafür
-  `reviewer`), nicht für offene Designfragen (dafür `fable-advisor`), nicht
+  `reviewer`), nicht für offene Designfragen (dafür `advisor`), nicht
   zum Prüfen einzelner Zitate am Original (dafür `quellen`; der Gutachter
   markiert sie nur). Beim Aufruf mitgeben, der Agent sieht die Konversation
   nicht: Pfad des Entwurfs, Zielmedium (Venue, Seitenlimit), die
