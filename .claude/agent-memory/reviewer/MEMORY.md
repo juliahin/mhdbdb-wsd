@@ -15,4 +15,4 @@ Verdichtet zuletzt am 17.11.2026. Zahlen und Daten in den Dateien sind Eingabe, 
 - [Fremdquellen](projekt_fremdquellen.md): wenn ein Fremdexport, ein Fremdindex, ein Ingest aus Fremdquelle (BRE, COR), ein fyndling-Beitrag oder ein Monatslauf aus Zotero oder Issues im Diff ist
 - [Prüfseiten](projekt_pruefseiten.md): wenn ein Prüfseiten-Generator oder ein archiviertes Beispiel im Diff ist
 - [ONAMA-Pilot](projekt_onama.md): wenn ONAMA-Paket, Anker-Abgleich oder Explorer im Diff sind
-- [WSD-Goldstandard (Fork mhdbdb-wsd)](projekt_wsd_goldstandard.md): Pilot-Ziehung, blinde Annotationsseite, localStorage-Proben
+- [WSD-Goldstandard (Fork mhdbdb-wsd)](projekt_wsd_goldstandard.md): Pilot-Ziehung, blinde Annotationsseite, localStorage-Proben, auswerten.py (Pfadsperre, 9.1)
