@@ -1,6 +1,6 @@
 # Datenmanagementplan: WSD-Goldstandard MHDBDB
 
-**Status:** Entwurf vom 2026-10-16 (Stand 2026-11-16: Canary-String in Abschnitt 5 ohne Literaturzuschreibung). Gliederung nach den Kernanforderungen von Science Europe
+**Status:** Entwurf vom 2026-10-16 (Stand 2026-11-20: Abschnitt 4 auf Arbeitsauftrag und Informationsblatt umgestellt, A40; Stand 2026-11-16: Canary-String in Abschnitt 5 ohne Literaturzuschreibung). Gliederung nach den Kernanforderungen von Science Europe
 (*Practical Guide to the International Alignment of Research Data Management*), auf denen auch
 die DMP-Vorlage des FWF beruht.
 **Verantwortlich:** Julia Hintersteiner. Bezug: [PROTOKOLL.md](PROTOKOLL.md).
@@ -71,11 +71,23 @@ Rückgabe werden im privaten Repository festgehalten.
   Bedingungen). Die Kontexte stammen aus Editionen; die Rechtegrundlage des Korpus regelt
   `docs/RESEARCH.md` (Corpus Scope and Rights Basis) im Upstream-Repo.
 - **Personenbezogene Daten der Annotator:innen [offen]:** Die Ereignisprotokolle enthalten Zeitstempel
-  und Verweildauern, also Daten über das Arbeitsverhalten einer bestimmten Person. Vor dem Pilot
-  braucht es Alans informierte Einwilligung: was protokolliert wird, wozu, wer es sieht, ob seine
-  Labels vor der Adjudikation mit Namen oder pseudonymisiert veröffentlicht werden, wie lange die
-  Daten aufbewahrt werden. Für die Veröffentlichung wird pseudonymisiert (A1, A2), Verweildauern
-  nur aggregiert.
+  und Verweildauern, also Daten über das Arbeitsverhalten einer bestimmten Person. **Grundlage ist
+  keine Einwilligung, sondern der Arbeitsauftrag:** Die zweite annotierende Person annotiert als
+  Mitarbeiter:in der MHDBDB im Auftrag von Katharina Zeppezauer-Wachauer; gegenüber Vorgesetzten wäre
+  eine Einwilligung kaum freiwillig (Entscheidung Julia Hintersteiner, 2026-11-20, A40 im Protokoll;
+  Begründung der Hauptsitzung, nicht juristisch geprüft). Stattdessen gibt es ein Informationsblatt mit
+  Absprache ([INFOBLATT-ANNOTATION.md](INFOBLATT-ANNOTATION.md), Entwurf vom 2026-11-20, noch nicht
+  gegengelesen): Was protokolliert wird, wozu, wer es sieht, Ablage, Veröffentlichung und Nennung.
+  Katharina bestätigt den Auftrag, die zweite Person bestätigt den Erhalt und wählt die Nennung, Julia
+  sagt die Behandlung zu. **Zeitdaten:** Die Aufzeichnung bleibt (Prüfung auf Ermüdung und Drift,
+  Protokoll Abschnitt 7, Schritt 4); zugesagt wird, sie nur gesammelt auszuwerten, nie zur
+  Leistungsbewertung, und nur aggregiert zu veröffentlichen. **Kennung:** Die Labels werden pro Person
+  mit Kennung veröffentlicht (Protokoll, A36; in den Annotationsdateien `julia` und `alan`, für die
+  Veröffentlichung wird die Kennung im Informationsblatt festgelegt). Bei nur zwei namentlich genannten Annotierenden
+  schützt die Kennung kaum vor Zuordnung; das Informationsblatt sagt das offen, und die Wahl der
+  Nennung liegt bei den Beteiligten. **[offen]** Bestätigung von Rechtsgrundlage und verantwortlicher
+  Stelle durch die Datenschutzstelle; Ablageweg der Rückgaben; Aufbewahrungsdauer; Nennung; die
+  Bestätigungen der drei Beteiligten.
 - **LLM-Nutzung:** An LLM-Anbieter gehen nur Korpuskontexte und Bedeutungskarten, keine
   personenbezogenen Daten. Nutzungsbedingungen des Anbieters und Modellversion werden pro Lauf im
   Prompt-Log festgehalten.
@@ -89,7 +101,7 @@ Rückgabe werden im privaten Repository festgehalten.
 - **Mit der Publikation:** Archivierung auf Zenodo mit DOI. Labels verschlüsselt (Passwort in der
   Publikation), Lizenz ohne Weiterverbreitung im Klartext und ohne Trainingsnutzung, dazu ein
   Canary-String (eigene Maßnahme ohne Literaturbeleg; Jacovi et al. 2023 und Sainz et al. 2023 erwähnen keinen, Korrektur vom 2026-11-16, A37 im Protokoll). Mitveröffentlicht werden die Labels vor der Adjudikation
-  (pseudonymisiert), die Adjudikation mit Ursachencodes und das Prompt-Log Ebene A.
+  (pro Person mit Kennung, Abschnitt 4), die Adjudikation mit Ursachencodes und das Prompt-Log Ebene A.
   **[offen]** Verträglichkeit einer Zusatzklausel „keine Trainingsnutzung" mit CC BY-NC-SA klären.
 - **Code:** Skripte im öffentlichen Fork, Release-Stand zusätzlich auf Zenodo.
 - **Aufbewahrung:** mindestens 10 Jahre (Regel guter wissenschaftlicher Praxis), über Zenodo gesichert.
