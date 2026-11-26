@@ -9,7 +9,8 @@ Aufruf aus dem Repo-Wurzelverzeichnis:
 Ablauf "lesart-zuerst" (Standard im Pilot, Protokoll A31): pro Beleg zuerst eine eigene Lesart, erst dann die Karten.
 "direkt": Karten sofort; nur für die Hauptrunde, falls Julia nach dem Pilot so entscheidet, und für den Browsertest.
 
-Liest manifest-pilot.json und items-pilot.json (aus pilot_ziehen.py) und prüft, dass items-pilot.json
+Liest manifest-pilot.json und items-pilot.json (aus pilot_ziehen.py), ab Runde 1 die Itemmenge aus
+runden-pilot.json (aus runden.py) und prüft, dass items-pilot.json
 die Prüfsumme aus dem Manifest hat. Pro Person eine eigene Datei mit fest eingetragener Kennung
 (kein Login, keine Namenseingabe). Itemreihenfolge pro Person und Runde gemischt, Kartenreihenfolge
 pro Person und Item gemischt, beides aus dem Seed des Manifests abgeleitet und in der Datei
@@ -27,6 +28,8 @@ import re
 import sys
 from datetime import date
 from pathlib import Path
+
+from runden import items_der_runde, runden_sha
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -52,9 +55,9 @@ if sha(items_roh) != man["pruefsummen"]["items-pilot.json"]:
     sys.exit("items-pilot.json passt nicht zum Manifest: pilot_ziehen.py neu ausführen")
 bau = {b["item"]: b for b in json.loads(items_roh)}
 
-runde = man.get(f"runde{args.runde}")
+runde = items_der_runde(args.runde, man_roh)
 if not runde:
-    sys.exit(f"Runde {args.runde} ist im Manifest nicht festgelegt")
+    sys.exit(f"Runde {args.runde} ist weder im Manifest noch in runden-pilot.json festgelegt")
 
 seed = man["seed"]
 reihe = sorted(runde)
@@ -75,7 +78,8 @@ daten = {"meta": {"kennung": args.kennung, "runde": args.runde, "korpus_commit":
                   "gebaut": date.today().isoformat(), "seed": seed,
                   "ablauf": args.ablauf, "lesart_zuerst": args.ablauf == "lesart-zuerst",
                   "itemreihenfolge": f"{seed}-{args.kennung}-runde{args.runde}",
-                  "kartenreihenfolge": f"{seed}-{args.kennung}-<item>"},
+                  "kartenreihenfolge": f"{seed}-{args.kennung}-<item>",
+                  **({"runden_sha256": runden_sha()} if args.runde else {})},
          "items": items}
 # Fingerprint nur über Inhalt und Herkunft, nicht über Baudatum und Werkzeug: Ein Neubau mit denselben
 # Daten findet den Browserstand wieder und nimmt Sicherungen aus der ausgelieferten Datei an.

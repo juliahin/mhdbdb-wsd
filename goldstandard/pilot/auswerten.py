@@ -42,6 +42,8 @@ from collections import Counter
 from fractions import Fraction
 from pathlib import Path
 
+from runden import items_der_runde, runden_sha
+
 HIER = Path(__file__).resolve().parent
 SCHEMA = "wsd-goldstandard-pilot-export-v1"
 KENNUNGEN = ("julia", "alan")
@@ -141,7 +143,7 @@ def gueltig(x, lesart_zuerst):
     return True
 
 
-def lade(pfad, manifest, manifest_sha):
+def lade(pfad, manifest, manifest_sha, man_roh):
     try:
         exp = json.loads(Path(pfad).read_text(encoding="utf-8"))
     except (OSError, ValueError) as f:
@@ -156,12 +158,14 @@ def lade(pfad, manifest, manifest_sha):
     if meta.get("korpus_commit") != manifest["korpus_commit"]:
         sys.exit(f"{pfad}: Korpus-Commit passt nicht zum Manifest")
     runde = meta.get("runde")
-    soll = manifest.get(f"runde{runde}")
+    soll = items_der_runde(runde, man_roh) if isinstance(runde, int) else None
     if not soll:
-        sys.exit(f"{pfad}: Runde {runde} ist im Manifest nicht festgelegt")
+        sys.exit(f"{pfad}: Runde {runde} ist weder im Manifest noch in runden-pilot.json festgelegt")
+    if runde and meta.get("runden_sha256") != runden_sha():
+        sys.exit(f"{pfad}: Prüfsumme von runden-pilot.json passt nicht zum Export")
     ids = [i.get("item") for i in exp.get("items") or []]
     if sorted(ids) != sorted(soll):
-        sys.exit(f"{pfad}: Items des Exports passen nicht zur Runde {runde} im Manifest")
+        sys.exit(f"{pfad}: Items des Exports passen nicht zur Runde {runde} in {'runden-pilot.json' if runde else 'manifest-pilot.json'}")
     abgeleitet = ableiten(exp.get("ereignisse") or [], ids)
     abweichend = 0
     for i in exp["items"]:
@@ -251,7 +255,7 @@ def main(argv=None):
     items = {i["item"]: i for i in json.loads(items_roh)}
     msha = hashlib.sha256(man_roh).hexdigest()
 
-    x, y = lade(args.export1, manifest, msha), lade(args.export2, manifest, msha)
+    x, y = lade(args.export1, manifest, msha, man_roh), lade(args.export2, manifest, msha, man_roh)
     if x["meta"]["kennung"] == y["meta"]["kennung"]:
         sys.exit("Beide Exporte tragen dieselbe Kennung")
     if x["runde"] != y["runde"]:

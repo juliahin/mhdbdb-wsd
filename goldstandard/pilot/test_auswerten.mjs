@@ -1,10 +1,11 @@
-// Durchlauf für auswerten.py mit echten Exporten der Annotationsseite (Runde 0, Ablauf lesart-zuerst).
+// Durchlauf für auswerten.py mit echten Exporten der Annotationsseite (Runde 0 oder eine Runde ab 1, Ablauf lesart-zuerst).
 // Beide Personen werden über die Oberfläche mit einem festen, erfundenen Plan "annotiert"; das sind Testdaten,
 // keine Labels. Danach prüft der Test die Kennzahlen gegen eine eigene Rechnung, die Konsole auf Lecks, die
 // Pfadsperre für --bericht und die Abbrüche bei falschen Exporten.
 //
 // Aufruf aus der Wurzel des Repos (die gebauten Dateien unter pilot/bau/ müssen da sein):
-//     node goldstandard/pilot/test_auswerten.mjs
+//     node goldstandard/pilot/test_auswerten.mjs        (Runde 0)
+//     node goldstandard/pilot/test_auswerten.mjs 1      (Runde 1, Items aus runden-pilot.json; Stoppregel, Prüfsumme der Rundendatei)
 import { chromium } from "playwright";
 import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -14,10 +15,13 @@ import { spawnSync } from "node:child_process";
 
 let fehler = 0;
 const ok = (b, text) => { console.log((b ? "ok    " : "FEHLER") + "  " + text); if (!b) fehler++; };
-const DATEI = n => resolve(`goldstandard/pilot/bau/annotation-${n}-runde0.html`);
+const RUNDE = Number(process.argv[2] ?? 0);
+const DATEI = n => resolve(`goldstandard/pilot/bau/annotation-${n}-runde${RUNDE}.html`);
 const tmp = mkdtempSync(join(tmpdir(), "wsd-auswerten-"));
 const items = Object.fromEntries(JSON.parse(readFileSync("goldstandard/pilot/items-pilot.json", "utf8")).map(i => [i.item, i]));
-const runde0 = JSON.parse(readFileSync("goldstandard/pilot/manifest-pilot.json", "utf8")).runde0.slice().sort();
+const runde0 = (RUNDE ? JSON.parse(readFileSync("goldstandard/pilot/runden-pilot.json", "utf8"))[`runde${RUNDE}`]
+                      : JSON.parse(readFileSync("goldstandard/pilot/manifest-pilot.json", "utf8")).runde0).slice().sort();
+const N = runde0.length;   // 15 in Runde 0, 25 ab Runde 1; die Erwartungen unten folgen aus dem Plan
 const S = id => items[id].karten.map(k => k.sense).sort();
 
 // Plan je Item-Index (sortierte IDs): [Status, Karten, Sicherheit, Kommentar]; null = nicht festhalten
@@ -56,7 +60,7 @@ for (const k of ["julia", "alan"]) {
     await page.click("#btnFest");
   }
   const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#btnExport")]);
-  exporte[k] = join(tmp, `wsd-pilot-runde0-${k}.json`);
+  exporte[k] = join(tmp, `wsd-pilot-runde${RUNDE}-${k}.json`);
   writeFileSync(exporte[k], readFileSync(await dl.path()));
   await ctx.close();
 }
@@ -91,17 +95,18 @@ const p2 = paare(["SENSE", "MEHRERE", "KEINE_PASST", "LEMMA_FALSCH"]);
 const block = () => out.split(/\r?\n\r?\n/).find(b => b.startsWith("Sense-Ebene")) || "";
 const f3 = v => v.toFixed(3);
 
-ok(out.includes("Festgehalten: julia 15, alan 14, beide gültig 14"), "Festgehalten-Zählung (Festhalten, Aufheben, wieder Festhalten zählt)");
-ok(out.includes("Rohübereinstimmung: 10 von 14 (71.4 %"), "ganzes Label: 10 von 14 gleich");
+ok(out.includes(`Runde ${RUNDE}: ${N} Items`) && out.includes(`Festgehalten: julia ${N}, alan ${N - 1}, beide gültig ${N - 1}`), "Festgehalten-Zählung (Festhalten, Aufheben, wieder Festhalten zählt)");
+ok(out.includes(`Rohübereinstimmung: ${N - 5} von ${N - 1} (${(100 * (N - 5) / (N - 1)).toFixed(1)} %`), `ganzes Label: ${N - 5} von ${N - 1} gleich`);
 ok(out.includes("α nominal: " + f3(alpha(ganz, nom))), "ganzes Label: α nominal wie eigene Rechnung (" + f3(alpha(ganz, nom)) + ")");
-// 12 Einheiten: 14 gemeinsam festgehaltene minus KONTEXT_UNZUREICHEND und TEXT_DEFEKT; das LEMMA_FALSCH-Paar zählt mit
-// (ohne A42 wären es 11)
-ok(block().includes("Einheiten: 12") && (out.match(/^Sense-Ebene/gm) || []).length === 1, "Sense-Ebene: 12 Einheiten mit KEINE_PASST und LEMMA_FALSCH als eigenen Kategorien (A41, A42), nur eine Lesart");
+// N - 3 Einheiten: N - 1 gemeinsam festgehaltene minus KONTEXT_UNZUREICHEND und TEXT_DEFEKT; das LEMMA_FALSCH-Paar zählt mit
+// (ohne A42 wären es N - 4)
+ok(block().includes(`Einheiten: ${N - 3}`) && (out.match(/^Sense-Ebene/gm) || []).length === 1, `Sense-Ebene: ${N - 3} Einheiten mit KEINE_PASST und LEMMA_FALSCH als eigenen Kategorien (A41, A42), nur eine Lesart`);
 ok(block().includes("α MASI (1 - J·M, Hauptmaß): " + f3(alpha(p2, masi))), "Sense-Ebene: α MASI wie eigene Rechnung (" + f3(alpha(p2, masi)) + ")");
-ok(block().includes("exakt: 10 von 12") && block().includes("Überschneidung: 11 von 12"), "Sense-Ebene: exakt 10, Überschneidung 11");
-ok(/ SEN +9 +0 +0 +0 +0 +1/.test(out) && / MEH +1 /.test(out) && / KON +1 /.test(out) && / LEM +0 +0 +0 +1 +0 +0/.test(out), "Konfusionstabelle der Status");
-ok(out.includes("Runde 0 hat keine Schwelle"), "Runde 0 ohne Stoppregel");
-ok(out.includes("julia: Sicherheit sicher 12, eher_sicher 1, unsicher 2"), "Sicherheit je Person");
+ok(block().includes(`exakt: ${N - 5} von ${N - 3}`) && block().includes(`Überschneidung: ${N - 4} von ${N - 3}`), `Sense-Ebene: exakt ${N - 5}, Überschneidung ${N - 4}`);
+ok(new RegExp(` SEN +${N - 6} +0 +0 +0 +0 +1`).test(out) && / MEH +1 /.test(out) && / KON +1 /.test(out) && / LEM +0 +0 +0 +1 +0 +0/.test(out), "Konfusionstabelle der Status");
+if (RUNDE) ok(out.includes(`Stoppregel: nicht anwendbar: nur ${N - 1} von ${N} Items`), "Stoppregel ab Runde 1 nur, wenn beide alles festgehalten haben");
+else ok(out.includes("Runde 0 hat keine Schwelle"), "Runde 0 ohne Stoppregel");
+ok(out.includes(`julia: Sicherheit sicher ${N - 3}, eher_sicher 1, unsicher 2`), "Sicherheit je Person");
 const ids = new Set(runde0.flatMap(x => [x, items[x].xml_id, items[x].lemma, ...items[x].karten.map(k => k.sense)]));
 ok(![...ids].some(x => out.includes(x)) && !/(lemma|concept)_\d|_sense_/.test(out), "keine ID auf der Konsole");
 
@@ -138,6 +143,14 @@ if (gefaelscht.items[0].status === plan.alan[gefaelscht.items[0].item]?.[0]) gef
 writeFileSync(join(tmp, "gefaelscht.json"), JSON.stringify(gefaelscht));
 const r6 = lauf(exporte.julia, join(tmp, "gefaelscht.json"));
 ok(r6.status !== 0 && r6.stderr.includes("Ereignisprotokoll"), "Endstand, der dem Protokoll widerspricht, abgelehnt");
+if (RUNDE) {
+  const fremd = JSON.parse(readFileSync(exporte.alan, "utf8"));
+  ok(/^[0-9a-f]{64}$/.test(fremd.meta.runden_sha256 || ""), "Export ab Runde 1 trägt die Prüfsumme der Rundendatei");
+  fremd.meta.runden_sha256 = "0".repeat(64);
+  writeFileSync(join(tmp, "fremd.json"), JSON.stringify(fremd));
+  const r7 = lauf(exporte.julia, join(tmp, "fremd.json"));
+  ok(r7.status !== 0 && r7.stderr.includes("runden-pilot.json"), "Export zu einer anderen Rundendatei abgelehnt");
+}
 
 rmSync(tmp, { recursive: true, force: true });
 console.log(fehler ? `\n${fehler} Prüfungen fehlgeschlagen` : "\nalle Prüfungen bestanden");
